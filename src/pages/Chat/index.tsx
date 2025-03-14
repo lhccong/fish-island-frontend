@@ -19,7 +19,7 @@ import {BACKEND_HOST_WS} from "@/constants";
 import {getOnlineUserListUsingGet, listMessageVoByPageUsingPost} from "@/services/backend/chatController";
 import MessageContent from '@/components/MessageContent';
 import EmoticonPicker from '@/components/EmoticonPicker';
-import {getCosCredentialUsingGet} from "@/services/backend/fileController";
+import {getCosCredentialUsingGet, getMinioPresignedUsingGet} from "@/services/backend/fileController";
 import {generatePresignedDownloadUrlUsingGet} from "@/services/backend/fileController";
 
 interface Message {
@@ -344,7 +344,7 @@ const ChatRoom: React.FC = () => {
   const handleFileUpload = async (file: File) => {
     try {
       setUploadingFile(true);
-      const res = await generatePresignedDownloadUrlUsingGet({
+      const res = await getMinioPresignedUsingGet({
         fileName: file.name
       });
 
