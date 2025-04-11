@@ -1,12 +1,12 @@
-import { Button, Form, message, Modal, Tabs } from 'antd';
-import { LockOutlined, MailOutlined, QqCircleFilled, UserOutlined } from '@ant-design/icons';
+import { Button, Form, message, Modal, Tabs, Divider, Space } from 'antd';
+import { LockOutlined, MailOutlined, QqCircleFilled, UserOutlined, GithubOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { useEmotionCss } from '@ant-design/use-emotion-css';
 import { Helmet } from '@@/exports';
 import Settings from '../../../config/defaultSettings';
 import Footer from '@/components/Footer';
 import { useModel } from '@umijs/max';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Captcha } from 'aj-captcha-react';
 import { BACKEND_HOST_CODE } from '@/constants';
 import styles from '@/pages/User/Register/index.less';
@@ -16,6 +16,7 @@ import {
   userEmailSendUsingPost,
   userEmailRegisterUsingPost,
 } from '@/services/backend/userController';
+import { renderAuthUsingGet } from '@/services/backend/restAuthController';
 
 interface UserLoginRequest {
   userAccount?: string;
@@ -176,6 +177,68 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel }) 
     }, 100);
   };
 
+  const handleAuthCallback = async () => {
+    // 从 URL 参数中获取 token 信息
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenName = urlParams.get('tokenName');
+    const tokenValue = urlParams.get('tokenValue');
+    const error = urlParams.get('error');
+
+    if (error) {
+      message.error(`第三方登录失败：${error}`);
+      return;
+    }
+
+    if (tokenName && tokenValue) {
+      try {
+        // 存储 token 信息
+        localStorage.setItem('tokenName', tokenName);
+        localStorage.setItem('tokenValue', tokenValue);
+
+        // 获取用户信息并更新状态
+        // 假设这里有一个获取用户信息的 API
+        // const userInfo = await getUserInfo();
+        setInitialState({
+          ...initialState,
+          // currentUser: userInfo,
+        });
+
+        message.success('登录成功！');
+
+        // 获取之前保存的重定向 URL
+        const redirectUrl = localStorage.getItem('loginRedirectUrl') || '/';
+        localStorage.removeItem('loginRedirectUrl'); // 清除存储的 URL
+
+        // 重定向到之前的页面
+        window.location.href = redirectUrl;
+      } catch (error: any) {
+        message.error(`登录失败：${error.message}`);
+      }
+    }
+  };
+
+  // 在组件加载时检查是否需要处理回调
+  useEffect(() => {
+    if (window.location.pathname === '/auth-callback') {
+      handleAuthCallback();
+    }
+  }, []);
+
+  const handleThirdPartyLogin = async (platform: string) => {
+    try {
+      // 在跳转前保存当前页面的 URL，用于登录后返回
+      localStorage.setItem('loginRedirectUrl', window.location.href);
+
+      const res = await renderAuthUsingGet(platform);
+      if (res.data) {
+        // 直接跳转到授权页面
+        window.location.href = res.data;
+      }
+    } catch (error: any) {
+      message.error(`${platform} 登录失败，${error.message}`);
+    }
+  };
+
   return (
     <Modal footer={null} open={isModalOpen} onCancel={onCancel}>
       <div className={containerClassName}>
@@ -254,6 +317,41 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel }) 
                     },
                   ]}
                 />
+                <div style={{ marginBottom: 24 }}>
+                  <Divider>
+                    <span style={{ color: 'rgba(0, 0, 0, 0.45)' }}>其他登录方式</span>
+                  </Divider>
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Button
+                      type="default"
+                      icon={<GithubOutlined />}
+                      onClick={() => handleThirdPartyLogin('github')}
+                      style={{ width: '100%', height: '40px' }}
+                    >
+                      使用 GitHub 登录
+                    </Button>
+                    <Button
+                      type="default"
+                      icon={<img
+                        src="https://gitee.com/favicon.ico"
+                        alt="Gitee"
+                        style={{ width: '14px', height: '14px', marginRight: '4px' }}
+                      />}
+                      onClick={() => handleThirdPartyLogin('gitee')}
+                      style={{ width: '100%', height: '40px' }}
+                    >
+                      使用 Gitee 登录
+                    </Button>
+                    {/* <Button
+                      type="default"
+                      icon={<QqCircleFilled style={{ color: '#12B7F5' }} />}
+                      onClick={() => handleThirdPartyLogin('qq')}
+                      style={{ width: '100%', height: '40px' }}
+                    >
+                      使用 QQ 登录
+                    </Button> */}
+                  </Space>
+                </div>
               </>
             )}
             {type === 'register' && (
@@ -388,4 +486,4 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel }) 
   );
 };
 
-export default LoginRegister; 
+export default LoginRegister;

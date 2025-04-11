@@ -4,6 +4,10 @@ import {
   signInUsingPost,
   getLoginUserUsingGet
 } from '@/services/backend/userController';
+import {
+  renderAuthUsingGet,
+  unbindPlatform
+} from '@/services/backend/restAuthController';
 import {getCosCredentialUsingGet, uploadFileByMinioUsingPost} from '@/services/backend/fileController';
 import {
   LockOutlined,
@@ -14,6 +18,7 @@ import {
   UploadOutlined,
   AppstoreOutlined,
   SwapOutlined,
+  GithubOutlined,
 } from '@ant-design/icons';
 import {history, useModel} from '@umijs/max';
 import {
@@ -41,6 +46,7 @@ import './app.css';
 import {RcFile} from "antd/lib/upload";
 import COS from 'cos-js-sdk-v5';
 import LoginRegister from '../LoginRegister';
+import { Item } from 'rc-menu';
 lazy(() => import('@/components/MusicPlayer'));
 export type GlobalHeaderRightProps = {
   menu?: boolean;
@@ -80,8 +86,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
     earnedAmount?: number;
   }>({type: 'work', timeRemaining: '00:00:00'});
 
-
-
   const onFinishMoYu: FormProps<MoYuTimeType>['onFinish'] = (values) => {
     // 将 Moment 对象转换为 ISO 字符串格式后存储
     const dataToSave = {
@@ -109,6 +113,43 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const loginOut = async () => {
     await userLogoutUsingPost();
   };
+
+  const getPlatformUsername = (platformName: string) => {
+    return currentUser?.bindPlatforms?.find((platformItem: { platform: string; }) => platformItem.platform === platformName)?.nickname || '';
+  };
+
+  const handleUnbind = (platform: string, nickname: string) => {
+    Modal.confirm({
+      title: '确认解绑',
+      content: `确定要解绑 ${platform} 账号 "${nickname}" 吗？`,
+      okText: '确认解绑',
+      cancelText: '取消',
+      okButtonProps: {
+        danger: true
+      },
+      async onOk() {
+        try {
+          const res = await unbindPlatform(platform.toLowerCase());
+          if (res.code === 0) {
+            message.success('解绑成功');
+            // 更新用户信息
+            const userInfo = await getLoginUserUsingGet();
+            if (userInfo.data) {
+              setInitialState((s) => ({
+                ...s,
+                currentUser: userInfo.data,
+              }));
+            }
+          } else {
+            message.error('解绑失败，请稍后重试');
+          }
+        } catch (error: any) {
+          message.error(`解绑失败：${error.message}`);
+        }
+      },
+    });
+  };
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMoneyOpen, setIsMoneyOpen] = useState(false);
 
@@ -148,8 +189,14 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         message.success('修改信息成功！');
         setIsEditProfileOpen(false);
         // 更新当前用户信息
-        // eslint-disable-next-line @typescript-eslint/no-use-before-define
-        setInitialState((s) => ({...s, currentUser: {...currentUser, ...values, userAvatar}}));
+        setInitialState((s) => ({
+          ...s, 
+          currentUser: {
+            ...currentUser, 
+            ...values, 
+            userAvatar,
+          }
+        }));
       }
     } catch (error: any) {
       message.error(`修改失败，${error.message}`);
@@ -985,6 +1032,82 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
               showCount
               placeholder="请输入不超过100个字符的个人简介"
             />
+          </Form.Item>
+
+          <Form.Item label="社交账号绑定">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ flex: 1 }}>
+                  {getPlatformUsername("github") ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                     <GithubOutlined style={{ fontSize: '16px' }} />
+                     <span>{getPlatformUsername("github")}</span>
+                      {/* <Button 
+                        type="text" 
+                        danger
+                        icon={<LogoutOutlined />}
+                        onClick={() => handleUnbind('github', getPlatformUsername("github"))}
+                      >
+                        解绑
+                      </Button> */}
+                    </div>
+                  ) : (
+                    <Button 
+                      type="default"
+                      icon={<GithubOutlined />}
+                      onClick={async () => {
+                        const res = await renderAuthUsingGet('github');
+                        location.href = res.data;
+                      }}
+                    >
+                      绑定 GitHub
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ flex: 1 }}>
+                  {getPlatformUsername("gitee") ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                     <img 
+                        src="https://gitee.com/favicon.ico" 
+                        alt="Gitee" 
+                        style={{ 
+                          width: '16px', 
+                          height: '16px',
+                          objectFit: 'contain'
+                        }} 
+                      />
+                      <span>{getPlatformUsername("gitee")}</span>
+                      {/* <Button 
+                        type="text" 
+                        danger
+                        icon={<LogoutOutlined />}
+                        onClick={() => handleUnbind('gitee', getPlatformUsername("gitee"))}
+                      >
+                        解绑
+                      </Button> */}
+                    </div>
+                  ) : (
+                    <Button 
+                      type="default"
+                      icon={<img 
+                        src="https://gitee.com/favicon.ico" 
+                        alt="Gitee" 
+                        style={{ width: '14px', height: '14px', marginRight: '4px' }} 
+                      />}
+                      onClick={async () => {
+                        const res = await renderAuthUsingGet('gitee');
+                        location.href = res.data;
+                      }}
+                    >
+                      绑定 Gitee
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Space>
           </Form.Item>
 
           <Form.Item>

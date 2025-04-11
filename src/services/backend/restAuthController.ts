@@ -3,41 +3,17 @@
 import { request } from '@umijs/max';
 
 /** 获取GitHub授权地址重定向 GET /api/oauth/render */
-export async function renderAuthUsingGet(options?: { [key: string]: any }) {
-  return request<any>('/api/oauth/render', {
+export async function renderAuthUsingGet(source: string, options?: { [key: string]: any }) {
+  return request<any>(`/api/oauth/render/${source}`, {
     method: 'GET',
     ...(options || {}),
   });
 }
 
-/** 获取GitHub授权地址重定向 PUT /api/oauth/render */
-export async function renderAuthUsingPut(options?: { [key: string]: any }) {
-  return request<any>('/api/oauth/render', {
-    method: 'PUT',
-    ...(options || {}),
-  });
-}
-
-/** 获取GitHub授权地址重定向 POST /api/oauth/render */
-export async function renderAuthUsingPost(options?: { [key: string]: any }) {
-  return request<any>('/api/oauth/render', {
-    method: 'POST',
-    ...(options || {}),
-  });
-}
-
-/** 获取GitHub授权地址重定向 DELETE /api/oauth/render */
-export async function renderAuthUsingDelete(options?: { [key: string]: any }) {
-  return request<any>('/api/oauth/render', {
+/* 解绑 */
+export async function unbindPlatform(source: string, options?: { [key: string]: any }) {
+  return request<any>(`/api/oauth/unbind/${source}`, {
     method: 'DELETE',
-    ...(options || {}),
-  });
-}
-
-/** 获取GitHub授权地址重定向 PATCH /api/oauth/render */
-export async function renderAuthUsingPatch(options?: { [key: string]: any }) {
-  return request<any>('/api/oauth/render', {
-    method: 'PATCH',
     ...(options || {}),
   });
 }
