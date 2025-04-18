@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Dropdown, Button } from 'antd';
-import { SearchOutlined, DownOutlined, SwapOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownOutlined, SwapOutlined, SettingOutlined } from '@ant-design/icons';
 import styles from './index.less';
 import moment from 'moment';
 import 'moment/locale/zh-cn';
 import Shortcut from '@/components/Shortcut';
 import WallpaperMenu from '@/components/WallpaperMenu';
+import CustomSites from '@/components/CustomSites';
 
 moment.locale('zh-cn');
 
@@ -44,7 +45,7 @@ const defaultShortcuts = [
     url: 'https://www.zhihu.com',
   },
   {
-    icon: 'https://github.com/favicon.ico',
+    icon: 'https://images.seeklogo.com/logo-png/30/2/github-logo-png_seeklogo-304612.png',
     title: 'GitHub',
     url: 'https://github.com',
   },
@@ -63,16 +64,25 @@ const defaultShortcuts = [
 const Home: React.FC = () => {
   const [time, setTime] = useState(moment());
   const [weather, setWeather] = useState({
-    temperature: '18°',
-    condition: '晴',
-    city: '香港',
+    temperature: '',
+    condition: '',
+    city: '',
   });
-  const [shortcuts, setShortcuts] = useState(defaultShortcuts);
+  const [customSites, setCustomSites] = useState<Array<{ title: string; url: string; icon: string }>>(() => {
+    const savedSites = localStorage.getItem('customSites');
+    return savedSites ? JSON.parse(savedSites) : [];
+  });
+  const [shortcuts, setShortcuts] = useState(() => {
+    const savedSites = localStorage.getItem('customSites');
+    const customSites = savedSites ? JSON.parse(savedSites) : [];
+    return [...defaultShortcuts, ...customSites];
+  });
   const [currentEngine, setCurrentEngine] = useState(searchEngines[0]);
   const [wallpaper, setWallpaper] = useState(() => {
     const savedWallpaper = localStorage.getItem('wallpaper');
     return savedWallpaper || '/img/defaultWallpaper.webp';
   });
+  const [customSitesVisible, setCustomSitesVisible] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -81,6 +91,33 @@ const Home: React.FC = () => {
 
     return () => {
       clearInterval(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const response = await fetch('https://api.kxzjoker.cn/api/Weather');
+        const data = await response.json();
+        if (data.code === 200) {
+          const weatherData = data.data.tianqi;
+          setWeather({
+            temperature: `${weatherData.temperature}°`,
+            condition: weatherData.weather,
+            city: weatherData.city,
+          });
+        }
+      } catch (error) {
+        console.error('获取天气数据失败:', error);
+      }
+    };
+
+    fetchWeather();
+    // 每30分钟更新一次天气数据
+    const weatherTimer = setInterval(fetchWeather, 30 * 60 * 1000);
+
+    return () => {
+      clearInterval(weatherTimer);
     };
   }, []);
 
@@ -130,12 +167,19 @@ const Home: React.FC = () => {
     window.location.href = '/index';
   };
 
+  const handleAddCustomSite = (site: { title: string; url: string; icon: string }) => {
+    const newCustomSites = [...customSites, site];
+    setCustomSites(newCustomSites);
+    setShortcuts([...defaultShortcuts, ...newCustomSites]);
+    localStorage.setItem('customSites', JSON.stringify(newCustomSites));
+  };
+
   return (
-    <div 
-      className={styles.container} 
+    <div
+      className={styles.container}
       onContextMenu={handleContextMenu}
-      style={{ 
-        backgroundImage: `url(${wallpaper})` 
+      style={{
+        backgroundImage: `url(${wallpaper})`
       }}
     >
       <Button
@@ -147,8 +191,8 @@ const Home: React.FC = () => {
       >
         摸鱼模式
       </Button>
-      <Dropdown 
-        overlay={<WallpaperMenu onWallpaperChange={setWallpaper} />} 
+      <Dropdown
+        overlay={<WallpaperMenu onWallpaperChange={setWallpaper} />}
         trigger={['contextMenu']}
       >
         <div className={styles.wallpaperOverlay}></div>
@@ -199,8 +243,15 @@ const Home: React.FC = () => {
           <div className={styles.countdownTime}>{5 - time.day()}天</div>
         </div>
       </div>
+
+      <CustomSites
+        visible={true}
+        onClose={() => {}}
+        onAddSite={handleAddCustomSite}
+        sites={customSites}
+      />
     </div>
   );
 };
 
-export default Home; 
+export default Home;

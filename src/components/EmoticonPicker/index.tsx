@@ -10,6 +10,7 @@ import {
 } from '@/services/backend/emoticonFavourController';
 import eventBus from '@/utils/eventBus';
 import { EMOTICON_FAVORITE_CHANGED } from '@/components/MessageContent';
+import { useModel } from '@umijs/max';
 
 interface Emoticon {
   thumbSrc: string;
@@ -30,6 +31,8 @@ interface EmoticonPickerProps {
 const PAGE_SIZE = 12;
 
 const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
+  const { initialState } = useModel('@@initialState');
+  const { currentUser } = initialState || {};
   const [keyword, setKeyword] = useState('');
   const [baiduEmoticons, setBaiduEmoticons] = useState<BaiduEmoticon[]>([]);
   const [baiduLoading, setBaiduLoading] = useState(false);
@@ -41,9 +44,21 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
   const [favoriteHasMore, setFavoriteHasMore] = useState(true);
   const baiduListRef = useRef<HTMLDivElement>(null);
   const favoriteListRef = useRef<HTMLDivElement>(null);
+  const hasFetchedFavorites = useRef(false);
 
   // 获取收藏的表情包
   const fetchFavoriteEmoticons = async (page: number = 1) => {
+    // 如果用户未登录，不获取收藏表情
+    if (!currentUser?.id) {
+      setFavoriteEmoticons([]);
+      return;
+    }
+
+    // 如果已经获取过第一页，且不是加载更多，则不再重复获取
+    if (page === 1 && hasFetchedFavorites.current) {
+      return;
+    }
+
     setFavoriteLoading(true);
     try {
       const response = await listEmoticonFavourByPageUsingPost({
@@ -55,10 +70,16 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
         const { records, total } = response.data;
         if (page === 1) {
           setFavoriteEmoticons(records || []);
+          hasFetchedFavorites.current = true;
         } else {
           setFavoriteEmoticons(prev => [...prev, ...(records || [])]);
         }
-        setFavoriteHasMore((records?.length || 0) * page < (total || 0));
+        // 如果当前页没有记录，或者已经加载完所有记录，则设置没有更多数据
+        if (!records || records.length === 0 || (records?.length || 0) * page >= (total || 0)) {
+          setFavoriteHasMore(false);
+        } else {
+          setFavoriteHasMore((records?.length || 0) * page < (total || 0));
+        }
         setFavoritePage(page);
       } else {
         message.error('获取收藏表情包失败');
@@ -166,7 +187,7 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
     
     // 监听收藏变化事件
     const handleFavoriteChanged = () => {
-      // 刷新收藏列表
+      hasFetchedFavorites.current = false; // 重置标志，允许重新获取
       fetchFavoriteEmoticons(1);
     };
     
@@ -176,7 +197,7 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
     return () => {
       eventBus.off(EMOTICON_FAVORITE_CHANGED, handleFavoriteChanged);
     };
-  }, []);
+  }, [currentUser?.id]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -322,7 +343,6 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
         renderBaiduEmoticonList(baiduEmoticons)
       ) : (
         <>
-          <div className={styles.sectionTitle}>我的收藏</div>
           <div ref={favoriteListRef} className={styles.emoticonList}>
             {renderEmoticonList(favoriteEmoticons)}
             {favoriteLoading && (

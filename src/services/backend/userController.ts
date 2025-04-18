@@ -29,6 +29,21 @@ export async function deleteUserUsingPost(
   });
 }
 
+/** 用户邮箱绑定账号 POST /api/user/email/bindToAccount */
+export async function userEmailBindToAccountUsingPost(
+  body: API.UserBindEmailRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/user/email/bindToAccount', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 用户邮箱登录 POST /api/user/email/login */
 export async function userEmailLoginUsingPost(
   body: API.UserLoginRequest,
@@ -59,9 +74,24 @@ export async function userEmailRegisterUsingPost(
   });
 }
 
+/** 用户邮箱找回密码 POST /api/user/email/resetPassword */
+export async function userEmailResetPasswordUsingPost(
+  body: API.UserEmailResetPasswordRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/user/email/resetPassword', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 用户邮箱验证码 POST /api/user/email/send */
 export async function userEmailSendUsingPost(
-  body: API.UserRegisterRequest,
+  body: API.UserEmailSendRequest,
   options?: { [key: string]: any },
 ) {
   return request<API.BaseResponseBoolean_>('/api/user/email/send', {

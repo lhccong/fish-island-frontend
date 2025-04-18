@@ -36,6 +36,7 @@ export default [
     routes: [
       { path: '/utils', redirect: '/utils/json', requireAuth: false },
       { icon: 'DesktopOutlined', path: '/utils/json', component: './Utils/JsonFormat', name: 'JSON格式化', requireAuth: false },
+      { icon: 'DesktopOutlined', path: '/utils/compare', component: './Utils/Compare', name: '文本比对', requireAuth: false },
     ],
   },
   { icon: 'PictureOutlined', path: '/avatarFrames', component: './Utils/AvatarFrames', name: '头像框兑换', requireAuth: true },

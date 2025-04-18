@@ -130,7 +130,8 @@ export default defineConfig({
     {
       requestLibPath: "import { request } from '@umijs/max'",
       // schemaPath: 'https://fish.codebug.icu/fish/api/v2/api-docs',
-      schemaPath: 'https://moyuapi.codebug.icu/fish/api/v2/api-docs',
+      // schemaPath: 'https://moyuapi.codebug.icu/fish/api/v2/api-docs',
+      schemaPath: 'http://localhost:8123/api/v2/api-docs',
       projectName: 'backend',
     },
   ],
@@ -138,4 +139,24 @@ export default defineConfig({
     strategy: 'normal',
   },
   requestRecord: {},
+  metas: [
+    { name: 'theme-color', content: '#1890ff' },
+    { name: 'apple-mobile-web-app-capable', content: 'yes' },
+    { name: 'apple-mobile-web-app-status-bar-style', content: 'black' },
+    { name: 'apple-mobile-web-app-title', content: '摸鱼岛' },
+    { name: 'application-name', content: '摸鱼岛' },
+    { name: 'msapplication-TileColor', content: '#1890ff' },
+    { name: 'msapplication-config', content: '/browserconfig.xml' }
+  ],
+  links: [
+    { rel: 'manifest', href: '/manifest.json' },
+    { rel: 'apple-touch-icon', sizes: '72x72', href: '/icons/icon-72x72.png' },
+    { rel: 'apple-touch-icon', sizes: '96x96', href: '/icons/icon-96x96.png' },
+    { rel: 'apple-touch-icon', sizes: '128x128', href: '/icons/icon-128x128.png' },
+    { rel: 'apple-touch-icon', sizes: '144x144', href: '/icons/icon-144x144.png' },
+    { rel: 'apple-touch-icon', sizes: '152x152', href: '/icons/icon-152x152.png' },
+    { rel: 'apple-touch-icon', sizes: '192x192', href: '/icons/icon-192x192.png' },
+    { rel: 'apple-touch-icon', sizes: '384x384', href: '/icons/icon-384x384.png' },
+    { rel: 'apple-touch-icon', sizes: '512x512', href: '/icons/icon-512x512.png' }
+  ],
 });

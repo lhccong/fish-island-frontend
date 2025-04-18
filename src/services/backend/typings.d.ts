@@ -583,7 +583,7 @@ declare namespace API {
     frameId: number;
   };
 
-  type streamChatUsingGETParams = {
+  type streamChatDemoUsingGETParams = {
     /** prompt */
     prompt: string;
   };
@@ -638,6 +638,11 @@ declare namespace API {
     userRole?: string;
   };
 
+  type UserBindEmailRequest = {
+    code?: string;
+    email?: string;
+  };
+
   type UserChatResponse = {
     /** 用户头像 */
     avatar?: string;
@@ -655,6 +660,17 @@ declare namespace API {
     points?: number;
     /** 用户状态 */
     status?: string;
+  };
+
+  type UserEmailResetPasswordRequest = {
+    checkPassword?: string;
+    code?: string;
+    email?: string;
+    userPassword?: string;
+  };
+
+  type UserEmailSendRequest = {
+    email?: string;
   };
 
   type userLoginByGithubUsingPOSTParams = {

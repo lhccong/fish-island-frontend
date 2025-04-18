@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {Card, Image, Button, message} from 'antd';
 import {BilibiliOutlined, LinkOutlined, FileOutlined, DownloadOutlined, StarOutlined, StarFilled} from '@ant-design/icons';
 import ReactMarkdown, { Components } from 'react-markdown';
@@ -15,6 +15,7 @@ import {
   listEmoticonFavourByPageUsingPost 
 } from '@/services/backend/emoticonFavourController';
 import eventBus from '@/utils/eventBus';
+import { useModel } from '@umijs/max';
 
 // 定义事件名称常量
 export const EMOTICON_FAVORITE_CHANGED = 'emoticon_favorite_changed';
@@ -41,10 +42,13 @@ interface Emoticon {
 }
 
 const MessageContent: React.FC<MessageContentProps> = ({content}) => {
+  const { initialState } = useModel('@@initialState');
+  const { currentUser } = initialState || {};
   const [webPages, setWebPages] = useState<Record<any, WebPageInfo>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [favoriteEmoticons, setFavoriteEmoticons] = useState<API.EmoticonFavour[]>([]);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const hasFetchedFavorites = useRef(false);
   // URL匹配正则表达式
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   // 图片标签匹配正则表达式
@@ -54,6 +58,17 @@ const MessageContent: React.FC<MessageContentProps> = ({content}) => {
 
   // 获取收藏的表情包
   const fetchFavoriteEmoticons = async () => {
+    // 如果用户未登录，不获取收藏表情
+    if (!currentUser?.id) {
+      setFavoriteEmoticons([]);
+      return;
+    }
+
+    // 如果已经获取过，不再重复获取
+    if (hasFetchedFavorites.current) {
+      return;
+    }
+
     setFavoriteLoading(true);
     try {
       const response = await listEmoticonFavourByPageUsingPost({
@@ -63,6 +78,7 @@ const MessageContent: React.FC<MessageContentProps> = ({content}) => {
       
       if (response.code === 0 && response.data) {
         setFavoriteEmoticons(response.data.records || []);
+        hasFetchedFavorites.current = true;
       }
     } catch (error) {
       console.error('获取收藏表情包失败:', error);
@@ -126,10 +142,19 @@ const MessageContent: React.FC<MessageContentProps> = ({content}) => {
     }
   };
 
-  // 在组件加载时获取收藏的表情包
+  // 监听收藏变化事件
   useEffect(() => {
-    fetchFavoriteEmoticons();
-  }, []);
+    const handleFavoriteChanged = () => {
+      hasFetchedFavorites.current = false; // 重置标志，允许重新获取
+      fetchFavoriteEmoticons();
+    };
+    
+    eventBus.on(EMOTICON_FAVORITE_CHANGED, handleFavoriteChanged);
+    
+    return () => {
+      eventBus.off(EMOTICON_FAVORITE_CHANGED, handleFavoriteChanged);
+    };
+  }, [currentUser?.id]); // 添加 currentUser.id 作为依赖
 
   // 截断文本到指定长度
   const truncateText = (text: string, maxLength: number = 20) => {

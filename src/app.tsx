@@ -12,6 +12,7 @@ import SideAnnouncement from '@/components/SideAnnouncement';
 import routes from '../config/routes';
 import GlobalTitle from '@/components/GlobalTitle';
 import {Board, Player, Position, Move, WinningLine} from '@/game';
+import {unregisterServiceWorker} from './utils/unregisterServiceWorker';
 
 const loginPath = '/user/login';
 
@@ -149,6 +150,9 @@ interface InitialState {
  * @see  https://umijs.org/zh-CN/plugins/plugin-initial-state
  * */
 export async function getInitialState(): Promise<InitialState> {
+  // 注销 Service Worker
+  await unregisterServiceWorker();
+  
   const initialState: InitialState = {
     currentUser: undefined,
     gameState: undefined,
@@ -159,16 +163,20 @@ export async function getInitialState(): Promise<InitialState> {
   const savedSiteConfig = localStorage.getItem('siteConfig');
   if (savedSiteConfig) {
     const {siteName, siteIcon} = JSON.parse(savedSiteConfig);
-    // 更新网站图标
-    const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-    if (link) {
-      link.href = siteIcon;
-    } else {
+    // 更新所有图标相关的标签
+    const iconTypes = ['icon', 'shortcut icon', 'apple-touch-icon'];
+    iconTypes.forEach(type => {
+      // 移除所有现有的图标标签
+      const existingLinks = document.querySelectorAll(`link[rel="${type}"]`);
+      existingLinks.forEach(link => link.remove());
+      
+      // 创建新的图标标签
       const newLink = document.createElement('link');
-      newLink.rel = 'icon';
+      newLink.rel = type;
       newLink.href = siteIcon;
       document.head.appendChild(newLink);
-    }
+    });
+    
     // 更新网站标题
     document.title = siteName;
     // 更新默认设置中的标题
@@ -197,9 +205,25 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const [showAnnouncement, setShowAnnouncement] = useState(true);
 
-  // 监听路由变化
+  // 注册 Service Worker
+  const registerServiceWorker = () => {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('ServiceWorker registration successful');
+          })
+          .catch(err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+      });
+    }
+  };
+
+  // 在 useEffect 中调用注册函数
   useEffect(() => {
     listenRouteChange();
+    registerServiceWorker();
   }, []);
 
   if (isBossMode) {
