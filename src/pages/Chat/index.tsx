@@ -954,25 +954,43 @@ const ChatRoom: React.FC = () => {
   };
 
   // 修改 handleInviteClick 函数
-  const handleInviteClick = (roomId: string) => {
-    // 跳转到游戏页面并设置房间号
-    history.push(`/game/piece?roomId=${roomId}&mode=online`);
+  const handleInviteClick = (roomId: string, gameType: string) => {
+    switch (gameType) {
+      case 'chess':
+        history.push(`/game/piece?roomId=${roomId}&mode=online`);
+        break;
+      case 'chineseChess':
+        history.push(`/game/chineseChess?roomId=${roomId}&mode=online`);
+        break;
+      default:
+        break;
+    }
   };
 
   // 修改 MessageContent 组件的渲染逻辑
   const renderMessageContent = (content: string) => {
     // 检查是否是邀请消息
-    const inviteMatch = content.match(/\[invite\](.*?)\[\/invite\]/);
+    const inviteMatch = content.match(/\[invite\/(\w+)\](\d+)\[\/invite\]/);
     if (inviteMatch) {
-      const roomId = inviteMatch[1];
+      const roomId = inviteMatch[2];
+      const gameType = inviteMatch[1];
+      let game = ''
+      switch (gameType) {
+        case 'chess':
+          game = '五子棋';
+          break;
+        case 'chineseChess':
+          game = '中国象棋';
+          break;
+      }
       return (
         <div className={styles.inviteMessage}>
           <div className={styles.inviteContent}>
-            <span className={styles.inviteText}>🎮 五子棋对战邀请</span>
+            <span className={styles.inviteText}>🎮 {game}对战邀请</span>
             <Button
               type="primary"
               size="small"
-              onClick={() => handleInviteClick(roomId)}
+              onClick={() => handleInviteClick(roomId, gameType)}
               className={styles.inviteButton}
             >
               加入对战

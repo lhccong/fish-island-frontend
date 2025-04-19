@@ -42,9 +42,13 @@ class WebSocketService {
     this.ws.onopen = () => {
       console.log('WebSocket连接成功');
       this.reconnectAttempts = 0;
-      this.ws?.send(JSON.stringify({
-        type: 1, // 登录连接
-      }));
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.ws?.send(JSON.stringify({
+          type: 1, // 登录连接
+        }));
+      } else {
+        message.error('WebSocket连接失败');
+      }
     };
 
     this.ws.onclose = () => {
@@ -120,6 +124,13 @@ class WebSocketService {
         handlers.splice(index, 1);
       }
     }
+  }
+
+  public clearMessageHandlers() {
+    // 清空所有消息处理器，但保留error默认处理器
+    const errorHandlers = this.messageHandlers.get('error') || [];
+    this.messageHandlers.clear();
+    this.messageHandlers.set('error', errorHandlers);
   }
 }
 

@@ -466,7 +466,7 @@ function App() {
         content: {
           message: {
             id: `${Date.now()}`,
-            content: `[invite]${roomId}[/invite]`,
+            content: `[invite/chess]${roomId}[/invite]`,
             sender: {
               id: String(currentUser.id),
               name: currentUser.userName || '游客',
