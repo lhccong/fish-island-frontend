@@ -50,10 +50,16 @@ export async function getHeroById(
 
 /** 记录猜对英雄次数 POST /api/hero/guess/success */
 export async function recordGuessSuccess(
+  params: {
+    heroId: number;
+  },
   options?: { [key: string]: any },
 ) {
   return request<API.BaseResponseBoolean_>('/api/hero/guess/success', {
     method: 'POST',
+    params: {
+      ...params,
+    },
     headers: {
       'Content-Type': 'application/json',
     },

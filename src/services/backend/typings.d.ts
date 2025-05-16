@@ -1101,12 +1101,12 @@ declare namespace API {
 
   type BaseResponseHeroVO_ = {
     code?: number;
-    data?: HeroVO;
+    data?: string;
     message?: string;
   };
 
   type HeroVO = {
-    id?: number;
+    id?: string;
     ename?: string;
     cname?: string;
     title?: string;

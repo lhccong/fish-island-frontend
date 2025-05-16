@@ -148,7 +148,6 @@
 /* 登录提示文字样式 */
 .guess-count-login-hint {
   color: #595959;
-  font-size: 11px;
   margin-left: 4px;
 }
 
@@ -195,6 +194,45 @@
     flex-wrap: nowrap !important; /* 禁止换行 */
   }
 }
+
+
+/* 默认样式（大屏幕） */
+.ant-card {
+  height: 90vh;
+}
+
+/* 背景图样式 */
+.card-background {
+  background: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), url('/img/guessHerobg.png'); /* 添加透明度 */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+/* 小于 768px 的屏幕 */
+@media (max-width: 768px) {
+  .card-background {
+    background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), url('/img/guessHerobg.png'); /* 增加透明度 */
+    background-size: contain;
+  }
+}
+
+.no-wrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.no-wrap-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+
+
 
 
 
