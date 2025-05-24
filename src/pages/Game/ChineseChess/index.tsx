@@ -1791,7 +1791,7 @@ function App() {
     // 重置所有游戏状态
     setPlayerColor(newColor);
     setIsThinking(false);
-    setBoard(createInitialBoard());
+    setBoard(createInitialBoard(gameType));
     setCurrentPlayer('red'); // 红方先行
     setWinInfo(null);
     setMoveHistory([]);
@@ -1804,7 +1804,7 @@ function App() {
     setCapturedPieceEffect(null);
     setShowRestartModal(false);
 
-    const initialBoard = createInitialBoard();
+    const initialBoard = createInitialBoard(gameType);
 
     // 如果玩家选择黑方，AI先行
     if (newColor === 'black' && gameMode === 'single') {
@@ -1843,7 +1843,7 @@ function App() {
   const continueWithSameColor = () => {
     // 重置所有游戏状态
     setIsThinking(false);
-    setBoard(createInitialBoard());
+    setBoard(createInitialBoard(gameType));
     setCurrentPlayer('red'); // 红方先行
     setWinInfo(null);
     setMoveHistory([]);
@@ -1856,7 +1856,7 @@ function App() {
     setCapturedPieceEffect(null);
     setShowRestartModal(false);
 
-    const initialBoard = createInitialBoard();
+    const initialBoard = createInitialBoard(gameType);
 
     // 如果玩家选择黑方，AI先行
     if (playerColor === 'black' && gameMode === 'single') {

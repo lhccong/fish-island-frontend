@@ -62,8 +62,8 @@ const Index: React.FC = () => {
   });
   const [tempTabVisible, setTempTabVisible] = useState(isTabVisible);
   // 触摸操作相关变量
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
+  const [touchStartXY, setTouchStartXY] = useState({ x: 0, y: 0 });
+  const [touchEndXY, setTouchEndXY] = useState({ x: 0, y: 0 });
   // 内容区域的引用，用于滚动控制
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -204,33 +204,40 @@ const Index: React.FC = () => {
 
   // 手势处理函数
   const handleTouchStart = (e: TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
+    setTouchStartXY({
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY,
+    });
+    setTouchEndXY({
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY,
+    });
   };
 
   const handleTouchMove = (e: TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    setTouchEndXY({
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY,
+    });
   };
 
   const handleTouchEnd = () => {
     if (!isMobileView) return;
 
-    const minSwipeDistance = 50;
-    const swipeDiff = touchStart - touchEnd;
+    const minSwipeDistance = 80; // 增大滑动距离阈值，防止误触
+    const dx = touchEndXY.x - touchStartXY.x;
+    const dy = touchEndXY.y - touchStartXY.y;
 
-    // 确保存在可切换的数据源
-    const visibleSources = hostPostVoList.filter(
-      (item) => selectedSourceIds.length === 0 || selectedSourceIds.includes(item.id as number),
-    );
-
-    if (visibleSources.length <= 1) return;
-
-    // 获取当前数据源索引
-    const currentIndex = visibleSources.findIndex((item) => String(item.id) === activeTab);
-    if (currentIndex === -1) return;
-
-    // 检测有效滑动
-    if (Math.abs(swipeDiff) > minSwipeDistance) {
-      if (swipeDiff > 0) {
+    // 只有水平方向滑动且距离足够大，且水平方向远大于垂直方向，才切换
+    if (Math.abs(dx) > minSwipeDistance && Math.abs(dx) > Math.abs(dy) * 2) {
+      // 确保存在可切换的数据源
+      const visibleSources = hostPostVoList.filter(
+        (item) => selectedSourceIds.length === 0 || selectedSourceIds.includes(item.id as number),
+      );
+      if (visibleSources.length <= 1) return;
+      const currentIndex = visibleSources.findIndex((item) => String(item.id) === activeTab);
+      if (currentIndex === -1) return;
+      if (dx < 0) {
         // 向左滑动，显示下一个数据源
         const nextIndex = (currentIndex + 1) % visibleSources.length;
         changeDataSource(String(visibleSources[nextIndex].id));
@@ -240,6 +247,7 @@ const Index: React.FC = () => {
         changeDataSource(String(visibleSources[prevIndex].id));
       }
     }
+    // 否则认为是点击，不做切换
   };
 
   return (
