@@ -273,7 +273,19 @@ function App() {
 
   const handleCreateChessRoom = (data: any) => {
     console.log('创建房间成功', data.data);
-    setRoomId(data.data);
+    
+    // 处理不同格式的返回数据
+    let roomId = '';
+    if (typeof data.data === 'object' && data.data !== null) {
+      // 新格式：{roomId: "xxx", gameType: "xxx"}
+      roomId = data.data.roomId || '';
+      console.log(`收到服务器返回的房间ID: ${roomId}`);
+    } else {
+      // 兼容旧格式：直接是房间号字符串
+      roomId = String(data.data);
+    }
+    
+    setRoomId(roomId);
     setOnlineStatus('waiting');
     messageApi.open({
       type: 'success',
@@ -759,7 +771,7 @@ function App() {
                       userId: -1,
                       data: {
                         type: 'createChessRoom',
-                        content: ''
+                        content: JSON.stringify({ gameType: 'normal' }) // 添加游戏类型信息
                       }
                     });
                   }
@@ -818,7 +830,11 @@ function App() {
                       }`}/>
                       <span className="text-sm text-purple-800">
                         {onlineStatus === 'connecting' && '连接中...'}
-                        {onlineStatus === 'waiting' && `等待对手加入 (房间号🏠: ${roomId})`}
+                        {onlineStatus === 'waiting' && (
+                          <span>
+                            等待对手加入 {roomId && <span className="font-medium">(房间号🏠: {roomId})</span>}
+                          </span>
+                        )}
                         {onlineStatus === 'playing' && `对战中 - 你执${playerColor === 'black' ? '黑' : '白'}棋`}
                       </span>
                     </div>

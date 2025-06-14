@@ -419,20 +419,25 @@ function App() {
     // 清除加入者标记
     localStorage.removeItem('chess_is_joiner');
 
-    // 房主固定为红方(先手)
+    // 创建新房间，房主固定为红方(先手)
     setPlayerColor('red');
     setOpponentColor('black');
 
+    // 获取当前游戏类型并确保它是正确的
+    const currentGameType = gameType;
+    console.log(`正在创建房间，你将执红先手，使用游戏类型: ${currentGameType}`);
+
+    // 发送创建房间请求，包含游戏类型
     wsService.send({
       type: 2,
       userId: -1,
       data: {
         type: 'createChessRoom',
-        content: '',
+        content: JSON.stringify({ gameType: currentGameType }), // 将对象转换为JSON字符串
         playerInfo: formatPlayerInfo(currentUser),
       },
     });
-  }, [currentUser]);
+  }, [currentUser, gameType]); // 添加gameType依赖
 
   // 修改：请求同步棋盘
   const requestBoardSync = useCallback(
@@ -567,303 +572,355 @@ function App() {
   );
 
   // 处理棋子移动
-  const handleMoveSelect = useCallback(
-    (toPosition: Position) => {
-      // 确保有选中的棋子，并且在联机模式下是当前玩家的回合
-      if (!selectedPosition) return;
-      if (gameMode === 'online' && currentPlayer !== playerColor) {
-        console.log('不是你的回合，无法移动棋子');
-        return;
-      }
+const handleMoveSelect = useCallback(
+  (toPosition: Position) => {
+    // 确保有选中的棋子，并且在联机模式下是当前玩家的回合
+    if (!selectedPosition) return;
+    if (gameMode === 'online' && currentPlayer !== playerColor) {
+      console.log('不是你的回合，无法移动棋子');
+      return;
+    }
 
-      // 检查移动是否有效
-      if (validMoves.some((move) => move.row === toPosition.row && move.col === toPosition.col)) {
-        // 根据游戏模式采用不同的处理逻辑
-        const isSingleOrSelfMode = gameMode === 'single' || gameMode === 'self';
+    // 检查移动是否有效
+    if (validMoves.some((move) => move.row === toPosition.row && move.col === toPosition.col)) {
+      // 根据游戏模式采用不同的处理逻辑
+      const isSingleOrSelfMode = gameMode === 'single' || gameMode === 'self';
 
-        if (isSingleOrSelfMode) {
-          // 单机模式和自对弈模式逻辑
-          // 获取移动的棋子和可能被吃掉的棋子
-          const movingPiece = board[selectedPosition.row][selectedPosition.col];
-          const capturedPiece = board[toPosition.row][toPosition.col];
+      if (isSingleOrSelfMode) {
+        // 单机模式和自对弈模式逻辑
+        // 获取移动的棋子和可能被吃掉的棋子
+        const movingPiece = board[selectedPosition.row][selectedPosition.col];
+        const capturedPiece = board[toPosition.row][toPosition.col];
 
-          if (!movingPiece) return;
+        if (!movingPiece) return;
 
-          // 执行移动
-          const newBoard = makeMove(board, selectedPosition, toPosition, gameType);
-          setBoard(newBoard);
+        // 执行移动
+        const newBoard = makeMove(board, selectedPosition, toPosition, gameType);
+        setBoard(newBoard);
 
-          // 更新移动历史
-          setMoveHistory((prev) => [
-            ...prev,
-            {
-              from: selectedPosition,
-              to: toPosition,
-              piece: movingPiece,
-              capturedPiece: capturedPiece || null,
-              number: prev.length + 1,
-            },
-          ]);
+        // 更新移动历史
+        setMoveHistory((prev) => [
+          ...prev,
+          {
+            from: selectedPosition,
+            to: toPosition,
+            piece: movingPiece,
+            capturedPiece: capturedPiece || null,
+            number: prev.length + 1,
+          },
+        ]);
 
-          // 设置最后移动
-          setLastMove({ from: selectedPosition, to: toPosition });
+        // 设置最后移动
+        setLastMove({ from: selectedPosition, to: toPosition });
 
-          // 如果有棋子被吃掉，显示吃子特效
-          if (capturedPiece) {
-            setCapturedPieceEffect({
-              position: toPosition,
-              piece: capturedPiece,
-              player: currentPlayer,
-              timestamp: Date.now(),
-              eatingPiece: movingPiece,
+        // 如果有棋子被吃掉，显示吃子特效
+        if (capturedPiece) {
+          setCapturedPieceEffect({
+            position: toPosition,
+            piece: capturedPiece,
+            player: currentPlayer,
+            timestamp: Date.now(),
+            eatingPiece: movingPiece,
+          });
+
+          // 如果吃掉了对方的将/帅，直接获胜
+          if (capturedPiece.type === 'general') {
+            setWinInfo({
+              winner: currentPlayer,
+              reason: 'capture',
             });
-
-            // 如果吃掉了对方的将/帅，直接获胜
-            if (capturedPiece.type === 'general') {
-              setWinInfo({
-                winner: currentPlayer,
-                reason: 'capture',
-              });
-              // 游戏结束时显示弹框
-              setShowGameEndModal(true);
-              return;
-            }
-
-            // 延迟清除吃子特效
-            setTimeout(() => {
-              setCapturedPieceEffect(null);
-            }, 3000);
-          }
-
-          // 检查将军状态
-          const nextPlayer = currentPlayer === 'red' ? 'black' : 'red';
-          const checkStatus = isInCheck(newBoard, nextPlayer);
-
-          if (checkStatus.inCheck) {
-            // 设置将军特效
-            setIsCheck(true);
-            setCheckEffectVisible(true);
-            setCheckPosition(findGeneral(newBoard, nextPlayer));
-
-            // 检查是否将死
-            if (isCheckmate(newBoard, nextPlayer)) {
-              setWinInfo({
-                winner: currentPlayer,
-                reason: 'checkmate',
-              });
-              // 游戏结束时显示弹框
-              setShowGameEndModal(true);
-              return;
-            }
-
-            // 延迟关闭将军特效
-            setTimeout(() => {
-              setCheckEffectVisible(false);
-            }, 2000);
-          } else {
-            setIsCheck(false);
-            setCheckPosition(null);
-          }
-
-          // 更新游戏状态
-          setCurrentPlayer(nextPlayer);
-          setSelectedPosition(null);
-          setValidMoves([]);
-
-          // 在单机模式下，AI轮次
-          if (gameMode === 'single' && !winInfo) {
-            setIsThinking(true);
-          }
-        } else {
-          // 联机模式逻辑
-          if (onlineStatus !== 'playing') {
-            messageApi.open({
-              type: 'info',
-              content: '对手还没加入呢，请耐心等待～',
-            });
+            // 游戏结束时显示弹框
+            setShowGameEndModal(true);
             return;
           }
 
-          // 获取移动的棋子和可能被吃掉的棋子
-          const movingPiece = board[selectedPosition.row][selectedPosition.col];
-          const capturedPiece = board[toPosition.row][toPosition.col];
+          // 延迟清除吃子特效
+          setTimeout(() => {
+            setCapturedPieceEffect(null);
+          }, 3000);
+        }
 
-          if (!movingPiece) return;
+        // 检查将军状态
+        const nextPlayer = currentPlayer === 'red' ? 'black' : 'red';
+        const checkStatus = isInCheck(newBoard, nextPlayer, false, gameType);
 
-          console.log('发送移动棋子请求:', {
-            from: selectedPosition,
-            to: toPosition,
-            player: playerColor,
-            pieceType: movingPiece.type,
+        if (checkStatus.inCheck) {
+          // 设置将军特效
+          setIsCheck(true);
+          setCheckEffectVisible(true);
+          setCheckPosition(findGeneral(newBoard, nextPlayer));
+
+          // 检查是否将死
+          if (isCheckmate(newBoard, nextPlayer, false, gameType)) {
+            setWinInfo({
+              winner: currentPlayer,
+              reason: 'checkmate',
+            });
+            // 游戏结束时显示弹框
+            setShowGameEndModal(true);
+            return;
+          }
+
+          // 延迟关闭将军特效
+          setTimeout(() => {
+            setCheckEffectVisible(false);
+          }, 2000);
+        } else {
+          setIsCheck(false);
+          setCheckPosition(null);
+        }
+
+        // 更新游戏状态
+        setCurrentPlayer(nextPlayer);
+        setSelectedPosition(null);
+        setValidMoves([]);
+
+        // 在单机模式下，AI轮次
+        if (gameMode === 'single' && !winInfo) {
+          setIsThinking(true);
+        }
+      } else {
+        // 联机模式逻辑
+        if (onlineStatus !== 'playing') {
+          messageApi.open({
+            type: 'info',
+            content: '对手还没加入呢，请耐心等待～',
           });
+          return;
+        }
 
-          // 使用深拷贝创建新棋盘状态，避免引用问题
-          const newBoard = JSON.parse(JSON.stringify(board));
+        // 获取移动的棋子和可能被吃掉的棋子
+        const movingPiece = board[selectedPosition.row][selectedPosition.col];
+        const capturedPiece = board[toPosition.row][toPosition.col];
 
+        if (!movingPiece) return;
+
+        console.log('发送移动棋子请求:', {
+          from: selectedPosition,
+          to: toPosition,
+          player: playerColor,
+          pieceType: movingPiece.type,
+        });
+
+        // 使用深拷贝创建新棋盘状态，避免引用问题
+        const newBoard = JSON.parse(JSON.stringify(board));
+        let updatedPiece;
+
+        // 检查是否是揭棋模式下的暗子
+        if (gameType === 'hidden' && (movingPiece as any).isHidden) {
+          console.log('[发送-本地] 处理暗棋移动:', {
+            原棋子: JSON.stringify(movingPiece),
+            位置: `从(${selectedPosition.row},${selectedPosition.col})到(${toPosition.row},${toPosition.col})`,
+            玩家: playerColor
+          });
+          
+          // 清除原位置
+          newBoard[selectedPosition.row][selectedPosition.col] = null;
+          
+          // 移除isHidden和originalPosition属性，创建明子
+          const { isHidden, originalPosition, ...revealedPiece } = movingPiece as any;
+          
           // 创建带有唯一ID的移动棋子
-          const movingPieceWithID = {
+          updatedPiece = {
+            ...revealedPiece,
+            id: `${playerColor}-${movingPiece.type}-${selectedPosition.row}-${selectedPosition.col}-${toPosition.row}-${toPosition.col}`,
+          };
+          
+          console.log('[发送-本地] 创建的明子:', JSON.stringify(updatedPiece));
+          
+          // 在新位置放置明子
+          newBoard[toPosition.row][toPosition.col] = updatedPiece;
+        } else {
+          // 普通模式或已翻开的棋子
+          // 创建带有唯一ID的移动棋子
+          updatedPiece = {
             ...movingPiece,
             id: `${playerColor}-${movingPiece.type}-${selectedPosition.row}-${selectedPosition.col}-${toPosition.row}-${toPosition.col}`,
           };
 
           // 清除原位置，在新位置放置棋子
           newBoard[selectedPosition.row][selectedPosition.col] = null;
-          newBoard[toPosition.row][toPosition.col] = movingPieceWithID;
+          newBoard[toPosition.row][toPosition.col] = updatedPiece;
+        }
 
-          // 更新本地棋盘状态（使用函数式更新确保状态的正确性）
-          setBoard(newBoard);
-          // 立即更新ref中的状态，确保网络回调能获取到最新的棋盘状态
-          boardRef.current = newBoard;
+        // 更新本地棋盘状态（使用函数式更新确保状态的正确性）
+        setBoard(newBoard);
+        // 立即更新ref中的状态，确保网络回调能获取到最新的棋盘状态
+        boardRef.current = newBoard;
 
-          // 使用全局 WebSocket 服务发送消息
-          wsService.send({
-            type: 2,
-            userId: opponentUserId,
-            data: {
-              type: 'moveChess',
-              content: {
-                roomId: roomId,
-                from: selectedPosition,
-                to: toPosition,
-                player: playerColor,
-                pieceType: movingPiece.type,
-                playerInfo: {
-                  id: currentUser?.id,
-                  name: currentUser?.userName,
-                  avatar: currentUser?.userAvatar,
-                  level: currentUser?.level,
-                },
-              },
-            },
-          });
-
-          // 更新移动历史
-          setMoveHistory((prev) => [
-            ...prev,
-            {
+        // 检查是否是揭棋模式下的暗子
+        const isHiddenPiece = gameType === 'hidden' && (movingPiece as any).isHidden;
+        
+        console.log('[发送] 移动棋子详细信息:', {
+          gameType,
+          isHiddenPiece,
+          movingPiece: JSON.stringify(movingPiece),
+          from: selectedPosition,
+          to: toPosition,
+          player: playerColor
+        });
+        
+        // 使用全局 WebSocket 服务发送消息
+        wsService.send({
+          type: 2,
+          userId: opponentUserId,
+          data: {
+            type: 'moveChess',
+            content: {
+              roomId: roomId,
               from: selectedPosition,
               to: toPosition,
-              piece: movingPieceWithID,
-              capturedPiece: capturedPiece || null,
-              number: prev.length + 1,
+              player: playerColor,
+              pieceType: movingPiece.type,
+              isHiddenPiece: isHiddenPiece, // 添加是否为暗棋的标志
+              // 如果是暗棋，发送完整的棋子信息，包括类型和玩家
+              pieceInfo: isHiddenPiece ? {
+                type: movingPiece.type,
+                player: playerColor
+              } : undefined,
+              playerInfo: {
+                id: currentUser?.id,
+                name: currentUser?.userName,
+                avatar: currentUser?.userAvatar,
+                level: currentUser?.level,
+              },
             },
-          ]);
+          },
+        });
+        
+        console.log('[发送] WebSocket消息已发送:', {
+          isHiddenPiece,
+          pieceType: movingPiece.type,
+          player: playerColor
+        });
 
-          // 设置最后移动
-          setLastMove({ from: selectedPosition, to: toPosition });
+        // 更新移动历史
+        setMoveHistory((prev) => [
+          ...prev,
+          {
+            from: selectedPosition,
+            to: toPosition,
+            piece: updatedPiece,
+            capturedPiece: capturedPiece || null,
+            number: prev.length + 1,
+          },
+        ]);
 
-          // 如果有棋子被吃掉，显示吃子特效
-          if (capturedPiece) {
-            setCapturedPieceEffect({
-              position: toPosition,
-              piece: capturedPiece,
-              player: currentPlayer,
-              timestamp: Date.now(),
-              eatingPiece: movingPieceWithID,
+        // 设置最后移动
+        setLastMove({ from: selectedPosition, to: toPosition });
+
+        // 如果有棋子被吃掉，显示吃子特效
+        if (capturedPiece) {
+          setCapturedPieceEffect({
+            position: toPosition,
+            piece: capturedPiece,
+            player: currentPlayer,
+            timestamp: Date.now(),
+            eatingPiece: updatedPiece,
+          });
+
+          // 如果吃掉了对方的将/帅，直接获胜
+          if (capturedPiece.type === 'general') {
+            setWinInfo({
+              winner: currentPlayer,
+              reason: 'capture',
             });
-
-            // 如果吃掉了对方的将/帅，直接获胜
-            if (capturedPiece.type === 'general') {
-              setWinInfo({
-                winner: currentPlayer,
-                reason: 'capture',
-              });
-              // 游戏结束时显示弹框
-              setShowGameEndModal(true);
-              // 向对方发送游戏结束通知
-              wsService.send({
-                type: 2,
-                userId: opponentUserId,
-                data: {
-                  type: 'gameEnd',
-                  content: {
-                    roomId: roomId,
-                    winner: currentPlayer,
-                    reason: 'capture',
-                  },
+            // 游戏结束时显示弹框
+            setShowGameEndModal(true);
+            // 向对方发送游戏结束通知
+            wsService.send({
+              type: 2,
+              userId: opponentUserId,
+              data: {
+                type: 'gameEnd',
+                content: {
+                  roomId: roomId,
+                  winner: currentPlayer,
+                  reason: 'capture',
                 },
-              });
-              return;
-            }
-
-            // 延迟清除吃子特效
-            setTimeout(() => {
-              setCapturedPieceEffect(null);
-            }, 3000);
+              },
+            });
+            return;
           }
 
-          // 计算下一个回合的玩家
-          const nextPlayer = currentPlayer === 'red' ? 'black' : 'red';
-
-          // 检查将军状态
-          const checkStatus = isInCheck(newBoard, nextPlayer);
-
-          if (checkStatus.inCheck) {
-            // 设置将军特效
-            setIsCheck(true);
-            setCheckEffectVisible(true);
-            setCheckPosition(findGeneral(newBoard, nextPlayer));
-
-            // 检查是否将死
-            if (isCheckmate(newBoard, nextPlayer)) {
-              setWinInfo({
-                winner: currentPlayer,
-                reason: 'checkmate',
-              });
-              // 游戏结束时显示弹框
-              setShowGameEndModal(true);
-              // 向对方发送游戏结束通知
-              wsService.send({
-                type: 2,
-                userId: opponentUserId,
-                data: {
-                  type: 'gameEnd',
-                  content: {
-                    roomId: roomId,
-                    winner: currentPlayer,
-                    reason: 'checkmate',
-                  },
-                },
-              });
-              return;
-            }
-
-            // 延迟关闭将军特效
-            setTimeout(() => {
-              setCheckEffectVisible(false);
-            }, 2000);
-          } else {
-            setIsCheck(false);
-            setCheckPosition(null);
-          }
-
-          // 更新游戏状态
-          setCurrentPlayer(nextPlayer);
-          setSelectedPosition(null);
-          setValidMoves([]);
-
-          // 记录游戏状态
-          saveGameState();
+          // 延迟清除吃子特效
+          setTimeout(() => {
+            setCapturedPieceEffect(null);
+          }, 3000);
         }
+
+        // 计算下一个回合的玩家
+        const nextPlayer = currentPlayer === 'red' ? 'black' : 'red';
+
+        // 检查将军状态
+        const checkStatus = isInCheck(newBoard, nextPlayer, false, gameType);
+
+        if (checkStatus.inCheck) {
+          // 设置将军特效
+          setIsCheck(true);
+          setCheckEffectVisible(true);
+          setCheckPosition(findGeneral(newBoard, nextPlayer));
+
+          // 检查是否将死
+          if (isCheckmate(newBoard, nextPlayer, false, gameType)) {
+            setWinInfo({
+              winner: currentPlayer,
+              reason: 'checkmate',
+            });
+            // 游戏结束时显示弹框
+            setShowGameEndModal(true);
+            // 向对方发送游戏结束通知
+            wsService.send({
+              type: 2,
+              userId: opponentUserId,
+              data: {
+                type: 'gameEnd',
+                content: {
+                  roomId: roomId,
+                  winner: currentPlayer,
+                  reason: 'checkmate',
+                },
+              },
+            });
+            return;
+          }
+
+          // 延迟关闭将军特效
+          setTimeout(() => {
+            setCheckEffectVisible(false);
+          }, 2000);
+        } else {
+          setIsCheck(false);
+          setCheckPosition(null);
+        }
+
+        // 更新游戏状态
+        setCurrentPlayer(nextPlayer);
+        setSelectedPosition(null);
+        setValidMoves([]);
+
+        // 记录游戏状态
+        saveGameState();
       }
-    },
-    [
-      board,
-      selectedPosition,
-      validMoves,
-      currentPlayer,
-      gameMode,
-      onlineStatus,
-      playerColor,
-      opponentUserId,
-      roomId,
-      messageApi,
-      saveGameState,
-      currentUser,
-      winInfo,
-      gameType,
-    ],
-  );
+    }
+  },
+  [
+    board,
+    selectedPosition,
+    validMoves,
+    currentPlayer,
+    gameMode,
+    onlineStatus,
+    playerColor,
+    opponentUserId,
+    roomId,
+    messageApi,
+    saveGameState,
+    currentUser,
+    winInfo,
+    gameType,
+  ],
+);
 
   // 添加聊天相关的函数
   const scrollToBottom = () => {
@@ -887,6 +944,12 @@ function App() {
     // 检查我们是加入者还是房主
     const isJoiner = localStorage.getItem('chess_is_joiner') === 'true';
 
+    // 获取游戏类型
+    const receivedGameType = data.data.gameType || 'normal';
+    console.log(`收到加入成功消息，游戏类型: ${receivedGameType}`);
+    console.log(`当前游戏类型: ${gameType}, 将更新为: ${receivedGameType}`);
+    setGameType(receivedGameType as GameType);
+
     // 如果是房主，保持颜色不变
     if (!isJoiner) {
       // 房主接收到消息，但颜色保持不变，只更新对手信息
@@ -897,7 +960,7 @@ function App() {
       setOpponentInfo(data.data.playerInfo);
       messageApi.open({
         type: 'success',
-        content: '对手已加入，战斗开始！！！',
+        content: `对手已加入，战斗开始！！！(${receivedGameType === 'hidden' ? '揭棋模式' : '普通模式'})`,
       });
     } else {
       // 加入者处理
@@ -911,7 +974,7 @@ function App() {
       setCurrentPlayer('red');
       messageApi.open({
         type: 'success',
-        content: '战斗开始！！！',
+        content: `战斗开始！！！(${receivedGameType === 'hidden' ? '揭棋模式' : '普通模式'})`,
       });
 
       // 加入者需要请求同步棋盘状态
@@ -937,21 +1000,53 @@ function App() {
       }, 1000);
     }
 
+    // 根据游戏类型重新创建棋盘
+    console.log(`使用游戏类型 ${receivedGameType} 创建初始棋盘`);
+    const newBoard = createInitialBoard(receivedGameType as GameType);
+    setBoard(newBoard);
     saveGameState();
   };
 
   const handleCreateChessRoom = (data: any) => {
     console.log('创建房间成功', data.data);
-    setRoomId(data.data);
+    
+    // 处理新的响应格式，包含房间号和游戏类型
+    let roomId = '';
+    let receivedGameType = gameType; // 默认使用当前游戏类型
+    
+    if (typeof data.data === 'object' && data.data !== null) {
+      // 新格式：{roomId: "xxx", gameType: "xxx"}
+      roomId = data.data.roomId || '';
+      receivedGameType = data.data.gameType || gameType;
+      console.log(`收到服务器返回的游戏类型: ${receivedGameType}`);
+      
+      // 更新游戏类型状态
+      if (receivedGameType !== gameType) {
+        console.log(`更新游戏类型从 ${gameType} 到 ${receivedGameType}`);
+        setGameType(receivedGameType as GameType);
+      }
+    } else {
+      // 兼容旧格式：直接是房间号字符串
+      roomId = data.data;
+    }
+    
+    setRoomId(roomId);
     setOnlineStatus('waiting');
     // 确保创建房间时不会触发将军特效
     setIsCheck(false);
     setCheckEffectVisible(false);
     setCheckPosition(null);
+    
+    // 使用服务器返回的游戏类型创建棋盘
+    console.log(`创建房间使用游戏类型: ${receivedGameType}`);
+    
+    // 重新创建棋盘，确保使用正确的游戏类型
+    const newBoard = createInitialBoard(receivedGameType as GameType);
+    setBoard(newBoard);
 
     messageApi.open({
       type: 'success',
-      content: '房间创建成功啦',
+      content: `房间创建成功啦 (${receivedGameType === 'hidden' ? '揭棋模式' : '普通模式'})`,
     });
     setGameStarted(true);
     saveGameState();
@@ -979,6 +1074,7 @@ function App() {
               lastMove: lastMove,
               checkPosition: checkPosition,
               isCheck: isCheck,
+              gameType: gameType, // 添加游戏类型
             },
           },
         });
@@ -996,19 +1092,33 @@ function App() {
       onlineStatus,
       playerColor,
       roomId,
+      gameType, // 添加gameType依赖
     ],
   );
 
   const handleBoardSync = useCallback(
     (data: any) => {
       // 加入者(黑方)处理同步数据
-      console.log('收到棋盘同步数据');
+      console.log('收到棋盘同步数据', data.data);
 
       const syncData = data.data;
       if (!syncData || playerColor === 'red') return;
 
-      // 应用同步的棋盘状态
-      setBoard(syncData.board || createInitialBoard());
+      // 设置游戏类型
+      if (syncData.gameType) {
+        const receivedGameType = syncData.gameType as GameType;
+        console.log(`收到游戏类型: ${receivedGameType}`);
+        setGameType(receivedGameType);
+        
+        // 根据游戏类型重新创建棋盘
+        const newBoard = syncData.board || createInitialBoard(receivedGameType);
+        console.log(`使用游戏类型 ${receivedGameType} 设置棋盘`);
+        setBoard(newBoard);
+      } else {
+        // 应用同步的棋盘状态，使用默认类型
+        setBoard(syncData.board || createInitialBoard('normal'));
+      }
+      
       setCurrentPlayer(syncData.currentPlayer || 'red');
       setMoveHistory(syncData.moveHistory || []);
 
@@ -1033,54 +1143,146 @@ function App() {
 
   const handleMoveChess = (data: any) => {
     // 解析数据
-    const { from, to, player, pieceType } = data.data;
+    const { from, to, player, pieceType, isHiddenPiece, pieceInfo } = data.data;
 
-    console.log('收到对方移动棋子请求:', data.data);
+    // 确保isHiddenPiece是布尔值
+    const isHidden = isHiddenPiece === true;
+
+    // 如果收到暗棋移动请求，但当前不是揭棋模式，强制更新游戏类型
+    if (isHidden && gameType !== 'hidden') {
+      console.log('[接收] 警告: 收到暗棋移动请求，但当前游戏类型是:', gameType);
+      console.log('[接收] 强制更新游戏类型为 hidden');
+      setGameType('hidden');
+    }
+
+    console.log('[接收] 收到对方移动棋子请求:', JSON.stringify(data.data));
     console.log(
-      `对方请求移动: 从(${from.row},${from.col})到(${to.row},${to.col}), 玩家: ${player}`,
+      `[接收] 对方请求移动: 从(${from.row},${from.col})到(${to.row},${to.col}), 玩家: ${player}, 是否为暗棋: ${isHidden ? 'true' : 'false'}, 棋子类型: ${pieceType}`,
     );
+    console.log('[接收] 当前游戏类型:', gameType);
+    console.log('[接收] 接收到的pieceInfo:', pieceInfo);
+    console.log('[接收] isHiddenPiece原始值:', isHiddenPiece, '类型:', typeof isHiddenPiece);
 
     // 使用ref中的最新棋盘状态创建新棋盘的深拷贝
     const newBoard = JSON.parse(JSON.stringify(boardRef.current));
 
     // 获取目标位置可能存在的棋子（可能被吃掉）
     const capturedPiece = newBoard[to.row][to.col];
+    
+    // 获取源位置的棋子
+    const sourcePiece = newBoard[from.row] && newBoard[from.row][from.col];
+    console.log('[接收] 源位置棋子:', sourcePiece ? JSON.stringify(sourcePiece) : '无');
 
-    // 首先确保源位置确实有棋子
-    if (
-      newBoard[from.row] &&
-      newBoard[from.row][from.col] &&
-      newBoard[from.row][from.col].player === player &&
-      newBoard[from.row][from.col].type === pieceType
-    ) {
+    // 清除源位置
+    if (sourcePiece && sourcePiece.player === player) {
       // 获取要移动的原棋子
       const originalPiece = newBoard[from.row][from.col];
-
-      // 清除源位置
       newBoard[from.row][from.col] = null;
 
-      // 在目标位置放置移动的棋子，保留原来的属性并添加唯一标识
-      newBoard[to.row][to.col] = {
-        ...originalPiece,
-        id: `${player}-${pieceType}-${from.row}-${from.col}-${to.row}-${to.col}`,
-      };
+      // 检查是否是暗棋移动 - 不再依赖gameType，只要isHidden为true就视为暗棋
+      if (isHidden) {
+        console.log('[接收] 处理揭棋模式下的暗子翻转 - 强制执行');
+        console.log('[接收] 原始棋子:', JSON.stringify(originalPiece));
+        console.log('[接收] 标准化后的isHidden值:', isHidden);
+        
+        // 创建新的明子，使用接收到的pieceInfo
+        const newPiece = {
+          type: pieceType as PieceType,
+          player: player,
+          id: `${player}-${pieceType}-${from.row}-${from.col}-${to.row}-${to.col}`,
+        };
+        
+        console.log('[接收] 创建的新明子:', JSON.stringify(newPiece));
+        newBoard[to.row][to.col] = newPiece;
+      } else {
+        console.log('[接收] 处理普通棋子移动');
+        
+        // 检查是否是暗棋，如果是则需要移除isHidden属性
+        if (originalPiece.isHidden) {
+          console.log('[接收] 检测到暗棋，但未标记为isHiddenPiece，强制翻转');
+          
+          // 移除isHidden和originalPosition属性
+          const { isHidden, originalPosition, ...revealedProps } = originalPiece;
+          
+          // 创建新的明子
+          const movedPiece = {
+            ...revealedProps,
+            type: pieceType as PieceType,
+            player: player,
+            id: `${player}-${pieceType}-${from.row}-${from.col}-${to.row}-${to.col}`,
+          };
+          
+          console.log('[接收] 强制翻转后的棋子:', JSON.stringify(movedPiece));
+          newBoard[to.row][to.col] = movedPiece;
+          return;
+        }
+        
+        // 在目标位置放置移动的棋子，保留原来的属性并添加唯一标识
+        const movedPiece = {
+          ...originalPiece,
+          id: `${player}-${pieceType}-${from.row}-${from.col}-${to.row}-${to.col}`,
+        };
+        
+        console.log('[接收] 移动后的棋子:', JSON.stringify(movedPiece));
+        newBoard[to.row][to.col] = movedPiece;
+      }
     } else {
-      console.error(`源位置(${from.row},${from.col})没有找到对应的棋子，添加新棋子`);
+      console.log(`[接收] 源位置(${from.row},${from.col})没有找到对应的棋子，创建新棋子`);
+      console.log('[接收] 棋盘状态检查:', {
+        gameType,
+        isHiddenPiece,
+        pieceInfo,
+        sourcePieceExists: !!newBoard[from.row] && !!newBoard[from.row][from.col],
+        sourcePiecePlayer: newBoard[from.row] && newBoard[from.row][from.col] ? newBoard[from.row][from.col].player : 'none'
+      });
 
-      // 如果没找到原棋子（异常情况），创建一个新棋子
-      newBoard[to.row][to.col] = {
-        type: pieceType as PieceType,
-        player,
-        id: `${player}-${pieceType}-${from.row}-${from.col}-${to.row}-${to.col}`,
-      };
+      // 如果标记为暗棋移动 - 不再依赖gameType
+      if (isHidden) {
+        console.log('[接收] 创建暗棋翻转后的明子 - 强制执行');
+        console.log('[接收] 标准化后的isHidden值:', isHidden);
+        
+        // 创建一个新的明子 - 使用pieceInfo中的信息
+        const newPiece = {
+          // 优先使用pieceInfo中的信息，如果没有则使用传递的参数
+          type: (pieceInfo && pieceInfo.type) ? pieceInfo.type as PieceType : pieceType as PieceType,
+          player: (pieceInfo && pieceInfo.player) ? pieceInfo.player : player,
+          id: `${player}-${pieceType}-${from.row}-${from.col}-${to.row}-${to.col}`,
+        };
+        
+        console.log('[接收] 新创建的明子:', JSON.stringify(newPiece));
+        newBoard[to.row][to.col] = newPiece;
+      } else {
+        console.log('[接收] 创建普通棋子');
+        
+        // 普通情况，创建一个新棋子
+        const newPiece = {
+          type: pieceType as PieceType,
+          player: player,
+          id: `${player}-${pieceType}-${from.row}-${from.col}-${to.row}-${to.col}`,
+        };
+        
+        console.log('[接收] 新创建的普通棋子:', JSON.stringify(newPiece));
+        newBoard[to.row][to.col] = newPiece;
+      }
     }
 
-    console.log(`更新棋盘: ${player}方 ${pieceType} 放置在 (${to.row},${to.col})`);
+    console.log(`[接收] 更新棋盘: ${player}方 ${pieceType} 放置在 (${to.row},${to.col})`);
+    console.log('[接收] 目标位置的新棋子:', JSON.stringify(newBoard[to.row][to.col]));
 
     // 更新棋盘状态
     setBoard(newBoard);
     // 立即更新ref中的状态
     boardRef.current = newBoard;
+    
+    // 延迟检查棋盘状态，确认更新成功
+    setTimeout(() => {
+      const currentBoard = boardRef.current;
+      console.log('[接收] 更新后的棋子状态:', {
+        位置: `(${to.row},${to.col})`,
+        棋子: currentBoard[to.row][to.col] ? JSON.stringify(currentBoard[to.row][to.col]) : '无',
+        是否为暗棋: currentBoard[to.row][to.col] && (currentBoard[to.row][to.col] as any).isHidden ? '是' : '否'
+      });
+    }, 100);
     // 更新移动历史
     setMoveHistory((prev) => [
       ...prev,
@@ -1096,7 +1298,7 @@ function App() {
     // 设置最后移动
     setLastMove({ from, to });
 
-    // 处理吃子特效
+    // 如果有棋子被吃掉，显示吃子特效
     if (capturedPiece) {
       setCapturedPieceEffect({
         position: to,
@@ -1127,7 +1329,7 @@ function App() {
     const nextPlayer = player === 'red' ? 'black' : 'red';
 
     // 检查将军状态
-    const checkStatus = isInCheck(newBoard, nextPlayer);
+    const checkStatus = isInCheck(newBoard, nextPlayer, false, gameType);
 
     if (checkStatus.inCheck) {
       // 设置将军特效
@@ -1139,7 +1341,7 @@ function App() {
       }
 
       // 检查是否将死
-      if (isCheckmate(newBoard, nextPlayer)) {
+      if (isCheckmate(newBoard, nextPlayer, false, gameType)) {
         setWinInfo({
           winner: player,
           reason: 'checkmate',
@@ -1211,6 +1413,30 @@ function App() {
 
     // 显示游戏结束弹框
     setShowGameEndModal(true);
+  }, []);
+  
+  // 添加WebSocket消息拦截器，用于调试
+  useEffect(() => {
+    const originalAddHandler = wsService.addMessageHandler;
+    
+    // 重写addMessageHandler方法，添加调试日志
+    wsService.addMessageHandler = function(type, handler) {
+      const wrappedHandler = (data: any) => {
+        if (type === 'moveChess') {
+          console.log('[WebSocket拦截器] 收到moveChess消息:', JSON.stringify(data));
+          console.log('[WebSocket拦截器] isHiddenPiece值:', data.data.isHiddenPiece);
+          console.log('[WebSocket拦截器] pieceInfo值:', data.data.pieceInfo);
+        }
+        return handler(data);
+      };
+      
+      return originalAddHandler.call(wsService, type, wrappedHandler);
+    };
+    
+    return () => {
+      // 恢复原始方法
+      wsService.addMessageHandler = originalAddHandler;
+    };
   }, []);
 
   // 在组件卸载时清理WebSocket资源
@@ -1747,7 +1973,10 @@ function App() {
 
     // 设置状态为连接中
     setOnlineStatus('connecting');
-    // messageApi.loading('正在连接服务器...');
+    
+    // 记录当前选择的游戏类型，确保后续使用正确的类型
+    const currentGameType = gameType;
+    console.log(`准备创建/加入房间，当前游戏类型: ${currentGameType}`);
 
     // 重置同步状态
     hasSynchronized.current = false;
@@ -1760,9 +1989,13 @@ function App() {
         joinExistingRoom();
       } else {
         // 没有房间ID则创建新房间
+        // 确保使用之前记录的游戏类型
+        if (gameType !== currentGameType) {
+          console.log(`游戏类型发生变化，从 ${gameType} 恢复为 ${currentGameType}`);
+          setGameType(currentGameType);
+        }
         createNewRoom();
       }
-      // messageApi.success('已连接到服务器');
     });
   };
 
@@ -1781,7 +2014,7 @@ function App() {
     setPlayerColor('red');
     setOpponentColor('black');
 
-    console.log('正在创建房间，你将执红先手');
+    console.log(`正在创建房间，你将执红先手，游戏类型: ${gameType}`);
 
     // 发送创建房间请求
     sendCreateRoomRequest();
@@ -1975,16 +2208,62 @@ function App() {
           {/* 联机模式下的额外UI */}
           {gameMode === 'online' && (
             <div className="mb-8">
-              <Input
-                type="text"
-                placeholder="输入房间号（留空创建新房间）"
-                value={roomId}
-                onChange={(e) => setRoomId(e.target.value)}
-                className="border p-2 rounded-lg mb-4"
-              />
-              <Button onClick={handleCreateOrJoinRoom} type="primary">
-                {roomId ? '加入房间' : '创建房间'}
-              </Button>
+              <h2 className="text-xl font-medium mb-4">选择游戏类型</h2>
+              <div className="flex gap-4 justify-center">
+                <button
+                  type={'button'}
+                  className="group px-8 py-4 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 transition-all duration-200 transform hover:scale-105"
+                  onClick={() => setGameType('normal')}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div
+                      style={{
+                        backgroundColor: gameType === 'normal' ? 'rgba(172,229,178,0.95)' : 'white',
+                        color: 'white',
+                      }}
+                      className="w-5 h-5 rounded-full border-2 border-gray-800"
+                    ></div>
+                    <span className="font-medium text-gray-800">普通模式</span>
+                  </div>
+                  <span className="text-sm text-gray-400 group-hover:text-gray-600">传统玩法</span>
+                </button>
+                <button
+                  type={'button'}
+                  className="group px-8 py-4 bg-white border-2 border-gray-200 rounded-xl hover:border-gray-300 transition-all duration-200 transform hover:scale-105"
+                  onClick={() => setGameType('hidden')}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div
+                      style={{
+                        backgroundColor: gameType === 'hidden' ? 'rgba(172,229,178,0.95)' : 'white',
+                        color: 'white',
+                      }}
+                      className="w-5 h-5 rounded-full border-2 border-gray-800"
+                    ></div>
+                    <span className="font-medium text-gray-800">揭棋模式</span>
+                  </div>
+                  <span className="text-sm text-gray-400 group-hover:text-gray-600">暗棋玩法</span>
+                </button>
+              </div>
+              <div className="mt-4 text-sm text-gray-500">
+                {gameType === 'normal' ? (
+                  <p>传统中国象棋玩法，双方轮流移动棋子。</p>
+                ) : (
+                  <p>揭棋模式：所有棋子初始为暗棋，移动时翻开，按规则移动。</p>
+                )}
+              </div>
+              <div className="mt-6">
+                <Input
+                  type="text"
+                  placeholder="输入房间号（留空创建新房间）"
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value)}
+                  className="border p-2 rounded-lg mb-4 w-full"
+                />
+                <Button onClick={handleCreateOrJoinRoom} type="primary" className="w-full">
+                  {roomId ? '加入房间' : '创建房间'}
+                </Button>
+              </div>
             </div>
           )}
 
