@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 330 450" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <filter id="e" x="-.19068" y="-.57799" width="1.3814" height="2.156">
+            <feGaussianBlur stdDeviation="11.0093"/>
+        </filter>
+        <radialGradient id="d" cx="567.08" cy="492.36" r="135.41" fx="547.74" fy="430.03"
+                        gradientTransform="matrix(.73848 -1.1144e-7 2.006e-7 1.3293 166.94 -179.26)"
+                        gradientUnits="userSpaceOnUse">
+            <stop stop-color="#fff" offset="0"/>
+            <stop stop-color="#fff" stop-opacity="0" offset="1"/>
+        </radialGradient>
+        <radialGradient id="c" cx="377.5" cy="492.36" r="135.41" fx="370.47" fy="510.74"
+                        gradientTransform="matrix(1.6246 9.2193e-8 -1.6762e-7 2.9539 -167.59 -979.17)"
+                        gradientUnits="userSpaceOnUse">
+            <stop stop-color="#d45500" offset="0"/>
+            <stop stop-color="#d45500" stop-opacity=".3307" offset=".4545"/>
+            <stop stop-color="#d45500" stop-opacity="0" offset="1"/>
+        </radialGradient>
+        <radialGradient id="b" cx="437.68" cy="494.54" r="135.41"
+                        gradientTransform="matrix(1.327 .01189 -.01558 1.7389 -33.091 -398.53)"
+                        gradientUnits="userSpaceOnUse">
+            <stop stop-color="#fff" stop-opacity="0" offset="0"/>
+            <stop stop-color="#fff" stop-opacity="0" offset=".7"/>
+            <stop stop-color="#fff" offset="1"/>
+        </radialGradient>
+        <radialGradient id="a" cx="428.67" cy="493.46" r="135.41"
+                        gradientTransform="matrix(1.92 2.989e-8 -4.6128e-8 1.7723 -294.49 -409.36)"
+                        gradientUnits="userSpaceOnUse">
+            <stop stop-opacity="0" offset="0"/>
+            <stop stop-opacity="0" offset=".7"/>
+            <stop stop-color="#fff" offset="1"/>
+        </radialGradient>
+    </defs>
+    <g transform="translate(-357.3 -256.61)">
+        <path transform="matrix(1.16 0 0 1.2516 193.73 -220.14)"
+              d="m328.57 679.51c0 12.624-31.02 22.857-69.286 22.857s-69.286-10.233-69.286-22.857 31.02-22.857 69.286-22.857 69.286 10.233 69.286 22.857z"
+              filter="url(#e)" opacity=".655"/>
+        <path d="m525.71 295.22c160 0 200 360 0 360s-160-360 0-360z" fill="#fca"/>
+        <path d="m525.71 295.22c160 0 200 360 0 360s-160-360 0-360z" fill="url(#d)" opacity=".7244"/>
+        <path d="m525.71 295.22c160 0 200 360 0 360s-160-360 0-360z" fill="url(#c)" opacity=".7244"/>
+        <path d="m525.71 295.22c160 0 200 360 0 360s-160-360 0-360z" fill="url(#b)" opacity=".3517"/>
+        <path d="m525.71 295.22c160 0 200 360 0 360s-160-360 0-360z" fill="url(#a)" opacity=".4724"/>
+    </g>
+</svg>

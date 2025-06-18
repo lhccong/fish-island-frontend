@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /index
+Allow: /game/
+Allow: /utils/
+Allow: /sitemap.xml
+Allow: /robots.txt
+Allow: /favicon.ico
+Allow: /apple-touch-icon.png
+Disallow: /user/
+Disallow: /admin/
+Disallow: /chat/
+Disallow: /todo/
+Disallow: /api/
+Disallow: /services/
+Disallow: /assets/
+Disallow: /static/
+
+Sitemap: https://fish-island.cn/sitemap.xml 
