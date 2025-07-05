@@ -515,9 +515,14 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
   }, [currentUser?.lastSignInDate]);
 
   // 处理签到
-  const handleCheckin = async () => {
+  const handleCheckin = useCallback(async () => {
+    // 如果已经签到，禁止点击
     if (hasCheckedIn) {
-      message.info('今天已经摸鱼打卡啦！明天继续加油 🐟');
+      return;
+    }
+
+    // 如果正在执行签到动画，防止重复点击
+    if (isCheckinAnimating) {
       return;
     }
 
@@ -543,7 +548,7 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
     } finally {
       setIsCheckinAnimating(false);
     }
-  };
+  }, [hasCheckedIn, isCheckinAnimating]);
 
   // VIP 标识动画样式
   const vipBadgeStyle = useEmotionCss(() => ({
@@ -646,7 +651,7 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
 
   // 签到按钮的样式
   const checkinButtonStyle = useEmotionCss(() => ({
-    cursor: 'pointer',
+    cursor: hasCheckedIn ? 'not-allowed' : 'pointer',
     transition: 'all 0.3s ease',
     display: 'inline-flex',
     alignItems: 'center',
@@ -659,8 +664,9 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
       ? '0 2px 4px rgba(24, 144, 255, 0.2)'
       : '0 1px 3px rgba(0, 0, 0, 0.05)',
     border: `1px solid ${hasCheckedIn ? '#1890ff' : '#e8e8e8'}`,
+    opacity: hasCheckedIn ? 0.8 : 1,
     '&:hover': {
-      transform: 'scale(1.03)',
+      transform: hasCheckedIn ? 'none' : 'scale(1.03)',
       background: hasCheckedIn
         ? 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)'
         : 'linear-gradient(135deg, #f0f0f0 0%, #f5f5f5 100%)',
