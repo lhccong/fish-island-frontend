@@ -4,22 +4,110 @@
   align-items: center;
   justify-content: center;
   min-width: 100px;
+  padding: 14px 10px;
+  gap: 8px;
+  height: 100%;
 }
 
 .money-button-time {
-  font-family: monospace;
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
   min-width: 90px;
   text-align: center;
   display: inline-block;
+  color: #2c3e50;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.3px;
+  line-height: 1.3;
 }
 
 .money-button-emoji {
-  font-size: 16px;
-  margin-bottom: 2px;
+  font-size: 22px;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.money-button-emoji:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
 }
 
 .money-button-amount {
-  font-family: monospace;
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
   min-width: 90px;
   text-align: center;
-} 
+  color: #27ae60;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+/* 添加微妙的动画效果 */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.money-button-time {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* 添加数字滚动效果 */
+.money-button-amount {
+  transition: all 0.3s ease;
+}
+
+.money-button-amount:hover {
+  transform: scale(1.05);
+  color: #2ecc71;
+}
+
+/* 添加渐变文字效果 */
+.money-button-time.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 午餐时间特殊样式 */
+.money-button-content.lunch-time .money-button-time {
+  color: #e67e22;
+  animation: none;
+}
+
+.money-button-content.lunch-time .money-button-emoji {
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-3px);
+  }
+
+  60% {
+    transform: translateY(-2px);
+  }
+}
