@@ -42,6 +42,7 @@ import {useEmotionCss} from "@ant-design/use-emotion-css";
 import moment, {Moment} from "moment";
 import './app.css';
 import './money-button.css';
+import './modern-effects.css';
 import {RcFile} from "antd/lib/upload";
 import LoginRegister from '../LoginRegister';
 import {setNotificationEnabled} from '@/utils/notification';
@@ -176,6 +177,9 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
     timeRemaining: string;
     earnedAmount?: number;
   }>({type: 'work', timeRemaining: '00:00:00'});
+
+  const [prevTimeRemaining, setPrevTimeRemaining] = useState<string>('00:00:00');
+  const [prevEarnedAmount, setPrevEarnedAmount] = useState<number>(0);
 
 
   const onFinishMoYu: FormProps<MoYuTimeType>['onFinish'] = (values) => {
@@ -462,16 +466,28 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
 
           // 如果所有时间都是0或负数，显示"已到午餐时间"
           if (hours <= 0 && minutes <= 0 && seconds <= 0) {
+            const newTimeRemaining = '已到午餐时间';
+            const newEarnedAmount = moYuData.monthlySalary ? earnedAmount : undefined;
+
+            setPrevTimeRemaining(timeInfo.timeRemaining);
+            setPrevEarnedAmount(timeInfo.earnedAmount || 0);
+
             setTimeInfo({
               type: 'lunch',
-              timeRemaining: '已到午餐时间',
-              earnedAmount: moYuData.monthlySalary ? earnedAmount : undefined
+              timeRemaining: newTimeRemaining,
+              earnedAmount: newEarnedAmount
             });
           } else {
+            const newTimeRemaining = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            const newEarnedAmount = moYuData.monthlySalary ? earnedAmount : undefined;
+
+            setPrevTimeRemaining(timeInfo.timeRemaining);
+            setPrevEarnedAmount(timeInfo.earnedAmount || 0);
+
             setTimeInfo({
               type: 'lunch',
-              timeRemaining: `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`,
-              earnedAmount: moYuData.monthlySalary ? earnedAmount : undefined
+              timeRemaining: newTimeRemaining,
+              earnedAmount: newEarnedAmount
             });
           }
         } else {
@@ -483,16 +499,28 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
 
           // 如果所有时间都是0或负数，显示"已到下班时间"
           if (hours <= 0 && minutes <= 0 && seconds <= 0) {
+            const newTimeRemaining = '已到下班时间';
+            const newEarnedAmount = moYuData.monthlySalary ? earnedAmount : undefined;
+
+            setPrevTimeRemaining(timeInfo.timeRemaining);
+            setPrevEarnedAmount(timeInfo.earnedAmount || 0);
+
             setTimeInfo({
               type: 'work',
-              timeRemaining: '已到下班时间',
-              earnedAmount: moYuData.monthlySalary ? earnedAmount : undefined
+              timeRemaining: newTimeRemaining,
+              earnedAmount: newEarnedAmount
             });
           } else {
+            const newTimeRemaining = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            const newEarnedAmount = moYuData.monthlySalary ? earnedAmount : undefined;
+
+            setPrevTimeRemaining(timeInfo.timeRemaining);
+            setPrevEarnedAmount(timeInfo.earnedAmount || 0);
+
             setTimeInfo({
               type: 'work',
-              timeRemaining: `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`,
-              earnedAmount: moYuData.monthlySalary ? earnedAmount : undefined
+              timeRemaining: newTimeRemaining,
+              earnedAmount: newEarnedAmount
             });
           }
         }
@@ -1174,9 +1202,13 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
                 onClick={() => {
                   setIsMoneyOpen(true);
                 }}
-                className="money-button"
+                className={`money-button ${
+                  timeInfo.timeRemaining === '已到下班时间' ? 'work-done' : ''
+                } ${
+                  holidayInfo && moment(holidayInfo.date).diff(moment(), 'days') <= 1 ? 'holiday-mode' : ''
+                }`}
               >
-                <div className="money-button-content">
+                <div className={`money-button-content ${timeInfo.type === 'lunch' ? 'lunch-time' : ''}`}>
                   <Tooltip title="点击查看今天吃什么" placement="top">
                     <div className="money-button-emoji" onClick={(e) => {
                       e.stopPropagation();
@@ -1185,14 +1217,18 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
                       {timeInfo.type === 'lunch' ? '🍱' : '🧑‍💻'}
                     </div>
                   </Tooltip>
-                  <div className="money-button-time">
+                  <div className={`money-button-time ${timeInfo.type === 'work' ? 'gradient-text' : ''} ${
+                    prevTimeRemaining !== timeInfo.timeRemaining ? 'time-change' : ''
+                  }`}>
                     {timeInfo.type === 'lunch' ?
                       `午餐: ${timeInfo.timeRemaining}` :
                       `下班: ${timeInfo.timeRemaining}`
                     }
                   </div>
                   {timeInfo.earnedAmount !== undefined && (
-                    <div className="money-button-amount">
+                    <div className={`money-button-amount ${
+                      prevEarnedAmount !== timeInfo.earnedAmount ? 'amount-increase' : ''
+                    }`}>
                       💰：{timeInfo.earnedAmount.toFixed(2)}
                     </div>
                   )}
