@@ -1667,7 +1667,6 @@ const [moYuData, setMoYuData] = useState<MoYuTimeType>({
               <Select
                 placeholder="请选择称号"
                 onChange={handleSetTitle}
-                allowClear
                 value={currentUser?.titleId}
               >
                 {availableTitles.map((title) => (

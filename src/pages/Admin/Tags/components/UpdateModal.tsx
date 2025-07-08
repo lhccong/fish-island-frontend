@@ -64,11 +64,6 @@ const UpdateModal: React.FC<Props> = (props) => {
           },
         }}
         onSubmit={async (values: API.TagsUpdateRequest) => {
-          // 确保颜色是RGB格式
-          if (values.color && typeof values.color !== 'string') {
-            values.color = values.color.toRgbString();
-          }
-
           const success = await handleUpdate({
             ...values,
             id: oldData.id as any,

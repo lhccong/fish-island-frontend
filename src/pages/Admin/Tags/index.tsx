@@ -5,7 +5,7 @@ import {PlusOutlined} from '@ant-design/icons';
 import type {ActionType, ProColumns} from '@ant-design/pro-components';
 import {PageContainer, ProTable} from '@ant-design/pro-components';
 import '@umijs/max';
-import {ColorPicker, Button, message, Popconfirm, Space, Typography} from 'antd';
+import {Tag, Select, Button, message, Popconfirm, Space, Typography} from 'antd';
 import React, {useRef, useState} from 'react';
 
 /**
@@ -21,6 +21,12 @@ const TagsAdminPage: React.FC = () => {
   const actionRef = useRef<ActionType>();
   // 当前标签点击的数据
   const [currentRow, setCurrentRow] = useState<API.TagsVO>();
+
+  // 定义 Ant Design 内置颜色
+  const TAG_COLORS = [
+    'magenta', 'red', 'volcano', 'orange', 'gold',
+    'lime', 'green', 'cyan', 'blue', 'geekblue', 'purple'
+  ];
 
   /**
    * 删除节点
@@ -63,21 +69,19 @@ const TagsAdminPage: React.FC = () => {
     {
       title: '颜色',
       dataIndex: 'color',
-      valueType: 'color',
+      valueType: 'text',
       hideInSearch: true,
-      // 只保存RGB字符串
-      renderFormItem: () => <ColorPicker format="rgb"/>,
+      renderFormItem: () => (
+        <Select placeholder="选择标签颜色">
+          {TAG_COLORS.map(color => (
+            <Select.Option key={color} value={color}>
+              <Tag color={color}>{color}</Tag>
+            </Select.Option>
+          ))}
+        </Select>
+      ),
       render: (text) => (
-        <div style={{display: 'flex', alignItems: 'center'}}>
-          <div style={{
-            backgroundColor: text as string,
-            width: 16,
-            height: 16,
-            borderRadius: 2,
-            marginRight: 8
-          }}/>
-          {text}
-        </div>
+        <Tag color={text as string}>{text}</Tag>
       )
     },
     {

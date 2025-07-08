@@ -60,11 +60,6 @@ const CreateModal: React.FC<Props> = (props) => {
           }
         }}
         onSubmit={async (values: API.TagsAddRequest) => {
-          // 确保颜色是RGB格式
-          if (values.color && typeof values.color !== 'string') {
-            values.color = values.color.toRgbString();
-          }
-
           const success = await handleAdd(values);
           if (success) {
             onSubmit?.(values);

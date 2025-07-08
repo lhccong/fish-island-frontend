@@ -1,30 +1,30 @@
-import React, {useState, useEffect} from 'react';
-import {Card, List, Tag, Space, Button, Input, Tabs, Avatar, Badge, message, Modal, Spin, Skeleton} from 'antd';
+import React, {useEffect, useState} from 'react';
+import {Avatar, Badge, Button, Card, Input, List, message, Modal, Skeleton, Spin, Tabs, Tag} from 'antd';
 import type {SizeType} from 'antd/es/config-provider/SizeContext';
 import {
-  FireOutlined,
-  RiseOutlined,
   ClockCircleOutlined,
-  MessageOutlined,
-  LikeOutlined,
-  EyeOutlined,
-  PlusOutlined,
-  SearchOutlined,
-  UserOutlined,
   DeleteOutlined,
   EditOutlined,
-  MenuOutlined,
+  EyeOutlined,
+  FilterOutlined,
+  FireOutlined,
+  LikeFilled,
+  LikeOutlined,
+  MessageOutlined,
+  PlusOutlined,
+  RiseOutlined,
+  SearchOutlined,
   UpOutlined,
-  DownOutlined,
-  FilterOutlined
+  UserOutlined
 } from '@ant-design/icons';
 import {history, Link} from '@umijs/max';
-import {listPostVoByPageUsingPost, deletePostUsingPost1} from '@/services/backend/postController';
+import {deletePostUsingPost1, listPostVoByPageUsingPost} from '@/services/backend/postController';
 import {listTagsVoByPageUsingPost} from '@/services/backend/tagsController';
 import {getLoginUserUsingGet} from '@/services/backend/userController';
 import './index.less';
 import moment from 'moment';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import {doThumbUsingPost1} from "@/services/backend/postThumbController";
 
 const {TabPane} = Tabs;
 const {Search} = Input;
@@ -97,10 +97,10 @@ const PostPage: React.FC = () => {
     if (tag && tag.icon) {
       // 如果是URL图标，渲染为img标签
       if (tag.icon.startsWith('http')) {
-        return <img src={tag.icon} alt={tag.tagsName} style={{ width: 16, height: 16, marginRight: 4 }} />;
+        return <img src={tag.icon} alt={tag.tagsName} style={{width: 16, height: 16, marginRight: 4}}/>;
       }
       // 否则可能是图标名称，可以根据需求处理
-      return <span style={{ marginRight: 4 }}>{tag.icon}</span>;
+      return <span style={{marginRight: 4}}>{tag.icon}</span>;
     }
     return null;
   };
@@ -179,12 +179,12 @@ const PostPage: React.FC = () => {
           // 否则，追加数据
           setPosts(prevPosts => [...prevPosts, ...(result.data?.records || [])]);
         }
-        
+
         setPagination({
           ...pagination,
           total: result.data.total || 0,
         });
-        
+
         // 判断是否还有更多数据
         setHasMore((result.data.records?.length || 0) > 0 && (pagination.current * pagination.pageSize) < (result.data.total || 0));
       }
@@ -271,7 +271,7 @@ const PostPage: React.FC = () => {
     setPagination({...pagination, current: 1}); // 重置到第一页
     setPosts([]); // 清空现有数据
     setHasMore(true); // 重置hasMore状态
-    
+
     // 如果切换到"我的帖子"标签，检查用户是否已登录
     if (key === 'my' && !currentUser) {
       message.warning('请先登录查看我的帖子');
@@ -319,13 +319,13 @@ const PostPage: React.FC = () => {
     return Array(3).fill(null).map((_, index) => (
       <div key={index} className="skeleton-item">
         <div className="skeleton-header">
-          <Skeleton.Avatar active size={isMobile ? 32 : 40} className="skeleton-avatar" />
+          <Skeleton.Avatar active size={isMobile ? 32 : 40} className="skeleton-avatar"/>
           <div className="skeleton-info">
-            <Skeleton.Input style={{ width: '150px', marginBottom: '8px' }} active />
-            <Skeleton.Input style={{ width: '100px' }} active />
+            <Skeleton.Input style={{width: '150px', marginBottom: '8px'}} active/>
+            <Skeleton.Input style={{width: '100px'}} active/>
           </div>
         </div>
-        <Skeleton title={{ width: '80%' }} paragraph={{ rows: 2 }} active />
+        <Skeleton title={{width: '80%'}} paragraph={{rows: 2}} active/>
       </div>
     ));
   };
@@ -348,6 +348,34 @@ const PostPage: React.FC = () => {
     };
   }, []);
 
+  // 在组件内添加点赞处理函数
+  const handleThumbPost = async (postId: string, currentThumbStatus: boolean, currentThumbNum: number) => {
+    if (!currentUser) {
+      message.warning('请先登录');
+      return;
+    }
+
+    try {
+      await doThumbUsingPost1({
+        postId: postId
+      } as any);
+
+      // 更新该帖子的点赞状态和数量
+      setPosts(posts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            hasThumb: !currentThumbStatus,
+            thumbNum: currentThumbStatus ? (currentThumbNum - 1) : (currentThumbNum + 1)
+          };
+        }
+        return post;
+      }));
+    } catch (error) {
+      message.error('操作失败');
+    }
+  };
+
   return (
     <div className="post-page">
       {/* 删除确认对话框 */}
@@ -367,7 +395,7 @@ const PostPage: React.FC = () => {
         <div className="post-main">
           <Card className="post-filter-card">
             <div className="filter-container">
-              
+
               <div className="category-filter">
                 <span className="filter-label">标签：</span>
                 <div className="tag-container">
@@ -393,15 +421,15 @@ const PostPage: React.FC = () => {
               </div>
               {/* 搜索框开关 */}
               <div className="search-toggle">
-                <Button 
-                  type="link" 
+                <Button
+                  type="link"
                   onClick={toggleSearchVisible}
-                  icon={searchVisible ? <UpOutlined /> : <FilterOutlined />}
+                  icon={searchVisible ? <UpOutlined/> : <FilterOutlined/>}
                 >
                   {searchVisible ? '收起搜索' : '展开搜索'}
                 </Button>
               </div>
-              
+
               {/* 可收起的搜索框 */}
               {searchVisible && (
                 <div className="post-search">
@@ -466,7 +494,7 @@ const PostPage: React.FC = () => {
               </div>
             </div>
 
-            <div id="scrollableDiv" style={{ overflow: 'auto', padding: '0 16px' }}>
+            <div id="scrollableDiv" style={{overflow: 'auto', padding: '0 16px'}}>
               {loading && posts.length === 0 ? (
                 renderPostSkeleton()
               ) : (
@@ -476,11 +504,11 @@ const PostPage: React.FC = () => {
                   hasMore={hasMore}
                   loader={
                     <div className="loading-container">
-                      <Spin size="large" tip="加载中..." />
+                      <Spin size="large" tip="加载中..."/>
                     </div>
                   }
                   endMessage={
-                    <div className="loading-container" style={{ color: '#999' }}>
+                    <div className="loading-container" style={{color: '#999'}}>
                       没有更多帖子了
                     </div>
                   }
@@ -501,9 +529,25 @@ const PostPage: React.FC = () => {
                           !isMobile &&
                           <span onClick={(e) => e.stopPropagation()}><EyeOutlined/> 浏览 {item.viewNum || 0}</span>,
                           !isMobile &&
-                          <span onClick={(e) => e.stopPropagation()}><LikeOutlined/> 点赞 {item.thumbNum || 0}</span>,
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleThumbPost(String(item.id), item.hasThumb || false, item.thumbNum || 0);
+                            }}
+                            className={item.hasThumb ? 'like-button active' : 'like-button'}
+                          >
+                            {item.hasThumb ? <LikeFilled/> : <LikeOutlined/>} 点赞 {item.thumbNum || 0}
+                          </span>,
                           !isMobile &&
-                          <span onClick={(e) => e.stopPropagation()}><MessageOutlined/> 评论 {item.commentNum || 0}</span>,
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              history.push(`/post/${String(item.id)}`);
+                            }}
+                            className="comment-link"
+                          >
+                            <MessageOutlined/> 评论 {item.commentNum || 0}
+                          </span>,
                           canDeletePost(item) && (
                             <span
                               onClick={(e) => {
