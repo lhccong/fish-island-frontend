@@ -5,29 +5,30 @@
   overflow-x: hidden; /* 添加这一行防止溢出 */
   width: 100%; /* 确保容器占满可用宽度 */
   box-sizing: border-box; /* 确保padding不会导致宽度溢出 */
-  
+  overflow: initial;
+
   .post-detail-summary {
     margin-bottom: 20px;
-    
+
     .summary-header {
       display: flex;
       align-items: center;
       font-weight: 500;
       color: #FFA768;
-      
+
       .anticon {
         margin-right: 8px;
         color: #FFA768;
       }
     }
-    
+
     .ant-alert-description {
       color: #333;
       font-size: 14px;
       line-height: 1.6;
       white-space: pre-line;
     }
-    
+
     .ant-alert-message {
       color: #FFA768;
     }
@@ -48,7 +49,7 @@
   align-items: center;
   cursor: pointer;
   color: #1890ff;
-  
+
   span {
     margin-left: 8px;
   }
@@ -84,12 +85,12 @@
   .post-detail-container {
     padding: 8px;
   }
-  
+
   .post-detail-layout {
     flex-direction: column;
     overflow-x: hidden;
   }
-  
+
   .post-detail-main {
     min-width: 0; /* 修改这里，不要设置固定的最小宽度 */
     width: 100%;
@@ -102,14 +103,14 @@
   position: relative;
   transition: all 0.3s ease;
   overflow: hidden;
-  
+
   &.sticky {
     position: sticky;
     top: 24px;
     align-self: flex-start;
     max-height: calc(100vh - 48px);
   }
-  
+
   &.collapsed {
     width: 30px;
     flex: 0 0 30px;
@@ -117,7 +118,7 @@
     padding: 0;
     margin-left: 0;
     margin-right: 0;
-    
+
     .post-detail-comments {
       width: 350px;
       transform: translateX(-350px);
@@ -126,12 +127,12 @@
       border: none;
       background-color: transparent;
       box-shadow: none;
-      
+
       .ant-card-head, .ant-card-body {
         display: none;
       }
     }
-    
+
     .comment-collapse-button {
       left: 0;
       z-index: 100;
@@ -159,11 +160,11 @@
   z-index: 10;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: left 0.3s ease, background-color 0.2s ease, color 0.2s ease;
-  
+
   &:hover {
     color: #1890ff;
     background-color: #f0f7ff;
-    
+
     &::after {
       content: attr(data-tooltip);
       position: absolute;
@@ -191,7 +192,7 @@
 
 .post-detail-title {
   margin-bottom: 16px;
-  
+
   h3 {
     margin-bottom: 8px;
   }
@@ -216,7 +217,7 @@
 .comments-header {
   display: flex;
   align-items: center;
-  
+
   .comment-count {
     margin-left: 8px;
     color: #8c8c8c;
@@ -226,10 +227,10 @@
 .post-actions {
   display: flex;
   align-items: center;
-  
+
   .action-button {
     margin-left: 8px;
-    
+
     &.active {
       color: #1890ff;
     }
@@ -254,11 +255,11 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  
+
   .comment-textarea {
     margin-bottom: 8px;
   }
-  
+
   button {
     align-self: flex-end;
   }
@@ -287,7 +288,7 @@
   width: 100%;
   max-width: 100%;
   overflow: hidden;
-  
+
   &.child-comment {
     margin-left: 24px;
     margin-bottom: 12px;
@@ -323,7 +324,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   .delete-button {
     padding: 0 4px;
     height: 22px;
@@ -351,17 +352,17 @@
   align-items: center;
   flex-wrap: wrap;
   margin-top: 4px;
-  
+
   .reply-button {
     margin-right: 16px;
   }
-  
+
   .like-button {
     &.active {
       color: #1890ff;
     }
   }
-  
+
   .delete-button {
     margin-left: 16px;
   }
@@ -370,14 +371,14 @@
 .reply-box {
   margin-top: 8px;
   width: 100%;
-  
+
   .reply-textarea {
     margin-bottom: 8px;
     width: 100%;
     overflow-wrap: break-word;
     word-wrap: break-word;
   }
-  
+
   .reply-actions {
     display: flex;
     justify-content: flex-end;
@@ -440,18 +441,18 @@
   .post-detail-layout {
     flex-direction: column;
   }
-  
+
   .post-detail-sidebar {
     width: 100%;
     margin-top: 16px;
-    
+
     &.collapsed {
       width: 100%;
       height: 30px;
       padding: 0;
       margin: 0;
       overflow: visible;
-      
+
       .post-detail-comments {
         width: 100%;
         transform: translateY(-100%);
@@ -460,12 +461,12 @@
         border: none;
         background-color: transparent;
         box-shadow: none;
-        
+
         .ant-card-head, .ant-card-body {
           display: none;
         }
       }
-      
+
       .comment-collapse-button {
         left: 50%;
         top: 0;
@@ -477,25 +478,25 @@
       }
     }
   }
-  
+
   .comment-collapse-button {
     left: 50%;
     top: -15px;
     transform: translateX(-50%) rotate(90deg);
     transition: top 0.3s ease, transform 0.3s ease;
   }
-} 
+}
 
 .vditor-reset {
   max-width: 100%;
   overflow-x: hidden;
   word-wrap: break-word; /* 确保长文本可以换行 */
-  
+
   img {
     max-width: 100%; /* 确保图片不会溢出容器 */
     height: auto;
   }
-  
+
   pre, code {
     white-space: pre-wrap; /* 允许代码块自动换行 */
     word-break: break-all; /* 允许在任何字符间断行 */
@@ -503,7 +504,7 @@
     max-width: 100%;
     overflow-x: auto; /* 对于特别长的代码行，允许在代码块内滚动而不影响整体布局 */
   }
-  
+
   table {
     display: block;
     max-width: 100%;
@@ -511,19 +512,19 @@
     width: fit-content; /* 使表格宽度适应内容 */
     margin: 0 auto; /* 居中表格 */
   }
-  
+
   /* 确保所有内容元素都不会溢出 */
   p, h1, h2, h3, h4, h5, h6, blockquote, ul, ol {
     max-width: 100%;
     overflow-wrap: break-word;
     word-wrap: break-word;
   }
-  
+
   /* 处理可能的溢出元素 */
   iframe, video, embed, object {
     max-width: 100%;
   }
-} 
+}
 
 // 添加表情包相关样式
 .comment-content-with-emoticon {
@@ -598,7 +599,7 @@
   justify-content: flex-end;
   margin-top: 8px;
   gap: 8px;
-} 
+}
 
 .pasted-images-preview {
   display: flex;
@@ -614,7 +615,7 @@
   color: #1890ff;
   margin: 8px 0;
   font-size: 14px;
-  
+
   .anticon {
     margin-right: 8px;
   }
@@ -626,13 +627,13 @@
   height: 100px;
   border-radius: 5px;
   overflow: hidden;
-  
+
   .pasted-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
-  
+
   .remove-image-btn {
     position: absolute;
     top: 5px;
@@ -645,7 +646,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     &:hover {
       background: rgba(255, 255, 255, 0.9);
     }
@@ -660,4 +661,4 @@
 .reply-textarea {
   border-radius: 4px;
   resize: none;
-} 
+}
