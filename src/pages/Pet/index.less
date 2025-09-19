@@ -236,8 +236,20 @@
   
 .petAvatar {
   margin-right: 12px;
-  border: 2px solid #f0f0f0;
-    }
+  border: none !important;
+  background: transparent !important;
+  
+  // 确保Avatar组件内部也没有边框和背景
+  :global(.ant-avatar) {
+    border: none !important;
+    background: transparent !important;
+  }
+  
+  // 确保图片能正常显示透明背景
+  :global(.ant-avatar img) {
+    background: transparent !important;
+  }
+}
 
 .petNameContainer {
   display: flex;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Modal, Tabs, Button, Progress, Card, Avatar, Row, Col, Input, Form, message, Tooltip, Popover, Spin } from 'antd';
+import { Modal, Tabs, Button, Progress, Card, Avatar, Row, Col, Input, Form, message, Tooltip, Popover, Spin, Radio } from 'antd';
 import {
   HeartOutlined,
   ThunderboltOutlined,
@@ -14,6 +14,10 @@ import {
   CloseOutlined,
   QuestionCircleOutlined,
   InfoCircleOutlined,
+
+  StarOutlined,
+  CrownOutlined,
+  FireOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 import { getPetDetailUsingGet, createPetUsingPost, feedPetUsingPost, patPetUsingPost, updatePetNameUsingPost, getOtherUserPetUsingGet } from '@/services/backend/fishPetController';
@@ -117,35 +121,37 @@ interface ShopTabsProps {
 }
 
 const ShopTabs: React.FC<ShopTabsProps> = ({ renderSkinsList }) => {
+  const [shopType, setShopType] = useState<'skin' | 'props'>('skin');
+
   return (
-    <Tabs
-      defaultActiveKey="skin"
-      items={[
-        {
-          key: 'skin',
-          label: (
-            <span>
-              <SkinOutlined /> 宠物商店
-            </span>
-          ),
-          children: renderSkinsList(true),
-        },
-        {
-          key: 'props',
-          label: (
-            <span>
-              <GiftOutlined /> 道具商店
-            </span>
-          ),
-          children: (
-            <div className={styles.shopEmpty}>
-              <div className={styles.emptyIcon}>🛒</div>
-              <div className={styles.emptyText}>更多道具即将上架，敬请期待！</div>
-            </div>
-          ),
-        },
-      ]}
-    />
+    <div className={styles.shopContainer}>
+      <div className={styles.shopTypeSelector}>
+        <Radio.Group 
+          value={shopType} 
+          onChange={(e) => setShopType(e.target.value)}
+          buttonStyle="solid"
+          size="large"
+        >
+          <Radio.Button value="skin">
+            <SkinOutlined /> 宠物商店
+          </Radio.Button>
+          <Radio.Button value="props">
+            <GiftOutlined /> 道具商店
+          </Radio.Button>
+        </Radio.Group>
+      </div>
+      
+      <div className={styles.shopContent}>
+        {shopType === 'skin' ? (
+          renderSkinsList(true)
+        ) : (
+          <div className={styles.shopEmpty}>
+            <div className={styles.emptyIcon}>🛒</div>
+            <div className={styles.emptyText}>更多道具即将上架，敬请期待！</div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -720,153 +726,224 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
             </Button>
           </Popover>
         </div>
-        <div className={styles.petInfo}>
-          <div className={styles.petAvatar}>
-            <Avatar src={pet?.petUrl} size={100} />
-          </div>
-          <div className={styles.petDetails}>
-            <div className={styles.petName}>
-              <span className={styles.name}>
-                {pet?.name}
-                {!isOtherUser && !isRenaming ? (
-                  <Tooltip title="修改名称需要消耗100积分">
-                    <Button
-                      type="link"
-                      size="small"
-                      onClick={() => setIsRenaming(true)}
-                      icon={<EditOutlined />}
-                      className={styles.renameButton}
-                    >
-                      修改
-                    </Button>
-                  </Tooltip>
-                ) : isRenaming ? (
-                  <div className={styles.renameContainer}>
-                    <Input
-                      size="small"
-                      placeholder="请输入新名称"
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      maxLength={10}
-                      autoFocus
-                      className={styles.renameInput}
-                      prefix={<EditOutlined />}
-                      suffix={
-                        <span className={styles.charCount}>
-                          {newName.length}/10
-                        </span>
-                      }
-                    />
-                    <div className={styles.renameActions}>
-                      <Button
-                        size="small"
-                        type="primary"
-                        onClick={handleRename}
-                        loading={renameLoading}
-                        icon={<CheckOutlined />}
+        
+        {/* 使用分栏布局 */}
+        <Row gutter={24} className={styles.petMainLayout}>
+          {/* 左侧装备界面 */}
+          <Col span={10} className={styles.petLeftColumn}>
+            <div className={styles.equipmentInterface}>
+              {/* 顶部宠物信息 */}
+              <div className={styles.petHeader}>
+                <div className={styles.petNameSection}>
+                  {!isOtherUser && !isRenaming ? (
+                    <Tooltip title="点击修改名称（消耗100积分）">
+                      <span 
+                        className={styles.editableName}
+                        onClick={() => setIsRenaming(true)}
                       >
-                        确定
-                      </Button>
-                      <Button
+                        {pet?.name}
+                        <EditOutlined className={styles.editIcon} />
+                      </span>
+                    </Tooltip>
+                  ) : isRenaming ? (
+                    <div className={styles.renameContainer}>
+                      <Input
                         size="small"
-                        onClick={() => {setIsRenaming(false); setNewName('');}}
-                        icon={<CloseOutlined />}
-                        className={styles.cancelButton}
-                      >
-                        取消
-                      </Button>
+                        placeholder="请输入新名称"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        maxLength={10}
+                        autoFocus
+                        className={styles.renameInput}
+                        prefix={<EditOutlined />}
+                        suffix={
+                          <span className={styles.charCount}>
+                            {newName.length}/10
+                          </span>
+                        }
+                      />
+                      <div className={styles.renameActions}>
+                        <Button
+                          size="small"
+                          type="primary"
+                          onClick={handleRename}
+                          loading={renameLoading}
+                          icon={<CheckOutlined />}
+                        >
+                          确定
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() => {setIsRenaming(false); setNewName('');}}
+                          icon={<CloseOutlined />}
+                          className={styles.cancelButton}
+                        >
+                          取消
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <span>{pet?.name}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* 装备栏布局 */}
+              <div className={styles.equipmentLayout}>
+                {/* 左侧装备栏 */}
+                <div className={styles.leftEquipments}>
+                  <div className={styles.equipSlot} data-slot="weapon">
+                    <Tooltip title="武器 - 空闲">
+                      <div className={styles.emptySlot}>
+                        <ThunderboltOutlined className={styles.slotIcon} />
+                      </div>
+                    </Tooltip>
+                  </div>
+                  <div className={styles.equipSlot} data-slot="armor">
+                    <Tooltip title="护甲 - 空闲">
+                      <div className={styles.emptySlot}>
+                        <StarOutlined className={styles.slotIcon} />
+                      </div>
+                    </Tooltip>
+                  </div>
+                  <div className={styles.equipSlot} data-slot="accessory1">
+                    <Tooltip title="饰品1 - 空闲">
+                      <div className={styles.emptySlot}>
+                        <StarOutlined className={styles.slotIcon} />
+                      </div>
+                    </Tooltip>
+                  </div>
+                </div>
+
+                {/* 中央宠物展示 */}
+                <div className={styles.petDisplay}>
+                  <div className={styles.petAvatar}>
+                    <Avatar src={pet?.petUrl} size={140} />
+                  </div>
+                  <div className={styles.petLevel}>Lv.{pet?.level || 1}</div>
+                </div>
+
+                {/* 右侧装备栏 */}
+                <div className={styles.rightEquipments}>
+                  <div className={styles.equipSlot} data-slot="helmet">
+                    <Tooltip title="头盔 - 空闲">
+                      <div className={styles.emptySlot}>
+                        <CrownOutlined className={styles.slotIcon} />
+                      </div>
+                    </Tooltip>
+                  </div>
+                  <div className={styles.equipSlot} data-slot="necklace">
+                    <Tooltip title="项链 - 空闲">
+                      <div className={styles.emptySlot}>
+                        <GiftOutlined className={styles.slotIcon} />
+                      </div>
+                    </Tooltip>
+                  </div>
+                  <div className={styles.equipSlot} data-slot="accessory2">
+                    <Tooltip title="饰品2 - 空闲">
+                      <div className={styles.emptySlot}>
+                        <HeartOutlined className={styles.slotIcon} />
+                      </div>
+                    </Tooltip>
+                  </div>
+                </div>
+              </div>
+
+
+
+              {/* 底部状态和操作 */}
+              <div className={styles.petStats}>
+                {/* 进度条区域 */}
+                <div className={styles.statusBars}>
+                  <div className={styles.statusItem}>
+                    <span className={styles.statusLabel}>
+                      <HeartOutlined /> 心情:
+                    </span>
+                    <div className={styles.statusProgressContainer}>
+                      <Progress
+                        percent={((pet?.mood || 0) / ((pet as any)?.maxMood || 100)) * 100}
+                        status="active"
+                        strokeColor="#ff7875"
+                        size="small"
+                        format={() => `${pet?.mood || 0}/${(pet as any)?.maxMood || 100}`}
+                      />
+                      <Tooltip title="心情值影响宠物的积分产出和经验获取">
+                        <InfoCircleOutlined className={styles.statusInfo} />
+                      </Tooltip>
                     </div>
                   </div>
-                ) : null}
-              </span>
-              <span className={styles.level}>Lv.{pet?.level || 1}</span>
-            </div>
-            <div className={styles.petStatus}>
-              <div className={styles.statusItem}>
-                <span className={styles.statusLabel}>
-                  <HeartOutlined /> 心情:
-                </span>
-                <div className={styles.statusProgressContainer}>
-                  <Progress
-                    percent={((pet?.mood || 0) / ((pet as any)?.maxMood || 100)) * 100}
-                    status="active"
-                    strokeColor="#ff7875"
-                    size="small"
-                    format={() => `${pet?.mood || 0}/${(pet as any)?.maxMood || 100}`}
-                  />
-                  <Tooltip title="心情值影响宠物的积分产出和经验获取">
-                    <InfoCircleOutlined className={styles.statusInfo} />
-                  </Tooltip>
-                </div>
-              </div>
-              <div className={styles.statusItem}>
-                <span className={styles.statusLabel}>
-                  <ThunderboltOutlined /> 饥饿:
-                </span>
-                <div className={styles.statusProgressContainer}>
-                  <Progress
-                    percent={((pet?.hunger || 0) / ((pet as any)?.maxHunger || 100)) * 100}
-                    status="active"
-                    strokeColor="#52c41a"
-                    size="small"
-                    format={() => `${pet?.hunger || 0}/${(pet as any)?.maxHunger || 100}`}
-                  />
-                  <Tooltip title="饥饿值影响宠物的积分产出和经验获取">
-                    <InfoCircleOutlined className={styles.statusInfo} />
-                  </Tooltip>
-                </div>
-              </div>
-              <div className={styles.statusItem}>
-                <span className={styles.statusLabel}>
-                  <ExperimentOutlined /> 经验:
-                </span>
-                <div className={styles.statusProgressContainer}>
-                  {pet && (
-                    <>
+                  <div className={styles.statusItem}>
+                    <span className={styles.statusLabel}>
+                      <ThunderboltOutlined /> 饥饿:
+                    </span>
+                    <div className={styles.statusProgressContainer}>
                       <Progress
-                        percent={(pet as any).exp ? (Math.floor((pet as any).exp) / ((pet as any)?.maxExp || 100) * 100) : 0}
+                        percent={((pet?.hunger || 0) / ((pet as any)?.maxHunger || 100)) * 100}
                         status="active"
-                        strokeColor="#1890ff"
+                        strokeColor="#52c41a"
                         size="small"
-                        format={() => `${Math.floor((pet as any).exp || 0)}/${(pet as any)?.maxExp || 100}`}
+                        format={() => `${pet?.hunger || 0}/${(pet as any)?.maxHunger || 100}`}
                       />
-                    </>
-                  )}
-                  <Tooltip title="每100点经验可提升1级">
-                    <InfoCircleOutlined className={styles.statusInfo} />
-                  </Tooltip>
+                      <Tooltip title="饥饿值影响宠物的积分产出和经验获取">
+                        <InfoCircleOutlined className={styles.statusInfo} />
+                      </Tooltip>
+                    </div>
+                  </div>
+                  <div className={styles.statusItem}>
+                    <span className={styles.statusLabel}>
+                      <ExperimentOutlined /> 经验:
+                    </span>
+                    <div className={styles.statusProgressContainer}>
+                      <Progress
+                        percent={pet && (pet as any).exp ? (Math.floor((pet as any).exp) / ((pet as any)?.maxExp || 100) * 100) : 0}
+                        status="active"
+                        strokeColor="#ffa768"
+                        size="small"
+                        format={() => `${Math.floor((pet as any)?.exp || 0)}/${(pet as any)?.maxExp || 100}`}
+                      />
+                      <Tooltip title="每100点经验可提升1级">
+                        <InfoCircleOutlined className={styles.statusInfo} />
+                      </Tooltip>
+                    </div>
+                  </div>
                 </div>
+
+                <div className={styles.powerScore}>
+                  <span className={styles.scoreIcon}>⚡</span>
+                  <span className={styles.scoreText}>宠物战力 {Math.floor((pet?.level || 1) * 100 + (pet?.mood || 0) + (pet?.hunger || 0))}</span>
+                </div>
+                
+                {!isOtherUser && (
+                  <div className={styles.quickActions}>
+                    <Button
+                      type="primary"
+                      onClick={handleFeed}
+                      loading={feedLoading}
+                      icon={<GiftOutlined />}
+                      className={styles.quickActionBtn}
+                      size="small"
+                    >
+                      喂食
+                    </Button>
+                    <Button
+                      type="primary"
+                      onClick={handlePat}
+                      loading={patLoading}
+                      icon={<HeartOutlined />}
+                      className={styles.quickActionBtn}
+                      size="small"
+                    >
+                      抚摸
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
-            {!isOtherUser && (
-              <div className={styles.petActions} style={{ marginTop: 10 }}>
-                <Button
-                  type="primary"
-                  onClick={handleFeed}
-                  loading={feedLoading}
-                  style={{ marginRight: 8 }}
-                  icon={<GiftOutlined />}
-                  className={styles.actionButton}
-                >
-                  喂食 <span className={styles.costBadge}>-5积分</span>
-                  <span className={styles.expBadge}>+1经验</span>
-                </Button>
-                <Button
-                  type="primary"
-                  onClick={handlePat}
-                  loading={patLoading}
-                  icon={<HeartOutlined />}
-                  className={styles.actionButton}
-                >
-                  抚摸 <span className={styles.costBadge}>-3积分</span>
-                  <span className={styles.expBadge}>+1经验</span>
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <Tabs
+          </Col>
+          
+          {/* 右侧Tab内容 */}
+          <Col span={14} className={styles.petRightColumn}>
+            <Tabs
           defaultActiveKey={isOtherUser ? "skills" : "items"}
           items={[
             ...(isOtherUser ? [] : [{
@@ -1032,6 +1109,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
             },
           ]}
         />
+          </Col>
+        </Row>
       </div>
     );
   }

@@ -91,6 +91,27 @@
       "description": "空白专属称号",
       "titleImg": "https://api.oss.cqbo.com/moyu/title/恐龙.png"
 
+    },
+    {
+      "id": "16",
+      "name": "摸鱼精灵王",
+      "description": "宠物第一名",
+      "titleImg": "https://api.oss.cqbo.com/moyu/title/badge-摸鱼精灵王.png"
+
+    },
+    {
+      "id": "17",
+      "name": "云朵摸鱼崽",
+      "description": "宠物第二名",
+      "titleImg": "https://api.oss.cqbo.com/moyu/title/badge-云朵摸鱼崽.png"
+
+    },
+    {
+      "id": "18",
+      "name": "摸鱼智多星",
+      "description": "宠物第三名",
+      "titleImg": "https://api.oss.cqbo.com/moyu/title/badge-摸鱼智多星.png"
+
     }
   ]
 }

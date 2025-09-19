@@ -1,6 +1,6 @@
 // 可滚动内容区域的混合宏
 .scrollableTabContent() {
-  max-height: 320px; // 设置一个最大高度
+  height: 100%; // 使用100%高度
   overflow-y: auto; // 内容超出时显示垂直滚动条
   padding: 20px; // 统一内边距
 
@@ -88,6 +88,7 @@
       transition: all 0.3s ease;
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
       z-index: 1;
+      background: transparent !important; /* 确保透明背景 */
     }
 
     &:hover .skinImage {
@@ -310,6 +311,35 @@
     font-weight: bold;
     display: flex;
     align-items: center;
+    
+    .editableName {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      position: relative;
+      
+      &:hover {
+        background: rgba(24, 144, 255, 0.1);
+        transform: translateY(-1px);
+        
+        .editIcon {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      
+      .editIcon {
+        font-size: 14px;
+        opacity: 0.6;
+        transform: scale(0.9);
+        transition: all 0.3s ease;
+        color: #1890ff;
+      }
+    }
   }
 
   .level {
@@ -448,72 +478,221 @@
 }
 
 .itemsContainer {
-  padding: 10px 0;
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  
+  // 美化物品容器滚动条
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(24, 144, 255, 0.2);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(24, 144, 255, 0.3);
+    }
+  }
 }
 
 .itemCard {
   text-align: center;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+  border: 1px solid #e6f0ff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.08);
 
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(24, 144, 255, 0.15);
+    border-color: #1890ff;
   }
 
   .itemIcon {
-    font-size: 32px;
-    margin-bottom: 10px;
+    font-size: 36px;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
   }
 
   .itemName {
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    color: #1890ff;
+    font-size: 16px;
   }
 
   .itemCount {
-    color: #1890ff;
-    margin-bottom: 5px;
+    color: #52c41a;
+    margin-bottom: 8px;
+    font-weight: 500;
+    background: rgba(82, 196, 26, 0.1);
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: inline-block;
   }
 
   .itemDesc {
     color: #666;
-    margin-bottom: 10px;
-    font-size: 12px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    line-height: 1.4;
   }
 
   .itemActions {
-    margin-top: 10px;
+    margin-top: 12px;
+    
+    button {
+      border-radius: 16px;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+    }
   }
 }
 
 .shopContainer {
-  .scrollableTabContent();
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: auto; // 让容器根据内容自适应高度
 
-  .shopSection {
-    margin-bottom: 30px;
-
-    .sectionTitle {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #f0f0f0;
-      color: #1890ff;
+  .shopTypeSelector {
+    padding: 20px 20px 0 20px;
+    flex-shrink: 0;
+    
+    :global(.ant-radio-group) {
+      width: 100%;
+      display: flex;
+      
+      :global(.ant-radio-button-wrapper) {
+        flex: 1;
+        text-align: center;
+        height: 44px;
+        line-height: 30px;
+        border-radius: 12px;
+        border: 2px solid #e6f0ff;
+        background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+        color: #666;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin: 0 4px;
+        
+        &:first-child {
+          margin-left: 0;
+          border-radius: 12px;
+        }
+        
+        &:last-child {
+          margin-right: 0;
+          border-radius: 12px;
+        }
+        
+        &:hover {
+          border-color: #1890ff;
+          background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+          color: #1890ff;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+        }
+        
+        &.ant-radio-button-wrapper-checked {
+          border-color: #1890ff;
+          background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+          color: white;
+          box-shadow: 0 4px 16px rgba(24, 144, 255, 0.3);
+          
+          &:hover {
+            background: linear-gradient(135deg, #096dd9 0%, #0050b3 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(24, 144, 255, 0.4);
+          }
+          
+          .anticon {
+            color: white;
+          }
+        }
+        
+        .anticon {
+          margin-right: 6px;
+          font-size: 16px;
+        }
+      }
     }
   }
+  
+  .shopContent {
+    padding: 20px;
+    overflow-y: visible; // 改为visible，让内容自然展开
+    flex-shrink: 0; // 防止内容被压缩
+    
+    .shopSection {
+      margin-bottom: 30px;
 
-  // 确保商店中的皮肤列表使用相同的样式
-  .skinsList {
-    margin-top: 10px;
-  }
+      .sectionTitle {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 16px;
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+        border-radius: 12px;
+        border-left: 4px solid #1890ff;
+        color: #1890ff;
+        box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+      }
+    }
 
-  .skinCard {
-    .skinCardStyles();
+    .skinsList {
+      margin-top: 10px;
+    }
+
+    .skinCard {
+      .skinCardStyles();
+      
+      // 增强商店卡片的视觉效果
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      
+      &:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+      }
+    }
+    
+    // 美化商店内容滚动条
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.04);
+      border-radius: 3px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(24, 144, 255, 0.2);
+      border-radius: 3px;
+      
+      &:hover {
+        background: rgba(24, 144, 255, 0.3);
+      }
+    }
   }
 }
 
 .skinContainer {
-  .scrollableTabContent();
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto; // 确保宠物馆容器可以滚动
+  box-sizing: border-box;
 
   .skinsList {
     margin-top: 10px;
@@ -521,41 +700,131 @@
 
   .skinCard {
     .skinCardStyles();
+    
+    // 增强宠物馆卡片的视觉效果
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    
+    &:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
   }
 
   .otherUserSkins {
     text-align: center;
     padding: 20px 0;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  // 美化宠物馆滚动条
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(24, 144, 255, 0.2);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(24, 144, 255, 0.3);
+    }
   }
 }
 
 .shopEmpty {
   text-align: center;
-  padding: 50px 0;
+  padding: 60px 20px;
+  background: linear-gradient(135deg, #f8faff 0%, #f0f7ff 100%);
+  border-radius: 16px;
+  border: 2px dashed #d9ecff;
+  margin: 20px 0;
 
   .emptyIcon {
-    font-size: 48px;
-    margin-bottom: 20px;
+    font-size: 64px;
+    margin-bottom: 24px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    animation: float 3s ease-in-out infinite;
   }
 
   .emptyText {
     font-size: 16px;
-    color: #999;
+    color: #666;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
   }
 }
 
 .achievementsContainer {
-  padding: 10px 0;
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  
+  // 美化成就容器滚动条
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(24, 144, 255, 0.2);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(24, 144, 255, 0.3);
+    }
+  }
 }
 
 .achievementCard {
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+  border: 1px solid #e6f0ff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.08);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(24, 144, 255, 0.15);
+    border-color: #1890ff;
+  }
 
   .achievementIcon {
-    font-size: 32px;
-    margin-right: 15px;
+    font-size: 36px;
+    margin-right: 16px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
   }
 
   .achievementInfo {
@@ -564,19 +833,26 @@
 
   .achievementName {
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
+    color: #1890ff;
+    font-size: 15px;
   }
 
   .achievementDesc {
     color: #666;
-    margin-bottom: 5px;
-    font-size: 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.4;
   }
 
   .achievementProgress {
     text-align: right;
-    color: #1890ff;
-    font-size: 12px;
+    color: #52c41a;
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(82, 196, 26, 0.1);
+    padding: 2px 8px;
+    border-radius: 8px;
   }
 }
 
@@ -595,6 +871,17 @@
 
 .petAvatar {
   animation: float 3s ease-in-out infinite;
+  
+  // 移除Avatar组件的边框和背景，支持透明图片
+  :global(.ant-avatar) {
+    border: none !important;
+    background: transparent !important;
+  }
+  
+  // 确保图片能正常显示透明背景
+  :global(.ant-avatar img) {
+    background: transparent !important;
+  }
 }
 
 // 添加迷你宠物样式
@@ -641,6 +928,7 @@
     object-fit: contain;
     animation: none; /* 移除呼吸动画 */
     pointer-events: none; /* 防止图片干扰拖动 */
+    background: transparent !important; /* 确保透明背景 */
   }
 
   @media screen and (max-width: 768px) {
@@ -702,6 +990,626 @@
 
     &::before {
       margin-right: 8px;
+    }
+  }
+}
+
+// 分栏布局样式
+.petMainLayout {
+  margin-top: 0;
+}
+
+.petLeftColumn {
+  .equipmentInterface {
+    background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 50%, #ffedd5 100%);
+    border: 2px solid #ffa768;
+    border-radius: 20px;
+    padding: 20px;
+    height: 700px;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(255, 167, 104, 0.2);
+    overflow: hidden;
+    
+    // 添加装饰性背景纹理
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 167, 104, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    
+    .petHeader {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      margin-bottom: 20px;
+      
+      .petNameSection {
+        background: rgba(255, 167, 104, 0.15);
+        border: 1px solid #ffa768;
+        border-radius: 20px;
+        padding: 8px 16px;
+        display: inline-block;
+        
+        .editableName {
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 8px;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+          color: #c2410c;
+          font-weight: bold;
+          font-size: 16px;
+          
+          &:hover {
+            background: rgba(255, 167, 104, 0.25);
+            transform: translateY(-1px);
+            
+            .editIcon {
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+          
+          .editIcon {
+            font-size: 14px;
+            opacity: 0.6;
+            transform: scale(0.9);
+            transition: all 0.3s ease;
+            color: #ffa768;
+          }
+        }
+      }
+    }
+    
+    .equipmentLayout {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 280px;
+      margin: 20px 0;
+    }
+    
+    .leftEquipments,
+    .rightEquipments {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .equipSlot {
+      width: 60px;
+      height: 60px;
+      border: 2px solid #ffa768;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+      
+      &:hover {
+        border-color: #f97316;
+        background: linear-gradient(135deg, #ffedd5 0%, #fdba74 100%);
+        transform: translateY(-2px);
+        box-shadow: 
+          inset 0 2px 4px rgba(0, 0, 0, 0.05),
+          0 4px 12px rgba(255, 167, 104, 0.3);
+      }
+      
+      .emptySlot {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: rgba(255, 167, 104, 0.1);
+        
+        .slotIcon {
+          font-size: 24px;
+          color: rgba(255, 167, 104, 0.6);
+          transition: all 0.3s ease;
+        }
+      }
+      
+      &:hover .emptySlot .slotIcon {
+        color: rgba(255, 167, 104, 0.8);
+        transform: scale(1.1);
+      }
+    }
+    
+    .petDisplay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      
+      .petAvatar {
+        position: relative;
+        margin-bottom: 10px;
+        
+        // 添加光环效果
+        &::before {
+          content: '';
+          position: absolute;
+          top: -10px;
+          left: -10px;
+          right: -10px;
+          bottom: -10px;
+          border: 3px solid rgba(255, 167, 104, 0.3);
+          border-radius: 50%;
+          animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        :global(.ant-avatar) {
+          border: 3px solid #ffa768;
+          box-shadow: 0 4px 16px rgba(255, 167, 104, 0.4);
+          background: transparent !important;
+        }
+      }
+      
+      .petLevel {
+        background: linear-gradient(135deg, #ffa768 0%, #f97316 100%);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        border: 2px solid #ea580c;
+        box-shadow: 0 2px 8px rgba(255, 167, 104, 0.4);
+      }
+    }
+    
+
+    
+    .petStats {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      
+      .statusBars {
+        margin-bottom: 15px;
+        
+        .statusItem {
+          display: flex;
+          align-items: center;
+          margin-bottom: 8px;
+          padding: 8px 12px;
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 12px;
+          border: 1px solid rgba(212, 175, 55, 0.3);
+          
+          .statusLabel {
+            min-width: 60px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #c2410c;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            
+            .anticon {
+              font-size: 14px;
+            }
+          }
+          
+          .statusProgressContainer {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 8px;
+            
+            :global(.ant-progress) {
+              flex: 1;
+              margin: 0;
+              
+              :global(.ant-progress-outer) {
+                padding-right: 0;
+              }
+              
+              :global(.ant-progress-text) {
+                font-size: 11px;
+                color: #c2410c;
+                font-weight: bold;
+              }
+            }
+            
+            .statusInfo {
+              font-size: 12px;
+              color: rgba(194, 65, 12, 0.6);
+              cursor: help;
+              
+              &:hover {
+                color: #c2410c;
+              }
+            }
+          }
+        }
+      }
+      
+      .powerScore {
+        background: linear-gradient(135deg, #ffa768 0%, #f97316 100%);
+        border: 2px solid #ea580c;
+        border-radius: 20px;
+        padding: 12px 20px;
+        margin-bottom: 15px;
+        color: white;
+        font-weight: bold;
+        font-size: 15px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(255, 167, 104, 0.4);
+        position: relative;
+        overflow: hidden;
+        
+        // 添加闪光效果
+        &::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          animation: shine 3s infinite;
+          pointer-events: none;
+        }
+        
+        .scoreIcon {
+          margin-right: 8px;
+          font-size: 18px;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+        
+        .scoreText {
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          letter-spacing: 0.5px;
+        }
+        
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(255, 167, 104, 0.5);
+        }
+      }
+      
+      .quickActions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        
+        .quickActionBtn {
+          background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+          border: none;
+          border-radius: 12px;
+          font-size: 12px;
+          height: 32px;
+          padding: 0 12px;
+          box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+          
+          &:hover {
+            background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4);
+          }
+          
+          &:first-child {
+            background: linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%);
+            
+            &:hover {
+              background: linear-gradient(135deg, #ff9c99 0%, #ff7875 100%);
+            }
+          }
+        }
+      }
+    }
+    
+    // 添加装饰性背景元素
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(24, 144, 255, 0.03) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -30%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(circle, rgba(82, 196, 26, 0.02) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    
+    .petAvatar {
+      margin-right: 0;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+      
+      // 为头像添加光晕效果
+      :global(.ant-avatar) {
+        box-shadow: 0 8px 24px rgba(24, 144, 255, 0.15);
+        border: 3px solid rgba(255, 255, 255, 0.8);
+        transition: all 0.3s ease;
+        
+        &:hover {
+          transform: scale(1.05);
+          box-shadow: 0 12px 32px rgba(24, 144, 255, 0.25);
+        }
+      }
+    }
+    
+    .petDetails {
+      width: 100%;
+      position: relative;
+      z-index: 1;
+      
+      .petName {
+        justify-content: center;
+        margin-bottom: 20px;
+        
+        .name {
+          flex-direction: column;
+          align-items: center;
+          font-size: 18px;
+          font-weight: bold;
+          color: #1890ff;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+          
+          .renameContainer {
+            margin-left: 0;
+            margin-top: 10px;
+          }
+        }
+        
+        .level {
+          background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+          color: white;
+          padding: 6px 12px;
+          border-radius: 16px;
+          font-size: 14px;
+          font-weight: bold;
+          margin-top: 8px;
+          box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+          border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+      }
+      
+      .petStatus {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.6);
+        border-radius: 12px;
+        padding: 16px;
+        margin: 16px 0;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        
+        .statusItem {
+          margin-bottom: 15px;
+          
+          &:last-child {
+            margin-bottom: 0;
+          }
+          
+          .statusLabel {
+            width: 80px;
+            text-align: left;
+            font-weight: 500;
+            color: #333;
+          }
+          
+          .statusProgressContainer {
+            :global(.ant-progress-bg) {
+              border-radius: 6px;
+            }
+            
+            :global(.ant-progress-inner) {
+              border-radius: 6px;
+              background-color: rgba(0, 0, 0, 0.06);
+            }
+          }
+        }
+      }
+      
+      .petActions {
+        margin-top: 20px;
+        width: 100%;
+        display: flex;
+        gap: 8px;
+        
+        .actionButton {
+          flex: 1;
+          height: 44px;
+          border-radius: 22px;
+          font-weight: 500;
+          font-size: 13px;
+          border: none;
+          position: relative;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          
+          &:first-child {
+            background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+            box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+            
+            &:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 6px 16px rgba(82, 196, 26, 0.4);
+            }
+          }
+          
+          &:last-child {
+            background: linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%);
+            box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+            
+            &:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 6px 16px rgba(255, 77, 79, 0.4);
+            }
+          }
+          
+          &:active {
+            transform: translateY(0);
+          }
+          
+          .costBadge, .expBadge {
+            border-radius: 8px;
+            padding: 1px 4px;
+            font-size: 10px;
+            margin-left: 4px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 光环动画
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 167, 104, 0.4);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(255, 167, 104, 0.6);
+    transform: scale(1.02);
+  }
+}
+
+.petRightColumn {
+  .ant-tabs {
+    height: 700px; // 匹配左侧装备界面高度
+    background: linear-gradient(135deg, #fafbff 0%, #f0f2ff 50%, #fafbff 100%);
+    border-radius: 16px;
+    border: 1px solid #e6f0ff;
+    box-shadow: 0 4px 16px rgba(24, 144, 255, 0.06);
+    overflow: hidden;
+    
+    :global(.ant-tabs-nav) {
+      margin: 0;
+      padding: 0 20px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+      border-bottom: 1px solid #e6f0ff;
+      border-radius: 16px 16px 0 0;
+      flex-shrink: 0; // 防止导航栏被压缩
+      
+      &::before {
+        border-bottom: none;
+      }
+    }
+    
+    :global(.ant-tabs-tab) {
+      padding: 12px 16px;
+      margin: 8px 4px 0 4px;
+      border-radius: 12px 12px 0 0;
+      transition: all 0.3s ease;
+      border: none;
+      background: transparent;
+      
+      &:hover {
+        background: rgba(24, 144, 255, 0.06);
+        color: #1890ff;
+      }
+      
+      &.ant-tabs-tab-active {
+        background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+        color: white !important;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+        
+        .anticon {
+          color: white;
+        }
+      }
+    }
+    
+    :global(.ant-tabs-ink-bar) {
+      display: none;
+    }
+    
+    :global(.ant-tabs-content-holder) {
+      height: calc(100% - 60px); // 调整高度计算，为导航栏留出更多空间
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 0 0 16px 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    :global(.ant-tabs-tabpane) {
+      min-height: 100%;
+      overflow-y: auto;
+      padding: 0; // 移除padding，让内部容器控制
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      
+      // 美化滚动条
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 3px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: rgba(24, 144, 255, 0.2);
+        border-radius: 3px;
+        
+        &:hover {
+          background: rgba(24, 144, 255, 0.3);
+        }
+      }
+    }
+  }
+}
+
+// 响应式调整
+@media (max-width: 1200px) {
+  .petMainLayout {
+    .petLeftColumn {
+      span: 12;
+    }
+    
+    .petRightColumn {
+      span: 12;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .petMainLayout {
+    flex-direction: column;
+    
+    .petLeftColumn,
+    .petRightColumn {
+      width: 100% !important;
+      flex: none !important;
+    }
+    
+    .petLeftColumn {
+      margin-bottom: 20px;
     }
   }
 }
