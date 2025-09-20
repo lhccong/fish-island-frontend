@@ -47,36 +47,115 @@
   }
 }
 
-.petTabsCard {
+// 游戏风格标签容器
+.gameTabsContainer {
+  background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+}
+
+// 游戏标签导航
+.gameTabsNav {
+  display: flex;
+  padding: 16px 16px 0 16px;
+  gap: 4px;
+  background: transparent;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+// 单个游戏标签
+.gameTab {
+  flex: 1;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 167, 104, 0.3);
+  border-radius: 8px 8px 0 0;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   
-  :global(.ant-card-body) {
-    padding: 0;
+  // 底部装饰线
+  .gameTabDecor {
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #ffa768;
+    opacity: 0;
+    transition: all 0.3s ease;
   }
   
-  :global(.ant-tabs-nav) {
-    margin: 0;
-    padding: 0 16px;
-    background-color: #fafafa;
-    border-bottom: 1px solid #f0f0f0;
+  &:hover {
+    background: rgba(255, 167, 104, 0.1);
+    border-color: #ffa768;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 167, 104, 0.2);
+    
+    .gameTabIcon {
+      color: #ffa768;
+      transform: scale(1.1);
+    }
+    
+    .gameTabText {
+      color: #ffa768;
+    }
   }
   
-  :global(.ant-tabs-content-holder) {
-    padding: 0;
+  // 激活状态
+  &.gameTabActive {
+    background: rgba(255, 167, 104, 0.15);
+    border-color: #ffa768;
+    border-bottom: none;
+    
+    .gameTabDecor {
+      opacity: 1;
+    }
+    
+    .gameTabIcon {
+      color: #ffa768;
+    }
+    
+    .gameTabText {
+      color: #ffa768;
+      font-weight: bold;
+    }
   }
-  
-  :global(.ant-tabs-tabpane) {
-    padding: 0;
-  }
+}
+
+// 标签图标
+.gameTabIcon {
+  font-size: 16px;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+// 标签文字
+.gameTabText {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+// 内容区域
+.gameTabContent {
+  background: #ffffff;
+  border-radius: 0 0 12px 12px;
+  min-height: 600px;
 }
 
 .petComponentWrapper {
   background: #fff;
   border-radius: 0;
   overflow: hidden;
-  padding: 0;
+  padding: 20px;
   // 设置最小高度，防止内容切换时（如加载、创建、显示）导致父容器高度变化，引起页面跳动
   min-height: 620px;
   
@@ -86,12 +165,12 @@
   
   // 为宠物组件添加内边距
   :global(.petContainer) {
-    padding: 20px !important;
+    padding: 0 !important;
   }
   
   // 为页面组件模式下的标题添加更多空间
   :global(.pageComponentHeader) {
-    padding: 0 20px 10px 20px !important;
+    padding: 0 !important;
     margin-bottom: 15px !important;
     border-bottom: 1px solid #f0f0f0;
   }
@@ -306,10 +385,12 @@
 
 // 排行榜容器样式
 .rankingContainer {
-  padding: 16px;
+  padding: 20px;
+  background: #fff;
+  min-height: 620px;
   
   @media (max-width: 768px) {
-    padding: 8px;
+    padding: 16px;
   }
 }
 

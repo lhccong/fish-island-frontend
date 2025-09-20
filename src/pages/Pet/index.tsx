@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Avatar, Badge, Tabs, Spin } from 'antd';
+import { Row, Col, Card, Table, Avatar, Badge, Spin } from 'antd';
 import { TrophyOutlined, CrownOutlined, HomeOutlined, BarChartOutlined } from '@ant-design/icons';
 import MoyuPet from '@/components/MoyuPet';
 import styles from './index.less';
 import { getPetRankListUsingGet } from '@/services/backend/petRankController';
 
 const PetPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<string>('pet');
   const [rankData, setRankData] = useState<API.PetRankVO[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [petModalVisible, setPetModalVisible] = useState<boolean>(false);
@@ -106,35 +107,41 @@ const PetPage: React.FC = () => {
 
   return (
     <div className={styles.petPageContainer}>
-      <Card className={styles.petTabsCard}>
-        <Tabs
-          defaultActiveKey="pet"
-          items={[
-            {
-              key: 'pet',
-              label: (
-                <span>
-                  <HomeOutlined /> 我的宠物
-                </span>
-              ),
-              children: (
-                <div className={styles.petComponentWrapper}>
-                  <MoyuPet isPageComponent={true} />
-                </div>
-              ),
-            },
-            {
-              key: 'ranking',
-              label: (
-                <span>
-                  <BarChartOutlined /> 排行榜
-                </span>
-              ),
-              children: renderRankingContent(),
-            },
-          ]}
-        />
-      </Card>
+      <div className={styles.gameTabsContainer}>
+        {/* 游戏风格标签导航 */}
+        <div className={styles.gameTabsNav}>
+          <div 
+            className={`${styles.gameTab} ${activeTab === 'pet' ? styles.gameTabActive : ''}`}
+            onClick={() => setActiveTab('pet')}
+          >
+            <div className={styles.gameTabIcon}>
+              <HomeOutlined />
+            </div>
+            <div className={styles.gameTabText}>我的宠物</div>
+            <div className={styles.gameTabDecor}></div>
+          </div>
+          <div 
+            className={`${styles.gameTab} ${activeTab === 'ranking' ? styles.gameTabActive : ''}`}
+            onClick={() => setActiveTab('ranking')}
+          >
+            <div className={styles.gameTabIcon}>
+              <TrophyOutlined />
+            </div>
+            <div className={styles.gameTabText}>排行榜</div>
+            <div className={styles.gameTabDecor}></div>
+          </div>
+        </div>
+
+        {/* 内容区域 */}
+        <div className={styles.gameTabContent}>
+          {activeTab === 'pet' && (
+            <div className={styles.petComponentWrapper}>
+              <MoyuPet isPageComponent={true} />
+            </div>
+          )}
+          {activeTab === 'ranking' && renderRankingContent()}
+        </div>
+      </div>
       
       {/* 查看他人宠物弹窗 */}
       {selectedUser && (
