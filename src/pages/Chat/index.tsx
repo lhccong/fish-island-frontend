@@ -41,6 +41,8 @@ import {
   ThunderboltOutlined,
   FileImageOutlined,
   RocketOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
 } from '@ant-design/icons';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
@@ -358,6 +360,12 @@ const ChatRoom: React.FC = () => {
 
   // 添加一个状态来记录最新消息的时间戳
   const [lastMessageTimestamp, setLastMessageTimestamp] = useState<number>(Date.now());
+  
+  // 添加用户列表显示隐藏状态，从localStorage获取初始值
+  const [isUserListVisible, setIsUserListVisible] = useState<boolean>(() => {
+    const saved = localStorage.getItem('chat_userlist_visible');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
 
   // 添加防抖相关的状态和引用
   const [newMessageCount, setNewMessageCount] = useState<number>(0);
@@ -452,7 +460,11 @@ const ChatRoom: React.FC = () => {
       const headerHeight = 40;
       const padding = 20;
       const newHeight = Math.max(containerHeight - headerHeight - padding, 200);
+      console.log('计算列表高度:', { containerHeight, headerHeight, padding, newHeight });
       setListHeight(newHeight);
+    } else {
+      console.log('userListRef.current 不存在，使用默认高度');
+      setListHeight(400); // 设置一个默认高度
     }
   }, []);
 
@@ -631,10 +643,21 @@ const ChatRoom: React.FC = () => {
       }, 100);
     }
   }, [messages]); // 监听消息数组变化
-  // 初始化时获取在线用户列表
+  // 初始化时获取在线用户列表（仅在列表可见时）
   useEffect(() => {
-    fetchOnlineUsers();
-  }, []);
+    if (isUserListVisible) {
+      fetchOnlineUsers();
+      // 延迟计算高度，确保DOM已经渲染
+      setTimeout(() => {
+        updateListHeight();
+      }, 100);
+    }
+  }, [isUserListVisible, updateListHeight]);
+
+  // 监听用户列表显示状态变化，保存到localStorage
+  useEffect(() => {
+    localStorage.setItem('chat_userlist_visible', JSON.stringify(isUserListVisible));
+  }, [isUserListVisible]);
 
   // 创建用户对象的工具函数
   const createUserFromRecord = (userRecord: any, defaultRegion: string = '未知地区'): User => {
@@ -2691,7 +2714,7 @@ const ChatRoom: React.FC = () => {
   };
 
   return (
-    <div className={`${styles.chatRoom} ${isSpeedMode ? styles.speedMode : ''}`}>
+    <div className={`${styles.chatRoom} ${isSpeedMode ? styles.speedMode : ''} ${!isUserListVisible ? styles.userListCollapsed : ''}`}>
         {/* 可拖动宠物组件 */}
         <MiniPet onClick={() => {
           setCurrentPetUserId(null);
@@ -2883,19 +2906,48 @@ const ChatRoom: React.FC = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className={styles.userList}>
-        <div className={styles.userListHeader}>在线成员 ({onlineUsers.length})</div>
-        <div className={styles.userListContent} ref={userListRef}>
-          <List
-            height={listHeight}
-            itemCount={onlineUsers.length}
-            itemSize={USER_ITEM_HEIGHT}
-            width="100%"
-          >
-            {UserItem}
-          </List>
+      {/* 用户列表隐藏时显示浮动按钮 */}
+      {!isUserListVisible && (
+        <div className={`${styles.userList} ${styles.userListHidden}`}>
+          <div className={styles.userListHeader}>
+            <Button
+              type="text"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => setIsUserListVisible(!isUserListVisible)}
+              title="显示用户列表"
+              className={styles.toggleButton}
+            />
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* 用户列表显示时的正常布局 */}
+      {isUserListVisible && (
+        <div className={styles.userList}>
+          <div className={styles.userListHeader}>
+            <span>在线成员 ({onlineUsers.length})</span>
+            <Button
+              type="text"
+              size="small"
+              icon={<EyeInvisibleOutlined />}
+              onClick={() => setIsUserListVisible(!isUserListVisible)}
+              title="隐藏用户列表"
+              className={styles.toggleButton}
+            />
+          </div>
+          <div className={styles.userListContent} ref={userListRef}>
+            <List
+              height={listHeight}
+              itemCount={onlineUsers.length}
+              itemSize={USER_ITEM_HEIGHT}
+              width="100%"
+            >
+              {UserItem}
+            </List>
+          </div>
+        </div>
+      )}
 
               <div className={styles.inputArea}>
         {quotedMessage && (

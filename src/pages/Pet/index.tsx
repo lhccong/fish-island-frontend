@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Avatar, Badge, Spin } from 'antd';
-import { TrophyOutlined, CrownOutlined, HomeOutlined, BarChartOutlined } from '@ant-design/icons';
+import { TrophyOutlined, CrownOutlined, HomeOutlined, BarChartOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import MoyuPet from '@/components/MoyuPet';
 import styles from './index.less';
 import { getPetRankListUsingGet } from '@/services/backend/petRankController';
@@ -105,6 +105,123 @@ const PetPage: React.FC = () => {
     );
   };
 
+  // 渲染摸鱼BOSS内容
+  const renderBossContent = () => {
+    return (
+      <div className={styles.bossContainer}>
+        <div className={styles.bossHeader}>
+          <div className={styles.bossTitle}>
+            <ThunderboltOutlined className={styles.bossTitleIcon} />
+            <span>世界BOSS - 黑心老板</span>
+          </div>
+          <div className={styles.bossSubtitle}>全服玩家联合攻打黑心老板，共同获得奖励！</div>
+        </div>
+        
+        <div className={styles.bossGrid}>
+          {/* BOSS卡片 */}
+          <div className={styles.bossCard}>
+            <div className={styles.bossAvatar}>
+              <div className={styles.bossImage}>👔</div>
+              <div className={styles.bossLevel}>Lv.50</div>
+            </div>
+            <div className={styles.bossInfo}>
+              <div className={styles.bossName}>压榨王CEO</div>
+              <div className={styles.bossDesc}>传说中的黑心老板之王，专门压榨员工加班</div>
+              <div className={styles.bossStats}>
+                <div className={styles.bossStat}>
+                  <span className={styles.bossStatLabel}>血量:</span>
+                  <span className={styles.bossStatValue}>10000</span>
+                </div>
+                <div className={styles.bossStat}>
+                  <span className={styles.bossStatLabel}>攻击:</span>
+                  <span className={styles.bossStatValue}>500</span>
+                </div>
+              </div>
+              <div className={styles.bossRewards}>
+                <div className={styles.rewardTitle}>讨伐奖励:</div>
+                <div className={styles.rewardList}>
+                  <span className={styles.reward}>💰 1000摸鱼币</span>
+                  <span className={styles.reward}>🏆 自由勋章</span>
+                </div>
+              </div>
+              <div className={styles.bossActions}>
+                <button className={styles.challengeBtn} disabled>
+                  联合讨伐
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.bossCard}>
+            <div className={styles.bossAvatar}>
+              <div className={styles.bossImage}>💼</div>
+              <div className={styles.bossLevel}>Lv.30</div>
+            </div>
+            <div className={styles.bossInfo}>
+              <div className={styles.bossName}>PUA部门经理</div>
+              <div className={styles.bossDesc}>精通职场PUA的黑心经理，专门打击员工自信</div>
+              <div className={styles.bossStats}>
+                <div className={styles.bossStat}>
+                  <span className={styles.bossStatLabel}>血量:</span>
+                  <span className={styles.bossStatValue}>6000</span>
+                </div>
+                <div className={styles.bossStat}>
+                  <span className={styles.bossStatLabel}>攻击:</span>
+                  <span className={styles.bossStatValue}>350</span>
+                </div>
+              </div>
+              <div className={styles.bossRewards}>
+                <div className={styles.rewardTitle}>讨伐奖励:</div>
+                <div className={styles.rewardList}>
+                  <span className={styles.reward}>💰 600摸鱼币</span>
+                  <span className={styles.reward}>🛡️ 心理防护</span>
+                </div>
+              </div>
+              <div className={styles.bossActions}>
+                <button className={styles.challengeBtn} disabled>
+                  联合讨伐
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.bossCard}>
+            <div className={styles.bossAvatar}>
+              <div className={styles.bossImage}>⏰</div>
+              <div className={styles.bossLevel}>Lv.20</div>
+            </div>
+            <div className={styles.bossInfo}>
+              <div className={styles.bossName}>996督察官</div>
+              <div className={styles.bossDesc}>专门监督员工加班的黑心督察，绝不允许摸鱼</div>
+              <div className={styles.bossStats}>
+                <div className={styles.bossStat}>
+                  <span className={styles.bossStatLabel}>血量:</span>
+                  <span className={styles.bossStatValue}>4000</span>
+                </div>
+                <div className={styles.bossStat}>
+                  <span className={styles.bossStatLabel}>攻击:</span>
+                  <span className={styles.bossStatValue}>250</span>
+                </div>
+              </div>
+              <div className={styles.bossRewards}>
+                <div className={styles.rewardTitle}>讨伐奖励:</div>
+                <div className={styles.rewardList}>
+                  <span className={styles.reward}>💰 300摸鱼币</span>
+                  <span className={styles.reward}>⏱️ 摸鱼时间</span>
+                </div>
+              </div>
+              <div className={styles.bossActions}>
+                <button className={styles.challengeBtn} disabled>
+                  联合讨伐
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={styles.petPageContainer}>
       <div className={styles.gameTabsContainer}>
@@ -130,6 +247,16 @@ const PetPage: React.FC = () => {
             <div className={styles.gameTabText}>排行榜</div>
             <div className={styles.gameTabDecor}></div>
           </div>
+          <div 
+            className={`${styles.gameTab} ${activeTab === 'boss' ? styles.gameTabActive : ''}`}
+            onClick={() => setActiveTab('boss')}
+          >
+            <div className={styles.gameTabIcon}>
+              <ThunderboltOutlined />
+            </div>
+            <div className={styles.gameTabText}>摸鱼BOSS</div>
+            <div className={styles.gameTabDecor}></div>
+          </div>
         </div>
 
         {/* 内容区域 */}
@@ -140,6 +267,7 @@ const PetPage: React.FC = () => {
             </div>
           )}
           {activeTab === 'ranking' && renderRankingContent()}
+          {activeTab === 'boss' && renderBossContent()}
         </div>
       </div>
       

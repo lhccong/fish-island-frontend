@@ -24,6 +24,10 @@
     0 0 0 1px rgba(255, 255, 255, 0.1) inset,
     0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 
+  &.userListCollapsed {
+    grid-template-columns: 1fr 0px;
+  }
+
   .announcement {
     grid-area: announcement;
     margin: 10px;
@@ -521,6 +525,91 @@
     flex-direction: column;
     height: calc(100% - 24px);
 
+    &.userListHidden {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: auto;
+      min-width: auto;
+      padding: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      z-index: 1000;
+      height: auto;
+      margin: 0;
+      
+      .userListHeader {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+        justify-content: center;
+        position: relative;
+        background: transparent;
+        
+        span {
+          display: none;
+        }
+        
+        .toggleButton {
+          margin: 0;
+          padding: 0;
+          background: rgba(255, 255, 255, 0.95);
+          border: 2px solid #1677ff;
+          border-radius: 8px;
+          color: #1677ff !important;
+          font-size: 18px !important;
+          font-weight: bold;
+          width: 36px;
+          height: 36px;
+          position: static;
+          transform: none;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          backdrop-filter: blur(10px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          line-height: 1;
+          
+          // 直接设置图标样式，确保可见
+          svg, .anticon {
+            font-size: 18px !important;
+            color: #1677ff !important;
+            font-weight: bold !important;
+            width: 18px !important;
+            height: 18px !important;
+            display: block !important;
+            opacity: 1 !important;
+          }
+          
+          // 如果图标还是不显示，用文字替代
+          &::before {
+            content: '👁';
+            font-size: 16px;
+            display: block;
+            line-height: 1;
+          }
+          
+          &:hover {
+            background: rgba(240, 245, 255, 0.98);
+            border-color: #096dd9;
+            color: #096dd9 !important;
+            transform: scale(1.08);
+            box-shadow: 0 6px 16px rgba(22, 119, 255, 0.25);
+            
+            svg, .anticon {
+              color: #096dd9 !important;
+            }
+          }
+          
+          &:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          }
+        }
+      }
+    }
+
     @media screen and (max-width: 768px) {
       display: none !important;
     }
@@ -529,18 +618,53 @@
       display: flex;
     }
 
-    .userListHeader {
-      font-weight: 600;
-      font-size: 13px;
-      margin-bottom: 10px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid rgba(238, 238, 238, 0.5);
-      background: linear-gradient(45deg, #1677ff, #36cfc9);
-      -webkit-background-clip: text;
-      color: transparent;
-      text-align: center;
-      flex-shrink: 0;
+  .userListHeader {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(238, 238, 238, 0.5);
+    background: linear-gradient(45deg, #1677ff, #36cfc9);
+    -webkit-background-clip: text;
+    color: transparent;
+    text-align: center;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+
+    .toggleButton {
+      background: rgba(22, 119, 255, 0.08);
+      border: none;
+      padding: 6px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+      color: #1677ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      min-width: 24px;
+      height: 24px;
+      box-shadow: 0 1px 3px rgba(22, 119, 255, 0.2);
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      
+      &:hover {
+        background: rgba(22, 119, 255, 0.15);
+        color: #096dd9;
+        transform: translateY(-50%) scale(1.1);
+        box-shadow: 0 2px 6px rgba(22, 119, 255, 0.3);
+      }
+      
+      &:active {
+        transform: translateY(-50%) scale(0.95);
+      }
     }
+  }
 
     .userListContent {
       overflow-y: hidden;

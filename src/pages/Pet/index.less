@@ -453,9 +453,280 @@
   }
 }
 
+// 摸鱼BOSS样式
+.bossContainer {
+  padding: 20px;
+  background: #fff;
+  min-height: 620px;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}
+
+.bossHeader {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+  border-radius: 16px;
+  border: 2px solid #ffa768;
+}
+
+.bossTitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #c2410c;
+  margin-bottom: 8px;
+  
+  .bossTitleIcon {
+    font-size: 28px;
+    color: #ffa768;
+  }
+}
+
+.bossSubtitle {
+  font-size: 16px;
+  color: #ea580c;
+  font-weight: 500;
+}
+
+.bossGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.bossCard {
+  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+  border: 2px solid #ffa768;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(255, 167, 104, 0.15);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  
+  // 装饰性背景
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 167, 104, 0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(255, 167, 104, 0.25);
+    border-color: #f97316;
+  }
+}
+
+.bossAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.bossImage {
+  font-size: 64px;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffa768 0%, #f97316 100%);
+  border-radius: 50%;
+  border: 3px solid #ea580c;
+  box-shadow: 0 4px 16px rgba(255, 167, 104, 0.4);
+  position: relative;
+  
+  // 光环效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    border: 2px solid rgba(255, 167, 104, 0.3);
+    border-radius: 50%;
+    animation: boss-glow 2s ease-in-out infinite alternate;
+  }
+}
+
+.bossLevel {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(194, 65, 12, 0.3);
+}
+
+.bossInfo {
+  position: relative;
+  z-index: 1;
+}
+
+.bossName {
+  font-size: 20px;
+  font-weight: bold;
+  color: #c2410c;
+  text-align: center;
+  margin-bottom: 8px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.bossDesc {
+  font-size: 14px;
+  color: #ea580c;
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.bossStats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255, 167, 104, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 167, 104, 0.2);
+}
+
+.bossStat {
+  text-align: center;
+  
+  .bossStatLabel {
+    display: block;
+    font-size: 12px;
+    color: #ea580c;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  
+  .bossStatValue {
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+    color: #c2410c;
+  }
+}
+
+.bossRewards {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255, 167, 104, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 167, 104, 0.15);
+}
+
+.rewardTitle {
+  font-size: 14px;
+  font-weight: bold;
+  color: #c2410c;
+  margin-bottom: 8px;
+}
+
+.rewardList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reward {
+  background: linear-gradient(135deg, #ffa768 0%, #f97316 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(255, 167, 104, 0.3);
+}
+
+.bossActions {
+  text-align: center;
+}
+
+.challengeBtn {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: not-allowed;
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.3);
+  transition: all 0.3s ease;
+  
+  &:not(:disabled) {
+    background: linear-gradient(135deg, #ffa768 0%, #f97316 100%);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 167, 104, 0.4);
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 167, 104, 0.5);
+    }
+  }
+}
+
+// BOSS光环动画
+@keyframes boss-glow {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 167, 104, 0.4);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(255, 167, 104, 0.6);
+    transform: scale(1.02);
+  }
+}
+
 @media (max-width: 768px) {
   .petComponentWrapper {
     margin: 0;
     border-radius: 0;
+  }
+  
+  .bossGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .bossCard {
+    padding: 16px;
+  }
+  
+  .bossImage {
+    font-size: 48px;
+    width: 60px;
+    height: 60px;
+  }
+  
+  .bossName {
+    font-size: 18px;
   }
 } 
