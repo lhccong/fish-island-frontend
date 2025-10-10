@@ -402,9 +402,21 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
           date: nextHoliday.date,
           name: nextHoliday.name
         });
+      } else {
+        // 如果没有找到下一个假期，设置一个默认的假期信息
+        // 这里可以设置为下一年的元旦或者显示"暂无假期"
+        setHolidayInfo({
+          date: '2026-01-01',
+          name: '元旦'
+        });
       }
     } catch (error) {
       console.error('获取假期信息失败:', error);
+      // 发生错误时也设置一个默认值，避免一直显示加载中
+      setHolidayInfo({
+        date: '2026-01-01',
+        name: '元旦'
+      });
     }
   };
 
