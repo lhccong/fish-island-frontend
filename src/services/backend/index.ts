@@ -14,6 +14,8 @@ import * as fileController from './fileController';
 import * as fishPetController from './fishPetController';
 import * as heroController from './heroController';
 import * as hotPostController from './hotPostController';
+import * as itemInstancesController from './itemInstancesController';
+import * as itemTemplatesController from './itemTemplatesController';
 import * as mockInterviewController from './mockInterviewController';
 import * as petRankController from './petRankController';
 import * as petSkinController from './petSkinController';
@@ -47,6 +49,8 @@ export default {
   fileController,
   heroController,
   hotPostController,
+  itemInstancesController,
+  itemTemplatesController,
   mockInterviewController,
   restAuthController,
   fishPetController,

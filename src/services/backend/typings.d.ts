@@ -81,6 +81,24 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseItemInstances_ = {
+    code?: number;
+    data?: ItemInstances;
+    message?: string;
+  };
+
+  type BaseResponseItemInstanceVO_ = {
+    code?: number;
+    data?: ItemInstanceVO;
+    message?: string;
+  };
+
+  type BaseResponseItemTemplateVO_ = {
+    code?: number;
+    data?: ItemTemplateVO;
+    message?: string;
+  };
+
   type BaseResponseListAvatarFrame_ = {
     code?: number;
     data?: AvatarFrame[];
@@ -228,6 +246,24 @@ declare namespace API {
   type BaseResponsePageEventRemindVO_ = {
     code?: number;
     data?: PageEventRemindVO_;
+    message?: string;
+  };
+
+  type BaseResponsePageItemInstances_ = {
+    code?: number;
+    data?: PageItemInstances_;
+    message?: string;
+  };
+
+  type BaseResponsePageItemInstanceVO_ = {
+    code?: number;
+    data?: PageItemInstanceVO_;
+    message?: string;
+  };
+
+  type BaseResponsePageItemTemplateVO_ = {
+    code?: number;
+    data?: PageItemTemplateVO_;
     message?: string;
   };
 
@@ -758,6 +794,16 @@ declare namespace API {
     id?: number;
   };
 
+  type getItemInstanceByIdUsingGETParams = {
+    /** id */
+    id?: number;
+  };
+
+  type getItemTemplateVOByIdUsingPOSTParams = {
+    /** id */
+    id?: number;
+  };
+
   type getMinioPresignedUsingGETParams = {
     /** fileName */
     fileName?: string;
@@ -918,6 +964,207 @@ declare namespace API {
     type?: string;
     typeName?: string;
     updateTime?: string;
+  };
+
+  type ItemInstanceAddRequest = {
+    /** 是否绑定（1-绑定后不可交易，0-未绑定可交易） */
+    bound?: number;
+    /** 耐久度（可选，部分装备适用） */
+    durability?: number;
+    /** 强化等级 */
+    enhanceLevel?: number;
+    /** 扩展信息（如附魔、镶嵌孔、特殊属性等JSON数据） */
+    extraData?: Record<string, any>;
+    /** 持有者用户ID，如果不传默认添加当前登录用户 */
+    ownerUserId?: number;
+    /** 添加数量，stackable为1时有效，stackable为0会忽略 */
+    quantity?: number;
+    /** 物品模板ID */
+    templateId: number;
+  };
+
+  type ItemInstanceEditRequest = {
+    /** 是否绑定（1绑定，0未绑定） */
+    bound?: number;
+    /** 耐久度 */
+    durability?: number;
+    /** 强化等级 */
+    enhanceLevel?: number;
+    /** 扩展信息（JSON字符串或对象） */
+    extraData?: Record<string, any>;
+    /** 物品实例ID */
+    id: number;
+    /** 是否需要返回模板信息，默认 true */
+    includeTemplate?: boolean;
+    /** 持有者用户ID（允许转移所有权） */
+    ownerUserId?: number;
+    /** 数量（大于0有效） */
+    quantity?: number;
+    /** 物品模板ID（允许修改实例关联的模板） */
+    templateId?: number;
+  };
+
+  type ItemInstanceQueryRequest = {
+    /** 物品大类（可选） */
+    category?: string;
+    current?: number;
+    /** 装备槽位（可选） */
+    equipSlot?: string;
+    pageSize?: number;
+    /** 稀有度等级（可选） */
+    rarity?: number;
+    sortField?: string;
+    sortOrder?: string;
+  };
+
+  type ItemInstances = {
+    bound?: number;
+    createTime?: string;
+    durability?: number;
+    enhanceLevel?: number;
+    extraData?: Record<string, any>;
+    id?: number;
+    isDelete?: number;
+    ownerUserId?: number;
+    quantity?: number;
+    templateId?: number;
+    updateTime?: string;
+  };
+
+  type ItemInstanceUpdateRequest = {
+    /** 绑定状态：1-绑定，0-未绑定 */
+    bound?: number;
+    /** 强化等级 */
+    enhanceLevel?: number;
+    /** 扩展信息(JSON) */
+    extraData?: string;
+    /** 物品实例ID */
+    id: number;
+    ownerUserId?: number;
+    /** 数量 */
+    quantity?: number;
+    templateId?: number;
+  };
+
+  type ItemInstanceVO = {
+    bound?: number;
+    createTime?: string;
+    durability?: number;
+    enhanceLevel?: number;
+    extraData?: Record<string, any>;
+    id?: number;
+    ownerUserId?: number;
+    quantity?: number;
+    template?: ItemTemplateVO;
+    templateId?: number;
+    updateTime?: string;
+  };
+
+  type ItemTemplateAddRequest = {
+    /** 基础攻击力 */
+    baseAttack?: number;
+    /** 基础防御力 */
+    baseDefense?: number;
+    /** 基础生命值 */
+    baseHp?: number;
+    /** 物品大类：equipment-装备类（能穿戴的）、consumable-消耗品（药水/卷轴/食物）、material-材料（强化石/合成材料） */
+    category?: string;
+    /** 模板唯一码，例如 sword_iron_01 */
+    code?: string;
+    /** 物品描述 */
+    description?: string;
+    /** 可穿戴槽位: head-头部, hand-手部, foot-脚部, weapon-武器；NULL 表示无法穿戴 */
+    equipSlot?: string;
+    /** 物品图标地址 */
+    icon?: string;
+    /** 使用等级需求 */
+    levelReq?: number;
+    /** 非常规属性/词缀(JSON)，格式: [{k,v},...] */
+    mainAttr?: string;
+    /** 物品名称 */
+    name?: string;
+    /** 稀有度等级（1-8，数字越高越稀有） */
+    rarity?: number;
+    /** 分解后获得的积分 */
+    removePoint?: number;
+    /** 是否可叠加，0-不可叠加，1-可叠加（如消耗品） */
+    stackable?: number;
+    /** 物品子类型，例如 weapon 武器、head 头盔、foot 鞋子、hand 手套 */
+    subType?: string;
+  };
+
+  type ItemTemplateEditRequest = {
+    /** 基础攻击力 */
+    baseAttack?: number;
+    /** 基础防御力 */
+    baseDefense?: number;
+    /** 基础生命值 */
+    baseHp?: number;
+    /** 物品大类 */
+    category: string;
+    /** 模板唯一码 */
+    code: string;
+    /** 物品描述 */
+    description?: string;
+    /** 可穿戴槽位 */
+    equipSlot?: string;
+    /** 物品图标地址 */
+    icon?: string;
+    /** 物品模板ID */
+    id: number;
+    /** 逻辑删除标识（0-正常，1-已删除） */
+    isDelete?: number;
+    /** 使用等级需求 */
+    levelReq?: number;
+    /** 非常规属性/词缀(JSON) */
+    mainAttr?: string;
+    /** 物品名称 */
+    name: string;
+    /** 稀有度等级（1-8） */
+    rarity?: number;
+    /** 分解后获得的积分 */
+    removePoint?: number;
+    /** 是否可叠加（0-不可叠加，1-可叠加） */
+    stackable?: number;
+    /** 物品子类型 */
+    subType?: string;
+  };
+
+  type ItemTemplateQueryRequest = {
+    /** 物品大类：equipment-装备类、consumable-消耗品、material-材料 */
+    category?: string;
+    /** 模板唯一码（精确匹配） */
+    code?: string;
+    current?: number;
+    /** id */
+    id?: number;
+    /** 物品名称（模糊搜索） */
+    name?: string;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    /** 是否可叠加（0-不可叠加，1-可叠加） */
+    stackable?: number;
+    /** 子类型，例如 weapon 武器、head 头盔、foot 鞋子、hand 手套 */
+    subType?: string;
+  };
+
+  type ItemTemplateVO = {
+    baseAttack?: number;
+    baseDefense?: number;
+    baseHp?: number;
+    category?: string;
+    code?: string;
+    description?: string;
+    equipSlot?: string;
+    icon?: string;
+    id?: number;
+    levelReq?: number;
+    name?: string;
+    rarity?: number;
+    removePoint?: number;
+    stackable?: number;
+    subType?: string;
   };
 
   type joinRoomUsingPOSTParams = {
@@ -1225,6 +1472,45 @@ declare namespace API {
     orders?: OrderItem[];
     pages?: number;
     records?: EventRemindVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
+  type PageItemInstances_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: ItemInstances[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
+  type PageItemInstanceVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: ItemInstanceVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
+  type PageItemTemplateVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: ItemTemplateVO[];
     searchCount?: boolean;
     size?: number;
     total?: number;
