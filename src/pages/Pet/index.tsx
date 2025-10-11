@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Avatar, Badge, Spin } from 'antd';
-import { TrophyOutlined, CrownOutlined, HomeOutlined, BarChartOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { TrophyOutlined, CrownOutlined, HomeOutlined, BarChartOutlined, ThunderboltOutlined, BookOutlined } from '@ant-design/icons';
 import MoyuPet from '@/components/MoyuPet';
 import styles from './index.less';
 import { getPetRankListUsingGet } from '@/services/backend/petRankController';
+import { listItemTemplatesVoByPageUsingPost } from '@/services/backend/itemTemplatesController';
 
 const PetPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('pet');
@@ -11,6 +12,15 @@ const PetPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [petModalVisible, setPetModalVisible] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<{id: number, name: string} | null>(null);
+  
+  // 图鉴相关状态
+  const [galleryData, setGalleryData] = useState<API.ItemTemplateVO[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState<boolean>(false);
+  const [galleryFilter, setGalleryFilter] = useState<{
+    category?: string;
+    subType?: string;
+    rarity?: number;
+  }>({});
 
   // 获取排行榜数据
   const fetchRankData = async () => {
@@ -27,9 +37,34 @@ const PetPage: React.FC = () => {
     }
   };
 
+  // 获取图鉴数据
+  const fetchGalleryData = async () => {
+    setGalleryLoading(true);
+    try {
+      const res = await listItemTemplatesVoByPageUsingPost({
+        current: 1,
+        pageSize: 50,
+        ...galleryFilter
+      });
+      if (res.data?.records) {
+        setGalleryData(res.data.records);
+      }
+    } catch (error) {
+      console.error('获取图鉴数据失败:', error);
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchRankData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'gallery') {
+      fetchGalleryData();
+    }
+  }, [activeTab, galleryFilter]);
 
   // 处理点击宠物行
   const handlePetRowClick = (record: API.PetRankVO) => {
@@ -100,6 +135,202 @@ const PetPage: React.FC = () => {
               style: { cursor: 'pointer' }
             })}
           />
+        </Spin>
+      </div>
+    );
+  };
+
+  // 渲染图鉴内容
+  const renderGalleryContent = () => {
+    // 判断数值是否有效（大于0）
+    const isValidNumber = (value: any): boolean => {
+      return value != null && value !== '' && !isNaN(Number(value)) && Number(value) > 0;
+    };
+
+    // 稀有度颜色映射
+    const rarityColors: Record<number, string> = {
+      1: '#8c8c8c', // 灰色 - 普通
+      2: '#52c41a', // 绿色 - 优良
+      3: '#1890ff', // 蓝色 - 精良
+      4: '#722ed1', // 紫色 - 史诗
+      5: '#fa8c16', // 橙色 - 传说
+      6: '#f5222d', // 红色 - 神话
+      7: '#eb2f96', // 粉色 - 至尊
+      8: '#fadb14', // 金色 - 神器
+    };
+
+    // 稀有度名称映射
+    const rarityNames: Record<number, string> = {
+      1: '普通',
+      2: '优良', 
+      3: '精良',
+      4: '史诗',
+      5: '传说',
+      6: '神话',
+      7: '至尊',
+      8: '神器',
+    };
+
+    // 物品大类名称映射
+    const categoryNames: Record<string, string> = {
+      'equipment': '装备类',
+      'consumable': '消耗品',
+      'material': '材料',
+    };
+
+    return (
+      <div className={styles.galleryContainer}>
+        <div className={styles.galleryHeader}>
+          <div className={styles.galleryTitle}>
+            <BookOutlined className={styles.galleryTitleIcon} />
+            <span>装备道具图鉴</span>
+          </div>
+          <div className={styles.gallerySubtitle}>收录各种装备道具的详细信息</div>
+        </div>
+
+        {/* 筛选器 */}
+        <div className={styles.galleryFilters}>
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>物品类型:</span>
+            <div className={styles.filterButtons}>
+              <button 
+                className={`${styles.filterBtn} ${!galleryFilter.category ? styles.filterBtnActive : ''}`}
+                onClick={() => setGalleryFilter(prev => ({ ...prev, category: undefined }))}
+              >
+                全部
+              </button>
+              <button 
+                className={`${styles.filterBtn} ${galleryFilter.category === 'equipment' ? styles.filterBtnActive : ''}`}
+                onClick={() => setGalleryFilter(prev => ({ ...prev, category: 'equipment' }))}
+              >
+                装备类
+              </button>
+              <button 
+                className={`${styles.filterBtn} ${galleryFilter.category === 'consumable' ? styles.filterBtnActive : ''}`}
+                onClick={() => setGalleryFilter(prev => ({ ...prev, category: 'consumable' }))}
+              >
+                消耗品
+              </button>
+              <button 
+                className={`${styles.filterBtn} ${galleryFilter.category === 'material' ? styles.filterBtnActive : ''}`}
+                onClick={() => setGalleryFilter(prev => ({ ...prev, category: 'material' }))}
+              >
+                材料
+              </button>
+            </div>
+          </div>
+          
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>稀有度:</span>
+            <div className={styles.filterButtons}>
+              <button 
+                className={`${styles.filterBtn} ${!galleryFilter.rarity ? styles.filterBtnActive : ''}`}
+                onClick={() => setGalleryFilter(prev => ({ ...prev, rarity: undefined }))}
+              >
+                全部
+              </button>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(rarity => (
+                <button 
+                  key={rarity}
+                  className={`${styles.filterBtn} ${galleryFilter.rarity === rarity ? styles.filterBtnActive : ''}`}
+                  style={{ color: rarityColors[rarity] }}
+                  onClick={() => setGalleryFilter(prev => ({ ...prev, rarity }))}
+                >
+                  {rarityNames[rarity]}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 物品网格 */}
+        <Spin spinning={galleryLoading}>
+          <div className={styles.galleryGrid}>
+            {galleryData.map((item) => (
+              <div key={item.id} className={styles.itemCard}>
+                <div className={styles.itemHeader}>
+                  <div className={styles.itemIcon}>
+                    {item.icon ? (
+                      <img src={item.icon} alt={item.name} />
+                    ) : (
+                      <div className={styles.itemIconPlaceholder}>
+                        {item.category === 'equipment' ? '⚔️' : 
+                         item.category === 'consumable' ? '🧪' : '💎'}
+                      </div>
+                    )}
+                  </div>
+                  <div 
+                    className={styles.itemRarity}
+                    style={{ 
+                      backgroundColor: rarityColors[item.rarity || 1],
+                      color: 'white'
+                    }}
+                  >
+                    {rarityNames[item.rarity || 1]}
+                  </div>
+                </div>
+                
+                <div className={styles.itemInfo}>
+                  <div className={styles.itemName}>{item.name}</div>
+                  <div className={styles.itemCategory}>
+                    {categoryNames[item.category || ''] || item.category}
+                  </div>
+                  
+                  {isValidNumber(item.levelReq) && (
+                    <div className={styles.itemLevel}>等级需求: Lv.{item.levelReq}</div>
+                  )}
+                  
+                  {/* 只有当有属性值大于0时才显示属性区域 */}
+                  {(isValidNumber(item.baseAttack) || 
+                    isValidNumber(item.baseDefense) || 
+                    isValidNumber(item.baseHp)) && (
+                    <div className={styles.itemStats}>
+                      {isValidNumber(item.baseAttack) && (
+                        <div className={styles.itemStat}>
+                          <span className={styles.statIcon}>⚔️</span>
+                          <span>攻击: {item.baseAttack}</span>
+                        </div>
+                      )}
+                      {isValidNumber(item.baseDefense) && (
+                        <div className={styles.itemStat}>
+                          <span className={styles.statIcon}>🛡️</span>
+                          <span>防御: {item.baseDefense}</span>
+                        </div>
+                      )}
+                      {isValidNumber(item.baseHp) && (
+                        <div className={styles.itemStat}>
+                          <span className={styles.statIcon}>❤️</span>
+                          <span>生命: {item.baseHp}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {item.description && (
+                    <div className={styles.itemDescription}>
+                      {item.description}
+                    </div>
+                  )}
+                  
+                  <div className={styles.itemFooter}>
+                    {item.stackable === 1 && (
+                      <span className={styles.itemTag}>可叠加</span>
+                    )}
+                    {isValidNumber(item.removePoint) && (
+                      <span className={styles.itemPoints}>分解: {item.removePoint}积分</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {galleryData.length === 0 && !galleryLoading && (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>📦</div>
+              <div className={styles.emptyText}>暂无物品数据</div>
+            </div>
+          )}
         </Spin>
       </div>
     );
@@ -257,6 +488,16 @@ const PetPage: React.FC = () => {
             <div className={styles.gameTabText}>摸鱼BOSS</div>
             <div className={styles.gameTabDecor}></div>
           </div>
+          <div 
+            className={`${styles.gameTab} ${activeTab === 'gallery' ? styles.gameTabActive : ''}`}
+            onClick={() => setActiveTab('gallery')}
+          >
+            <div className={styles.gameTabIcon}>
+              <BookOutlined />
+            </div>
+            <div className={styles.gameTabText}>图鉴</div>
+            <div className={styles.gameTabDecor}></div>
+          </div>
         </div>
 
         {/* 内容区域 */}
@@ -268,6 +509,7 @@ const PetPage: React.FC = () => {
           )}
           {activeTab === 'ranking' && renderRankingContent()}
           {activeTab === 'boss' && renderBossContent()}
+          {activeTab === 'gallery' && renderGalleryContent()}
         </div>
       </div>
       
