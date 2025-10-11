@@ -1,4 +1,4 @@
-import { getFileContent } from '@/services/backend/file';
+import { getFileContent } from '@/services/file';
 import { NotificationOutlined } from '@ant-design/icons';
 import { Modal } from 'antd';
 import React, { useEffect, useState } from 'react';
