@@ -13,6 +13,7 @@ class WebSocketService {
   private isManuallyClosed = false;
   private notificationInterval: number | null = null;
   private isWindowFocused: boolean = true;
+  private isMessageProcessingPaused: boolean = false;
 
   private constructor() {
     // 添加默认的错误消息处理器
@@ -91,6 +92,15 @@ class WebSocketService {
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        
+        // 如果消息处理被暂停，直接丢弃聊天消息
+        if (this.isMessageProcessingPaused) {
+          // 只暂停聊天消息，其他类型的消息（如系统消息、错误消息等）仍然处理
+          if (data.type === 'chat') {
+            return; // 直接丢弃，不存储
+          }
+        }
+        
         const handlers = this.messageHandlers.get(data.type) || [];
         handlers.forEach(handler => handler(data));
 
@@ -175,6 +185,19 @@ class WebSocketService {
     this.messageHandlers.clear();
     this.messageHandlers.set('error', errorHandlers);
   }
+
+  // 暂停消息处理
+  public pauseMessageProcessing() {
+    this.isMessageProcessingPaused = true;
+    console.log('WebSocket消息处理已暂停');
+  }
+
+  // 恢复消息处理
+  public resumeMessageProcessing() {
+    this.isMessageProcessingPaused = false;
+    console.log('WebSocket消息处理已恢复');
+  }
+
 }
 
 export const wsService = WebSocketService.getInstance();

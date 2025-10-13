@@ -163,12 +163,15 @@ const ChatRoom: React.FC = () => {
   const loadingRef = useRef(false); // 添加loadingRef防止重复请求
 
   const [announcement, setAnnouncement] = useState<string>(
-    '欢迎来到摸鱼聊天室！🎉 这里是一个充满快乐的地方~。致谢：感谢 yovvis 大佬赞助的服务器资源🌟，域名9月份过期，请移步新域名：<a href="https://yucoder.cn/" target="_blank" rel="noopener noreferrer">https://yucoder.cn/</a>',
+    '欢迎来到摸鱼聊天室！🎉 这里是一个充满快乐的地方~。致谢：感谢 yovvis 大佬赞助的服务器资源',
   );
   const [showAnnouncement, setShowAnnouncement] = useState<boolean>(true);
   const [isAnnouncementModalVisible, setIsAnnouncementModalVisible] = useState(false);
 
   const [isComponentMounted, setIsComponentMounted] = useState(true);
+  const [isPageVisible, setIsPageVisible] = useState(!document.hidden);
+  const pageHiddenTimeRef = useRef<number | null>(null);
+  const visibilityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [uploading, setUploading] = useState(false);
 
@@ -2705,6 +2708,76 @@ const ChatRoom: React.FC = () => {
         console.error('加载用户备注失败:', error);
       }
     }
+  }, []);
+
+  // 监听页面可见性变化
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const isVisible = !document.hidden;
+      setIsPageVisible(isVisible);
+      
+      if (isVisible) {
+        // 页面变为可见时
+        console.log('页面变为可见');
+        
+        // 清除定时器
+        if (visibilityTimeoutRef.current) {
+          clearTimeout(visibilityTimeoutRef.current);
+          visibilityTimeoutRef.current = null;
+        }
+        
+        // 检查是否离开超过30秒
+        if (pageHiddenTimeRef.current) {
+          const hiddenDuration = Date.now() - pageHiddenTimeRef.current;
+          const THIRTY_SECONDS = 30 * 1000;
+          
+          if (hiddenDuration >= THIRTY_SECONDS) {
+            // 离开超过30秒，执行恢复和重新加载
+            console.log(`页面离开了 ${Math.round(hiddenDuration / 1000)} 秒，重新获取聊天记录`);
+            wsService.resumeMessageProcessing();
+            
+            // 清空当前消息列表并重新加载最新消息
+            setMessages([]);
+            setCurrent(1);
+            setHasMore(true);
+            loadHistoryMessages(1, true);
+            
+            // 显示恢复提示
+            messageApi.info(`页面离开了 ${Math.round(hiddenDuration / 1000)} 秒，已重新获取最新聊天记录`);
+          } else {
+            // 离开时间不足30秒，只恢复消息处理
+            console.log(`页面离开了 ${Math.round(hiddenDuration / 1000)} 秒，未达到30秒阈值，仅恢复消息处理`);
+            wsService.resumeMessageProcessing();
+          }
+          
+          pageHiddenTimeRef.current = null;
+        } else {
+          // 首次加载或其他情况，直接恢复消息处理
+          wsService.resumeMessageProcessing();
+        }
+      } else {
+        // 页面变为不可见时
+        console.log('页面变为不可见，30秒后将暂停消息处理');
+        pageHiddenTimeRef.current = Date.now();
+        
+        // 设置30秒延迟暂停消息处理
+        visibilityTimeoutRef.current = setTimeout(() => {
+          console.log('页面离开超过30秒，暂停消息处理');
+          wsService.pauseMessageProcessing();
+        }, 30 * 1000);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // 清理定时器
+      if (visibilityTimeoutRef.current) {
+        clearTimeout(visibilityTimeoutRef.current);
+        visibilityTimeoutRef.current = null;
+      }
+    };
   }, []);
 
   // 保存用户备注
