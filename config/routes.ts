@@ -2,6 +2,7 @@ export default [
   {
     path: '/user', layout: false, requireAuth: false, routes: [
       {path: '/user/login', component: './User/Login', requireAuth: false},
+      {path: '/user/login/linuxdo', component: './User/Login/LinuxDo', requireAuth: false},
       {path: '/user/register', component: './User/Register', requireAuth: false}
     ]
   },

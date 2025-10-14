@@ -15,6 +15,7 @@ import {
   userEmailLoginUsingPost,
   userEmailSendUsingPost,
   userEmailRegisterUsingPost,
+  getLinuxDoAuthUrlUsingGet,
 } from '@/services/backend/userController';
 
 interface UserLoginRequest {
@@ -184,6 +185,21 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
       message.error(defaultLoginFailureMessage);
     }
   };
+
+  // LinuxDo 第三方登录
+  const handleLinuxDoLogin = async () => {
+    try {
+      const res = await getLinuxDoAuthUrlUsingGet();
+      if (res.code === 0 && res.data) {
+        // 跳转到 LinuxDo 授权页面
+        window.location.href = res.data;
+      } else {
+        message.error('获取 LinuxDo 授权链接失败');
+      }
+    } catch (error: any) {
+      message.error(`LinuxDo 登录失败：${error.message}`);
+    }
+  };
   return (
     <Modal footer={null} open={isModalOpen} onCancel={onCancel}>
       <div className={containerClassName}>
@@ -274,6 +290,55 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                     忘记密码？
                   </Button>
                 </div>
+                
+                {/* 第三方登录分割线 */}
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  margin: '16px 0',
+                  color: '#999',
+                  fontSize: '14px'
+                }}>
+                  <div style={{ flex: 1, height: '1px', background: '#e8e8e8' }}></div>
+                  <span style={{ padding: '0 16px' }}>或</span>
+                  <div style={{ flex: 1, height: '1px', background: '#e8e8e8' }}></div>
+                </div>
+
+                {/* LinuxDo 第三方登录按钮 */}
+                <Button
+                  block
+                  size="large"
+                  onClick={handleLinuxDoLogin}
+                  style={{
+                    marginBottom: '16px',
+                    background: '#ff6b35',
+                    borderColor: '#ff6b35',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    height: '44px',
+                    fontWeight: 500,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e55a2b';
+                    e.currentTarget.style.borderColor = '#e55a2b';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#ff6b35';
+                    e.currentTarget.style.borderColor = '#ff6b35';
+                  }}
+                >
+                  <img 
+                    src="/img/logo-new-5.png" 
+                    alt="Linux Do" 
+                    width="20" 
+                    height="20" 
+                    style={{ objectFit: 'contain' }}
+                  />
+                  使用 Linux Do 登录
+                </Button>
               </>
             )}
             {type === 'register' && (

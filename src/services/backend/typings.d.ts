@@ -1172,6 +1172,13 @@ declare namespace API {
     roomId: string;
   };
 
+  type linuxDoCallbackUsingGETParams = {
+    /** code */
+    code?: string;
+    /** state */
+    state?: string;
+  };
+
   type listPetSkinsUsingGETParams = {
     current?: number;
     name?: string;

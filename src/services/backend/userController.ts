@@ -225,6 +225,29 @@ export async function userLoginByGithubUsingPost(
   });
 }
 
+/** 获取 Linux Do 授权链接 GET /api/user/login/linuxdo */
+export async function getLinuxDoAuthUrlUsingGet(options?: { [key: string]: any }) {
+  return request<API.BaseResponseString_>('/api/user/login/linuxdo', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/** Linux Do 授权回调 GET /api/user/login/linuxdo/callback */
+export async function linuxDoCallbackUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.linuxDoCallbackUsingGETParams,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseTokenLoginUserVo_>('/api/user/login/linuxdo/callback', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
 /** 用户注销 POST /api/user/logout */
 export async function userLogoutUsingPost(options?: { [key: string]: any }) {
   return request<API.BaseResponseBoolean_>('/api/user/logout', {

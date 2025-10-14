@@ -1,10 +1,10 @@
 import Footer from '@/components/Footer';
-import { userLoginUsingPost } from '@/services/backend/userController';
+import { userLoginUsingPost, getLinuxDoAuthUrlUsingGet } from '@/services/backend/userController';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { useEmotionCss } from '@ant-design/use-emotion-css';
 import { Helmet, history, useModel } from '@umijs/max';
-import { message, Tabs } from 'antd';
+import { message, Tabs, Button } from 'antd';
 import React, { useState } from 'react';
 import Settings from '../../../../config/defaultSettings';
 import {Link} from "umi";
@@ -48,6 +48,21 @@ const Login: React.FC = () => {
     } catch (error: any) {
       const defaultLoginFailureMessage = `登录失败，${error.message}`;
       message.error(defaultLoginFailureMessage);
+    }
+  };
+
+  // LinuxDo 第三方登录
+  const handleLinuxDoLogin = async () => {
+    try {
+      const res = await getLinuxDoAuthUrlUsingGet();
+      if (res.code === 0 && res.data) {
+        // 跳转到 LinuxDo 授权页面
+        window.location.href = res.data;
+      } else {
+        message.error('获取 LinuxDo 授权链接失败');
+      }
+    } catch (error: any) {
+      message.error(`LinuxDo 登录失败：${error.message}`);
     }
   };
 
@@ -131,6 +146,55 @@ const Login: React.FC = () => {
           >
             <Link to="/user/register">新用户注册</Link>
           </div>
+
+          {/* 第三方登录分割线 */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            margin: '16px 0',
+            color: '#999',
+            fontSize: '14px'
+          }}>
+            <div style={{ flex: 1, height: '1px', background: '#e8e8e8' }}></div>
+            <span style={{ padding: '0 16px' }}>或</span>
+            <div style={{ flex: 1, height: '1px', background: '#e8e8e8' }}></div>
+          </div>
+
+          {/* LinuxDo 第三方登录按钮 */}
+          <Button
+            block
+            size="large"
+            onClick={handleLinuxDoLogin}
+            style={{
+              marginBottom: '16px',
+              background: '#ff6b35',
+              borderColor: '#ff6b35',
+              color: 'white',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              height: '44px',
+              fontWeight: 500,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#e55a2b';
+              e.currentTarget.style.borderColor = '#e55a2b';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#ff6b35';
+              e.currentTarget.style.borderColor = '#ff6b35';
+            }}
+          >
+            <img 
+              src="/img/logo-new-5.png" 
+              alt="Linux Do" 
+              width="20" 
+              height="20" 
+              style={{ objectFit: 'contain' }}
+            />
+            使用 Linux Do 登录
+          </Button>
         </LoginForm>
       </div>
       <Footer />
