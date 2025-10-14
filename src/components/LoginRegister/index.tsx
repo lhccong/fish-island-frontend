@@ -1,4 +1,4 @@
-import { Button, Form, message, Modal, Tabs } from 'antd';
+import { Button, Form, message, Modal, Tabs, Input, Select } from 'antd';
 import { LockOutlined, MailOutlined, QqCircleFilled, UserOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { useEmotionCss } from '@ant-design/use-emotion-css';
@@ -56,11 +56,38 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
   const ref = useRef();
   const [countdown, setCountdown] = useState(0);
   const [email, setEmail] = useState('');
+  const [emailPrefix, setEmailPrefix] = useState('');
+  const [emailSuffix, setEmailSuffix] = useState('');
   const { initialState, setInitialState } = useModel('@@initialState');
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [registerValues, setRegisterValues] = useState<any>(null);
   const [loginValues, setLoginValues] = useState<any>(null);
   const [showLoginCaptcha, setShowLoginCaptcha] = useState(false);
+
+  // 邮箱域名选项
+  const emailDomains = [
+    'qq.com',
+    '163.com',
+    'gmail.com',
+    '126.com',
+    'outlook.com',
+    'foxmail.com',
+    'sina.com',
+    'vip.qq.com',
+    '139.com',
+    '88.com',
+    'icloud.com'
+  ];
+
+  // 处理邮箱输入变化
+  const handleEmailChange = (prefix: string, suffix: string) => {
+    const fullEmail = prefix && suffix ? `${prefix}@${suffix}` : '';
+    setEmailPrefix(prefix);
+    setEmailSuffix(suffix);
+    setEmail(fullEmail);
+    // 更新表单字段值
+    form.setFieldsValue({ email: fullEmail });
+  };
 
   const containerClassName = useEmotionCss(() => {
     return {
@@ -227,11 +254,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                 await validateAndShowCaptcha(values);
               }
             }}
-            submitter={{
-              searchConfig: {
-                submitText: type === 'register' ? '注册' : '登录',
-              }
-            }}
+            submitter={false}
           >
             <Tabs
               activeKey={type}
@@ -290,6 +313,21 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                     忘记密码？
                   </Button>
                 </div>
+
+                {/* 登录按钮 */}
+                <Button
+                  type="primary"
+                  block
+                  size="large"
+                  htmlType="submit"
+                  style={{
+                    marginBottom: '16px',
+                    height: '44px',
+                    fontWeight: 500,
+                  }}
+                >
+                  登录
+                </Button>
                 
                 {/* 第三方登录分割线 */}
                 <div style={{ 
@@ -389,14 +427,8 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                     },
                   ]}
                 />
-                <ProFormText
+                <Form.Item
                   name="email"
-                  fieldProps={{
-                    size: 'large',
-                    prefix: <QqCircleFilled className={styles.prefixIcon} />,
-                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value),
-                  }}
-                  placeholder="请输入邮箱"
                   rules={[
                     {
                       required: true,
@@ -407,7 +439,54 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                       message: '请输入正确的邮箱地址！',
                     },
                   ]}
-                />
+                >
+                  <Input.Group compact style={{ display: 'flex' }}>
+                    <Input
+                      size="large"
+                      prefix={<QqCircleFilled className={styles.prefixIcon} />}
+                      placeholder="请输入邮箱前缀"
+                      value={emailPrefix}
+                      onChange={(e) => handleEmailChange(e.target.value, emailSuffix)}
+                      style={{ flex: 1 }}
+                    />
+                    <Input
+                      size="large"
+                      style={{ 
+                        width: '40px', 
+                        minWidth: '40px',
+                        borderLeft: 0, 
+                        borderRight: 0, 
+                        pointerEvents: 'none',
+                        textAlign: 'center',
+                        backgroundColor: '#fafafa',
+                        color: '#000',
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        padding: '0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      value="@"
+                      disabled
+                    />
+                    <Select
+                      size="large"
+                      placeholder="选择域名"
+                      value={emailSuffix}
+                      onChange={(value) => handleEmailChange(emailPrefix, value)}
+                      style={{ width: '140px' }}
+                      showSearch
+                      filterOption={(input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                      }
+                      options={emailDomains.map(domain => ({
+                        value: domain,
+                        label: domain
+                      }))}
+                    />
+                  </Input.Group>
+                </Form.Item>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <ProFormText
                     name="code"
@@ -432,6 +511,23 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                     {countdown > 0 ? `${countdown}秒后重试` : '获取验证码'}
                   </Button>
                 </div>
+
+                {/* 注册按钮 */}
+                <Button
+                  type="primary"
+                  block
+                  size="large"
+                  htmlType="submit"
+                  style={{
+                    marginTop: '16px',
+                    marginBottom: '16px',
+                    height: '44px',
+                    fontWeight: 500,
+                  }}
+                >
+                  注册
+                </Button>
+
                 <Captcha
                   onSuccess={async (data) => {
                     setValueData({
