@@ -196,8 +196,8 @@ const ChatRoom: React.FC = () => {
   const mentionDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isRedPacketModalVisible, setIsRedPacketModalVisible] = useState(false);
-  const [redPacketAmount, setRedPacketAmount] = useState<number>(0);
-  const [redPacketCount, setRedPacketCount] = useState<number>(1);
+  const [redPacketAmount, setRedPacketAmount] = useState<number>(100);
+  const [redPacketCount, setRedPacketCount] = useState<number>(10);
   const [redPacketMessage, setRedPacketMessage] = useState<string>('恭喜发财，大吉大利！');
   const [redPacketType, setRedPacketType] = useState<number>(1); // 1-随机红包 2-平均红包
   // 添加发红包防抖相关的状态
