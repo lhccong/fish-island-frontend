@@ -1,0 +1,102 @@
+.miss-video-page {
+  // 抵消 .ant-pro-layout-content 默认内边距 32px/40px，仅影响当前页面
+  margin-top: -32px;
+  margin-bottom: -32px;
+  margin-left: -40px;
+  margin-right: -40px;
+}
+
+.miss-video-container {
+  padding: 24px;
+  padding-top: 0;
+  background: #f5f5f5;
+  min-height: 100vh;
+
+  .video-card {
+    max-width: 500px; // 减小最大宽度，更适合竖屏视频
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    
+    // 去掉 Card 的默认内边距
+    .ant-card-body {
+      padding: 0;
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      height: 0;
+      padding-bottom: 177.78%; // 9:16 比例，适合竖屏视频
+      background: #000;
+      overflow: hidden;
+
+      .loading-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: #fff;
+
+        p {
+          margin-top: 16px;
+          font-size: 16px;
+        }
+      }
+
+      .no-video {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: #ccc;
+
+        p {
+          margin-top: 16px;
+          font-size: 16px;
+        }
+      }
+
+      .video-player {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain; // 改为contain，确保完整显示竖屏视频
+        background: #000;
+      }
+    }
+
+    .video-actions {
+      padding: 16px;
+    }
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .miss-video-container {
+    padding: 16px;
+
+    .video-card {
+      .video-wrapper {
+        max-width: 300px; // 移动端更小的宽度
+        padding-bottom: 177.78%; // 保持9:16比例
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .miss-video-container {
+    padding: 12px;
+
+    .video-card {
+      .video-wrapper {
+        max-width: 280px; // 小屏幕设备
+      }
+    }
+  }
+}

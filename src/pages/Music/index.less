@@ -1,0 +1,330 @@
+.music-page {
+  min-height: 100vh;
+  /* 动态主题变量（默认值） */
+  --music-bg-start: #f6fafc;
+  --music-bg-end: #eef4f8;
+  --music-accent: #2563eb;
+  --music-panel-bg: #F4F8FB;
+  --music-text-secondary: #65708a;
+  background: linear-gradient(180deg, var(--music-bg-start), var(--music-bg-end));
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 0 16px;
+  overflow-y: auto;
+  /* 抵消 .ant-pro-layout-content 默认内边距 32px/40px，仅影响当前页面 */
+  margin-top: -32px;
+  margin-bottom: -32px;
+  margin-left: -40px;
+  margin-right: -40px;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.settings-btn {
+  margin-left: 0;
+  background-color: var(--music-panel-bg);
+}
+
+.search-input {
+  border-radius: 999px;
+  background-color: var(--music-panel-bg);
+}
+
+.search-input .ant-input-affix-wrapper {
+  background-color: var(--music-panel-bg) !important; /* !important 用于覆盖 AntD 默认样式 */
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  background-color: var(--music-panel-bg);
+  gap: 24px;
+  flex: 1;
+  overflow: hidden;
+  max-width: 1080px;
+  margin: 0 auto; /* 居中内容区域 */
+  // 去掉 box-shadow
+  box-shadow: none;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.album-card {
+  text-align: center;
+  background-color: var(--music-panel-bg);
+  border: none;
+}
+
+.song-title {
+  margin-top: 8px !important;
+  margin-bottom: 4px !important;
+}
+
+.search-results {
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  overflow: auto;
+  flex: 1;
+}
+
+.result-item {
+  cursor: pointer;
+}
+.result-item:hover {
+  background: #f5f8ff;
+}
+.result-title {
+  font-weight: 500;
+}
+.result-sub {
+  color: #8a8f98;
+  font-size: 12px;
+}
+
+.right {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+.lyrics-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52vh; // 固定高度，确保内部容器可计算
+}
+
+/* 参考 Lyric-Scrolling 结构与样式命名（作用域在歌词面板内） */
+.lyrics-panel .container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 8px 12px;
+}
+.lyrics-panel .container ul {
+  width: 100%;
+  transition: 0.5s;
+}
+.lyrics-panel .container ul li {
+  margin-right: 20px;
+  width: 100%;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  color: #666;
+  transition: all 0.5s;
+}
+.lyrics-panel .container ul li.active {
+  color: var(--music-accent);
+  font-weight: 600;
+  transform: scale(1.2);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px 0 8px;
+}
+.time-left,
+.time-right {
+  color: var(--music-text-secondary);
+  text-align: center;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  position: relative;
+}
+.loop-icon.single {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.loop-icon.single .badge {
+  position: absolute;
+  font-size: 10px;
+  line-height: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 600;
+}
+.play-icon {
+  font-size: 28px;
+}
+/* 左右控制区域 */
+.left-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 25px;
+}
+// 中间控制区域
+.center-controls {
+  // display: flex;
+  // align-items: center;
+  // gap: 8px;
+  // margin-right: 120px;
+}
+
+
+.right-controls {
+  display: flex;
+  align-items: center;
+}
+
+/* 歌单按钮现在在flex布局中，无需特殊定位 */
+
+.playlist-item.active {
+  background: #eef2ff;
+}
+
+.truncate {
+  display: inline-block;
+  max-width: 340px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 歌单工具栏 */
+.playlist-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 12px 0;
+}
+.playlist-filter-input {
+  max-width: 250px;
+}
+
+/* 控制按钮组 */
+.control-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.control-group .ant-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.control-group .ant-btn.active {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border-color: #91d5ff;
+}
+
+.vertical-slider-container {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: white;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  padding: 12px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 8px;
+}
+
+.vertical-slider {
+  height: 120px;
+  width: 20px;
+}
+
+.vertical-slider .ant-slider-rail {
+  background-color: #f5f5f5;
+}
+
+.vertical-slider .ant-slider-track {
+  background-color: #1890ff;
+}
+
+.vertical-slider .ant-slider-handle {
+  border: 2px solid #1890ff;
+  background-color: white;
+}
+
+.vertical-slider .ant-slider-handle:hover {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 5px rgba(24, 144, 255, 0.12);
+}
+
+/* 结果列表与歌词的细滚动条优化 */
+.search-results {
+  scrollbar-width: thin;
+}
+.search-results::-webkit-scrollbar {
+  width: 8px;
+}
+.search-results::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 8px;
+}
+
+/* 隐藏歌词区域滚动条（仍允许程序化滚动） */
+.lyrics-panel .container {
+  scrollbar-width: none;
+}
+.lyrics-panel .container::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.result-item.loading {
+  opacity: 0.6;
+}
+.lyrics-spin .ant-spin-nested-loading > div > .ant-spin {
+  max-height: 52vh;
+}
+
+.search-modal-body {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+@media (max-width: 980px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+  .content{
+    padding: 0;
+  }
+  .ant-space-gap-col-large {
+    column-gap: 0px;
+}
+}
+
+
