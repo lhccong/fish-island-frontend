@@ -591,7 +591,7 @@ const ChatRoom: React.FC = () => {
           id: '-1',
           name: '摸鱼助手',
           avatar:
-            'https://api.oss.cqbo.com/moyu/user_avatar/1/hYskW0jH-34eaba5c-3809-45ef-a3bd-dd01cf97881b_478ce06b6d869a5a11148cf3ee119bac.gif',
+            'https://oss.cqbo.com/moyu/user_avatar/1/hYskW0jH-34eaba5c-3809-45ef-a3bd-dd01cf97881b_478ce06b6d869a5a11148cf3ee119bac.gif',
           level: 1,
           isAdmin: false,
           status: '在线',
@@ -2715,33 +2715,33 @@ const ChatRoom: React.FC = () => {
     const handleVisibilityChange = () => {
       const isVisible = !document.hidden;
       setIsPageVisible(isVisible);
-      
+
       if (isVisible) {
         // 页面变为可见时
         console.log('页面变为可见');
-        
+
         // 清除定时器
         if (visibilityTimeoutRef.current) {
           clearTimeout(visibilityTimeoutRef.current);
           visibilityTimeoutRef.current = null;
         }
-        
+
         // 检查是否离开超过30秒
         if (pageHiddenTimeRef.current) {
           const hiddenDuration = Date.now() - pageHiddenTimeRef.current;
           const THIRTY_SECONDS = 30 * 1000;
-          
+
           if (hiddenDuration >= THIRTY_SECONDS) {
             // 离开超过30秒，执行恢复和重新加载
             console.log(`页面离开了 ${Math.round(hiddenDuration / 1000)} 秒，重新获取聊天记录`);
             wsService.resumeMessageProcessing();
-            
+
             // 清空当前消息列表并重新加载最新消息
             setMessages([]);
             setCurrent(1);
             setHasMore(true);
             loadHistoryMessages(1, true);
-            
+
             // 显示恢复提示
             messageApi.info(`页面离开了 ${Math.round(hiddenDuration / 1000)} 秒，已重新获取最新聊天记录`);
           } else {
@@ -2749,7 +2749,7 @@ const ChatRoom: React.FC = () => {
             console.log(`页面离开了 ${Math.round(hiddenDuration / 1000)} 秒，未达到30秒阈值，仅恢复消息处理`);
             wsService.resumeMessageProcessing();
           }
-          
+
           pageHiddenTimeRef.current = null;
         } else {
           // 首次加载或其他情况，直接恢复消息处理
@@ -2759,7 +2759,7 @@ const ChatRoom: React.FC = () => {
         // 页面变为不可见时
         console.log('页面变为不可见，30秒后将暂停消息处理');
         pageHiddenTimeRef.current = Date.now();
-        
+
         // 设置30秒延迟暂停消息处理
         visibilityTimeoutRef.current = setTimeout(() => {
           console.log('页面离开超过30秒，暂停消息处理');
@@ -2769,7 +2769,7 @@ const ChatRoom: React.FC = () => {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       // 清理定时器

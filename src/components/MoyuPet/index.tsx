@@ -126,8 +126,8 @@ const ShopTabs: React.FC<ShopTabsProps> = ({ renderSkinsList }) => {
   return (
     <div className={styles.shopContainer}>
       <div className={styles.shopTypeSelector}>
-        <Radio.Group 
-          value={shopType} 
+        <Radio.Group
+          value={shopType}
           onChange={(e) => setShopType(e.target.value)}
           buttonStyle="solid"
           size="large"
@@ -140,7 +140,7 @@ const ShopTabs: React.FC<ShopTabsProps> = ({ renderSkinsList }) => {
           </Radio.Button>
         </Radio.Group>
       </div>
-      
+
       <div className={styles.shopContent}>
         {shopType === 'skin' ? (
           renderSkinsList(true)
@@ -376,7 +376,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
           skinId: -1,
           name: '原皮',
           description: '最初的样子，朴素而自然',
-          url: 'https://api.oss.cqbo.com/moyu/pet/超级玛丽马里奥 (73)_爱给网_aigei_com.png', // 使用默认图片，可以根据实际情况调整
+          url: 'https://oss.cqbo.com/moyu/pet/超级玛丽马里奥 (73)_爱给网_aigei_com.png', // 使用默认图片，可以根据实际情况调整
           points: 0,
           owned: true, // 默认拥有
         };
@@ -726,7 +726,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
             </Button>
           </Popover>
         </div>
-        
+
         {/* 使用分栏布局 */}
         <Row gutter={24} className={styles.petMainLayout}>
           {/* 左侧装备界面 */}
@@ -737,7 +737,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 <div className={styles.petNameSection}>
                   {!isOtherUser && !isRenaming ? (
                     <Tooltip title="点击修改名称（消耗100积分）">
-                      <span 
+                      <span
                         className={styles.editableName}
                         onClick={() => setIsRenaming(true)}
                       >
@@ -912,7 +912,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                   <span className={styles.scoreIcon}>⚡</span>
                   <span className={styles.scoreText}>宠物战力 {Math.floor((pet?.level || 1) * 100 + (pet?.mood || 0) + (pet?.hunger || 0))}</span>
                 </div>
-                
+
                 {!isOtherUser && (
                   <div className={styles.quickActions}>
                     <Button
@@ -940,7 +940,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
               </div>
             </div>
           </Col>
-          
+
           {/* 右侧Tab内容 */}
           <Col span={14} className={styles.petRightColumn}>
             <Tabs

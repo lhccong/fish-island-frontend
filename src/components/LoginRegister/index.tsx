@@ -57,7 +57,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
   const [countdown, setCountdown] = useState(0);
   const [email, setEmail] = useState('');
   const [emailPrefix, setEmailPrefix] = useState('');
-  const [emailSuffix, setEmailSuffix] = useState('');
+  const [emailSuffix, setEmailSuffix] = useState('qq.com');
   const { initialState, setInitialState } = useModel('@@initialState');
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [registerValues, setRegisterValues] = useState<any>(null);
@@ -241,7 +241,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
               maxWidth: '75vw',
             }}
             logo={<img alt="logo" style={{ height: '100%' }}
-                      src="https://api.oss.cqbo.com/moyu/moyu.png" />}
+                      src="https://oss.cqbo.com/moyu/moyu.png" />}
             title="摸鱼岛"
             subTitle={'加入摸鱼岛一起来摸吧'}
             initialValues={{
@@ -328,11 +328,11 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                 >
                   登录
                 </Button>
-                
+
                 {/* 第三方登录分割线 */}
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   margin: '16px 0',
                   color: '#999',
                   fontSize: '14px'
@@ -368,11 +368,11 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                     e.currentTarget.style.borderColor = '#ff6b35';
                   }}
                 >
-                  <img 
-                    src="/img/logo-new-5.png" 
-                    alt="Linux Do" 
-                    width="20" 
-                    height="20" 
+                  <img
+                    src="/img/logo-new-5.png"
+                    alt="Linux Do"
+                    width="20"
+                    height="20"
                     style={{ objectFit: 'contain' }}
                   />
                   使用 Linux Do 登录
@@ -451,11 +451,11 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                     />
                     <Input
                       size="large"
-                      style={{ 
-                        width: '40px', 
+                      style={{
+                        width: '40px',
                         minWidth: '40px',
-                        borderLeft: 0, 
-                        borderRight: 0, 
+                        borderLeft: 0,
+                        borderRight: 0,
                         pointerEvents: 'none',
                         textAlign: 'center',
                         backgroundColor: '#fafafa',
@@ -472,7 +472,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                     />
                     <Select
                       size="large"
-                      placeholder="选择域名"
+                      placeholder="qq.com"
                       value={emailSuffix}
                       onChange={(value) => handleEmailChange(emailPrefix, value)}
                       style={{ width: '140px' }}

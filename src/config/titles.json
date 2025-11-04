@@ -74,14 +74,14 @@
       "id": "13",
       "name": "查无此人",
       "description": "没有名字的专属定制称号",
-      "titleImg": "https://api.oss.cqbo.com/moyu/title/Yg2oqPCa-badge-查无此人.png"
+      "titleImg": "https://oss.cqbo.com/moyu/title/Yg2oqPCa-badge-查无此人.png"
 
     },
     {
       "id": "14",
       "name": "喂鱼大师",
       "description": "喂鱼大师的专属定制称号",
-      "titleImg": "https://api.oss.cqbo.com/moyu/title/wZdzS3TT-badge-喂鱼大师.png"
+      "titleImg": "https://oss.cqbo.com/moyu/title/wZdzS3TT-badge-喂鱼大师.png"
 
     }
   ,
@@ -89,28 +89,28 @@
       "id": "15",
       "name": "恐龙专属称号",
       "description": "空白专属称号",
-      "titleImg": "https://api.oss.cqbo.com/moyu/title/恐龙.png"
+      "titleImg": "https://oss.cqbo.com/moyu/title/恐龙.png"
 
     },
     {
       "id": "16",
       "name": "摸鱼精灵王",
       "description": "宠物第一名",
-      "titleImg": "https://api.oss.cqbo.com/moyu/title/badge-摸鱼精灵王.png"
+      "titleImg": "https://oss.cqbo.com/moyu/title/badge-摸鱼精灵王.png"
 
     },
     {
       "id": "17",
       "name": "云朵摸鱼崽",
       "description": "宠物第二名",
-      "titleImg": "https://api.oss.cqbo.com/moyu/title/badge-云朵摸鱼崽.png"
+      "titleImg": "https://oss.cqbo.com/moyu/title/badge-云朵摸鱼崽.png"
 
     },
     {
       "id": "18",
       "name": "摸鱼智多星",
       "description": "宠物第三名",
-      "titleImg": "https://api.oss.cqbo.com/moyu/title/badge-摸鱼智多星.png"
+      "titleImg": "https://oss.cqbo.com/moyu/title/badge-摸鱼智多星.png"
 
     }
   ]

@@ -346,7 +346,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
     const savedConfig = localStorage.getItem('siteConfig');
     return savedConfig ? JSON.parse(savedConfig) : {
       siteName: '摸鱼岛',
-      siteIcon: 'https://api.oss.cqbo.com/moyu/moyu.png',
+      siteIcon: 'https://oss.cqbo.com/moyu/moyu.png',
       notificationEnabled: true
     };
   });
@@ -354,7 +354,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   // 添加默认网站配置
   const defaultSiteConfig = {
     siteName: '摸鱼岛',
-    siteIcon: 'https://api.oss.cqbo.com/moyu/moyu.png',
+    siteIcon: 'https://oss.cqbo.com/moyu/moyu.png',
     notificationEnabled: true
   };
 

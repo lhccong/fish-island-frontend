@@ -84,7 +84,7 @@ const Login: React.FC = () => {
             minWidth: 280,
             maxWidth: '75vw',
           }}
-          logo={<img alt="logo" style={{ height: '100%' }} src="https://api.oss.cqbo.com/moyu/moyu.png" />}
+          logo={<img alt="logo" style={{ height: '100%' }} src="https://oss.cqbo.com/moyu/moyu.png" />}
           title="摸鱼岛"
           subTitle={'加入摸鱼岛一起来摸吧'}
           initialValues={{
@@ -148,9 +148,9 @@ const Login: React.FC = () => {
           </div>
 
           {/* 第三方登录分割线 */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
             margin: '16px 0',
             color: '#999',
             fontSize: '14px'
@@ -186,11 +186,11 @@ const Login: React.FC = () => {
               e.currentTarget.style.borderColor = '#ff6b35';
             }}
           >
-            <img 
-              src="/img/logo-new-5.png" 
-              alt="Linux Do" 
-              width="20" 
-              height="20" 
+            <img
+              src="/img/logo-new-5.png"
+              alt="Linux Do"
+              width="20"
+              height="20"
               style={{ objectFit: 'contain' }}
             />
             使用 Linux Do 登录
