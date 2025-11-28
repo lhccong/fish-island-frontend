@@ -1,0 +1,1186 @@
+// 宠物对战界面样式
+.fightContainer {
+  padding: 20px;
+  min-height: calc(100vh - 64px);
+  background: 
+    linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 100%),
+    url('https://img2.huashi6.com/images/resource/thumbnail/2021/12/27/105425_66510272259.jpg?imageMogr2/quality/100/interlace/1/thumbnail/2000x%3E');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  margin: 10px;
+
+  @media (max-width: 768px) {
+    padding: 12px;
+    background-attachment: scroll;
+    border-radius: 16px;
+    margin: 8px;
+  }
+}
+
+@keyframes background-shimmer {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+// 血条区域
+.healthBarsContainer {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+}
+
+.petHealthBar, .bossHealthBar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.healthBarHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.petHealthBar .healthBarHeader {
+  justify-content: flex-start;
+}
+
+.bossHealthBar .healthBarHeader {
+  justify-content: flex-end;
+}
+
+.healthBarInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.healthBarName {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.healthBarStats {
+  font-size: 12px;
+  color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.petAvatarSmall {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%) !important;
+  border: 2px solid #fff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3) !important;
+
+  :global(.ant-avatar-string) {
+    font-size: 20px !important;
+  }
+}
+
+.bossAvatarSmall {
+  background: linear-gradient(135deg, #f5222d 0%, #ff4d4f 100%) !important;
+  border: 2px solid #fff !important;
+  border-radius: 16px !important;
+  box-shadow: 0 2px 8px rgba(245, 34, 45, 0.3) !important;
+
+  :global(.ant-avatar-string) {
+    font-size: 20px !important;
+  }
+}
+
+.vsIndicatorSmall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: 60px;
+
+  @media (max-width: 768px) {
+    order: 2;
+    transform: rotate(90deg);
+  }
+}
+
+.vsTextSmall {
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.hpText {
+  font-size: 12px;
+  color: #f0f0f0;
+  text-align: center;
+  margin-top: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+// 战斗场景
+.battleArena {
+  position: relative;
+  padding: 60px 40px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 400px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 40px;
+    padding: 40px 20px;
+    text-align: center;
+  }
+}
+
+.arenaBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 0;
+  // 移除所有卡片样式效果
+}
+
+.arenaDecoration {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.08) 0%, rgba(255, 255, 255, 0.02) 50%, transparent 70%);
+  border-radius: 50%;
+  animation: arena-pulse 4s ease-in-out infinite;
+}
+
+@keyframes arena-pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.2;
+  }
+}
+
+// 战斗者区域
+.petArea, .bossArea {
+  position: relative;
+  z-index: 1;
+  
+  // 添加微妙的光晕效果
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
+    border-radius: 50%;
+    z-index: -1;
+    animation: subtle-glow 6s ease-in-out infinite;
+  }
+}
+
+@keyframes subtle-glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+.combatant {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 30px;
+  transition: all 0.3s ease;
+  position: relative;
+  // 移除卡片背景效果
+
+  &.activeTurn {
+    animation: active-glow 2s ease-in-out infinite;
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    gap: 12px;
+  }
+}
+
+.combatantLabel {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  text-align: center;
+  margin-top: 8px;
+  text-shadow: 
+    0 3px 6px rgba(0, 0, 0, 0.8), 
+    0 1px 3px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 16px;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+}
+
+// 震动动画
+@keyframes shake-effect {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-8px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(8px);
+  }
+}
+
+@keyframes active-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(24, 144, 255, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(24, 144, 255, 0.8));
+  }
+}
+
+.combatantAvatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.petAvatar {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%) !important;
+  border: 5px solid #fff !important;
+  border-radius: 28px !important;
+  box-shadow: 
+    0 16px 32px rgba(82, 196, 26, 0.5),
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3) !important;
+  font-size: 60px !important;
+  animation: pet-float 3s ease-in-out infinite;
+  transition: all 0.3s ease;
+
+  :global(.ant-avatar-string) {
+    font-size: 60px !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  // 攻击动画
+  &.attacking {
+    animation: pet-attack 0.5s ease-in-out;
+  }
+
+  // 受伤动画
+  &.hurt {
+    animation: avatar-hurt 0.3s ease-in-out;
+  }
+}
+
+.bossAvatar {
+  background: linear-gradient(135deg, #f5222d 0%, #ff4d4f 100%) !important;
+  border: 5px solid #fff !important;
+  border-radius: 28px !important;
+  box-shadow: 
+    0 16px 32px rgba(245, 34, 45, 0.5),
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3) !important;
+  font-size: 60px !important;
+  animation: boss-float 3s ease-in-out infinite reverse;
+  transition: all 0.3s ease;
+
+  :global(.ant-avatar-string) {
+    font-size: 60px !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  // 攻击动画
+  &.attacking {
+    animation: boss-attack 0.5s ease-in-out;
+  }
+
+  // 受伤动画
+  &.hurt {
+    animation: avatar-hurt 0.3s ease-in-out;
+  }
+}
+
+@keyframes pet-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes boss-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+// 宠物攻击动画
+@keyframes pet-attack {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  20% {
+    transform: translateX(30px) scale(1.1);
+    box-shadow: 0 12px 24px rgba(82, 196, 26, 0.6) !important;
+  }
+  40% {
+    transform: translateX(25px) scale(1.15);
+    box-shadow: 0 16px 32px rgba(82, 196, 26, 0.8) !important;
+  }
+  60% {
+    transform: translateX(20px) scale(1.1);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+// BOSS攻击动画
+@keyframes boss-attack {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  20% {
+    transform: translateX(-30px) scale(1.1);
+    box-shadow: 0 12px 24px rgba(245, 34, 45, 0.6) !important;
+  }
+  40% {
+    transform: translateX(-25px) scale(1.15);
+    box-shadow: 0 16px 32px rgba(245, 34, 45, 0.8) !important;
+  }
+  60% {
+    transform: translateX(-20px) scale(1.1);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+// 受伤震动动画
+@keyframes avatar-hurt {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-4px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(4px);
+  }
+}
+
+.turnIndicator {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  animation: turn-pulse 1s ease-in-out infinite;
+  box-shadow: 
+    0 4px 12px rgba(24, 144, 255, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+@keyframes turn-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.combatantInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.combatantName {
+  font-size: 16px;
+  font-weight: bold;
+  color: #262626;
+  text-align: center;
+
+  :global(.ant-badge) {
+    :global(.ant-badge-count) {
+      font-size: 10px;
+      min-width: 16px;
+      height: 16px;
+      line-height: 16px;
+      padding: 0 4px;
+    }
+  }
+}
+
+.hpBar, .expBar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hpText, .expText {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+.stats {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rewardPreview {
+  text-align: center;
+  padding: 12px;
+  background: rgba(250, 173, 20, 0.15);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  border: 1px solid rgba(250, 173, 20, 0.3);
+  box-shadow: 0 4px 12px rgba(250, 173, 20, 0.2);
+}
+
+.rewardTitle {
+  font-size: 12px;
+  font-weight: bold;
+  color: #fa8c16;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.rewardItems {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  font-size: 10px;
+  color: #fa8c16;
+
+  span {
+    background: rgba(250, 173, 20, 0.2);
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(250, 173, 20, 0.3);
+  }
+}
+
+// VS 指示器
+.vsIndicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+
+  @media (max-width: 768px) {
+    order: 2;
+  }
+}
+
+.vsText {
+  font-size: 32px;
+  font-weight: bold;
+  color: #1890ff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  animation: vs-pulse 2s ease-in-out infinite;
+}
+
+.vsLightning {
+  font-size: 24px;
+  color: #faad14;
+  margin-top: 8px;
+  animation: lightning-flash 1.5s ease-in-out infinite;
+}
+
+@keyframes vs-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes lightning-flash {
+  0%, 50%, 100% {
+    opacity: 1;
+  }
+  25%, 75% {
+    opacity: 0.5;
+  }
+}
+
+// 碰撞特效
+.collisionEffect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.collisionRing {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 3px solid #ff6b6b;
+  border-radius: 50%;
+  animation: collision-ring 0.3s ease-out;
+}
+
+.collisionSpark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: radial-gradient(circle, #ffeb3b 0%, #ff9800 50%, transparent 100%);
+  border-radius: 50%;
+  animation: collision-spark 0.3s ease-out;
+  
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #ffeb3b, transparent);
+    animation: spark-flash 0.3s ease-out;
+  }
+  
+  &::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+  
+  &::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+}
+
+@keyframes collision-ring {
+  0% {
+    width: 15px;
+    height: 15px;
+    opacity: 1;
+    border-width: 4px;
+  }
+  100% {
+    width: 80px;
+    height: 80px;
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+@keyframes collision-spark {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes spark-flash {
+  0%, 100% {
+    opacity: 0;
+    width: 10px;
+  }
+  50% {
+    opacity: 1;
+    width: 40px;
+  }
+}
+
+// 控制面板
+.controlPanel {
+  margin-bottom: 20px;
+}
+
+.controlCard {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+
+  :global(.ant-card-body) {
+    padding: 20px;
+    background: transparent;
+  }
+}
+
+.battleControls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.fightingControls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.startButton, .restartButton {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  border: none;
+  border-radius: 20px;
+  height: 48px;
+  padding: 0 32px;
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 
+    0 4px 12px rgba(82, 196, 26, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(82, 196, 26, 0.4);
+  }
+}
+
+.toggleButton {
+  height: 48px;
+  padding: 0 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.resetButton {
+  height: 48px;
+  padding: 0 24px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.battleStatus {
+  display: flex;
+  justify-content: center;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+  &.idle {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  }
+
+  &.fighting {
+    background: rgba(64, 169, 255, 0.2);
+    color: #40a9ff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    animation: fighting-pulse 2s ease-in-out infinite;
+    border-color: rgba(64, 169, 255, 0.4);
+  }
+
+  &.paused {
+    background: rgba(250, 173, 20, 0.2);
+    color: #faad14;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    border-color: rgba(250, 173, 20, 0.4);
+  }
+
+  &.victory {
+    background: rgba(115, 209, 61, 0.2);
+    color: #73d13d;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    animation: victory-celebration 1s ease-in-out;
+    border-color: rgba(115, 209, 61, 0.4);
+  }
+
+  &.defeat {
+    background: rgba(255, 120, 117, 0.2);
+    color: #ff7875;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    border-color: rgba(255, 120, 117, 0.4);
+  }
+}
+
+@keyframes fighting-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes victory-celebration {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25%, 75% {
+    transform: scale(1.05);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+// 战斗日志面板
+.battleLogPanel {
+  position: relative;
+}
+
+.logCard {
+  border-radius: 24px;
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.15),
+    0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+
+  :global(.ant-card-head) {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 24px 24px 0 0;
+
+    :global(.ant-card-head-title) {
+      font-weight: bold;
+      color: #262626;
+    }
+  }
+
+  :global(.ant-card-body) {
+    padding: 16px;
+  }
+}
+
+.logContainer {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 12px;
+  border-radius: 16px;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.3);
+    }
+  }
+}
+
+.emptyLog {
+  text-align: center;
+  color: #8c8c8c;
+  padding: 40px 20px;
+  font-size: 14px;
+}
+
+.logItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 6px;
+  border-radius: 16px;
+  font-size: 13px;
+  animation: log-appear 0.3s ease-out;
+  border-left: 4px solid transparent;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  &.attack {
+    background: rgba(24, 144, 255, 0.05);
+    border-left-color: #1890ff;
+  }
+
+  &.critical {
+    background: rgba(245, 34, 45, 0.05);
+    border-left-color: #f5222d;
+    
+    .logMessage {
+      color: #f5222d;
+      font-weight: bold;
+    }
+  }
+
+  &.miss {
+    background: rgba(140, 140, 140, 0.05);
+    border-left-color: #8c8c8c;
+    
+    .logMessage {
+      color: #8c8c8c;
+      font-style: italic;
+    }
+  }
+
+  &.heal {
+    background: rgba(82, 196, 26, 0.05);
+    border-left-color: #52c41a;
+  }
+}
+
+@keyframes log-appear {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.logMessage {
+  flex: 1;
+  color: #262626;
+  line-height: 1.4;
+}
+
+.logDamage {
+  font-weight: bold;
+  color: #f5222d;
+  font-size: 12px;
+  background: rgba(245, 34, 45, 0.15);
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 34, 45, 0.2);
+  box-shadow: 0 2px 4px rgba(245, 34, 45, 0.1);
+}
+
+// 奖励弹窗
+.rewardModal {
+  :global(.ant-modal-content) {
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  :global(.ant-modal-header) {
+    background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+    border-bottom: none;
+    padding: 20px 24px;
+
+    :global(.ant-modal-title) {
+      color: white;
+      font-weight: bold;
+    }
+  }
+
+  :global(.ant-modal-body) {
+    padding: 24px;
+  }
+
+  :global(.ant-modal-footer) {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 16px 24px;
+
+    :global(.ant-btn-primary) {
+      background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+      border: none;
+      border-radius: 16px;
+      height: 44px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+    }
+  }
+}
+
+.rewardModalTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+}
+
+.rewardContent {
+  text-align: center;
+}
+
+.congratulations {
+  font-size: 18px;
+  font-weight: bold;
+  color: #52c41a;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: rgba(82, 196, 26, 0.15);
+  border-radius: 20px;
+  border: 1px solid rgba(82, 196, 26, 0.3);
+  box-shadow: 0 4px 16px rgba(82, 196, 26, 0.1);
+}
+
+.rewardList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rewardItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    background: rgba(82, 196, 26, 0.1);
+    border-color: rgba(82, 196, 26, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(82, 196, 26, 0.15);
+  }
+}
+
+.rewardIcon {
+  font-size: 20px;
+}
+
+.rewardText {
+  font-size: 16px;
+  font-weight: 500;
+  color: #262626;
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .fightContainer {
+    padding: 12px;
+    border-radius: 16px;
+    margin: 8px;
+  }
+
+  .battleArena {
+    padding: 20px 12px;
+    margin-bottom: 16px;
+  }
+
+  // 移动端战斗背景样式优化
+
+  .combatant {
+    padding: 12px;
+  }
+
+  .petAvatar, .bossAvatar {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 28px !important;
+    border-radius: 20px !important;
+
+    :global(.ant-avatar-string) {
+      font-size: 28px !important;
+    }
+  }
+
+  .vsText {
+    font-size: 24px;
+  }
+
+  .vsLightning {
+    font-size: 18px;
+  }
+
+  .combatantInfo {
+    max-width: 160px;
+  }
+
+  .fightingControls {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .startButton, .restartButton, .toggleButton, .resetButton {
+    width: 100%;
+    max-width: 200px;
+    border-radius: 16px;
+  }
+
+  .logContainer {
+    max-height: 200px;
+  }
+
+  .rewardItem {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .fightContainer {
+    border-radius: 12px;
+    margin: 4px;
+  }
+
+  .battleArena {
+    padding: 16px 8px;
+  }
+
+  .combatant {
+    padding: 8px;
+  }
+
+  .combatantInfo {
+    max-width: 140px;
+  }
+
+  .stats {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat {
+    border-radius: 12px;
+  }
+
+  .rewardItems {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .logCard {
+    border-radius: 20px;
+  }
+
+  .startButton, .restartButton, .toggleButton, .resetButton {
+    border-radius: 14px;
+  }
+}

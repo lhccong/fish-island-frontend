@@ -163,7 +163,7 @@ const ChatRoom: React.FC = () => {
   const loadingRef = useRef(false); // 添加loadingRef防止重复请求
 
   const [announcement, setAnnouncement] = useState<string>(
-    '欢迎来到摸鱼聊天室！🎉 这里是一个充满快乐的地方~。致谢：感谢 yovvis 大佬赞助的服务器资源',
+    '欢迎来到摸鱼聊天室！🎉 这里是一个充满快乐的地方~。致谢服务商：<a href="https://crash.work/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; text-decoration: none; margin-left: 4px;"><img src="/img/posuiyun.png" alt="破碎工坊云" style="height: 20px; vertical-align: middle; margin-right: 4px;" /></a>',
   );
   const [showAnnouncement, setShowAnnouncement] = useState<boolean>(true);
   const [isAnnouncementModalVisible, setIsAnnouncementModalVisible] = useState(false);
@@ -2871,13 +2871,13 @@ const ChatRoom: React.FC = () => {
             <div className={styles.announcementContent}>
               <SoundOutlined className={styles.announcementIcon} />
               <span dangerouslySetInnerHTML={{ __html: announcement }} />
-              <Button
-                type="link"
-                onClick={() => setIsAnnouncementModalVisible(true)}
-                style={{ marginLeft: '16px', padding: '0' }}
-              >
-                查看更新
-              </Button>
+              {/*<Button*/}
+              {/*  type="link"*/}
+              {/*  onClick={() => setIsAnnouncementModalVisible(true)}*/}
+              {/*  style={{ marginLeft: '16px', padding: '0' }}*/}
+              {/*>*/}
+              {/*  查看更新*/}
+              {/*</Button>*/}
             </div>
           }
           type="info"

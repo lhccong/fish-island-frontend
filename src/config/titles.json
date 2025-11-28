@@ -112,6 +112,13 @@
       "description": "宠物第三名",
       "titleImg": "https://oss.cqbo.com/moyu/title/badge-摸鱼智多星.png"
 
+    },
+    {
+      "id": "19",
+      "name": "犯困嫌疑人",
+      "description": "Auxi 专属",
+      "titleImg": "https://oss.cqbo.com/moyu/title/auxi.jpg"
+
     }
   ]
 }
