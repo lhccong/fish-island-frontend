@@ -119,6 +119,13 @@
       "description": "Auxi 专属",
       "titleImg": "https://oss.cqbo.com/moyu/title/auxi.jpg"
 
+    },
+    {
+      "id": "20",
+      "name": "闲人一个",
+      "description": "土黑娃专属",
+      "titleImg": "https://oss.cqbo.com/moyu/title/土黑娃.png"
+
     }
   ]
 }
