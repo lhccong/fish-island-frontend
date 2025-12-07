@@ -20,6 +20,36 @@ export default [
   { path: '/draw', icon: 'FundViewOutlined', component: './Draw', name: '你画我猜', requireAuth: true },
   {path: '/draw/:id',component: './Draw/Detail', requireAuth: true},
   {
+    path: '/video',
+    icon: 'VideoCameraOutlined',
+    name: '视频',
+    requireAuth: true,
+    routes: [
+      {
+        icon: 'VideoCameraOutlined',
+        path: '/video/miss',
+        component: './Video/Miss',
+        name: '小姐姐短视频',
+        requireAuth: false
+      },
+      {
+        icon: 'PlayCircleOutlined',
+        path: '/video/bilibili',
+        component: './Video/Bilibili',
+        name: '随机哔哩哔哩',
+        requireAuth: false
+      },
+    ],
+  },
+  {
+    // 修改图标为音乐图标
+    icon: 'TikTokOutlined',
+    path: '/music',
+    component: './Music',
+    name: '音乐',
+    requireAuth: false
+  },
+  {
     path: '/game',
     icon: 'DesktopOutlined',
     name: '小游戏',
