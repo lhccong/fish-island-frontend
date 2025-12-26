@@ -1,7 +1,7 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Avatar, Badge, Button, Card, Drawer, Empty, List, Space, Spin, Tag, Tooltip, message } from 'antd';
-import { BellOutlined, CheckCircleOutlined, CheckOutlined } from '@ant-design/icons';
-import { batchSetReadUsingPost, listMyEventRemindByPageUsingPost } from '@/services/backend/eventRemindController';
+import { Avatar, Badge, Button, Card, Drawer, Empty, List, Space, Spin, Tag, Tooltip, message, Checkbox, Popconfirm } from 'antd';
+import { BellOutlined, CheckCircleOutlined, CheckOutlined, DeleteOutlined } from '@ant-design/icons';
+import { batchDeleteUsingPost, batchSetReadUsingPost, listMyEventRemindByPageUsingPost } from '@/services/backend/eventRemindController';
 import { history } from '@umijs/max';
 import moment from 'moment';
 import './index.less';
@@ -51,6 +51,9 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
     const pageSize = 10;
     const listRef = useRef<HTMLDivElement>(null);
     const scrollThreshold = 100; // 滚动到距离底部多少px时加载更多
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [deleting, setDeleting] = useState<boolean>(false);
+    const [isDeleteMode, setIsDeleteMode] = useState<boolean>(false);
 
     // 暴露给父组件的方法
     useImperativeHandle(ref, () => ({
@@ -214,6 +217,55 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
       }
     };
 
+    // 选择 / 取消选择单条消息
+    const handleSelectItem = (id: number, checked: boolean) => {
+      setSelectedIds((prev) => {
+        if (checked) {
+          if (prev.includes(id)) return prev;
+          return [...prev, id];
+        }
+        return prev.filter((itemId) => itemId !== id);
+      });
+    };
+
+    // 进入删除模式
+    const enterDeleteMode = () => {
+      setIsDeleteMode(true);
+      setSelectedIds([]);
+    };
+
+    // 退出删除模式
+    const exitDeleteMode = () => {
+      setIsDeleteMode(false);
+      setSelectedIds([]);
+    };
+
+    // 批量删除消息
+    const handleBatchDelete = async () => {
+      if (selectedIds.length === 0) {
+        message.info('请先选择要删除的消息');
+        return;
+      }
+
+      try {
+        setDeleting(true);
+        const res = await batchDeleteUsingPost({ ids: selectedIds });
+        if (res.data) {
+          message.success('删除成功');
+          // 删除后刷新列表并重置选择，退出删除模式
+          setCurrentPage(1);
+          setSelectedIds([]);
+          setIsDeleteMode(false);
+          await fetchMessageList(1, true);
+        }
+      } catch (error) {
+        console.error('批量删除消息失败', error);
+        message.error('批量删除消息失败');
+      } finally {
+        setDeleting(false);
+      }
+    };
+
     // 初始化加载消息
     useEffect(() => {
       fetchMessageList(1, true);
@@ -228,11 +280,15 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
       return () => clearInterval(timer);
     }, [visible]);
 
-    // 监听抽屉显示状态，重置页码
+    // 监听抽屉显示状态，重置页码和删除模式
     useEffect(() => {
       if (visible) {
         setCurrentPage(1);
         fetchMessageList(1, true);
+      } else {
+        // 关闭抽屉时退出删除模式
+        setIsDeleteMode(false);
+        setSelectedIds([]);
       }
     }, [visible]);
 
@@ -271,13 +327,32 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
       const senderUser = item.senderUser;
       const defaultAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=visitor';
       const tagInfo = getMessageTagInfo(item.action);
+      const itemId = item.id;
+      const checked = itemId !== undefined && selectedIds.includes(itemId);
       
       return (
         <List.Item 
           className={`message-item ${isUnread ? 'unread' : 'read'}`}
-          onClick={() => handleMessageClick(item)}
+          onClick={() => {
+            // 删除模式下点击不跳转
+            if (!isDeleteMode) {
+              handleMessageClick(item);
+            }
+          }}
         >
           <Card className="message-card" bordered={false}>
+            {isDeleteMode && (
+              <div className="message-select">
+                <Checkbox
+                  checked={checked}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    if (itemId === undefined) return;
+                    handleSelectItem(itemId, e.target.checked);
+                  }}
+                />
+              </div>
+            )}
             <div className="message-header">
               <div className="message-user-info">
                 <Avatar 
@@ -330,15 +405,56 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
               <span>消息通知</span>
               {unreadCount > 0 && <Badge count={unreadCount} size="small" />}
             </Space>
-            <Button 
-              type="primary"
-              icon={<CheckOutlined />}
-              onClick={markAllAsRead}
-              disabled={unreadCount === 0}
-              size="small"
-            >
-              全部已读
-            </Button>
+            <Space>
+              {isDeleteMode ? (
+                <>
+                  <Popconfirm
+                    title="确定删除选中的消息吗？"
+                    okText="删除"
+                    cancelText="取消"
+                    onConfirm={handleBatchDelete}
+                    disabled={selectedIds.length === 0}
+                  >
+                    <Button
+                      type="primary"
+                      danger
+                      icon={<DeleteOutlined />}
+                      size="small"
+                      disabled={selectedIds.length === 0}
+                      loading={deleting}
+                    >
+                      批量删除
+                    </Button>
+                  </Popconfirm>
+                  <Button 
+                    size="small"
+                    onClick={exitDeleteMode}
+                  >
+                    取消
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    danger
+                    icon={<DeleteOutlined />}
+                    size="small"
+                    onClick={enterDeleteMode}
+                  >
+                    删除
+                  </Button>
+                  <Button 
+                    type="primary"
+                    icon={<CheckOutlined />}
+                    onClick={markAllAsRead}
+                    disabled={unreadCount === 0}
+                    size="small"
+                  >
+                    全部已读
+                  </Button>
+                </>
+              )}
+            </Space>
           </div>
         }
         placement="right"
