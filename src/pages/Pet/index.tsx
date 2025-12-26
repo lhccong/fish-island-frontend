@@ -202,8 +202,6 @@ const PetPage: React.FC = () => {
             rowKey="petId"
             pagination={false}
             className={styles.rankTable}
-            // 限制排行榜表格高度，超出部分出现滚动条
-            scroll={{ y: 400 }}
             onRow={(record) => ({
               onClick: () => handlePetRowClick(record),
               style: { cursor: 'pointer' }
