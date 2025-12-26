@@ -381,6 +381,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePostRewardTokenVO_ = {
+    code?: number;
+    data?: PostRewardTokenVO;
+    message?: string;
+  };
+
   type BaseResponsePostVO_ = {
     code?: number;
     data?: PostVO;
@@ -444,6 +450,12 @@ declare namespace API {
   type BaseResponseUserMuteVO_ = {
     code?: number;
     data?: UserMuteVO;
+    message?: string;
+  };
+
+  type BaseResponseUserRewardVO_ = {
+    code?: number;
+    data?: UserRewardVO;
     message?: string;
   };
 
@@ -878,6 +890,11 @@ declare namespace API {
     roomId: string;
   };
 
+  type getCurrentRewardUserUsingGETParams = {
+    /** postId */
+    postId?: number;
+  };
+
   type getDonationRecordsVoByIdUsingGETParams = {
     /** id */
     id?: number;
@@ -930,6 +947,11 @@ declare namespace API {
     roomId: string;
     /** userId */
     userId: number;
+  };
+
+  type getPostRewardTokenUsingGETParams = {
+    /** postId */
+    postId?: number;
   };
 
   type getPostVoByIdUsingGETParams = {
@@ -1936,6 +1958,15 @@ declare namespace API {
     userId?: number;
   };
 
+  type PostRandomThumbRequest = {
+    postId?: number;
+    randomIndex?: number;
+  };
+
+  type PostRewardTokenVO = {
+    rewardToken?: string;
+  };
+
   type PostThumbAddRequest = {
     postId?: number;
   };
@@ -2417,6 +2448,16 @@ declare namespace API {
     email?: string;
     userAccount?: string;
     userPassword?: string;
+  };
+
+  type UserRewardVO = {
+    createTime?: string;
+    id?: number;
+    rewardToken?: string;
+    userAvatar?: string;
+    userName?: string;
+    userProfile?: string;
+    userRole?: string;
   };
 
   type UserTitle = {

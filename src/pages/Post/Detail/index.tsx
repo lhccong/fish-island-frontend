@@ -1,6 +1,6 @@
 import React, {useEffect, useState, useRef} from 'react';
 import {useParams, history, Link} from 'umi';
-import {Card, Avatar, Typography, Space, Divider, List, Button, message, Spin, Input, Pagination, Modal, Popover, Image, Alert} from 'antd';
+import {Card, Avatar, Typography, Space, Divider, List, Button, message, Spin, Input, Pagination, Modal, Popover, Image, Alert, Tooltip, Dropdown, Menu} from 'antd';
 import {
   LikeOutlined,
   LikeFilled,
@@ -20,9 +20,16 @@ import {
   PictureOutlined,
   CloseCircleOutlined,
   LoadingOutlined,
-  RobotOutlined
+  RobotOutlined,
+  MoreOutlined
 } from '@ant-design/icons';
-import {getPostVoByIdUsingGet, deletePostUsingPost1} from '@/services/backend/postController';
+import {
+  getPostVoByIdUsingGet,
+  deletePostUsingPost1,
+  randomThumbUserUsingPost,
+  getPostRewardTokenUsingGet,
+  getCurrentRewardUserUsingGet
+} from '@/services/backend/postController';
 import {doThumbUsingPost1} from '@/services/backend/postThumbController';
 import {doPostFavourUsingPost} from '@/services/backend/postFavourController';
 import {
@@ -106,6 +113,12 @@ const PostDetail: React.FC = () => {
   const [replyPastedImages, setReplyPastedImages] = useState<{[commentId: string]: string[]}>({});
   const [uploadingImage, setUploadingImage] = useState<boolean>(false);
   const [uploadingReplyImage, setUploadingReplyImage] = useState<{[commentId: string]: boolean}>({});
+  const [randomThumbLoading, setRandomThumbLoading] = useState<boolean>(false);
+  const [randomThumbModalVisible, setRandomThumbModalVisible] = useState<boolean>(false);
+  const [randomIndexInput, setRandomIndexInput] = useState<string>('');
+  const [rewardTokenLoading, setRewardTokenLoading] = useState<boolean>(false);
+  const [rewardUser, setRewardUser] = useState<API.UserRewardVO | null>(null);
+  const [rewardUserLoading, setRewardUserLoading] = useState<boolean>(false);
 
   // 处理图片压缩
   const compressImage = (file: File): Promise<File> => {
@@ -1390,6 +1403,174 @@ const PostDetail: React.FC = () => {
     return currentUser.id === commentUserId;
   };
 
+  // 抽取随机点赞用户（仅帖子创建者可用）
+  const handleRandomThumbUser = async (randomIndex?: number) => {
+    if (!currentUser) {
+      message.warning('请先登录');
+      return;
+    }
+    if (!post || !post.id) {
+      message.warning('帖子信息异常');
+      return;
+    }
+    if (currentUser.id !== post.userId) {
+      message.warning('仅帖子创建者可使用该功能');
+      return;
+    }
+
+    if (!randomIndex || randomIndex <= 0) {
+      message.warning('请输入大于 0 的随机数');
+      return;
+    }
+
+    if (typeof post.thumbNum === 'number' && post.thumbNum > 0 && randomIndex > post.thumbNum) {
+      message.warning(`随机数不能大于当前点赞数，请输入 1 ~ ${post.thumbNum} 之间的整数`);
+      return;
+    }
+
+    setRandomThumbLoading(true);
+    try {
+      const res = await randomThumbUserUsingPost({
+        postId: post.id as number,
+        randomIndex: randomIndex
+      });
+
+      if (!res.data) {
+        message.warning('当前暂无可抽取的点赞用户');
+        return;
+      }
+
+      const rewardUser = res.data;
+
+      Modal.info({
+        title: '抽取结果',
+        content: (
+          <div style={{ marginTop: 12 }}>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Space>
+                <Avatar src={rewardUser.userAvatar} />
+                <span>{rewardUser.userName || '匿名用户'}</span>
+              </Space>
+              {rewardUser.userProfile && (
+                <div>
+                  <Text type="secondary">个人简介：</Text>
+                  <Paragraph style={{ marginBottom: 0 }}>{rewardUser.userProfile}</Paragraph>
+                </div>
+              )}
+              {rewardUser.rewardToken && (
+                <div>
+                  <Text>兑奖口令：</Text>
+                  <Paragraph copyable style={{ marginBottom: 0 }}>
+                    {rewardUser.rewardToken}
+                  </Paragraph>
+                </div>
+              )}
+            </Space>
+          </div>
+        ),
+        okText: '我知道了'
+      });
+    } catch (e) {
+      message.error('抽取点赞用户失败，请稍后重试');
+    } finally {
+      setRandomThumbLoading(false);
+    }
+  };
+
+  // 获取帖子兑奖加密 token（所有用户可用）
+  const handleGetPostRewardToken = async () => {
+    if (!post || !post.id) {
+      message.warning('帖子信息异常');
+      return;
+    }
+
+    setRewardTokenLoading(true);
+    try {
+      const res = await getPostRewardTokenUsingGet({
+        postId: post.id as number
+      });
+
+      if (!res.data || !res.data.rewardToken) {
+        message.warning('暂未获取到兑奖 token');
+        return;
+      }
+
+      Modal.info({
+        title: '帖子兑奖 Token',
+        content: (
+          <div style={{ marginTop: 12 }}>
+            <Text>请妥善保管该 Token：</Text>
+            <Paragraph copyable style={{ marginTop: 8, marginBottom: 0 }}>
+              {res.data.rewardToken}
+            </Paragraph>
+          </div>
+        ),
+        okText: '已复制'
+      });
+    } catch (e) {
+      message.error('获取帖子兑奖 token 失败，请稍后重试');
+    } finally {
+      setRewardTokenLoading(false);
+    }
+  };
+
+  // 获取中奖用户信息
+  const handleGetRewardUser = async () => {
+    if (!post || !post.id) {
+      message.warning('帖子信息异常');
+      return;
+    }
+
+    setRewardUserLoading(true);
+    try {
+      const res = await getCurrentRewardUserUsingGet({
+        postId: post.id as number
+      });
+      if (res.data) {
+        setRewardUser(res.data);
+
+        const user = res.data;
+        Modal.info({
+          title: '中奖用户信息',
+          content: (
+            <div style={{ marginTop: 12 }}>
+              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                <Space>
+                  <Avatar src={user.userAvatar} />
+                  <span>{user.userName || '匿名用户'}</span>
+                </Space>
+                {user.userProfile && (
+                  <div>
+                    <Text type="secondary">个人简介：</Text>
+                    <Paragraph style={{ marginBottom: 0 }}>{user.userProfile}</Paragraph>
+                  </div>
+                )}
+                {user.rewardToken && (
+                  <div>
+                    <Text>兑奖口令：</Text>
+                    <Paragraph copyable style={{ marginBottom: 0 }}>
+                      {user.rewardToken}
+                    </Paragraph>
+                  </div>
+                )}
+              </Space>
+            </div>
+          ),
+          okText: '我知道了'
+        });
+      } else {
+        setRewardUser(null);
+        message.warning('当前暂无中奖用户');
+      }
+    } catch (error: any) {
+      // 如果接口返回错误，说明没有中奖用户
+      setRewardUser(null);
+      message.warning('当前暂无中奖用户');
+    } finally {
+      setRewardUserLoading(false);
+    }
+  };
+
   // 编辑帖子
   const handleEditPost = () => {
     if (!id) return;
@@ -1796,26 +1977,87 @@ const PostDetail: React.FC = () => {
           </div>
         </Link>
         <div className="post-actions-buttons">
-          {/* 添加编辑按钮 */}
           {canEditPost() && (
-            <Button
-              type="primary"
-              icon={<EditOutlined/>}
-              onClick={handleEditPost}
-              style={{marginRight: 8}}
-            >
-              编辑帖子
-            </Button>
+            <>
+              {/* 编辑按钮 */}
+              <Button
+                type="primary"
+                icon={<EditOutlined/>}
+                onClick={handleEditPost}
+                style={{marginRight: 8}}
+              >
+                编辑帖子
+              </Button>
+              {/* 删除按钮 */}
+              <Button
+                danger
+                icon={<DeleteOutlined/>}
+                onClick={showDeleteConfirm}
+                style={{marginRight: 8}}
+              >
+                删除帖子
+              </Button>
+              {/* 更多操作下拉菜单 */}
+              <Dropdown
+                overlay={
+                  <Menu>
+                    <Menu.Item
+                      key="reward-user"
+                      onClick={handleGetRewardUser}
+                      disabled={rewardUserLoading}
+                    >
+                      {rewardUserLoading ? '加载中...' : '查看中奖用户'}
+                    </Menu.Item>
+                    <Menu.Item
+                      key="reward-token"
+                      onClick={handleGetPostRewardToken}
+                      disabled={rewardTokenLoading}
+                    >
+                      {rewardTokenLoading ? '加载中...' : '获取兑奖 Token'}
+                    </Menu.Item>
+                    <Menu.Item
+                      key="random-thumb"
+                      onClick={() => setRandomThumbModalVisible(true)}
+                      disabled={randomThumbLoading}
+                    >
+                      {randomThumbLoading ? '加载中...' : '抽取点赞用户'}
+                    </Menu.Item>
+                  </Menu>
+                }
+                placement="bottomRight"
+              >
+                <Button icon={<MoreOutlined />} style={{marginRight: 8}}>
+                  更多操作
+                </Button>
+              </Dropdown>
+            </>
           )}
-          {/* 添加删除按钮 */}
-          {canEditPost() && (
-            <Button
-              danger
-              icon={<DeleteOutlined/>}
-              onClick={showDeleteConfirm}
+          {!canEditPost() && (
+            <Dropdown
+              overlay={
+                <Menu>
+                  <Menu.Item
+                    key="reward-user"
+                    onClick={handleGetRewardUser}
+                    disabled={rewardUserLoading}
+                  >
+                    {rewardUserLoading ? '加载中...' : '查看中奖用户'}
+                  </Menu.Item>
+                  <Menu.Item
+                    key="reward-token"
+                    onClick={handleGetPostRewardToken}
+                    disabled={rewardTokenLoading}
+                  >
+                    {rewardTokenLoading ? '加载中...' : '获取兑奖 Token'}
+                  </Menu.Item>
+                </Menu>
+              }
+              placement="bottomRight"
             >
-              删除帖子
-            </Button>
+              <Button icon={<MoreOutlined />}>
+                更多操作
+              </Button>
+            </Dropdown>
           )}
         </div>
       </div>
@@ -1833,6 +2075,49 @@ const PostDetail: React.FC = () => {
         <p>确定要删除这篇帖子吗？删除后将无法恢复。</p>
       </Modal>
 
+      {/* 抽取点赞用户 - 输入随机数弹窗 */}
+      <Modal
+        title="抽取点赞用户"
+        open={randomThumbModalVisible}
+        onOk={async () => {
+          const value = parseInt(randomIndexInput, 10);
+          if (Number.isNaN(value) || value <= 0) {
+            message.warning('请输入大于 0 的整数随机数');
+            return;
+          }
+          if (typeof post.thumbNum === 'number' && post.thumbNum > 0 && value > post.thumbNum) {
+            message.warning(`随机数不能大于当前点赞数，请输入 1 ~ ${post.thumbNum} 之间的整数`);
+            return;
+          }
+          setRandomThumbModalVisible(false);
+          setRandomIndexInput('');
+          await handleRandomThumbUser(value);
+        }}
+        onCancel={() => {
+          setRandomThumbModalVisible(false);
+          setRandomIndexInput('');
+        }}
+        okText="开始抽取"
+        cancelText="取消"
+        confirmLoading={randomThumbLoading}
+      >
+        <div>
+          <p style={{ marginBottom: 8 }}>
+            请输入一个你自己选择的随机数（例如 123、999 等），系统会根据该随机数从点赞用户中抽取一位。
+          </p>
+          {typeof post.thumbNum === 'number' && post.thumbNum > 0 && (
+            <p style={{ marginBottom: 8, color: '#888' }}>
+              当前点赞数：{post.thumbNum}，建议输入 1 ~ {post.thumbNum} 之间的整数。
+            </p>
+          )}
+          <Input
+            value={randomIndexInput}
+            onChange={(e) => setRandomIndexInput(e.target.value)}
+            placeholder="请输入随机数，例如 123"
+          />
+        </div>
+      </Modal>
+
       <div className="post-detail-layout">
         <div className="post-detail-main" ref={mainContentRef}>
           <Card className="post-detail-card">
@@ -1843,6 +2128,40 @@ const PostDetail: React.FC = () => {
                   <Avatar src={post.user?.userAvatar} size="small"/>
                   <Text strong>{post.user?.userName}</Text>
                   <Text type="secondary">{formatTime(post.createTime)}</Text>
+                  {/* 显示中奖用户头像 */}
+                  {rewardUser && (
+                    <Tooltip
+                      title={
+                        <div style={{ padding: '4px 0' }}>
+                          <div style={{ marginBottom: 8, fontWeight: 'bold' }}>🎉 中奖用户</div>
+                          <div style={{ marginBottom: 4 }}>
+                            <Text strong style={{ color: '#fff' }}>{rewardUser.userName}</Text>
+                          </div>
+                          {rewardUser.userProfile && (
+                            <div style={{ marginBottom: 4, fontSize: '12px', color: '#fff' }}>
+                              {rewardUser.userProfile}
+                            </div>
+                          )}
+                          {rewardUser.rewardToken && (
+                            <div style={{ marginTop: 8, fontSize: '12px', color: '#fff', opacity: 0.8 }}>
+                              兑奖Token: {rewardUser.rewardToken}
+                            </div>
+                          )}
+                        </div>
+                      }
+                      placement="top"
+                    >
+                      <Space>
+                        <Text type="secondary" style={{ fontSize: '12px' }}>🎉</Text>
+                        <Avatar 
+                          src={rewardUser.userAvatar} 
+                          size="small"
+                          style={{ cursor: 'pointer', border: '2px solid #ffd700' }}
+                        />
+                        <Text type="secondary" style={{ fontSize: '12px' }}>中奖用户</Text>
+                      </Space>
+                    </Tooltip>
+                  )}
                 </Space>
               </div>
             </div>

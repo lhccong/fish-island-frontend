@@ -134,6 +134,51 @@ export async function listMyPostVoByPageUsingPost(
   });
 }
 
+/** 从帖子点赞列表中随机抽取一个用户（仅帖子创建用户可使用） POST /api/post/random/thumb/user */
+export async function randomThumbUserUsingPost(
+  body: API.PostRandomThumbRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseUserRewardVO_>('/api/post/random/thumb/user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 获取帖子兑奖加密token GET /api/post/reward/token */
+export async function getPostRewardTokenUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getPostRewardTokenUsingGETParams,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponsePostRewardTokenVO_>('/api/post/reward/token', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
+/** 获取当前中奖用户 GET /api/post/reward/user */
+export async function getCurrentRewardUserUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getCurrentRewardUserUsingGETParams,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseUserRewardVO_>('/api/post/reward/user', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}
+
 /** 更新（仅管理员） POST /api/post/update */
 export async function updatePostUsingPost(
   body: API.PostUpdateRequest,
