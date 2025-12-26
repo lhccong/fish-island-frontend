@@ -16,8 +16,10 @@ import {
   grabRedPacketUsingPost,
 } from '@/services/backend/redPacketController';
 import { muteUserUsingPost, getUserMuteInfoUsingGet, unmuteUserUsingPost } from '@/services/backend/userMuteController';
+import { generateAnnualReportUsingGet } from '@/services/backend/userController';
 import { wsService } from '@/services/websocket';
 import { useModel } from '@@/exports';
+import html2canvas from 'html2canvas';
 // ... 其他 imports ...
 import {
   BugOutlined,
@@ -167,6 +169,9 @@ const ChatRoom: React.FC = () => {
   );
   const [showAnnouncement, setShowAnnouncement] = useState<boolean>(true);
   const [isAnnouncementModalVisible, setIsAnnouncementModalVisible] = useState(false);
+  const [isAnnualReportModalVisible, setIsAnnualReportModalVisible] = useState(false);
+  const [annualReportHtml, setAnnualReportHtml] = useState<string>('');
+  const [isLoadingAnnualReport, setIsLoadingAnnualReport] = useState(false);
 
   const [isComponentMounted, setIsComponentMounted] = useState(true);
   const [isPageVisible, setIsPageVisible] = useState(!document.hidden);
@@ -197,6 +202,58 @@ const ChatRoom: React.FC = () => {
   const mentionListRef = useRef<HTMLDivElement>(null);
   // 添加防抖引用
   const mentionDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const annualReportRef = useRef<HTMLDivElement | null>(null);
+
+  // 导出摸鱼年终报告为图片
+  const handleExportAnnualReportImage = async () => {
+    if (!annualReportHtml) {
+      message.error('报告内容还没有加载完成，请稍后再试~');
+      return;
+    }
+
+    try {
+      setIsExportingAnnualReportImage(true);
+
+      // 在屏幕外创建一个隐藏容器，避免被 Modal 头部等元素遮挡
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '750px'; // 固定宽度，保证版式稳定
+      container.style.padding = '24px 0 32px';
+      container.style.background = '#E7F5FF'; // 和年报背景接近
+      container.style.zIndex = '-1';
+      container.innerHTML = annualReportHtml;
+
+      document.body.appendChild(container);
+
+      // 等待一帧，确保样式和图片加载
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+
+      const canvas = await html2canvas(container, {
+        useCORS: true,
+        backgroundColor: '#E7F5FF',
+        scale: 2,
+        scrollX: 0,
+        scrollY: 0,
+      });
+
+      document.body.removeChild(container);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'moyu-annual-report.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('导出年终报告图片失败:', error);
+      message.error('导出图片失败，请稍后重试~');
+    } finally {
+      setIsExportingAnnualReportImage(false);
+    }
+  };
 
   const [isRedPacketModalVisible, setIsRedPacketModalVisible] = useState(false);
   const [redPacketAmount, setRedPacketAmount] = useState<number>(100);
@@ -374,6 +431,7 @@ const ChatRoom: React.FC = () => {
   const newMessageTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isLoadingMoyu, setIsLoadingMoyu] = useState(false);
+  const [isExportingAnnualReportImage, setIsExportingAnnualReportImage] = useState(false);
 
   // 添加用户备注相关状态
   const [userRemarks, setUserRemarks] = useState<Record<string, string>>({});
@@ -2871,13 +2929,32 @@ const ChatRoom: React.FC = () => {
             <div className={styles.announcementContent}>
               <SoundOutlined className={styles.announcementIcon} />
               <span dangerouslySetInnerHTML={{ __html: announcement }} />
-              {/*<Button*/}
-              {/*  type="link"*/}
-              {/*  onClick={() => setIsAnnouncementModalVisible(true)}*/}
-              {/*  style={{ marginLeft: '16px', padding: '0' }}*/}
-              {/*>*/}
-              {/*  查看更新*/}
-              {/*</Button>*/}
+              <Button
+                type="link"
+                loading={isLoadingAnnualReport}
+                onClick={async () => {
+                  let hideLoading: VoidFunction | undefined;
+                  try {
+                    setIsLoadingAnnualReport(true);
+                    hideLoading = messageApi.loading('摸鱼年报生成中，请稍候...', 0);
+                    const res = await generateAnnualReportUsingGet();
+                    // 接口直接返回 HTML 字符串
+                    setAnnualReportHtml(res as unknown as string);
+                    setIsAnnualReportModalVisible(true);
+                  } catch (error) {
+                    console.error('生成摸鱼年终报告失败:', error);
+                    message.error('生成摸鱼年终报告失败，请稍后重试~');
+                  } finally {
+                    if (hideLoading) {
+                      hideLoading();
+                    }
+                    setIsLoadingAnnualReport(false);
+                  }
+                }}
+                style={{ marginLeft: 16, padding: 0 }}
+              >
+                ⭐生成你的摸鱼年终报告🐟
+              </Button>
             </div>
           }
           type="info"
@@ -2887,6 +2964,27 @@ const ChatRoom: React.FC = () => {
           className={styles.announcement}
         />
       )}
+      <Modal
+        title="你的摸鱼年终报告"
+        open={isAnnualReportModalVisible}
+        onCancel={() => setIsAnnualReportModalVisible(false)}
+        footer={[
+          <Button key="download" type="primary" loading={isExportingAnnualReportImage} onClick={handleExportAnnualReportImage}>
+            导出为图片
+          </Button>,
+          <Button key="close" onClick={() => setIsAnnualReportModalVisible(false)}>
+            关闭
+          </Button>,
+        ]}
+        width={800}
+        bodyStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
+      >
+        <div
+          ref={annualReportRef}
+          // 后端返回的是完整的 HTML 片段
+          dangerouslySetInnerHTML={{ __html: annualReportHtml }}
+        />
+      </Modal>
       <div className={styles['floating-fish'] + ' ' + styles.fish1}>🐟</div>
       <div className={styles['floating-fish'] + ' ' + styles.fish2}>🐠</div>
       <div className={styles['floating-fish'] + ' ' + styles.fish3}>🐡</div>

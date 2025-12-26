@@ -119,6 +119,14 @@ export async function getUserByIdUsingGet(
   });
 }
 
+/** 生成用户年度报告 GET /api/user/get/annualReport */
+export async function generateAnnualReportUsingGet(options?: { [key: string]: any }) {
+  return request<string>('/api/user/get/annualReport', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
 /** 获取当前登录用户 GET /api/user/get/login */
 export async function getLoginUserUsingGet(options?: { [key: string]: any }) {
   return request<API.BaseResponseLoginUserVO_>('/api/user/get/login', {
