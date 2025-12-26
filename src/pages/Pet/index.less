@@ -667,7 +667,11 @@
 }
 
 .bossActions {
-  text-align: center;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .challengeBtn {
@@ -692,6 +696,89 @@
       box-shadow: 0 6px 16px rgba(255, 167, 104, 0.5);
     }
   }
+}
+
+.rankingBtn {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(251, 191, 36, 0.5);
+    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 100%);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// 排行榜弹窗样式
+.rankingModal {
+  :global(.ant-modal-header) {
+    background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+    border-bottom: 2px solid #ffa768;
+    border-radius: 8px 8px 0 0;
+  }
+  
+  :global(.ant-modal-title) {
+    font-weight: bold;
+    color: #c2410c;
+  }
+  
+  :global(.ant-modal-body) {
+    padding: 20px;
+  }
+}
+
+.rankingModalTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #c2410c;
+}
+
+.rankingModalIcon {
+  font-size: 20px;
+  color: #f59e0b;
+}
+
+.bossRankingContainer {
+  min-height: 200px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userAvatar {
+  flex-shrink: 0;
+}
+
+.userName {
+  font-weight: 500;
+  color: #333;
+}
+
+.damageValue {
+  font-weight: bold;
+  color: #f97316;
+  font-size: 15px;
 }
 
 // BOSS光环动画

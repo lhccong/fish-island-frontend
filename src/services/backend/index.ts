@@ -3,6 +3,7 @@
 // API 更新时间：
 // API 唯一标识：
 import * as avatarFrameController from './avatarFrameController';
+import * as bossController from './bossController';
 import * as chatController from './chatController';
 import * as commentController from './commentController';
 import * as commentThumbController from './commentThumbController';
@@ -39,6 +40,7 @@ export default {
   petRankController,
   petSkinController,
   webParserController,
+  bossController,
   chatController,
   commentController,
   commentThumbController,

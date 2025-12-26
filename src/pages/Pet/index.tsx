@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Avatar, Badge, Spin } from 'antd';
+import { Row, Col, Card, Table, Avatar, Badge, Spin, Modal } from 'antd';
 import { TrophyOutlined, CrownOutlined, HomeOutlined, BarChartOutlined, ThunderboltOutlined, BookOutlined } from '@ant-design/icons';
+import { history, useSearchParams } from '@umijs/max';
 import MoyuPet from '@/components/MoyuPet';
 import styles from './index.less';
 import { getPetRankListUsingGet } from '@/services/backend/petRankController';
 import { listItemTemplatesVoByPageUsingPost } from '@/services/backend/itemTemplatesController';
+import { getBossListWithCacheUsingGet, getBossChallengeRankingUsingGet } from '@/services/backend/bossController';
 
 const PetPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>('pet');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<string>(tabParam || 'pet');
   const [rankData, setRankData] = useState<API.PetRankVO[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [petModalVisible, setPetModalVisible] = useState<boolean>(false);
@@ -21,6 +25,16 @@ const PetPage: React.FC = () => {
     subType?: string;
     rarity?: number;
   }>({});
+
+  // Boss相关状态
+  const [bossData, setBossData] = useState<API.BossVO[]>([]);
+  const [bossLoading, setBossLoading] = useState<boolean>(false);
+  
+  // Boss排行榜相关状态
+  const [rankingModalVisible, setRankingModalVisible] = useState<boolean>(false);
+  const [currentBossId, setCurrentBossId] = useState<number | null>(null);
+  const [rankingData, setRankingData] = useState<API.BossChallengeRankingVO[]>([]);
+  const [rankingLoading, setRankingLoading] = useState<boolean>(false);
 
   // 获取排行榜数据
   const fetchRankData = async () => {
@@ -56,6 +70,50 @@ const PetPage: React.FC = () => {
     }
   };
 
+  // 获取Boss数据
+  const fetchBossData = async () => {
+    setBossLoading(true);
+    try {
+      const res = await getBossListWithCacheUsingGet();
+      if (res.data) {
+        setBossData(res.data);
+      }
+    } catch (error) {
+      console.error('获取Boss数据失败:', error);
+    } finally {
+      setBossLoading(false);
+    }
+  };
+
+  // 获取Boss排行榜数据
+  const fetchBossRanking = async (bossId: number) => {
+    setRankingLoading(true);
+    try {
+      const res = await getBossChallengeRankingUsingGet({ bossId, limit: 20 });
+      if (res.data) {
+        setRankingData(res.data);
+      }
+    } catch (error) {
+      console.error('获取Boss排行榜数据失败:', error);
+    } finally {
+      setRankingLoading(false);
+    }
+  };
+
+  // 打开排行榜弹窗
+  const handleOpenRanking = (bossId: number) => {
+    setCurrentBossId(bossId);
+    setRankingModalVisible(true);
+    fetchBossRanking(bossId);
+  };
+
+  // 关闭排行榜弹窗
+  const handleCloseRanking = () => {
+    setRankingModalVisible(false);
+    setCurrentBossId(null);
+    setRankingData([]);
+  };
+
   useEffect(() => {
     fetchRankData();
   }, []);
@@ -65,6 +123,20 @@ const PetPage: React.FC = () => {
       fetchGalleryData();
     }
   }, [activeTab, galleryFilter]);
+
+  useEffect(() => {
+    if (activeTab === 'boss') {
+      fetchBossData();
+    }
+  }, [activeTab]);
+
+  // 支持通过 URL 参数设置 tab
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['pet', 'ranking', 'boss', 'gallery'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // 处理点击宠物行
   const handlePetRowClick = (record: API.PetRankVO) => {
@@ -348,107 +420,74 @@ const PetPage: React.FC = () => {
           <div className={styles.bossSubtitle}>全服玩家联合攻打黑心老板，共同获得奖励！</div>
         </div>
         
-        <div className={styles.bossGrid}>
-          {/* BOSS卡片 */}
-          <div className={styles.bossCard}>
-            <div className={styles.bossAvatar}>
-              <div className={styles.bossImage}>👔</div>
-              <div className={styles.bossLevel}>Lv.50</div>
-            </div>
-            <div className={styles.bossInfo}>
-              <div className={styles.bossName}>压榨王CEO</div>
-              <div className={styles.bossDesc}>传说中的黑心老板之王，专门压榨员工加班</div>
-              <div className={styles.bossStats}>
-                <div className={styles.bossStat}>
-                  <span className={styles.bossStatLabel}>血量:</span>
-                  <span className={styles.bossStatValue}>10000</span>
+        <Spin spinning={bossLoading}>
+          <div className={styles.bossGrid}>
+            {bossData.map((boss) => (
+              <div key={boss.id} className={styles.bossCard}>
+                <div className={styles.bossAvatar}>
+                  {boss.avatar ? (
+                    <img src={boss.avatar} alt={boss.name} className={styles.bossImage} />
+                  ) : (
+                    <div className={styles.bossImage}>👔</div>
+                  )}
                 </div>
-                <div className={styles.bossStat}>
-                  <span className={styles.bossStatLabel}>攻击:</span>
-                  <span className={styles.bossStatValue}>500</span>
+                <div className={styles.bossInfo}>
+                  <div className={styles.bossName}>{boss.name || '未知BOSS'}</div>
+                  <div className={styles.bossStats}>
+                    <div className={styles.bossStat}>
+                      <span className={styles.bossStatLabel}>血量:</span>
+                      <span className={styles.bossStatValue}>{boss.health ?? 0}</span>
+                    </div>
+                    {boss.attack !== undefined && (
+                      <div className={styles.bossStat}>
+                        <span className={styles.bossStatLabel}>攻击:</span>
+                        <span className={styles.bossStatValue}>{boss.attack}</span>
+                      </div>
+                    )}
+                  </div>
+                  {boss.rewardPoints !== undefined && (
+                    <div className={styles.bossRewards}>
+                      <div className={styles.rewardTitle}>讨伐奖励:</div>
+                      <div className={styles.rewardList}>
+                        <span className={styles.reward}>💰 {boss.rewardPoints}摸鱼币</span>
+                      </div>
+                    </div>
+                  )}
+                  <div className={styles.bossActions}>
+                    <button 
+                      className={styles.challengeBtn} 
+                      onClick={() => {
+                        if (boss.id) {
+                          history.push(`/pet/fight?bossId=${boss.id}`);
+                        }
+                      }}
+                    >
+                      联合讨伐
+                    </button>
+                    <button 
+                      className={styles.rankingBtn} 
+                      onClick={() => {
+                        if (boss.id) {
+                          handleOpenRanking(boss.id);
+                        }
+                      }}
+                      title="查看排行榜"
+                    >
+                      <TrophyOutlined /> 排行榜
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className={styles.bossRewards}>
-                <div className={styles.rewardTitle}>讨伐奖励:</div>
-                <div className={styles.rewardList}>
-                  <span className={styles.reward}>💰 1000摸鱼币</span>
-                  <span className={styles.reward}>🏆 自由勋章</span>
-                </div>
+            ))}
+            
+            {bossData.length === 0 && !bossLoading && (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>⚔️</div>
+                <div className={styles.emptyText}>暂无BOSS数据</div>
               </div>
-              <div className={styles.bossActions}>
-                <button className={styles.challengeBtn} disabled>
-                  联合讨伐
-                </button>
-              </div>
-            </div>
+            )}
           </div>
-
-          <div className={styles.bossCard}>
-            <div className={styles.bossAvatar}>
-              <div className={styles.bossImage}>💼</div>
-              <div className={styles.bossLevel}>Lv.30</div>
-            </div>
-            <div className={styles.bossInfo}>
-              <div className={styles.bossName}>PUA部门经理</div>
-              <div className={styles.bossDesc}>精通职场PUA的黑心经理，专门打击员工自信</div>
-              <div className={styles.bossStats}>
-                <div className={styles.bossStat}>
-                  <span className={styles.bossStatLabel}>血量:</span>
-                  <span className={styles.bossStatValue}>6000</span>
-                </div>
-                <div className={styles.bossStat}>
-                  <span className={styles.bossStatLabel}>攻击:</span>
-                  <span className={styles.bossStatValue}>350</span>
-                </div>
-              </div>
-              <div className={styles.bossRewards}>
-                <div className={styles.rewardTitle}>讨伐奖励:</div>
-                <div className={styles.rewardList}>
-                  <span className={styles.reward}>💰 600摸鱼币</span>
-                  <span className={styles.reward}>🛡️ 心理防护</span>
-                </div>
-              </div>
-              <div className={styles.bossActions}>
-                <button className={styles.challengeBtn} disabled>
-                  联合讨伐
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.bossCard}>
-            <div className={styles.bossAvatar}>
-              <div className={styles.bossImage}>⏰</div>
-              <div className={styles.bossLevel}>Lv.20</div>
-            </div>
-            <div className={styles.bossInfo}>
-              <div className={styles.bossName}>996督察官</div>
-              <div className={styles.bossDesc}>专门监督员工加班的黑心督察，绝不允许摸鱼</div>
-              <div className={styles.bossStats}>
-                <div className={styles.bossStat}>
-                  <span className={styles.bossStatLabel}>血量:</span>
-                  <span className={styles.bossStatValue}>4000</span>
-                </div>
-                <div className={styles.bossStat}>
-                  <span className={styles.bossStatLabel}>攻击:</span>
-                  <span className={styles.bossStatValue}>250</span>
-                </div>
-              </div>
-              <div className={styles.bossRewards}>
-                <div className={styles.rewardTitle}>讨伐奖励:</div>
-                <div className={styles.rewardList}>
-                  <span className={styles.reward}>💰 300摸鱼币</span>
-                  <span className={styles.reward}>⏱️ 摸鱼时间</span>
-                </div>
-              </div>
-              <div className={styles.bossActions}>
-                <button className={styles.challengeBtn} disabled>
-                  联合讨伐
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        </Spin>
       </div>
     );
   };
@@ -522,6 +561,88 @@ const PetPage: React.FC = () => {
           otherUserName={selectedUser.name}
         />
       )}
+
+      {/* Boss排行榜弹窗 */}
+      <Modal
+        title={
+          <div className={styles.rankingModalTitle}>
+            <TrophyOutlined className={styles.rankingModalIcon} />
+            <span>挑战排行榜</span>
+          </div>
+        }
+        open={rankingModalVisible}
+        onCancel={handleCloseRanking}
+        footer={null}
+        width={600}
+        className={styles.rankingModal}
+      >
+        <Spin spinning={rankingLoading}>
+          <div className={styles.bossRankingContainer}>
+            {rankingData.length > 0 ? (
+              <Table
+                dataSource={rankingData}
+                rowKey={(record, index) => `${record.userId}-${index}`}
+                pagination={false}
+                columns={[
+                  {
+                    title: '排名',
+                    dataIndex: 'rank',
+                    key: 'rank',
+                    width: 80,
+                    render: (rank: number) => {
+                      if (rank === 1) {
+                        return <div className={styles.rankFirst}>{rank}</div>;
+                      } else if (rank === 2) {
+                        return <div className={styles.rankSecond}>{rank}</div>;
+                      } else if (rank === 3) {
+                        return <div className={styles.rankThird}>{rank}</div>;
+                      }
+                      return <div className={styles.rankNormal}>{rank}</div>;
+                    }
+                  },
+                  {
+                    title: '玩家',
+                    key: 'user',
+                    render: (_, record: API.BossChallengeRankingVO) => (
+                      <div className={styles.userInfo}>
+                        <Avatar src={record.userAvatar} size={32} className={styles.userAvatar} />
+                        <span className={styles.userName}>{record.userName || '未知用户'}</span>
+                      </div>
+                    )
+                  },
+                  {
+                    title: '宠物',
+                    key: 'pet',
+                    render: (_, record: API.BossChallengeRankingVO) => (
+                      <div className={styles.petInfo}>
+                        <Avatar src={record.petAvatar} size={32} className={styles.petAvatar} />
+                        <span className={styles.petName}>{record.petName || '未知宠物'}</span>
+                      </div>
+                    )
+                  },
+                  {
+                    title: '伤害',
+                    dataIndex: 'damage',
+                    key: 'damage',
+                    width: 120,
+                    align: 'right',
+                    render: (damage: number) => (
+                      <span className={styles.damageValue}>{damage?.toLocaleString() || 0}</span>
+                    )
+                  }
+                ]}
+              />
+            ) : (
+              !rankingLoading && (
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyIcon}>📊</div>
+                  <div className={styles.emptyText}>暂无排行榜数据</div>
+                </div>
+              )
+            )}
+          </div>
+        </Spin>
+      </Modal>
     </div>
   );
 };

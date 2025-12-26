@@ -31,6 +31,42 @@
   }
 }
 
+// 返回按钮容器
+.backButtonContainer {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-start;
+
+  @media (max-width: 768px) {
+    margin-bottom: 16px;
+  }
+}
+
+.backButton {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  :global(.anticon) {
+    font-size: 16px;
+  }
+}
+
 // 血条区域
 .healthBarsContainer {
   display: flex;
@@ -99,10 +135,10 @@
 }
 
 .petAvatarSmall {
-  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%) !important;
+  background: #fff !important;
   border: 2px solid #fff !important;
   border-radius: 16px !important;
-  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
 
   :global(.ant-avatar-string) {
     font-size: 20px !important;
@@ -299,11 +335,11 @@
 }
 
 .petAvatar {
-  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%) !important;
+  background: #fff !important;
   border: 5px solid #fff !important;
   border-radius: 28px !important;
   box-shadow: 
-    0 16px 32px rgba(82, 196, 26, 0.5),
+    0 16px 32px rgba(0, 0, 0, 0.2),
     0 8px 16px rgba(0, 0, 0, 0.3),
     inset 0 2px 4px rgba(255, 255, 255, 0.3) !important;
   font-size: 60px !important;

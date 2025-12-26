@@ -39,6 +39,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseBossBattleInfoVO_ = {
+    code?: number;
+    data?: BossBattleInfoVO;
+    message?: string;
+  };
+
   type BaseResponseCosCredentialVo_ = {
     code?: number;
     data?: CosCredentialVo;
@@ -102,6 +108,24 @@ declare namespace API {
   type BaseResponseListAvatarFrame_ = {
     code?: number;
     data?: AvatarFrame[];
+    message?: string;
+  };
+
+  type BaseResponseListBattleResultVO_ = {
+    code?: number;
+    data?: BattleResultVO[];
+    message?: string;
+  };
+
+  type BaseResponseListBossChallengeRankingVO_ = {
+    code?: number;
+    data?: BossChallengeRankingVO[];
+    message?: string;
+  };
+
+  type BaseResponseListBossVO_ = {
+    code?: number;
+    data?: BossVO[];
     message?: string;
   };
 
@@ -453,6 +477,64 @@ declare namespace API {
     message?: string;
   };
 
+  type BattleResultVO = {
+    /** 当前攻击对象类型：PET-宠物攻击，BOSS-Boss攻击 */
+    attackerType?: string;
+    /** Boss剩余血量 */
+    bossRemainingHealth?: number;
+    /** 扣血量 */
+    damage?: number;
+    /** 是否连击 */
+    isCombo?: boolean;
+    /** 是否暴击 */
+    isCritical?: boolean;
+    /** 是否闪避 */
+    isDodge?: boolean;
+    /** 是否普通攻击 */
+    isNormalAttack?: boolean;
+    /** 宠物剩余血量 */
+    petRemainingHealth?: number;
+  };
+
+  type battleUsingGETParams = {
+    /** bossId */
+    bossId: number;
+  };
+
+  type BossBattleInfoVO = {
+    bossInfo?: BossInfo;
+    petInfo?: PetInfo;
+  };
+
+  type BossChallengeRankingVO = {
+    damage?: number;
+    petAvatar?: string;
+    petName?: string;
+    rank?: number;
+    userAvatar?: string;
+    userId?: number;
+    userName?: string;
+  };
+
+  type BossInfo = {
+    attack?: number;
+    avatar?: string;
+    currentHealth?: number;
+    id?: number;
+    maxHealth?: number;
+    name?: string;
+    rewardPoints?: number;
+  };
+
+  type BossVO = {
+    attack?: number;
+    avatar?: string;
+    health?: number;
+    id?: number;
+    name?: string;
+    rewardPoints?: number;
+  };
+
   type callbackUsingDELETEParams = {
     auth_code?: string;
     authorization_code?: string;
@@ -772,6 +854,18 @@ declare namespace API {
   type generatePresignedDownloadUrlUsingGETParams = {
     /** fileName */
     fileName: string;
+  };
+
+  type getBossBattleInfoUsingGETParams = {
+    /** bossId */
+    bossId: number;
+  };
+
+  type getBossChallengeRankingUsingGETParams = {
+    /** bossId */
+    bossId: number;
+    /** limit */
+    limit?: number;
   };
 
   type getCosCredentialUsingGETParams = {
@@ -1720,6 +1814,15 @@ declare namespace API {
   type patPetUsingPOSTParams = {
     /** petId */
     petId: number;
+  };
+
+  type PetInfo = {
+    attack?: number;
+    avatar?: string;
+    health?: number;
+    level?: number;
+    name?: string;
+    petId?: number;
   };
 
   type PetRankVO = {

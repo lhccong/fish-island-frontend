@@ -1073,43 +1073,7 @@ const ChatRoom: React.FC = () => {
   };
 
   // 处理文件上传
-  const handleFileUpload = async (file: File) => {
-    try {
-      setUploadingFile(true);
-
-      // 调用后端上传接口
-      const res = await uploadFileByMinioUsingPost(
-        { biz: 'user_file' }, // 业务标识参数
-        {}, // body 参数
-        file, // 文件参数
-        {
-          // 其他选项
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        },
-      );
-
-      if (!res.data) {
-        throw new Error('文件上传失败');
-      }
-
-      // 获取文件的访问URL
-      const fileUrl = res.data;
-      console.log('文件上传地址：', fileUrl);
-      setPendingFileUrl(fileUrl);
-      // 更新发送按钮状态
-      setShouldShowSendButton(true);
-
-      messageApi.success('文件上传成功');
-    } catch (error) {
-      messageApi.error(`文件上传失败：${error}`);
-    } finally {
-      setUploadingFile(false);
-    }
-  };
-
-  // 移除待发送的文件
+// 移除待发送的文件
   const handleRemoveFile = () => {
     setPendingFileUrl(null);
     // 更新发送按钮状态
@@ -2489,7 +2453,7 @@ const ChatRoom: React.FC = () => {
   };
 
   // 添加禁言用户的函数
-  const handleMuteUser = (userId: string) => {
+  const handleMuteUser = () => {
     // 确保当前用户是管理员
     if (!currentUser || currentUser.userRole !== 'admin') {
       return;
@@ -3769,7 +3733,7 @@ const ChatRoom: React.FC = () => {
                 <Button
                   type="primary"
                   danger
-                  onClick={() => selectedUser && handleMuteUser(selectedUser.id)}
+                  onClick={() => selectedUser && handleMuteUser()}
                 >
                   禁言用户
                 </Button>
