@@ -1,51 +1,90 @@
 .lotteryContainer {
-  padding: 16px;
+  padding: 8px;
   background: #fff;
   min-height: auto;
-  
-  @media (max-width: 768px) {
-    padding: 12px;
-  }
+  border-radius: 6px;
+  width: 100%;
+  margin: 0 auto;
 }
 
-.lotteryHeader {
-  text-align: center;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #fff8f0 0%, #ffe8d6 100%);
+// 转盘Tab切换
+.turntableTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.turntableTab {
+  padding: 4px 12px;
+  background: #f5f5f5;
   border-radius: 12px;
-  border: 2px solid #ffa768;
-}
-
-.lotteryTitle {
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  font-size: 24px;
-  font-weight: bold;
-  color: #e67e22;
-  margin-bottom: 8px;
-  
-  .lotteryTitleIcon {
-    font-size: 28px;
-    color: #ffa768;
+  gap: 4px;
+
+  &:hover {
+    background: #ffe8d6;
+    color: #ff7043;
   }
 }
 
-.lotterySubtitle {
-  font-size: 16px;
-  color: #ff8c42;
-  font-weight: 500;
+.turntableTabIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
 }
 
+.turntableTabActive {
+  background: linear-gradient(135deg, #ff9a56 0%, #ff7b35 100%);
+  color: #fff;
+  font-weight: 500;
+
+  &:hover {
+    background: linear-gradient(135deg, #ff9a56 0%, #ff7b35 100%);
+    color: #fff;
+  }
+}
+
+// 顶部货币显示
+.currencyBar {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+}
+
+.currencyItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(91, 124, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.currencyIcon {
+  font-size: 14px;
+}
+
+.currencyValue {
+  font-size: 13px;
+  font-weight: bold;
+  color: #5b7cff;
+}
+
+// 主要内容区
 .lotteryContent {
   display: flex;
-  gap: 16px;
-  
-  @media (max-width: 1024px) {
+  gap: 8px;
+
+  @media (max-width: 768px) {
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
   }
 }
 
@@ -54,407 +93,416 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 0;
+  gap: 6px;
 }
 
 // 右侧区域
 .rightSection {
-  flex: 0 0 320px;
+  flex: 0 0 240px;
   display: flex;
   flex-direction: column;
-  
-  @media (max-width: 1024px) {
+  gap: 6px;
+
+  @media (max-width: 768px) {
     flex: 1;
   }
 }
 
-// 转盘容器
-.wheelContainer {
-  position: relative;
+// 区域标题
+.sectionHeader {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  padding: 30px;
-  background: linear-gradient(135deg, #fff8f0 0%, #ffe8d6 100%);
-  border-radius: 12px;
-  border: 2px solid #ffa768;
-  
-  @media (max-width: 768px) {
-    padding: 20px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ff7043;
+
+  .titleIcon {
+    font-size: 16px;
   }
 }
 
-// 转盘指针
-.wheelPointer {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  animation: pointer-bounce 2s ease-in-out infinite;
-  
-  &.pointerSpinning {
-    animation: pointer-glow 0.5s ease-in-out infinite;
-    
-    .pointerGlow {
-      animation: glow-pulse 0.5s ease-in-out infinite;
-    }
+.signStatus {
+  background: #f0f0f0;
+  color: #999;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+// 9宫格容器
+.gridContainer {
+  background: linear-gradient(135deg, #ff9a56 0%, #ff7b35 100%);
+  padding: 8px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+// 9宫格
+.prizeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+// 奖品格子
+.prizeItem {
+  height: 170px;
+  background: #fff;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
-  
-  @media (max-width: 768px) {
-    top: 10px;
+
+  &.active {
+    border-color: #ffeb3b;
+    background: linear-gradient(135deg, #fff9c4 0%, #ffeb3b 100%);
+    animation: pulse 0.2s ease;
+  }
+
+  &.locked {
+    background: rgba(255, 255, 255, 0.7);
+    color: #999;
   }
 }
 
-.pointerTriangle {
-  width: 0;
-  height: 0;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-top: 40px solid #ffa768;
-  position: relative;
-  filter: drop-shadow(0 4px 8px rgba(255, 167, 104, 0.4));
-  transition: all 0.3s ease;
-  
-  // 指针高光效果
-  &::before {
-    content: '';
-    position: absolute;
-    top: -38px;
-    left: -18px;
-    width: 0;
-    height: 0;
-    border-left: 18px solid transparent;
-    border-right: 18px solid transparent;
-    border-top: 35px solid #ffc299;
-  }
-  
-  // 指针中心线
-  &::after {
-    content: '';
-    position: absolute;
-    top: -40px;
-    left: -1px;
-    width: 2px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.3);
-  }
-  
-  @media (max-width: 768px) {
-    border-left-width: 15px;
-    border-right-width: 15px;
-    border-top-width: 30px;
-    
-    &::before {
-      top: -28px;
-      left: -13px;
-      border-left-width: 13px;
-      border-right-width: 13px;
-      border-top-width: 26px;
-    }
-    
-    &::after {
-      top: -30px;
-      height: 30px;
-    }
-  }
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
 }
 
-.pointerGlow {
-  position: absolute;
-  top: -50px;
-  left: -25px;
-  width: 50px;
-  height: 50px;
-  background: radial-gradient(circle, rgba(255, 167, 104, 0.6) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  
-  @media (max-width: 768px) {
-    top: -40px;
-    left: -20px;
-    width: 40px;
-    height: 40px;
-  }
+.prizeIcon {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.pointerShadow {
-  position: absolute;
-  top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 30px;
-  height: 8px;
-  background: rgba(255, 167, 104, 0.2);
-  border-radius: 50%;
-  filter: blur(4px);
-  
-  @media (max-width: 768px) {
-    width: 24px;
-    height: 6px;
-  }
+.prizeIconImg {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border-radius: 4px;
 }
 
-// 指针动画
-@keyframes pointer-bounce {
+.prizeIconShine {
+  animation: iconShine 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(255, 183, 77, 0.8));
+}
+
+@keyframes iconShine {
   0%, 100% {
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    transform: translateX(-50%) translateY(-5px);
-  }
-}
-
-@keyframes pointer-glow {
-  0%, 100% {
-    transform: translateX(-50%) scale(1);
-    filter: drop-shadow(0 4px 8px rgba(255, 167, 104, 0.4));
-  }
-  50% {
-    transform: translateX(-50%) scale(1.1);
-    filter: drop-shadow(0 6px 16px rgba(255, 167, 104, 0.8));
-  }
-}
-
-@keyframes glow-pulse {
-  0%, 100% {
-    opacity: 0;
+    filter: drop-shadow(0 0 4px rgba(255, 183, 77, 0.8)) brightness(1);
     transform: scale(1);
   }
   50% {
-    opacity: 1;
-    transform: scale(1.5);
-  }
-}
-
-.wheel {
-  position: relative;
-  width: 480px;
-  height: 480px;
-  border-radius: 50%;
-  border: 8px solid #ffa768;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(255, 167, 104, 0.3);
-  background: #fff;
-  transform-origin: center center;
-  
-  &.wheelSpinning {
-    // 旋转时的额外效果
-    filter: brightness(1.1);
-  }
-  
-  @media (max-width: 768px) {
-    width: 380px;
-    height: 380px;
-  }
-  
-  @media (max-width: 480px) {
-    width: 320px;
-    height: 320px;
-  }
-}
-
-.wheelItem {
-  position: absolute;
-  width: 50%;
-  height: 50%;
-  top: 0;
-  left: 50%;
-  transform-origin: 0 100%;
-  border-right: 2px solid #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.wheelItemContent {
-  position: absolute;
-  top: 30px;
-  left: 30px;
-  transform: rotate(-45deg);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  
-  @media (max-width: 768px) {
-    top: 24px;
-    left: 24px;
-    gap: 4px;
-  }
-  
-  @media (max-width: 480px) {
-    top: 20px;
-    left: 20px;
-    gap: 4px;
-  }
-}
-
-.wheelItemIcon {
-  font-size: 32px;
-  
-  @media (max-width: 768px) {
-    font-size: 24px;
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 20px;
-  }
-}
-
-.wheelItemName {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  white-space: nowrap;
-  
-  @media (max-width: 768px) {
-    font-size: 12px;
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 10px;
-  }
-}
-
-// 稀有度颜色
-.raritycommon {
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-}
-
-.rarityrare {
-  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
-}
-
-.rarityepic {
-  background: linear-gradient(135deg, #f9f0ff 0%, #efdbff 100%);
-}
-
-.raritylegendary {
-  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
-}
-
-.wheelCenter {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 200px;
-  height: 200px;
-  background: transparent;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: none;
-  z-index: 10;
-  border: none;
-  
-  @media (max-width: 768px) {
-    width: 160px;
-    height: 160px;
-    border-width: 4px;
-  }
-  
-  @media (max-width: 480px) {
-    width: 140px;
-    height: 140px;
-    border-width: 3px;
-  }
-}
-
-.drawButtons {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  padding: 0 8px;
-  
-  @media (max-width: 768px) {
-    gap: 8px;
-    padding: 0 6px;
-  }
-  
-  @media (max-width: 480px) {
-    gap: 6px;
-    padding: 0 4px;
-  }
-}
-
-.drawButton {
-  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
-  border: 2px solid #ff8c42;
-  color: #e67e22;
-  font-weight: bold;
-  font-size: 16px;
-  height: auto;
-  padding: 10px 16px;
-  box-shadow: 0 3px 10px rgba(230, 126, 34, 0.3);
-  width: 100%;
-  text-shadow: none;
-  
-  &:hover {
-    background: linear-gradient(135deg, #fff8f0 0%, #ffe8d6 100%);
-    border-color: #ffa768;
-    color: #ff8c42;
+    filter: drop-shadow(0 0 12px rgba(255, 183, 77, 1)) brightness(1.15);
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(230, 126, 34, 0.4);
   }
-  
+}
+
+.prizeName {
+  font-size: 10px;
+  color: #333;
+  text-align: center;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.prizeQuality {
+  font-size: 8px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(255, 112, 67, 0.1);
+  color: #ff7043;
+}
+
+.lockIcon {
+  font-size: 16px;
+  color: #bbb;
+}
+
+.unlockText {
+  font-size: 9px;
+  color: #bbb;
+}
+
+// 稀有度样式
+.rarityCommon {
+  background: #fff;
+}
+
+.rarityRare {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #64b5f6;
+}
+
+.rarityEpic {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+  border-color: #ba68c8;
+}
+
+.rarityLegendary {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border-color: #ffb74d;
+  animation: legendaryGlow 2s ease-in-out infinite;
+}
+
+@keyframes legendaryGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 183, 77, 0.6), 0 0 16px rgba(255, 183, 77, 0.3);
+    border-color: #ffb74d;
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 183, 77, 0.9), 0 0 32px rgba(255, 152, 0, 0.5);
+    border-color: #ff9800;
+  }
+}
+
+// 抽奖按钮容器（在9宫格下方）
+.drawButtonsContainer {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.singleDrawBtn,
+.tenDrawBtn {
+  flex: 1;
+  height: auto !important;
+  padding: 6px 10px !important;
+  border-radius: 16px !important;
+  border: none !important;
+  font-size: 12px;
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.15s ease;
+  box-shadow: none !important;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
   &:active {
     transform: scale(0.98);
-    box-shadow: 0 2px 6px rgba(230, 126, 34, 0.3);
-  }
-  
-  @media (max-width: 768px) {
-    font-size: 14px;
-    padding: 8px 14px;
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 13px;
-    padding: 7px 12px;
   }
 }
 
-.tenDrawButton {
-  background: linear-gradient(135deg, #ff8c42 0%, #e67e22 100%);
-  border-color: #e67e22;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  
-  &:hover {
-    background: linear-gradient(135deg, #ffa768 0%, #ff8c42 100%);
-    border-color: #ff8c42;
-    color: #ffffff;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+.singleDrawBtn {
+  background: linear-gradient(135deg, #ffcc80 0%, #ffb74d 100%);
+  color: #333;
+}
+
+.tenDrawBtn {
+  background: linear-gradient(135deg, #ff8a65 0%, #ff7043 100%);
+  color: #fff;
+}
+
+.btnCost {
+  font-size: 10px;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+// 幸运值
+.luckyBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f5f5;
+  padding: 6px 10px;
+  border-radius: 16px;
+}
+
+.luckyLabel {
+  color: #666;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.luckyProgress {
+  flex: 1;
+
+  :global(.ant-progress-inner) {
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    height: 6px !important;
+  }
+
+  :global(.ant-progress-bg) {
+    border-radius: 4px;
+    height: 6px !important;
   }
 }
 
-// 抽奖记录卡片
-.recordsCard {
-  height: 600px;
-  max-height: 600px;
-  border-radius: 12px;
-  border: 1px solid #e8e8e8;
+.luckyValue {
+  color: #ff7043;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.luckyTip {
+  color: #bbb;
+  font-size: 9px;
+  text-align: center;
+}
+
+// 围观大奖卡片
+.winnersCard {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  border: none;
+
+  :global(.ant-card-body) {
+    padding: 10px;
+  }
+}
+
+.winnersTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #ff7043;
+  margin-bottom: 8px;
+
+  .winnersIcon {
+    font-size: 16px;
+  }
+}
+
+.winnersList {
   display: flex;
   flex-direction: column;
-  
+  gap: 6px;
+}
+
+.winnerItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.winnerIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.winnerIconImg {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.winnerInfo {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+}
+
+.winnerLabel {
+  color: #666;
+}
+
+.winnerName {
+  color: #5b7cff;
+  font-weight: 500;
+}
+
+.winnerPrize {
+  color: #ff7043;
+  font-weight: 500;
+}
+
+// 分页
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pageArrow {
+  color: #999;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 12px;
+
+  &:hover {
+    color: #5b7cff;
+  }
+}
+
+.pageNum {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 11px;
+  color: #666;
+  cursor: pointer;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+
+  &.pageActive {
+    background: #5b7cff;
+    color: #fff;
+  }
+}
+
+// 中奖播报卡片
+.recordsCard {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  border: none;
+  flex: 1;
+  max-height: 200px;
+
   :global(.ant-card-body) {
-    padding: 12px 16px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    flex: 1;
-    overflow: hidden;
-    min-height: 0;
-  }
-  
-  @media (max-width: 1024px) {
-    height: 400px;
-    max-height: 400px;
+    height: 100%;
   }
 }
 
@@ -462,194 +510,102 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
-  color: #e67e22;
-  margin-bottom: 12px;
-  
+  color: #ff7043;
+  margin-bottom: 8px;
+
   .recordsIcon {
-    font-size: 18px;
-    color: #ffa768;
+    font-size: 16px;
   }
 }
 
 .recordsList {
   flex: 1;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
 }
 
 .emptyRecords {
-  flex: 1;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 150px;
 }
 
 .recordsContent {
-  flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: #f5f5f5;
-    border-radius: 3px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #d9d9d9;
-    border-radius: 3px;
-    
-    &:hover {
-      background: #bfbfbf;
-    }
-  }
+  gap: 6px;
 }
 
 .recordItem {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
-  background: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #e8e8e8;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: #f0f0f0;
-    border-color: #ffa768;
-    transform: translateX(4px);
-  }
-  
-  &:first-child {
-    background: linear-gradient(135deg, #fff8f0 0%, #ffe8d6 100%);
-    border-color: #ffa768;
-    
-    .recordPrizeName {
-      color: #e67e22;
-      font-weight: bold;
-    }
-  }
+  gap: 4px;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  font-size: 11px;
+  flex-wrap: wrap;
 }
 
-.recordIcon {
-  font-size: 28px;
-  flex-shrink: 0;
-  
-  @media (max-width: 768px) {
-    font-size: 24px;
-  }
+.recordLabel {
+  color: #666;
 }
 
-.recordInfo {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.recordPrizeName {
-  font-size: 14px;
+.recordUser {
+  color: #5b7cff;
   font-weight: 500;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  
-  @media (max-width: 768px) {
-    font-size: 13px;
-  }
+}
+
+.recordPrize {
+  color: #ff7043;
+  font-weight: 500;
+  flex: 1;
 }
 
 .recordTime {
-  font-size: 11px;
   color: #999;
-  
-  @media (max-width: 768px) {
-    font-size: 10px;
-  }
+  font-size: 10px;
 }
 
-// 规则卡片
-.rulesCard {
-  border-radius: 12px;
-  border: 1px solid #e8e8e8;
-  
-  :global(.ant-card-body) {
-    padding: 12px 16px;
-  }
-}
-
-.rulesTitle {
-  font-size: 14px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.rulesList {
-  margin: 0;
-  padding-left: 18px;
-  color: #666;
-  line-height: 1.8;
-  font-size: 12px;
-  
-  li {
-    margin-bottom: 4px;
-  }
-}
-
-// 十连抽弹窗
+// 弹窗样式
 .tenDrawModal {
   :global(.ant-modal-header) {
-    border-bottom: 2px solid #ffa768;
+    background: linear-gradient(135deg, #ff9a56 0%, #ff7b35 100%);
+    border-bottom: none;
   }
-  
+
   :global(.ant-modal-title) {
-    color: #e67e22;
+    color: #fff;
   }
 }
 
 .modalTitle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 18px;
+  gap: 6px;
+  font-size: 16px;
   font-weight: bold;
-  color: #e67e22;
-  
-  .modalTitleIcon {
-    font-size: 20px;
-    color: #ffa768;
-  }
+  color: #fff;
+}
+
+.modalTitleIcon {
+  font-size: 18px;
 }
 
 .tenDrawResults {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
-  padding: 20px 0;
-  
+  gap: 10px;
+  padding: 16px 0;
+
   @media (max-width: 768px) {
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    padding: 16px 0;
   }
-  
+
   @media (max-width: 480px) {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
   }
 }
 
@@ -657,49 +613,20 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 12px;
+  gap: 6px;
+  padding: 10px;
   background: linear-gradient(135deg, #fff8f0 0%, #ffe8d6 100%);
-  border-radius: 12px;
+  border-radius: 8px;
   border: 2px solid #ffa768;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 16px rgba(255, 167, 104, 0.3);
-  }
-  
-  @media (max-width: 768px) {
-    padding: 12px 8px;
-    gap: 6px;
-  }
 }
 
 .resultIcon {
-  font-size: 40px;
-  
-  @media (max-width: 768px) {
-    font-size: 32px;
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 28px;
-  }
+  font-size: 28px;
 }
 
 .resultName {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 11px;
   color: #333;
   text-align: center;
-  word-break: break-word;
-  
-  @media (max-width: 768px) {
-    font-size: 12px;
-  }
-  
-  @media (max-width: 480px) {
-    font-size: 11px;
-  }
+  font-weight: 500;
 }
-

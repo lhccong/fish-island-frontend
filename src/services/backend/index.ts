@@ -29,11 +29,14 @@ import * as redPacketController from './redPacketController';
 import * as restAuthController from './restAuthController';
 import * as tagsController from './tagsController';
 import * as todoController from './todoController';
+import * as turntableController from './turntableController';
 import * as undercoverGameController from './undercoverGameController';
 import * as userController from './userController';
 import * as userMuteController from './userMuteController';
+import * as userPointsRecordController from './userPointsRecordController';
 import * as userTitleController from './userTitleController';
 import * as userVipController from './userVipController';
+import * as voteController from './voteController';
 import * as webParserController from './webParserController';
 import * as wordLibraryController from './wordLibraryController';
 export default {
@@ -65,10 +68,13 @@ export default {
   redPacketController,
   tagsController,
   todoController,
+  turntableController,
   undercoverGameController,
   userController,
   userMuteController,
+  userPointsRecordController,
   userTitleController,
   userVipController,
+  voteController,
   wordLibraryController,
 };

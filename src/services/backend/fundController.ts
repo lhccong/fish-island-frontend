@@ -44,6 +44,14 @@ export async function editFundUsingPost(
   });
 }
 
+/** 获取国内主要指数行情 GET /api/fund/indices */
+export async function getMajorIndicesUsingGet(options?: { [key: string]: any }) {
+  return request<API.BaseResponseListMarketIndexVO_>('/api/fund/indices', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
 /** 获取基金持仓列表 GET /api/fund/list */
 export async function getFundListUsingGet(options?: { [key: string]: any }) {
   return request<API.BaseResponseFundListVO_>('/api/fund/list', {

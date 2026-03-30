@@ -17,6 +17,13 @@ import {
 } from '@/services/backend/redPacketController';
 import { muteUserUsingPost, getUserMuteInfoUsingGet, unmuteUserUsingPost } from '@/services/backend/userMuteController';
 import { generateAnnualReportUsingGet } from '@/services/backend/userController';
+import {
+  getActiveVoteIdsUsingGet,
+  getVoteResultUsingGet,
+  voteUsingPost1,
+  createVoteUsingPost,
+  deleteVoteUsingPost,
+} from '@/services/backend/voteController';
 import { wsService } from '@/services/websocket';
 import { useModel } from '@@/exports';
 import html2canvas from 'html2canvas';
@@ -52,6 +59,7 @@ import {
   Alert,
   Avatar,
   Button,
+  Checkbox,
   Empty,
   Input,
   message,
@@ -438,6 +446,22 @@ const ChatRoom: React.FC = () => {
   const [isRemarkModalVisible, setIsRemarkModalVisible] = useState(false);
   const [remarkValue, setRemarkValue] = useState('');
   const [remarkUserId, setRemarkUserId] = useState<string | null>(null);
+
+  // 添加投票相关状态
+  const [activeVotes, setActiveVotes] = useState<string[]>([]);
+  const [activeVoteDetails, setActiveVoteDetails] = useState<API.VoteVO[]>([]);
+  const [currentVote, setCurrentVote] = useState<API.VoteVO | null>(null);
+  const [isVoteModalVisible, setIsVoteModalVisible] = useState(false);
+  const [isVoteListModalVisible, setIsVoteListModalVisible] = useState(false);
+  const [voteLoading, setVoteLoading] = useState(false);
+  const [selectedVoteOptions, setSelectedVoteOptions] = useState<number[]>([]);
+
+  // 创建投票相关状态
+  const [isCreateVoteModalVisible, setIsCreateVoteModalVisible] = useState(false);
+  const [voteTitle, setVoteTitle] = useState('');
+  const [voteOptions, setVoteOptions] = useState<string[]>(['', '']);
+  const [isSingleChoice, setIsSingleChoice] = useState(true);
+  const [createVoteLoading, setCreateVoteLoading] = useState(false);
 
   const scrollToBottom = () => {
     const container = messageContainerRef.current;
@@ -2830,6 +2854,197 @@ const ChatRoom: React.FC = () => {
     }
   };
 
+  // 获取活跃投票列表
+  const fetchActiveVotes = async () => {
+    try {
+      const res = await getActiveVoteIdsUsingGet();
+      if (res.data && res.data.length > 0) {
+        setActiveVotes(res.data);
+        // 获取所有活跃投票的详情
+        const voteDetails = await Promise.all(
+          res.data.map(voteId => fetchVoteResult(voteId))
+        );
+        // 过滤掉获取失败的投票
+        const validVotes = voteDetails.filter(vote => vote !== null) as API.VoteVO[];
+        setActiveVoteDetails(validVotes);
+        // 默认设置第一个为当前投票
+        if (validVotes.length > 0 && !currentVote) {
+          setCurrentVote(validVotes[0]);
+        }
+      } else {
+        setActiveVotes([]);
+        setActiveVoteDetails([]);
+        setCurrentVote(null);
+      }
+    } catch (error) {
+      console.error('获取活跃投票失败:', error);
+    }
+  };
+
+  // 获取投票结果
+  const fetchVoteResult = async (voteId: string): Promise<API.VoteVO | null> => {
+    try {
+      const res = await getVoteResultUsingGet({ voteId });
+      if (res.data) {
+        return res.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('获取投票结果失败:', error);
+      return null;
+    }
+  };
+
+  // 参与投票
+  const handleVote = async (optionIndexes?: number[]) => {
+    if (!currentVote?.voteId) return;
+    const indexesToVote = optionIndexes || selectedVoteOptions;
+    if (indexesToVote.length === 0) {
+      messageApi.error('请至少选择一个选项');
+      return;
+    }
+    try {
+      setVoteLoading(true);
+      const res = await voteUsingPost1({
+        voteId: currentVote.voteId,
+        optionIndexes: indexesToVote,
+      });
+      if (res.data) {
+        messageApi.success('投票成功！');
+        setSelectedVoteOptions([]);
+        // 刷新投票结果
+        const updatedVote = await fetchVoteResult(currentVote.voteId);
+        if (updatedVote) {
+          setCurrentVote(updatedVote);
+        }
+      } else {
+        messageApi.error('投票失败，请重试');
+      }
+    } catch (error) {
+      console.error('投票失败:', error);
+      messageApi.error('投票失败，请稍后重试');
+    } finally {
+      setVoteLoading(false);
+    }
+  };
+
+  // 切换选项选择（用于多选）
+  const toggleVoteOption = (index: number) => {
+    setSelectedVoteOptions(prev => {
+      if (prev.includes(index)) {
+        return prev.filter(i => i !== index);
+      } else {
+        if (currentVote?.singleChoice) {
+          // 单选：只保留当前选项
+          return [index];
+        } else {
+          // 多选：添加选项
+          return [...prev, index];
+        }
+      }
+    });
+  };
+
+  // 创建投票
+  const handleCreateVote = async () => {
+    if (!voteTitle.trim()) {
+      messageApi.error('请输入投票标题');
+      return;
+    }
+    if (voteOptions.length < 2) {
+      messageApi.error('至少需要2个选项');
+      return;
+    }
+    const validOptions = voteOptions.filter(opt => opt.trim());
+    if (validOptions.length < 2) {
+      messageApi.error('至少需要2个非空选项');
+      return;
+    }
+
+    try {
+      setCreateVoteLoading(true);
+      const res = await createVoteUsingPost({
+        title: voteTitle,
+        options: validOptions,
+        singleChoice: isSingleChoice,
+      });
+      if (res.data) {
+        messageApi.success('创建投票成功！扣除100积分');
+        setIsCreateVoteModalVisible(false);
+        // 清空表单
+        setVoteTitle('');
+        setVoteOptions(['', '']);
+        setIsSingleChoice(true);
+        // 刷新投票列表
+        fetchActiveVotes();
+      } else {
+        messageApi.error('创建投票失败，请重试');
+      }
+    } catch (error: any) {
+      console.error('创建投票失败:', error);
+      if (error?.response?.data?.message) {
+        messageApi.error(error.response.data.message);
+      } else {
+        messageApi.error('创建投票失败，积分可能不足（需要100积分）');
+      }
+    } finally {
+      setCreateVoteLoading(false);
+    }
+  };
+
+  // 删除投票
+  const handleDeleteVote = async (voteId: string) => {
+    try {
+      const res = await deleteVoteUsingPost({ voteId });
+      if (res.data) {
+        messageApi.success('删除投票成功！');
+        // 刷新投票列表
+        fetchActiveVotes();
+      } else {
+        messageApi.error('删除投票失败，请重试');
+      }
+    } catch (error: any) {
+      console.error('删除投票失败:', error);
+      if (error?.response?.data?.message) {
+        messageApi.error(error.response.data.message);
+      } else {
+        messageApi.error('删除投票失败，可能没有权限');
+      }
+    }
+  };
+  const addVoteOption = () => {
+    if (voteOptions.length >= 10) {
+      messageApi.warning('最多只能添加10个选项');
+      return;
+    }
+    setVoteOptions([...voteOptions, '']);
+  };
+
+  // 删除投票选项
+  const removeVoteOption = (index: number) => {
+    if (voteOptions.length <= 2) {
+      messageApi.warning('至少需要保留2个选项');
+      return;
+    }
+    const newOptions = voteOptions.filter((_, i) => i !== index);
+    setVoteOptions(newOptions);
+  };
+
+  // 更新投票选项
+  const updateVoteOption = (index: number, value: string) => {
+    const newOptions = [...voteOptions];
+    newOptions[index] = value;
+    setVoteOptions(newOptions);
+  };
+
+  // 组件加载时获取活跃投票
+  useEffect(() => {
+    fetchActiveVotes();
+    // 每30秒刷新一次
+    const interval = setInterval(fetchActiveVotes, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className={`${styles.chatRoom} ${isSpeedMode ? styles.speedMode : ''} ${!isUserListVisible ? styles.userListCollapsed : ''}`}>
         {/* 可拖动宠物组件 */}
@@ -2893,6 +3108,16 @@ const ChatRoom: React.FC = () => {
             <div className={styles.announcementContent}>
               <SoundOutlined className={styles.announcementIcon} />
               <span dangerouslySetInnerHTML={{ __html: announcement }} />
+              {/* 投票按钮 - 当有活跃投票时显示 */}
+              {activeVotes.length > 0 && (
+                <Button
+                  type="link"
+                  onClick={() => setIsVoteListModalVisible(true)}
+                  style={{ marginLeft: 16, padding: 0 }}
+                >
+                  🗳️ 活跃投票列表 ({activeVotes.length}个)
+                </Button>
+              )}
               <Button
                 type="link"
                 loading={isLoadingAnnualReport}
@@ -2915,7 +3140,7 @@ const ChatRoom: React.FC = () => {
                     setIsLoadingAnnualReport(false);
                   }
                 }}
-                style={{ marginLeft: 16, padding: 0 }}
+                style={{ marginLeft: 16, padding: 0, display: 'none' }}
               >
                 ⭐生成你的摸鱼年终报告🐟
               </Button>
@@ -3267,6 +3492,10 @@ const ChatRoom: React.FC = () => {
                   <PaperClipOutlined className={styles.moreOptionsIcon} />
                   <span>上传图片</span>
                 </div>
+                <div className={styles.moreOptionsItem} onClick={() => setIsCreateVoteModalVisible(true)}>
+                  <SoundOutlined className={styles.moreOptionsIcon} />
+                  <span>创建投票</span>
+                </div>
                 <div className={styles.moreOptionsItem}>
                   <RocketOutlined className={styles.moreOptionsIcon} />
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
@@ -3403,7 +3632,12 @@ const ChatRoom: React.FC = () => {
                   {isSpeedMode ? '关闭极速' : '开启极速'}
                 </div>
               </div>
-              <div className={styles.mobileTool} style={{ visibility: 'hidden' }}></div>
+              <div className={styles.mobileTool} onClick={() => setIsCreateVoteModalVisible(true)}>
+                <div className={styles.mobileToolIcon}>
+                  <SoundOutlined />
+                </div>
+                <div className={styles.mobileToolText}>创建投票</div>
+              </div>
               <div className={styles.mobileTool} style={{ visibility: 'hidden' }}></div>
             </div>
             {(currentUser?.userRole === 'admin' || (currentUser?.level && currentUser.level >= 6) || currentUser?.vip) && (
@@ -4013,6 +4247,323 @@ const ChatRoom: React.FC = () => {
             备注后将在聊天中显示为：{remarkValue}
           </div>
         )}
+      </Modal>
+
+      {/* 投票弹窗 */}
+      <Modal
+        title={
+          <div>
+            {currentVote?.title || '投票'}
+            <span style={{ fontSize: '14px', color: '#999', marginLeft: '12px' }}>
+              ({currentVote?.singleChoice ? '单选' : '多选'})
+            </span>
+          </div>
+        }
+        open={isVoteModalVisible}
+        onCancel={() => {
+          setIsVoteModalVisible(false);
+          setSelectedVoteOptions([]);
+        }}
+        footer={
+          !currentVote?.hasVoted ? [
+            <Button key="cancel" onClick={() => {
+              setIsVoteModalVisible(false);
+              setSelectedVoteOptions([]);
+            }}>
+              取消
+            </Button>,
+            <Button
+              key="vote"
+              type="primary"
+              loading={voteLoading}
+              onClick={() => handleVote()}
+              disabled={selectedVoteOptions.length === 0}
+            >
+              提交投票 ({selectedVoteOptions.length})
+            </Button>,
+          ] : [
+            <Button key="close" onClick={() => setIsVoteModalVisible(false)}>
+              关闭
+            </Button>,
+          ]
+        }
+        width={500}
+      >
+        <div className={styles.voteModalContent}>
+          {currentVote?.hasVoted ? (
+            <div style={{ marginBottom: '16px', color: '#52c41a' }}>
+              ✅ 你已经投过票了
+            </div>
+          ) : null}
+          <div className={styles.voteOptions}>
+            {currentVote?.options?.map((option, index) => (
+              <div
+                key={index}
+                className={styles.voteOption}
+                style={{
+                  marginBottom: '12px',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  backgroundColor: currentVote?.userVotedOptions?.includes(index)
+                    ? '#e6f7ff'
+                    : selectedVoteOptions.includes(index)
+                    ? '#fff7e6'
+                    : '#f5f5f5',
+                  border: currentVote?.userVotedOptions?.includes(index)
+                    ? '1px solid #1890ff'
+                    : selectedVoteOptions.includes(index)
+                    ? '1px solid #ffa940'
+                    : '1px solid #d9d9d9',
+                  cursor: !currentVote?.hasVoted ? 'pointer' : 'default',
+                }}
+                onClick={() => {
+                  if (!currentVote?.hasVoted) {
+                    toggleVoteOption(index);
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {!currentVote?.hasVoted && (
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedVoteOptions.includes(index)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            toggleVoteOption(index);
+                          }}
+                          style={{ marginRight: '8px' }}
+                        />
+                      </span>
+                    )}
+                    <span style={{ fontWeight: currentVote?.userVotedOptions?.includes(index) || selectedVoteOptions.includes(index) ? 'bold' : 'normal' }}>
+                      {option.text}
+                    </span>
+                    {currentVote?.userVotedOptions?.includes(index) && (
+                      <span style={{ marginLeft: '8px', color: '#1890ff' }}>（你的选择）</span>
+                    )}
+                  </div>
+                </div>
+                <div style={{ marginTop: '8px', paddingLeft: !currentVote?.hasVoted ? '24px' : '0' }}>
+                  <div
+                    style={{
+                      height: '8px',
+                      backgroundColor: '#e8e8e8',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${option.percentage || 0}%`,
+                        backgroundColor: currentVote?.userVotedOptions?.includes(index) ? '#1890ff' : '#91d5ff',
+                        transition: 'width 0.3s ease',
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginTop: '4px', fontSize: '12px', color: '#666' }}>
+                    {option.count || 0} 票 ({option.percentage?.toFixed(1) || 0}%)
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {!currentVote?.hasVoted && (
+            <div style={{ marginTop: '12px', color: '#999', fontSize: '12px', textAlign: 'center' }}>
+              已选择 {selectedVoteOptions.length} 个选项
+              {currentVote?.singleChoice ? '（单选）' : '（可多选）'}
+            </div>
+          )}
+          <div style={{ marginTop: '16px', textAlign: 'center', color: '#999', fontSize: '12px' }}>
+            总票数：{currentVote?.totalCount || 0}
+            {currentVote?.remainingSeconds && currentVote?.remainingSeconds > 0 && (
+              <span style={{ marginLeft: '16px' }}>
+                剩余时间：{Math.ceil(currentVote.remainingSeconds / 60)} 分钟
+              </span>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* 创建投票弹窗 */}
+      <Modal
+        title="创建投票（扣除100积分）"
+        open={isCreateVoteModalVisible}
+        onCancel={() => {
+          setIsCreateVoteModalVisible(false);
+          // 清空表单
+          setVoteTitle('');
+          setVoteOptions(['', '']);
+          setIsSingleChoice(true);
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setIsCreateVoteModalVisible(false);
+            setVoteTitle('');
+            setVoteOptions(['', '']);
+            setIsSingleChoice(true);
+          }}>
+            取消
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={createVoteLoading}
+            onClick={handleCreateVote}
+          >
+            创建投票
+          </Button>,
+        ]}
+        width={500}
+      >
+        <div style={{ padding: '16px 0' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              投票标题：
+            </label>
+            <Input
+              placeholder="请输入投票标题"
+              value={voteTitle}
+              onChange={(e) => setVoteTitle(e.target.value)}
+              maxLength={50}
+              showCount
+            />
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              投票类型：
+            </label>
+            <Radio.Group
+              value={isSingleChoice}
+              onChange={(e) => setIsSingleChoice(e.target.value)}
+            >
+              <Radio value={true}>单选</Radio>
+              <Radio value={false}>多选</Radio>
+            </Radio.Group>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              投票选项：
+            </label>
+            {voteOptions.map((option, index) => (
+              <div key={index} style={{ display: 'flex', marginBottom: '8px', gap: '8px' }}>
+                <Input
+                  placeholder={`选项 ${index + 1}`}
+                  value={option}
+                  onChange={(e) => updateVoteOption(index, e.target.value)}
+                  maxLength={30}
+                />
+                <Button
+                  type="text"
+                  danger
+                  icon={<CloseOutlined />}
+                  onClick={() => removeVoteOption(index)}
+                  disabled={voteOptions.length <= 2}
+                />
+              </div>
+            ))}
+            <Button
+              type="dashed"
+              onClick={addVoteOption}
+              disabled={voteOptions.length >= 10}
+              style={{ width: '100%', marginTop: '8px' }}
+            >
+              <PlusOutlined /> 添加选项
+            </Button>
+          </div>
+
+          <div style={{ color: '#999', fontSize: '12px', textAlign: 'center' }}>
+            当前可用积分：{(currentUser?.points || 0) - (currentUser?.usedPoints || 0)}，创建投票将扣除 100 积分
+          </div>
+        </div>
+      </Modal>
+
+      {/* 投票列表弹窗 */}
+      <Modal
+        title="活跃投票列表"
+        open={isVoteListModalVisible}
+        onCancel={() => setIsVoteListModalVisible(false)}
+        footer={null}
+        width={500}
+      >
+        <div style={{ padding: '16px 0' }}>
+          {activeVoteDetails.length === 0 ? (
+            <Empty description="暂无活跃投票" />
+          ) : (
+            <div>
+              {activeVoteDetails.map((vote, index) => (
+                <div
+                  key={vote.voteId}
+                  style={{
+                    marginBottom: '12px',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e8e8e8',
+                    backgroundColor: '#fafafa',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    setCurrentVote(vote);
+                    setIsVoteListModalVisible(false);
+                    setIsVoteModalVisible(true);
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontWeight: 'bold', fontSize: '14px' }}>
+                        {index + 1}. {vote.title}
+                      </span>
+                      <span style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>
+                        ({vote.singleChoice ? '单选' : '多选'})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <Button type="primary" size="small">
+                        参与投票
+                      </Button>
+                      {currentUser?.userRole === 'admin' && (
+                        <Popconfirm
+                          title="确定要删除这个投票吗？"
+                          onConfirm={(e) => {
+                            e?.stopPropagation();
+                            handleDeleteVote(vote.voteId!);
+                          }}
+                          onCancel={(e) => e?.stopPropagation()}
+                          okText="确定"
+                          cancelText="取消"
+                        >
+                          <Button
+                            type="text"
+                            danger
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </Popconfirm>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
+                    总票数：{vote.totalCount || 0}
+                    {vote.remainingSeconds && vote.remainingSeconds > 0 && (
+                      <span style={{ marginLeft: '16px' }}>
+                        剩余：{Math.ceil(vote.remainingSeconds / 60)} 分钟
+                      </span>
+                    )}
+                    {vote.hasVoted && (
+                      <span style={{ marginLeft: '16px', color: '#52c41a' }}>
+                        ✅ 已投票
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );

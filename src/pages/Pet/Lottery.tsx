@@ -1,111 +1,235 @@
-import React, { useState } from 'react';
-import { Card, Button, message, Empty, Modal } from 'antd';
-import { GiftOutlined, HistoryOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Card, Button, message, Empty, Modal, Progress, Spin } from 'antd';
+import { GiftOutlined } from '@ant-design/icons';
+import { useModel } from '@umijs/max';
 import styles from './Lottery.less';
+import {
+  listTurntablesUsingGet,
+  getTurntableDetailUsingGet,
+  drawUsingPost,
+  listDrawRecordsUsingGet,
+} from '@/services/backend/turntableController';
 
 interface LotteryRecord {
   id: number;
   prizeName: string;
   prizeIcon: string;
   drawTime: string;
+  userName?: string;
+  quality?: number;
+  qualityName?: string;
+}
+
+interface Prize {
+  id?: number;
+  name?: string;
+  icon?: string;
+  quality?: number;
+  qualityName?: string;
+  probability?: number;
+  prizeId?: number;
+  prizeType?: number;
+}
+
+interface Turntable {
+  id?: number;
+  name?: string;
+  icon?: string;
+  costPoints?: number;
+  guaranteeCount?: number;
+  prizeList?: Prize[];
+  userProgress?: {
+    guaranteeCount?: number;
+    lastDrawTime?: string;
+    smallFailCount?: number;
+    totalDrawCount?: number;
+  };
 }
 
 const Lottery: React.FC = () => {
+  const { initialState } = useModel('@@initialState');
+  const currentUser = initialState?.currentUser;
+  
+  // 计算可用积分
+  const availablePoints = (currentUser?.points ?? 0) - (currentUser?.usedPoints ?? 0);
+  
   const [loading, setLoading] = useState<boolean>(false);
   const [drawing, setDrawing] = useState<boolean>(false);
-  const [isSpinning, setIsSpinning] = useState<boolean>(false);
-  const [rotation, setRotation] = useState<number>(0);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [selectedPrizeIndex, setSelectedPrizeIndex] = useState<number | null>(null);
   const [lotteryRecords, setLotteryRecords] = useState<LotteryRecord[]>([]);
   const [isTenDraw, setIsTenDraw] = useState<boolean>(false);
   const [tenDrawResults, setTenDrawResults] = useState<LotteryRecord[]>([]);
   const [showTenDrawModal, setShowTenDrawModal] = useState<boolean>(false);
+  
+  // 转盘相关状态
+  const [turntableList, setTurntableList] = useState<Turntable[]>([]);
+  const [currentTurntable, setCurrentTurntable] = useState<Turntable | null>(null);
+  const [activeTabKey, setActiveTabKey] = useState<string>('');
+  const [turntableLoading, setTurntableLoading] = useState<boolean>(false);
+  const [prizes, setPrizes] = useState<Prize[]>([]);
 
-  // 抽奖奖品列表（示例数据，后续可替换为API数据）
-  const prizes = [
-    { id: 1, name: '摸鱼币 x100', icon: '💰', rarity: 'common' },
-    { id: 2, name: '摸鱼币 x500', icon: '💰', rarity: 'rare' },
-    { id: 3, name: '摸鱼币 x1000', icon: '💰', rarity: 'epic' },
-    { id: 4, name: '宠物经验 x50', icon: '⭐', rarity: 'common' },
-    { id: 5, name: '宠物经验 x200', icon: '⭐', rarity: 'rare' },
-    { id: 6, name: '稀有装备', icon: '⚔️', rarity: 'epic' },
-    { id: 7, name: '传说装备', icon: '👑', rarity: 'legendary' },
-    { id: 8, name: '谢谢参与', icon: '🎁', rarity: 'common' },
-  ];
-
-  // 单次抽奖
-  const drawSingle = async (prizeIndex: number): Promise<void> => {
-    return new Promise((resolve) => {
-      // 计算旋转角度
-      const anglePerPrize = 360 / prizes.length;
-      // 指针固定在顶部（0度位置）
-      // 转盘初始状态：索引0的奖品在顶部（0度位置）
-      // 转盘顺时针旋转（CSS rotate正值是顺时针）
-      // 第i个奖品的中心角度：i * anglePerPrize + anglePerPrize/2
-      const prizeCenterAngle = prizeIndex * anglePerPrize + anglePerPrize / 2;
-      
-      // 要让prizeCenterAngle转到指针位置（0度），需要旋转的角度
-      // 由于转盘顺时针旋转，要让prizeCenterAngle转到0度，需要旋转 (360 - prizeCenterAngle) 度
-      const targetRelativeAngle = 360 - prizeCenterAngle;
-      
-      // 当前转盘已经旋转的角度（归一化到0-360）
-      const currentAngle = ((rotation % 360) + 360) % 360;
-      
-      // 计算需要额外旋转的角度
-      // 如果目标角度小于当前角度，需要多转一圈
-      let additionalAngle = targetRelativeAngle - currentAngle;
-      if (additionalAngle <= 0) {
-        additionalAngle += 360;
+  // 获取转盘列表
+  const fetchTurntableList = async () => {
+    try {
+      const res = await listTurntablesUsingGet({});
+      if (res.data && res.data.length > 0) {
+        setTurntableList(res.data);
+        setActiveTabKey(String(res.data[0].id));
       }
-      
-      // 加上多圈旋转（至少5圈=1800度）让转盘转得更久，更有视觉效果
-      const totalRotation = rotation + 1800 + additionalAngle;
-      
-      setRotation(totalRotation);
-      setIsSpinning(true);
-      
-      // 等待转盘旋转完成（2.5秒）
-      setTimeout(() => {
-        setIsSpinning(false);
-        resolve();
-      }, 2500);
+    } catch (error) {
+      console.error('获取转盘列表失败:', error);
+    }
+  };
+
+  // 获取转盘详情
+  const fetchTurntableDetail = async (id: number) => {
+    setTurntableLoading(true);
+    try {
+      const res = await getTurntableDetailUsingGet({ id });
+      if (res.data) {
+        setCurrentTurntable(res.data);
+        // 填充奖品到9宫格
+        const prizeList = res.data.prizeList || [];
+        // 确保有9个格子，不足的用占位符填充
+        const filledPrizes: Prize[] = [];
+        for (let i = 0; i < 9; i++) {
+          if (prizeList[i]) {
+            filledPrizes.push(prizeList[i]);
+          } else {
+            filledPrizes.push({ id: i, name: '暂无奖品', icon: '❓', quality: 0 });
+          }
+        }
+        setPrizes(filledPrizes);
+      }
+    } catch (error) {
+      console.error('获取转盘详情失败:', error);
+    } finally {
+      setTurntableLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTurntableList();
+  }, []);
+
+  useEffect(() => {
+    if (activeTabKey) {
+      fetchTurntableDetail(Number(activeTabKey));
+      // 获取当前转盘的抽奖记录
+      fetchDrawRecords(Number(activeTabKey));
+    }
+  }, [activeTabKey]);
+
+  // 获取抽奖记录
+  const fetchDrawRecords = async (turntableId?: number) => {
+    try {
+      const params: API.listDrawRecordsUsingGETParams = {
+        current: 1,
+        pageSize: 10,
+        sortField: 'createTime',
+        sortOrder: 'descend',
+      };
+      if (turntableId) {
+        params.turntableId = turntableId;
+      }
+      const res = await listDrawRecordsUsingGet(params);
+      if (res.data) {
+        // 将 DrawRecordVO 转换为 LotteryRecord
+        const records: LotteryRecord[] = res.data.map((item) => ({
+          id: item.id || Date.now(),
+          prizeName: item.name || '',
+          prizeIcon: item.icon || '�',
+          drawTime: item.createTime || '',
+          quality: item.quality,
+          qualityName: item.qualityName,
+        }));
+        setLotteryRecords(records);
+      }
+    } catch (error) {
+      console.error('获取抽奖记录失败:', error);
+    }
+  };
+
+  // 抽奖动画序列（9宫格外圈高亮顺序：0→1→2→5→8→7→6→3）
+  const animationSequence = [0, 1, 2, 5, 8, 7, 6, 3];
+
+  // 执行抽奖动画
+  const runLotteryAnimation = async (targetIndex: number): Promise<void> => {
+    return new Promise((resolve) => {
+      let currentStep = 0;
+      let speed = 80;
+      let rounds = 3;
+      let totalSteps = animationSequence.length * rounds + animationSequence.indexOf(targetIndex);
+
+      const animate = () => {
+        const sequenceIndex = currentStep % animationSequence.length;
+        setActiveIndex(animationSequence[sequenceIndex]);
+        currentStep++;
+
+        if (currentStep <= totalSteps) {
+          if (currentStep > totalSteps - 8) {
+            speed += 60;
+          }
+          setTimeout(animate, speed);
+        } else {
+          setActiveIndex(targetIndex);
+          setTimeout(() => {
+            setActiveIndex(null);
+            resolve();
+          }, 300);
+        }
+      };
+
+      animate();
     });
   };
 
   // 处理单次抽奖
   const handleDraw = async () => {
-    if (drawing) return;
-    
+    if (drawing || !currentTurntable) return;
+
     setDrawing(true);
     setLoading(true);
-    
+    setIsTenDraw(false);
+
     try {
-      // TODO: 调用抽奖API
-      // const res = await drawLotteryUsingPost();
-      
-      // 随机选择一个奖品索引
-      const randomIndex = Math.floor(Math.random() * prizes.length);
-      setSelectedPrizeIndex(randomIndex);
-      
-      // 执行转盘旋转
-      await drawSingle(randomIndex);
-      
-      // 显示中奖结果
-      const randomPrize = prizes[randomIndex];
-      message.success(`恭喜获得：${randomPrize.name}！`);
-      
-      // 添加到抽奖记录
-      const newRecord: LotteryRecord = {
-        id: Date.now(),
-        prizeName: randomPrize.name,
-        prizeIcon: randomPrize.icon,
-        drawTime: new Date().toLocaleString('zh-CN'),
-      };
-      setLotteryRecords(prev => [newRecord, ...prev]);
-      
-    } catch (error) {
+      // 调用抽奖接口
+      const res = await drawUsingPost({
+        turntableId: currentTurntable.id!,
+        drawCount: 1,
+      });
+
+      if (res.data && res.data.prizeList && res.data.prizeList.length > 0) {
+        const wonPrize = res.data.prizeList[0];
+        
+        // 找到奖品在9宫格中的位置
+        const prizeIndex = prizes.findIndex(p => p.prizeId === wonPrize.prizeId || p.id === wonPrize.prizeId);
+        const targetIndex = prizeIndex >= 0 ? prizeIndex : animationSequence[Math.floor(Math.random() * animationSequence.length)];
+        
+        await runLotteryAnimation(targetIndex);
+
+        message.success(`恭喜获得：${wonPrize.name}！`);
+
+        const newRecord: LotteryRecord = {
+          id: Date.now(),
+          prizeName: wonPrize.name || '',
+          prizeIcon: wonPrize.icon || '🎁',
+          drawTime: new Date().toLocaleString('zh-CN'),
+          quality: wonPrize.quality,
+          qualityName: wonPrize.qualityName,
+        };
+        setLotteryRecords(prev => [newRecord, ...prev]);
+
+        // 刷新转盘详情和抽奖记录
+        if (currentTurntable.id) {
+          fetchTurntableDetail(currentTurntable.id);
+          fetchDrawRecords(currentTurntable.id);
+        }
+      }
+    } catch (error: any) {
       console.error('抽奖失败:', error);
-      message.error('抽奖失败，请稍后重试');
+      message.error(error?.message || '抽奖失败，请稍后重试');
     } finally {
       setLoading(false);
       setDrawing(false);
@@ -114,48 +238,48 @@ const Lottery: React.FC = () => {
 
   // 处理十连抽
   const handleTenDraw = async () => {
-    if (drawing) return;
-    
+    if (drawing || !currentTurntable) return;
+
     setDrawing(true);
     setIsTenDraw(true);
     setLoading(true);
-    
+
     try {
-      // 生成10个随机奖品
-      const results: LotteryRecord[] = [];
-      for (let i = 0; i < 10; i++) {
-        // TODO: 调用抽奖API
-        // const res = await drawLotteryUsingPost();
-        
-        // 随机选择一个奖品索引
-        const randomIndex = Math.floor(Math.random() * prizes.length);
-        const randomPrize = prizes[randomIndex];
-        
-        results.push({
-          id: Date.now() + i,
-          prizeName: randomPrize.name,
-          prizeIcon: randomPrize.icon,
+      // 调用抽奖接口
+      const res = await drawUsingPost({
+        turntableId: currentTurntable.id!,
+        drawCount: 10,
+      });
+
+      if (res.data && res.data.prizeList && res.data.prizeList.length > 0) {
+        const results: LotteryRecord[] = res.data.prizeList.map((prize, index) => ({
+          id: Date.now() + index,
+          prizeName: prize.name || '',
+          prizeIcon: prize.icon || '🎁',
           drawTime: new Date().toLocaleString('zh-CN'),
-        });
+          quality: prize.quality,
+          qualityName: prize.qualityName,
+        }));
+
+        // 播放一次动画
+        const lastPrize = res.data.prizeList[res.data.prizeList.length - 1];
+        const prizeIndex = prizes.findIndex(p => p.prizeId === lastPrize.prizeId || p.id === lastPrize.prizeId);
+        const targetIndex = prizeIndex >= 0 ? prizeIndex : animationSequence[Math.floor(Math.random() * animationSequence.length)];
+        await runLotteryAnimation(targetIndex);
+
+        setTenDrawResults(results);
+        setShowTenDrawModal(true);
+        setLotteryRecords(prev => [...results, ...prev]);
+
+        // 刷新转盘详情和抽奖记录
+        if (currentTurntable.id) {
+          fetchTurntableDetail(currentTurntable.id);
+          fetchDrawRecords(currentTurntable.id);
+        }
       }
-      
-      // 随机选择一个奖品作为转盘停止的位置（用于视觉效果）
-      const displayIndex = Math.floor(Math.random() * prizes.length);
-      setSelectedPrizeIndex(displayIndex);
-      
-      // 转盘只转一次
-      await drawSingle(displayIndex);
-      
-      // 保存结果并显示弹窗
-      setTenDrawResults(results);
-      setShowTenDrawModal(true);
-      
-      // 批量添加到抽奖记录
-      setLotteryRecords(prev => [...results, ...prev]);
-      
-    } catch (error) {
+    } catch (error: any) {
       console.error('十连抽失败:', error);
-      message.error('十连抽失败，请稍后重试');
+      message.error(error?.message || '十连抽失败，请稍后重试');
     } finally {
       setLoading(false);
       setDrawing(false);
@@ -163,121 +287,160 @@ const Lottery: React.FC = () => {
     }
   };
 
-  // 关闭十连抽弹窗
   const handleCloseTenDrawModal = () => {
     setShowTenDrawModal(false);
     setTenDrawResults([]);
   };
 
+  const getQualityClass = (quality?: number) => {
+    switch (quality) {
+      case 4: return styles.rarityLegendary;
+      case 3: return styles.rarityEpic;
+      case 2: return styles.rarityRare;
+      default: return styles.rarityCommon;
+    }
+  };
+
   return (
     <div className={styles.lotteryContainer}>
-      <div className={styles.lotteryHeader}>
-        <div className={styles.lotteryTitle}>
-          <GiftOutlined className={styles.lotteryTitleIcon} />
-          <span>幸运抽奖</span>
+      {/* 顶部货币显示 */}
+      <div className={styles.currencyBar}>
+        <div className={styles.currencyItem}>
+          <span className={styles.currencyIcon}>💎</span>
+          <span className={styles.currencyValue}>{availablePoints}</span>
         </div>
-        <div className={styles.lotterySubtitle}>每日一次免费抽奖机会，丰厚奖品等你来拿！</div>
       </div>
 
       <div className={styles.lotteryContent}>
-        {/* 左侧转盘区域 */}
+        {/* 左侧9宫格区域 */}
         <div className={styles.leftSection}>
-          <div className={styles.wheelContainer}>
-            {/* 转盘指针 */}
-            <div className={`${styles.wheelPointer} ${isSpinning ? styles.pointerSpinning : ''}`}>
-              <div className={styles.pointerTriangle}>
-                <div className={styles.pointerGlow}></div>
-              </div>
-              <div className={styles.pointerShadow}></div>
-            </div>
-            <div 
-              className={`${styles.wheel} ${isSpinning ? styles.wheelSpinning : ''}`}
-              style={{
-                transform: `rotate(${rotation}deg)`,
-                transition: isSpinning ? 'transform 3s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
-              }}
-            >
-              {prizes.map((prize, index) => (
+          {/* 转盘Tab切换 */}
+          {turntableList.length > 0 && (
+            <div className={styles.turntableTabs}>
+              {turntableList.map((item) => (
                 <div
-                  key={prize.id}
-                  className={`${styles.wheelItem} ${styles[`rarity${prize.rarity}`]}`}
-                  style={{
-                    transform: `rotate(${index * (360 / prizes.length)}deg)`,
-                  }}
+                  key={item.id}
+                  className={`${styles.turntableTab} ${activeTabKey === String(item.id) ? styles.turntableTabActive : ''}`}
+                  onClick={() => setActiveTabKey(String(item.id))}
                 >
-                  <div className={styles.wheelItemContent}>
-                    <div className={styles.wheelItemIcon}>{prize.icon}</div>
-                    <div className={styles.wheelItemName}>{prize.name}</div>
-                  </div>
+                  {item.icon && (
+                    <img src={item.icon} alt={item.name || ''} className={styles.turntableTabIcon} />
+                  )}
+                  <span>{item.name}</span>
                 </div>
               ))}
             </div>
-            <div className={styles.wheelCenter}>
-              <div className={styles.drawButtons}>
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<GiftOutlined />}
-                  onClick={handleDraw}
-                  loading={loading && !isTenDraw}
-                  disabled={drawing}
-                  className={styles.drawButton}
-                >
-                  {drawing && !isTenDraw ? '抽奖中...' : '单抽'}
-                </Button>
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<GiftOutlined />}
-                  onClick={handleTenDraw}
-                  loading={loading && isTenDraw}
-                  disabled={drawing}
-                  className={`${styles.drawButton} ${styles.tenDrawButton}`}
-                >
-                  {drawing && isTenDraw ? '十连抽中...' : '十连抽'}
-                </Button>
+          )}
+
+     
+
+          <Spin spinning={turntableLoading}>
+            <div className={styles.gridContainer}>
+              <div className={styles.prizeGrid}>
+                {prizes.map((prize, index) => (
+                  <div
+                    key={prize.id}
+                    className={`${styles.prizeItem} ${getQualityClass(prize.quality)} ${
+                      activeIndex === index ? styles.active : ''
+                    }`}
+                  >
+                    <div className={styles.prizeIcon}>
+                      {prize.icon?.startsWith('http') ? (
+                        <img
+                          src={prize.icon}
+                          alt={prize.name || ''}
+                          className={`${styles.prizeIconImg} ${prize.quality === 4 ? styles.prizeIconShine : ''}`}
+                        />
+                      ) : (
+                        prize.icon
+                      )}
+                    </div>
+                    <div className={styles.prizeName}>{prize.name}</div>
+                    {prize.qualityName && (
+                      <div className={styles.prizeQuality}>{prize.qualityName}</div>
+                    )}
+                  </div>
+                ))}
               </div>
+            
+            {/* 抽奖按钮放下面 */}
+            <div className={styles.drawButtonsContainer}>
+              <Button
+                className={styles.singleDrawBtn}
+                onClick={handleDraw}
+                disabled={drawing || !currentTurntable}
+              >
+                <span>单抽</span>
+                <span className={styles.btnCost}>💎 {currentTurntable?.costPoints || 0}</span>
+              </Button>
+              <Button
+                className={styles.tenDrawBtn}
+                onClick={handleTenDraw}
+                disabled={drawing || !currentTurntable}
+              >
+                <span>十连抽</span>
+                <span className={styles.btnCost}>💎 {(currentTurntable?.costPoints || 0) * 10}</span>
+              </Button>
             </div>
           </div>
 
-          {/* 抽奖规则 */}
-          <Card className={styles.rulesCard}>
-            <div className={styles.rulesTitle}>抽奖规则</div>
-            <ul className={styles.rulesList}>
-              <li>每日可免费抽奖1次</li>
-              <li>十连抽可获得更多奖励</li>
-              <li>奖品将自动发放到账户</li>
-              <li>活动最终解释权归平台所有</li>
-            </ul>
-          </Card>
+          {/* 保底进度 */}
+          {currentTurntable?.guaranteeCount && currentTurntable.guaranteeCount > 0 && (
+            <>
+              <div className={styles.luckyBar}>
+                <span className={styles.luckyLabel}>保底进度</span>
+                <Progress
+                  percent={((currentTurntable.userProgress?.totalDrawCount || 0) / currentTurntable.guaranteeCount) * 100}
+                  showInfo={false}
+                  strokeColor="linear-gradient(90deg, #ff8c42 0%, #ffa768 100%)"
+                  trailColor="#e8e8e8"
+                  className={styles.luckyProgress}
+                />
+                <span className={styles.luckyValue}>
+                  {currentTurntable.userProgress?.totalDrawCount || 0}/{currentTurntable.guaranteeCount}
+                </span>
+              </div>
+              <div className={styles.luckyTip}>
+                * 抽奖{currentTurntable.guaranteeCount}次必出稀有奖励
+              </div>
+            </>
+          )}
+          </Spin>
         </div>
 
-        {/* 右侧抽奖记录 */}
+        {/* 右侧区域 */}
         <div className={styles.rightSection}>
-          <Card className={styles.recordsCard}>
-            <div className={styles.recordsTitle}>
-              <HistoryOutlined className={styles.recordsIcon} />
-              <span>抽奖记录</span>
+          {/* 我的中奖记录 */}
+          <Card className={styles.winnersCard}>
+            <div className={styles.winnersTitle}>
+              <span className={styles.winnersIcon}>🏆</span>
+              <span>我的中奖记录</span>
             </div>
-            <div className={styles.recordsList}>
+            <div className={styles.winnersList}>
               {lotteryRecords.length === 0 ? (
-                <Empty 
-                  description="暂无抽奖记录" 
+                <Empty
+                  description="暂无中奖记录"
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   className={styles.emptyRecords}
                 />
               ) : (
-                <div className={styles.recordsContent}>
-                  {lotteryRecords.map((record) => (
-                    <div key={record.id} className={styles.recordItem}>
-                      <div className={styles.recordIcon}>{record.prizeIcon}</div>
-                      <div className={styles.recordInfo}>
-                        <div className={styles.recordPrizeName}>{record.prizeName}</div>
-                        <div className={styles.recordTime}>{record.drawTime}</div>
-                      </div>
+                lotteryRecords.map((record) => (
+                  <div key={record.id} className={styles.winnerItem}>
+                    <div className={styles.winnerIcon}>
+                      {record.prizeIcon?.startsWith('http') ? (
+                        <img src={record.prizeIcon} alt={record.prizeName} className={styles.winnerIconImg} />
+                      ) : (
+                        record.prizeIcon
+                      )}
                     </div>
-                  ))}
-                </div>
+                    <div className={styles.winnerInfo}>
+                      <span className={styles.winnerLabel}>恭喜</span>
+                      <span className={styles.winnerName}>我</span>
+                      <span className={styles.winnerLabel}>抽中</span>
+                      <span className={styles.winnerPrize}>{record.prizeName}</span>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </Card>
@@ -303,7 +466,7 @@ const Lottery: React.FC = () => {
         className={styles.tenDrawModal}
       >
         <div className={styles.tenDrawResults}>
-          {tenDrawResults.map((result, index) => (
+          {tenDrawResults.map((result) => (
             <div key={result.id} className={styles.resultItem}>
               <div className={styles.resultIcon}>{result.prizeIcon}</div>
               <div className={styles.resultName}>{result.prizeName}</div>
@@ -316,4 +479,3 @@ const Lottery: React.FC = () => {
 };
 
 export default Lottery;
-

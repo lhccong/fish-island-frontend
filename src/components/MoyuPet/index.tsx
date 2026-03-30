@@ -22,6 +22,7 @@ import {
 import styles from './index.less';
 import { getPetDetailUsingGet, createPetUsingPost, feedPetUsingPost, patPetUsingPost, updatePetNameUsingPost, getOtherUserPetUsingGet } from '@/services/backend/fishPetController';
 import { listPetSkinsUsingGet, exchangePetSkinUsingPost, setPetSkinUsingPost } from '@/services/backend/petSkinController';
+import { listMyItemInstancesByPageUsingPost } from '@/services/backend/itemInstancesController';
 import { useModel } from '@umijs/max';
 
 export interface PetInfo {
@@ -172,6 +173,13 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   const [skinLoading, setSkinLoading] = useState(false);
   const [exchangeLoading, setExchangeLoading] = useState<number | null>(null);
   const [setCurrentSkinLoading, setSetCurrentSkinLoading] = useState<number | null>(null);
+  
+  // 物品列表相关状态
+  const [items, setItems] = useState<API.ItemInstanceVO[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [itemsTotal, setItemsTotal] = useState(0);
+  const [itemsCurrent, setItemsCurrent] = useState(1);
+  const [itemsPageSize, setItemsPageSize] = useState(10);
 
   // 获取宠物数据
   const fetchPetData = async () => {
@@ -471,6 +479,31 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
     }
   };
 
+  // 获取物品列表
+  const fetchItems = async () => {
+    if (isOtherUser) return; // 查看其他用户时不获取物品
+
+    setItemsLoading(true);
+    try {
+      const res = await listMyItemInstancesByPageUsingPost({
+        current: itemsCurrent,
+        pageSize: itemsPageSize,
+      });
+
+      if (res.code === 0 && res.data) {
+        setItems(res.data.records || []);
+        setItemsTotal(res.data.total || 0);
+      } else {
+        message.error(res.message || '获取物品列表失败');
+      }
+    } catch (error) {
+      console.error('获取物品列表失败', error);
+      message.error('获取物品列表失败');
+    } finally {
+      setItemsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isPageComponent || visible) {
       // 重置状态，避免显示上一次的结果
@@ -481,6 +514,14 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
       fetchPetSkins(); // 获取宠物列表
     }
   }, [visible, otherUserId, isPageComponent]);
+
+  // 获取物品列表
+  useEffect(() => {
+    if ((isPageComponent || visible) && !isOtherUser) {
+      fetchItems();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPageComponent, visible, itemsCurrent, itemsPageSize]);
 
   // 创建宠物表单
   if (isCreating) {
@@ -955,42 +996,42 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
               ),
               children: (
                 <div className={styles.itemsContainer}>
-                  <Row gutter={[16, 16]}>
-                    <Col span={8}>
-                      <Card className={styles.itemCard}>
-                        <div className={styles.itemIcon}>🍞</div>
-                        <div className={styles.itemName}>鱼饵</div>
-                        <div className={styles.itemCount}>数量: 5</div>
-                        <div className={styles.itemDesc}>恢复20点饥饿值</div>
-                        <div className={styles.itemActions}>
-                          <Button
-                            type="primary"
-                            size="small"
-                            disabled
-                          >
-                            敬请期待
-                          </Button>
-                        </div>
-                      </Card>
-                    </Col>
-                    <Col span={8}>
-                      <Card className={styles.itemCard}>
-                        <div className={styles.itemIcon}>🎾</div>
-                        <div className={styles.itemName}>玩具球</div>
-                        <div className={styles.itemCount}>数量: 3</div>
-                        <div className={styles.itemDesc}>提高15点心情值</div>
-                        <div className={styles.itemActions}>
-                          <Button
-                            type="primary"
-                            size="small"
-                            disabled
-                          >
-                            敬请期待
-                          </Button>
-                        </div>
-                      </Card>
-                    </Col>
-                  </Row>
+                  <Spin spinning={itemsLoading}>
+                    {items.length > 0 ? (
+                      <Row gutter={[16, 16]}>
+                        {items.map((item) => (
+                          <Col span={8} key={item.id}>
+                            <Card className={styles.itemCard}>
+                              <div className={styles.itemIcon}>
+                                {item.template?.icon ? (
+                                  <img src={item.template.icon} alt={item.template.name} style={{ width: 40, height: 40 }} />
+                                ) : (
+                                  '📦'
+                                )}
+                              </div>
+                              <div className={styles.itemName}>{item.template?.name || '未知物品'}</div>
+                              <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
+                              <div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>
+                              <div className={styles.itemActions}>
+                                <Button
+                                  type="primary"
+                                  size="small"
+                                  disabled
+                                >
+                                  使用
+                                </Button>
+                              </div>
+                            </Card>
+                          </Col>
+                        ))}
+                      </Row>
+                    ) : (
+                      <div className={styles.shopEmpty} style={{ textAlign: 'center', padding: '50px 0' }}>
+                        <div className={styles.emptyIcon} style={{ fontSize: '48px', marginBottom: '20px' }}>📦</div>
+                        <div className={styles.emptyText} style={{ fontSize: '16px' }}>暂无物品</div>
+                      </div>
+                    )}
+                  </Spin>
                 </div>
               ),
             }]),
@@ -1308,42 +1349,42 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
               ),
               children: (
                 <div className={styles.itemsContainer}>
-                  <Row gutter={[16, 16]}>
-                    <Col span={8}>
-                      <Card className={styles.itemCard}>
-                        <div className={styles.itemIcon}>🍞</div>
-                        <div className={styles.itemName}>鱼饵</div>
-                        <div className={styles.itemCount}>数量: 5</div>
-                        <div className={styles.itemDesc}>恢复20点饥饿值</div>
-                        <div className={styles.itemActions}>
-                          <Button
-                            type="primary"
-                            size="small"
-                            disabled
-                          >
-                            敬请期待
-                          </Button>
-                        </div>
-                      </Card>
-                    </Col>
-                    <Col span={8}>
-                      <Card className={styles.itemCard}>
-                        <div className={styles.itemIcon}>🎾</div>
-                        <div className={styles.itemName}>玩具球</div>
-                        <div className={styles.itemCount}>数量: 3</div>
-                        <div className={styles.itemDesc}>提高15点心情值</div>
-                        <div className={styles.itemActions}>
-                          <Button
-                            type="primary"
-                            size="small"
-                            disabled
-                          >
-                            敬请期待
-                          </Button>
-                        </div>
-                      </Card>
-                    </Col>
-                  </Row>
+                  <Spin spinning={itemsLoading}>
+                    {items.length > 0 ? (
+                      <Row gutter={[16, 16]}>
+                        {items.map((item) => (
+                          <Col span={8} key={item.id}>
+                            <Card className={styles.itemCard}>
+                              <div className={styles.itemIcon}>
+                                {item.template?.icon ? (
+                                  <img src={item.template.icon} alt={item.template.name} style={{ width: 40, height: 40 }} />
+                                ) : (
+                                  '📦'
+                                )}
+                              </div>
+                              <div className={styles.itemName}>{item.template?.name || '未知物品'}</div>
+                              <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
+                              <div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>
+                              <div className={styles.itemActions}>
+                                <Button
+                                  type="primary"
+                                  size="small"
+                                  disabled
+                                >
+                                  使用
+                                </Button>
+                              </div>
+                            </Card>
+                          </Col>
+                        ))}
+                      </Row>
+                    ) : (
+                      <div className={styles.shopEmpty} style={{ textAlign: 'center', padding: '50px 0' }}>
+                        <div className={styles.emptyIcon} style={{ fontSize: '48px', marginBottom: '20px' }}>📦</div>
+                        <div className={styles.emptyText} style={{ fontSize: '16px' }}>暂无物品</div>
+                      </div>
+                    )}
+                  </Spin>
                 </div>
               ),
             }]),

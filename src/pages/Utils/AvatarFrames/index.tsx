@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Avatar, Button, message, Spin, Tabs, Modal, Card, List, Typography, Tag } from 'antd';
-import { ShopOutlined, CrownOutlined, GiftOutlined, ExclamationCircleOutlined, CreditCardOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { ShopOutlined, CrownOutlined, GiftOutlined, ExclamationCircleOutlined, CreditCardOutlined, CheckCircleOutlined, HistoryOutlined } from '@ant-design/icons';
 import { getLoginUserUsingGet } from '@/services/backend/userController';
 import { listAvatarFrameVoByPageUsingPost, exchangeFrameUsingPost, setCurrentFrameUsingPost } from '@/services/backend/avatarFrameController';
 import { listPropsPageUsingGet, purchasePropsUsingPost } from '@/services/backend/propsController';
+import { listMyPointsRecordsUsingGet } from '@/services/backend/userPointsRecordController';
 import styles from './index.module.less';
 import './index.less';
 import { useModel } from '@umijs/max';
@@ -17,14 +18,18 @@ const AvatarFrames: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('frames');
   const [frames, setFrames] = useState<API.AvatarFrameVO[]>([]);
   const [props, setProps] = useState<API.PropsVO[]>([]);
+  const [pointsRecords, setPointsRecords] = useState<API.VO[]>([]);
   const [currentUser, setCurrentUser] = useState<API.LoginUserVO | null>(null);
   const [previewFrame, setPreviewFrame] = useState<API.AvatarFrameVO | null>(null);
   const [framesCurrent, setFramesCurrent] = useState<number>(1);
   const [propsCurrent, setPropsCurrent] = useState<number>(1);
+  const [pointsCurrent, setPointsCurrent] = useState<number>(1);
   const [framesLoading, setFramesLoading] = useState<boolean>(true);
   const [propsLoading, setPropsLoading] = useState<boolean>(true);
+  const [pointsLoading, setPointsLoading] = useState<boolean>(false);
   const [hasMoreFrames, setHasMoreFrames] = useState<boolean>(true);
   const [hasMoreProps, setHasMoreProps] = useState<boolean>(true);
+  const [hasMorePoints, setHasMorePoints] = useState<boolean>(true);
 
   // 获取当前登录用户
   useEffect(() => {
@@ -112,6 +117,36 @@ const AvatarFrames: React.FC = () => {
     const nextPage = propsCurrent + 1;
     setPropsCurrent(nextPage);
     fetchProps(nextPage);
+  };
+
+  // 获取积分记录列表
+  const fetchPointsRecords = async (page: number) => {
+    try {
+      setPointsLoading(true);
+      const res = await listMyPointsRecordsUsingGet({
+        current: page,
+        pageSize: 10,
+      });
+      if (res?.data) {
+        if (page === 1) {
+          setPointsRecords(res.data.records ?? []);
+        } else {
+          setPointsRecords(prev => [...prev, ...(res.data?.records ?? [])]);
+        }
+        setHasMorePoints((res.data?.records?.length ?? 0) > 0);
+      }
+    } catch (error) {
+      message.error('获取积分记录失败');
+    } finally {
+      setPointsLoading(false);
+    }
+  };
+
+  const loadMorePointsRecords = () => {
+    if (pointsLoading) return;
+    const nextPage = pointsCurrent + 1;
+    setPointsCurrent(nextPage);
+    fetchPointsRecords(nextPage);
   };
 
   const handlePurchase = async (frame: API.AvatarFrameVO) => {
@@ -438,6 +473,68 @@ const AvatarFrames: React.FC = () => {
     );
   };
 
+  // 积分记录标签页内容
+  const renderPointsRecords = () => (
+    <InfiniteScroll
+      dataLength={pointsRecords.length}
+      next={loadMorePointsRecords}
+      hasMore={hasMorePoints}
+      loader={
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <Spin />
+        </div>
+      }
+      endMessage={
+        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+          没有更多记录了
+        </div>
+      }
+    >
+      <div className="pointsRecordsList" style={{ padding: '0 20px' }}>
+        {pointsRecords.map((record) => (
+          <Card
+            key={record.id}
+            size="small"
+            style={{
+              marginBottom: '12px',
+              borderRadius: '8px',
+              border: '1px solid #f0f0f0',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 500, fontSize: '15px', marginBottom: '4px' }}>
+                  {record.description || record.sourceTypeText || '积分变动'}
+                </div>
+                <div style={{ fontSize: '13px', color: '#888' }}>
+                  {record.createTime}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  color: record.changeType === 1 ? '#52c41a' : '#ff4d4f'
+                }}>
+                  {record.changeType === 1 ? '+' : '-'}{record.changePoints}
+                </div>
+                <div style={{ fontSize: '12px', color: '#888' }}>
+                  变动后: {record.afterPoints}
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+        {pointsRecords.length === 0 && !pointsLoading && (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            <HistoryOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+            <div>暂无积分记录</div>
+          </div>
+        )}
+      </div>
+    </InfiniteScroll>
+  );
+
   const tabItems = [
     {
       key: 'frames',
@@ -469,6 +566,16 @@ const AvatarFrames: React.FC = () => {
       ),
       children: renderMonthlyCard(),
     },
+    {
+      key: 'pointsRecords',
+      label: (
+        <span>
+          <HistoryOutlined />
+          积分记录
+        </span>
+      ),
+      children: renderPointsRecords(),
+    },
   ];
 
   // 处理标签页切换
@@ -490,6 +597,12 @@ const AvatarFrames: React.FC = () => {
       fetchProps(1);
     } else if (key === 'monthlyCard') {
       // 切换到月卡标签，不需要加载数据
+    } else if (key === 'pointsRecords') {
+      // 如果切换到积分记录标签，重置积分记录数据和页码
+      setPointsCurrent(1);
+      setPointsRecords([]);
+      setHasMorePoints(true);
+      fetchPointsRecords(1);
     }
   };
 

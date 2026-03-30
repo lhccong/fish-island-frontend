@@ -72,6 +72,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseDrawResultVO_ = {
+    code?: number;
+    data?: DrawResultVO;
+    message?: string;
+  };
+
   type BaseResponseDrawRoomVO_ = {
     code?: number;
     data?: DrawRoomVO;
@@ -150,6 +156,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListDrawRecordVO_ = {
+    code?: number;
+    data?: DrawRecordVO[];
+    message?: string;
+  };
+
   type BaseResponseListDrawRoomVO_ = {
     code?: number;
     data?: DrawRoomVO[];
@@ -168,6 +180,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListMarketIndexVO_ = {
+    code?: number;
+    data?: MarketIndexVO[];
+    message?: string;
+  };
+
   type BaseResponseListNewUserDataWebVO_ = {
     code?: number;
     data?: NewUserDataWebVO[];
@@ -183,6 +201,18 @@ declare namespace API {
   type BaseResponseListSimpleHeroVO_ = {
     code?: number;
     data?: SimpleHeroVO[];
+    message?: string;
+  };
+
+  type BaseResponseListString_ = {
+    code?: number;
+    data?: string[];
+    message?: string;
+  };
+
+  type BaseResponseListTurntableVO_ = {
+    code?: number;
+    data?: TurntableVO[];
     message?: string;
   };
 
@@ -218,7 +248,7 @@ declare namespace API {
 
   type BaseResponseListVO_ = {
     code?: number;
-    data?: VO[];
+    data?: VO2[];
     message?: string;
   };
 
@@ -384,6 +414,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageVO_ = {
+    code?: number;
+    data?: PageVO_;
+    message?: string;
+  };
+
   type BaseResponsePageWordLibrary_ = {
     code?: number;
     data?: PageWordLibrary_;
@@ -429,6 +465,12 @@ declare namespace API {
   type BaseResponseTokenLoginUserVo_ = {
     code?: number;
     data?: TokenLoginUserVo;
+    message?: string;
+  };
+
+  type BaseResponseTurntableVO_ = {
+    code?: number;
+    data?: TurntableVO;
     message?: string;
   };
 
@@ -489,6 +531,12 @@ declare namespace API {
   type BaseResponseUserVO_ = {
     code?: number;
     data?: UserVO;
+    message?: string;
+  };
+
+  type BaseResponseVoteVO_ = {
+    code?: number;
+    data?: VoteVO;
     message?: string;
   };
 
@@ -710,6 +758,11 @@ declare namespace API {
     id?: string;
   };
 
+  type deleteVoteUsingPOSTParams = {
+    /** voteId */
+    voteId: string;
+  };
+
   type DonationRecords = {
     amount?: number;
     createTime?: string;
@@ -784,6 +837,42 @@ declare namespace API {
     userAvatar?: string;
     userId?: number;
     userName?: string;
+  };
+
+  type DrawPrizeVO = {
+    convertedPoints?: number;
+    convertedToPoints?: boolean;
+    icon?: string;
+    name?: string;
+    prizeId?: number;
+    prizeType?: number;
+    quality?: number;
+    qualityName?: string;
+    turntablePrizeId?: number;
+  };
+
+  type DrawRecordVO = {
+    costPoints?: number;
+    createTime?: string;
+    guaranteeType?: number;
+    icon?: string;
+    id?: number;
+    isGuarantee?: boolean;
+    name?: string;
+    quality?: number;
+    qualityName?: string;
+  };
+
+  type DrawRequest = {
+    drawCount?: number;
+    turntableId?: number;
+  };
+
+  type DrawResultVO = {
+    costPoints?: number;
+    guaranteeType?: number;
+    isGuarantee?: boolean;
+    prizeList?: DrawPrizeVO[];
   };
 
   type DrawRoomCreateRequest = {
@@ -909,6 +998,8 @@ declare namespace API {
     name?: string;
     /** 昨日净值 */
     prevPrice?: number;
+    /** 持有收益率（%） */
+    profitRate?: number;
     /** 持有份额 */
     shares?: number;
     /** 累计盈亏 */
@@ -919,17 +1010,21 @@ declare namespace API {
 
   type FundListVO = {
     /** 基金列表 */
-    fundList?: FundItemVO[];
+    fundList: FundItemVO[];
     /** 今日下跌的基金数量 */
     todayDownCount?: number;
     /** 今日上涨的基金数量 */
     todayUpCount?: number;
     /** 今日总盈亏 */
     totalDayProfit?: number;
+    /** 今日总收益率（%） */
+    totalDayProfitRate?: number;
     /** 总市值 */
     totalMarketValue?: number;
     /** 累计总盈亏 */
     totalProfit?: number;
+    /** 总持有收益率（%） */
+    totalProfitRate?: number;
   };
 
   type generatePresignedDownloadUrlUsingGETParams = {
@@ -1068,6 +1163,11 @@ declare namespace API {
     id?: number;
   };
 
+  type getTurntableDetailUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
   type getUserByIdUsingGETParams = {
     /** id */
     id?: number;
@@ -1091,6 +1191,11 @@ declare namespace API {
   type getUserVoByIdUsingGETParams = {
     /** id */
     id?: number;
+  };
+
+  type getVoteResultUsingGETParams = {
+    /** voteId */
+    voteId: string;
   };
 
   type getWordLibraryByIdUsingGETParams = {
@@ -1369,6 +1474,30 @@ declare namespace API {
     state?: string;
   };
 
+  type listDrawRecordsUsingGETParams = {
+    current?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    turntableId?: number;
+  };
+
+  type listMyPointsRecordsBySourceUsingGETParams = {
+    /** current */
+    current?: number;
+    /** pageSize */
+    pageSize?: number;
+    /** sourceType */
+    sourceType: string;
+  };
+
+  type listMyPointsRecordsUsingGETParams = {
+    /** current */
+    current?: number;
+    /** pageSize */
+    pageSize?: number;
+  };
+
   type listPetSkinsUsingGETParams = {
     current?: number;
     name?: string;
@@ -1384,6 +1513,23 @@ declare namespace API {
     sortField?: string;
     sortOrder?: string;
     type?: string;
+  };
+
+  type listTurntablesUsingGETParams = {
+    current?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    type?: number;
+  };
+
+  type listUserPointsRecordsUsingGETParams = {
+    /** current */
+    current?: number;
+    /** pageSize */
+    pageSize?: number;
+    /** userId */
+    userId: number;
   };
 
   type listUserTitlesByUserIdUsingGETParams = {
@@ -1409,6 +1555,14 @@ declare namespace API {
     userProfile?: string;
     userRole?: string;
     vip?: boolean;
+  };
+
+  type MarketIndexVO = {
+    changePercent?: string;
+    changeValue?: number;
+    currentValue?: number;
+    indexCode?: string;
+    indexName?: string;
   };
 
   type Message = {
@@ -1889,6 +2043,19 @@ declare namespace API {
     total?: number;
   };
 
+  type PageVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: VO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
   type PageWordLibrary_ = {
     countId?: string;
     current?: number;
@@ -2290,6 +2457,28 @@ declare namespace API {
     vip?: boolean;
   };
 
+  type TurntablePrizeVO = {
+    icon?: string;
+    id?: number;
+    name?: string;
+    prizeId?: number;
+    prizeType?: number;
+    probability?: number;
+    quality?: number;
+    qualityName?: string;
+  };
+
+  type TurntableVO = {
+    costPoints?: number;
+    createTime?: string;
+    guaranteeCount?: number;
+    id?: number;
+    name?: string;
+    prizeList?: TurntablePrizeVO[];
+    type?: number;
+    userProgress?: UserProgressVO;
+  };
+
   type unbindUsingDELETEParams = {
     /** source */
     source: string;
@@ -2512,6 +2701,13 @@ declare namespace API {
     remainingTime?: string;
   };
 
+  type UserProgressVO = {
+    guaranteeCount?: number;
+    lastDrawTime?: string;
+    smallFailCount?: number;
+    totalDrawCount?: number;
+  };
+
   type UserQueryRequest = {
     createTimeRange?: string[];
     current?: number;
@@ -2654,6 +2850,37 @@ declare namespace API {
   };
 
   type VO = {
+    /** 变动后总积分 */
+    afterPoints?: number;
+    /** 变动后已用积分 */
+    afterUsedPoints?: number;
+    /** 变动前总积分 */
+    beforePoints?: number;
+    /** 变动前已用积分 */
+    beforeUsedPoints?: number;
+    /** 变动积分数量 */
+    changePoints?: number;
+    /** 变动类型：1-增加，2-扣除 */
+    changeType?: number;
+    /** 变动类型文本 */
+    changeTypeText?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 描述/备注 */
+    description?: string;
+    /** 记录ID */
+    id?: number;
+    /** 来源ID */
+    sourceId?: string;
+    /** 来源类型 */
+    sourceType?: string;
+    /** 来源类型文本 */
+    sourceTypeText?: string;
+    /** 用户ID */
+    userId?: number;
+  };
+
+  type VO2 = {
     /** 抢到的金额 */
     amount?: number;
     /** 抢红包时间 */
@@ -2668,6 +2895,35 @@ declare namespace API {
     userId?: number;
     /** 用户昵称 */
     userName?: string;
+  };
+
+  type VoteAddRequest = {
+    options?: string[];
+    singleChoice?: boolean;
+    title?: string;
+  };
+
+  type VoteOptionVO = {
+    count?: number;
+    index?: number;
+    percentage?: number;
+    text?: string;
+  };
+
+  type VoteRecordRequest = {
+    optionIndexes?: number[];
+    voteId?: string;
+  };
+
+  type VoteVO = {
+    hasVoted?: boolean;
+    options?: VoteOptionVO[];
+    remainingSeconds?: number;
+    singleChoice?: boolean;
+    title?: string;
+    totalCount?: number;
+    userVotedOptions?: number[];
+    voteId?: string;
   };
 
   type WebParseVO = {
