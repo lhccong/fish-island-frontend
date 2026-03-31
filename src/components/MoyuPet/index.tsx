@@ -22,7 +22,7 @@ import {
 import styles from './index.less';
 import { getPetDetailUsingGet, createPetUsingPost, feedPetUsingPost, patPetUsingPost, updatePetNameUsingPost, getOtherUserPetUsingGet } from '@/services/backend/fishPetController';
 import { listPetSkinsUsingGet, exchangePetSkinUsingPost, setPetSkinUsingPost } from '@/services/backend/petSkinController';
-import { listMyItemInstancesByPageUsingPost } from '@/services/backend/itemInstancesController';
+import { listMyItemInstancesByPageUsingPost, decomposeItemInstanceUsingPost, equipItemUsingPost, unequipItemUsingPost } from '@/services/backend/itemInstancesController';
 import { useModel } from '@umijs/max';
 
 export interface PetInfo {
@@ -180,6 +180,9 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   const [itemsTotal, setItemsTotal] = useState(0);
   const [itemsCurrent, setItemsCurrent] = useState(1);
   const [itemsPageSize, setItemsPageSize] = useState(10);
+  const [decomposeLoading, setDecomposeLoading] = useState<number | null>(null); // 分解中的物品ID
+  const [equipLoading, setEquipLoading] = useState<number | null>(null); // 穿戴中的物品ID
+  const [unequipLoading, setUnequipLoading] = useState<string | null>(null); // 卸下中的装备槽位
 
   // 获取宠物数据
   const fetchPetData = async () => {
@@ -286,7 +289,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
         if (res.data.hunger) {
           res.data.hunger = Math.floor(res.data.hunger);
         }
-        setPet(res.data);
+        // 保留原有的 equippedItems，因为喂食接口可能不返回装备信息
+        setPet({...pet, ...res.data, equippedItems: (pet as API.PetVO)?.equippedItems});
       }
     } catch (error) {
     } finally {
@@ -313,7 +317,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
         if (res.data.hunger) {
           res.data.hunger = Math.floor(res.data.hunger);
         }
-        setPet(res.data);
+        // 保留原有的 equippedItems，因为抚摸接口可能不返回装备信息
+        setPet({...pet, ...res.data, equippedItems: (pet as API.PetVO)?.equippedItems});
       }
     } catch (error) {
       console.error('抚摸失败', error);
@@ -501,6 +506,100 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
       message.error('获取物品列表失败');
     } finally {
       setItemsLoading(false);
+    }
+  };
+
+  // 分解物品
+  const handleDecomposeItem = (item: API.ItemInstanceVO) => {
+    const removePoint = item.template?.removePoint || 0;
+    const itemName = item.template?.name || '未知物品';
+    
+    Modal.confirm({
+      title: '确认分解物品',
+      content: (
+        <div>
+          <p>确定要分解 <strong>{itemName}</strong> 吗？</p>
+          <p>分解后将获得 <strong style={{ color: '#faad14' }}>{removePoint}</strong> 积分</p>
+          <p style={{ color: '#ff4d4f', fontSize: '12px' }}>此操作不可撤销！</p>
+        </div>
+      ),
+      okText: '确认分解',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        if (!item.id) return;
+        setDecomposeLoading(item.id);
+        try {
+          const res = await decomposeItemInstanceUsingPost({
+            itemInstanceId: item.id,
+          });
+
+          if (res.code === 0) {
+            message.success(`分解成功，获得 ${removePoint} 积分`);
+            // 刷新物品列表
+            fetchItems();
+          } else {
+            message.error(res.message || '分解失败');
+          }
+        } catch (error) {
+          console.error('分解物品失败', error);
+          message.error('分解物品失败');
+        } finally {
+          setDecomposeLoading(null);
+        }
+      },
+    });
+  };
+
+  // 穿戴装备
+  const handleEquipItem = async (item: API.ItemInstanceVO) => {
+    if (!item.id) return;
+
+    setEquipLoading(item.id);
+    try {
+      const res = await equipItemUsingPost({
+        itemInstanceId: item.id,
+      });
+
+      if (res.code === 0 && res.data) {
+        message.success('穿戴成功');
+        // 刷新宠物数据以获取更新后的装备信息
+        fetchPetData();
+        // 刷新物品列表
+        fetchItems();
+      } else {
+        message.error(res.message || '穿戴失败');
+      }
+    } catch (error) {
+      console.error('穿戴装备失败', error);
+      message.error('穿戴装备失败');
+    } finally {
+      setEquipLoading(null);
+    }
+  };
+
+  // 卸下装备
+  const handleUnequipItem = async (equipSlot: string) => {
+    setUnequipLoading(equipSlot);
+    try {
+      const res = await unequipItemUsingPost({
+        equipSlot,
+      });
+
+      if (res.code === 0 && res.data) {
+        message.success('卸下成功');
+        // 刷新宠物数据以获取更新后的装备信息
+        fetchPetData();
+        // 刷新物品列表
+        fetchItems();
+      } else {
+        message.error(res.message || '卸下失败');
+      }
+    } catch (error) {
+      console.error('卸下装备失败', error);
+      message.error('卸下装备失败');
+    } finally {
+      setUnequipLoading(null);
     }
   };
 
@@ -834,25 +933,136 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 {/* 左侧装备栏 */}
                 <div className={styles.leftEquipments}>
                   <div className={styles.equipSlot} data-slot="weapon">
-                    <Tooltip title="武器 - 空闲">
-                      <div className={styles.emptySlot}>
-                        <ThunderboltOutlined className={styles.slotIcon} />
-                      </div>
-                    </Tooltip>
+                    {(() => {
+                      const petData = pet as API.PetVO;
+                      const equippedWeapon = petData?.equippedItems?.weapon;
+                      if (!equippedWeapon) {
+                        return (
+                          <Tooltip title="武器 - 空闲">
+                            <div className={styles.emptySlot}>
+                              <ThunderboltOutlined className={styles.slotIcon} />
+                            </div>
+                          </Tooltip>
+                        );
+                      }
+                      const rarity = equippedWeapon?.template?.rarity || 1;
+                      const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
+                      const enhanceLevel = equippedWeapon?.enhanceLevel || 0;
+                      return (
+                        <Tooltip title={`点击卸下${enhanceLevel > 0 ? ` (+${enhanceLevel})` : ''}`}>
+                          <div
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
+                            onClick={() => !isOtherUser && handleUnequipItem('weapon')}
+                            style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
+                          >
+                            <Spin spinning={unequipLoading === 'weapon'} size="small">
+                              {equippedWeapon?.template?.icon ? (
+                                <div className={styles.equippedItemWrapper}>
+                                  <img
+                                    src={equippedWeapon.template.icon}
+                                    alt={equippedWeapon.name}
+                                    className={styles.equippedItemIcon}
+                                  />
+                                  {enhanceLevel > 0 && (
+                                    <div className={styles.enhanceLevelBadge}>+{enhanceLevel}</div>
+                                  )}
+                                </div>
+                              ) : (
+                                <ThunderboltOutlined className={styles.slotIcon} />
+                              )}
+                            </Spin>
+                          </div>
+                        </Tooltip>
+                      );
+                    })()}
                   </div>
-                  <div className={styles.equipSlot} data-slot="armor">
-                    <Tooltip title="护甲 - 空闲">
-                      <div className={styles.emptySlot}>
-                        <StarOutlined className={styles.slotIcon} />
-                      </div>
-                    </Tooltip>
+                  <div className={styles.equipSlot} data-slot="hand">
+                    {(() => {
+                      const petData = pet as API.PetVO;
+                      const equippedHand = petData?.equippedItems?.hand;
+                      if (!equippedHand) {
+                        return (
+                          <Tooltip title="手套 - 空闲">
+                            <div className={styles.emptySlot}>
+                              <StarOutlined className={styles.slotIcon} />
+                            </div>
+                          </Tooltip>
+                        );
+                      }
+                      const rarity = equippedHand?.template?.rarity || 1;
+                      const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
+                      const enhanceLevel = equippedHand?.enhanceLevel || 0;
+                      return (
+                        <Tooltip title={`点击卸下${enhanceLevel > 0 ? ` (+${enhanceLevel})` : ''}`}>
+                          <div
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
+                            onClick={() => !isOtherUser && handleUnequipItem('hand')}
+                            style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
+                          >
+                            <Spin spinning={unequipLoading === 'hand'} size="small">
+                              {equippedHand?.template?.icon ? (
+                                <div className={styles.equippedItemWrapper}>
+                                  <img
+                                    src={equippedHand.template.icon}
+                                    alt={equippedHand.name}
+                                    className={styles.equippedItemIcon}
+                                  />
+                                  {enhanceLevel > 0 && (
+                                    <div className={styles.enhanceLevelBadge}>+{enhanceLevel}</div>
+                                  )}
+                                </div>
+                              ) : (
+                                <StarOutlined className={styles.slotIcon} />
+                              )}
+                            </Spin>
+                          </div>
+                        </Tooltip>
+                      );
+                    })()}
                   </div>
-                  <div className={styles.equipSlot} data-slot="accessory1">
-                    <Tooltip title="饰品1 - 空闲">
-                      <div className={styles.emptySlot}>
-                        <StarOutlined className={styles.slotIcon} />
-                      </div>
-                    </Tooltip>
+                  <div className={styles.equipSlot} data-slot="foot">
+                    {(() => {
+                      const petData = pet as API.PetVO;
+                      const equippedFoot = petData?.equippedItems?.foot;
+                      if (!equippedFoot) {
+                        return (
+                          <Tooltip title="鞋子 - 空闲">
+                            <div className={styles.emptySlot}>
+                              <FireOutlined className={styles.slotIcon} />
+                            </div>
+                          </Tooltip>
+                        );
+                      }
+                      const rarity = equippedFoot?.template?.rarity || 1;
+                      const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
+                      const enhanceLevel = equippedFoot?.enhanceLevel || 0;
+                      return (
+                        <Tooltip title={`点击卸下${enhanceLevel > 0 ? ` (+${enhanceLevel})` : ''}`}>
+                          <div
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
+                            onClick={() => !isOtherUser && handleUnequipItem('foot')}
+                            style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
+                          >
+                            <Spin spinning={unequipLoading === 'foot'} size="small">
+                              {equippedFoot?.template?.icon ? (
+                                <div className={styles.equippedItemWrapper}>
+                                  <img
+                                    src={equippedFoot.template.icon}
+                                    alt={equippedFoot.name}
+                                    className={styles.equippedItemIcon}
+                                  />
+                                  {enhanceLevel > 0 && (
+                                    <div className={styles.enhanceLevelBadge}>+{enhanceLevel}</div>
+                                  )}
+                                </div>
+                              ) : (
+                                <FireOutlined className={styles.slotIcon} />
+                              )}
+                            </Spin>
+                          </div>
+                        </Tooltip>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -866,12 +1076,49 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
 
                 {/* 右侧装备栏 */}
                 <div className={styles.rightEquipments}>
-                  <div className={styles.equipSlot} data-slot="helmet">
-                    <Tooltip title="头盔 - 空闲">
-                      <div className={styles.emptySlot}>
-                        <CrownOutlined className={styles.slotIcon} />
-                      </div>
-                    </Tooltip>
+                  <div className={styles.equipSlot} data-slot="head">
+                    {(() => {
+                      const petData = pet as API.PetVO;
+                      const equippedHead = petData?.equippedItems?.head;
+                      if (!equippedHead) {
+                        return (
+                          <Tooltip title="头盔 - 空闲">
+                            <div className={styles.emptySlot}>
+                              <CrownOutlined className={styles.slotIcon} />
+                            </div>
+                          </Tooltip>
+                        );
+                      }
+                      const rarity = equippedHead?.template?.rarity || 1;
+                      const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
+                      const enhanceLevel = equippedHead?.enhanceLevel || 0;
+                      return (
+                        <Tooltip title={`点击卸下${enhanceLevel > 0 ? ` (+${enhanceLevel})` : ''}`}>
+                          <div
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
+                            onClick={() => !isOtherUser && handleUnequipItem('head')}
+                            style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
+                          >
+                            <Spin spinning={unequipLoading === 'head'} size="small">
+                              {equippedHead?.template?.icon ? (
+                                <div className={styles.equippedItemWrapper}>
+                                  <img
+                                    src={equippedHead.template.icon}
+                                    alt={equippedHead.name}
+                                    className={styles.equippedItemIcon}
+                                  />
+                                  {enhanceLevel > 0 && (
+                                    <div className={styles.enhanceLevelBadge}>+{enhanceLevel}</div>
+                                  )}
+                                </div>
+                              ) : (
+                                <CrownOutlined className={styles.slotIcon} />
+                              )}
+                            </Spin>
+                          </div>
+                        </Tooltip>
+                      );
+                    })()}
                   </div>
                   <div className={styles.equipSlot} data-slot="necklace">
                     <Tooltip title="项链 - 空闲">
@@ -1001,7 +1248,10 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       <Row gutter={[16, 16]}>
                         {items.map((item) => (
                           <Col span={8} key={item.id}>
-                            <Card className={styles.itemCard}>
+                            <Card 
+                              className={styles.itemCard}
+                              bodyStyle={{ padding: '12px 8px' }}
+                            >
                               <div className={styles.itemIcon}>
                                 {item.template?.icon ? (
                                   <img src={item.template.icon} alt={item.template.name} style={{ width: 40, height: 40 }} />
@@ -1013,12 +1263,31 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                               <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
                               <div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>
                               <div className={styles.itemActions}>
+                                {item.template?.equipSlot ? (
+                                  <Button
+                                    type="primary"
+                                    size="small"
+                                    loading={equipLoading === item.id}
+                                    onClick={() => handleEquipItem(item)}
+                                  >
+                                    穿戴
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="primary"
+                                    size="small"
+                                    disabled
+                                  >
+                                    使用
+                                  </Button>
+                                )}
                                 <Button
-                                  type="primary"
+                                  danger
                                   size="small"
-                                  disabled
+                                  loading={decomposeLoading === item.id}
+                                  onClick={() => handleDecomposeItem(item)}
                                 >
-                                  使用
+                                  分解
                                 </Button>
                               </div>
                             </Card>
@@ -1354,7 +1623,10 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       <Row gutter={[16, 16]}>
                         {items.map((item) => (
                           <Col span={8} key={item.id}>
-                            <Card className={styles.itemCard}>
+                            <Card 
+                              className={styles.itemCard}
+                              bodyStyle={{ padding: '12px 8px' }}
+                            >
                               <div className={styles.itemIcon}>
                                 {item.template?.icon ? (
                                   <img src={item.template.icon} alt={item.template.name} style={{ width: 40, height: 40 }} />
@@ -1366,12 +1638,31 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                               <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
                               <div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>
                               <div className={styles.itemActions}>
+                                {item.template?.equipSlot ? (
+                                  <Button
+                                    type="primary"
+                                    size="small"
+                                    loading={equipLoading === item.id}
+                                    onClick={() => handleEquipItem(item)}
+                                  >
+                                    穿戴
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="primary"
+                                    size="small"
+                                    disabled
+                                  >
+                                    使用
+                                  </Button>
+                                )}
                                 <Button
-                                  type="primary"
+                                  danger
                                   size="small"
-                                  disabled
+                                  loading={decomposeLoading === item.id}
+                                  onClick={() => handleDecomposeItem(item)}
                                 >
-                                  使用
+                                  分解
                                 </Button>
                               </div>
                             </Card>

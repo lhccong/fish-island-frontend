@@ -519,7 +519,7 @@ const AvatarFrames: React.FC = () => {
                   {record.changeType === 1 ? '+' : '-'}{record.changePoints}
                 </div>
                 <div style={{ fontSize: '12px', color: '#888' }}>
-                  变动后: {record.afterPoints}
+                  可用: {(record.afterPoints ?? 0) - (record.afterUsedPoints ?? 0)}
                 </div>
               </div>
             </div>

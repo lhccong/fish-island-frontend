@@ -17,6 +17,21 @@ export async function addItemInstanceUsingPost(
   });
 }
 
+/** 分解物品 POST /api/itemInstances/decompose */
+export async function decomposeItemInstanceUsingPost(
+  body: API.ItemInstanceDecomposeRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseLong_>('/api/itemInstances/decompose', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 删除物品 POST /api/itemInstances/delete */
 export async function deleteItemInstanceUsingPost(
   body: API.DeleteRequest,
@@ -38,6 +53,21 @@ export async function editItemInstanceUsingPost(
   options?: { [key: string]: any },
 ) {
   return request<API.BaseResponseItemInstanceVO_>('/api/itemInstances/edit', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 穿戴装备 POST /api/itemInstances/equip */
+export async function equipItemUsingPost(
+  body: API.ItemEquipRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/itemInstances/equip', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -98,6 +128,21 @@ export async function listMyItemInstancesByPageUsingPost(
   options?: { [key: string]: any },
 ) {
   return request<API.BaseResponsePageItemInstanceVO_>('/api/itemInstances/my/list/page/vo', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 卸下装备 POST /api/itemInstances/unequip */
+export async function unequipItemUsingPost(
+  body: API.ItemUnequipRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/itemInstances/unequip', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

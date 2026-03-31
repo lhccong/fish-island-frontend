@@ -541,18 +541,19 @@
 
   .itemDesc {
     color: #666;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
     font-size: 13px;
     line-height: 1.4;
   }
 
   .itemActions {
-    margin-top: 12px;
+    margin-top: 4px;
     
     button {
       border-radius: 16px;
       font-weight: 500;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin: 0 4px;
       
       &:hover {
         transform: translateY(-1px);
@@ -1089,8 +1090,8 @@
     }
     
     .equipSlot {
-      width: 60px;
-      height: 60px;
+      width: 70px;
+      height: 70px;
       border: 2px solid #ffa768;
       border-radius: 12px;
       background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
@@ -1121,7 +1122,7 @@
         background: rgba(255, 167, 104, 0.1);
         
         .slotIcon {
-          font-size: 24px;
+          font-size: 28px;
           color: rgba(255, 167, 104, 0.6);
           transition: all 0.3s ease;
         }
@@ -1130,6 +1131,156 @@
       &:hover .emptySlot .slotIcon {
         color: rgba(255, 167, 104, 0.8);
         transform: scale(1.1);
+      }
+      
+      // 已装备物品样式
+      .equippedItem {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        overflow: visible;
+        position: relative;
+        
+        &:hover {
+          transform: scale(1.05);
+        }
+        
+        .equippedItemIcon {
+          width: 60px;
+          height: 60px;
+          object-fit: contain;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        // 装备图标容器，用于显示强化等级角标
+        .equippedItemWrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: visible;
+        }
+        
+        // 强化等级角标
+        .enhanceLevelBadge {
+          position: absolute;
+          top: -10px;
+          right: -10px;
+          background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+          color: white;
+          font-size: 11px;
+          font-weight: 800;
+          padding: 2px 6px;
+          border-radius: 10px;
+          border: 2px solid #fff;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 8px rgba(255, 68, 68, 0.4);
+          line-height: 1;
+          z-index: 10;
+        }
+        
+        .slotIcon {
+          font-size: 28px;
+        }
+      }
+      
+      // 稀有度样式 - 1级
+      .rarity-rarity-1 {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        border: 2px solid #4caf50;
+        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        
+        &:hover {
+          border-color: #388e3c;
+          box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+        }
+        
+        .slotIcon {
+          color: #4caf50;
+        }
+      }
+      
+      // 稀有度样式 - 2级
+      .rarity-rarity-2 {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border: 2px solid #2196f3;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        
+        &:hover {
+          border-color: #1976d2;
+          box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+        
+        .slotIcon {
+          color: #2196f3;
+        }
+      }
+      
+      // 稀有度样式 - 3级
+      .rarity-rarity-3 {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        border: 2px solid #9c27b0;
+        box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
+        
+        &:hover {
+          border-color: #7b1fa2;
+          box-shadow: 0 4px 12px rgba(156, 39, 176, 0.4);
+        }
+        
+        .slotIcon {
+          color: #9c27b0;
+        }
+      }
+      
+      // 稀有度样式 - 4级
+      .rarity-rarity-4 {
+        background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+        border: 2px solid #ffc107;
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+        
+        &:hover {
+          border-color: #ffa000;
+          box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+        }
+        
+        .slotIcon {
+          color: #ffc107;
+        }
+      }
+      
+      // 稀有度样式 - 5级
+      .rarity-rarity-5 {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        border: 2px solid #f44336;
+        box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+        
+        &:hover {
+          border-color: #d32f2f;
+          box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+        
+        .slotIcon {
+          color: #f44336;
+        }
+      }
+      
+      // 稀有度样式 - 6,7,8级 (红色)
+      .rarity-rarity-red {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        border: 2px solid #f44336;
+        box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3), 0 0 16px rgba(244, 67, 54, 0.2);
+        
+        &:hover {
+          border-color: #d32f2f;
+          box-shadow: 0 4px 16px rgba(244, 67, 54, 0.5), 0 0 24px rgba(244, 67, 54, 0.3);
+        }
+        
+        .slotIcon {
+          color: #f44336;
+        }
       }
     }
     

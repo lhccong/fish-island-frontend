@@ -1256,6 +1256,10 @@ declare namespace API {
     updateTime?: string;
   };
 
+  type ItemEquipRequest = {
+    itemInstanceId?: number;
+  };
+
   type ItemInstanceAddRequest = {
     /** 是否绑定（1-绑定后不可交易，0-未绑定可交易） */
     bound?: number;
@@ -1271,6 +1275,10 @@ declare namespace API {
     quantity?: number;
     /** 物品模板ID */
     templateId: number;
+  };
+
+  type ItemInstanceDecomposeRequest = {
+    itemInstanceId?: number;
   };
 
   type ItemInstanceEditRequest = {
@@ -1460,6 +1468,10 @@ declare namespace API {
     removePoint?: number;
     stackable?: number;
     subType?: string;
+  };
+
+  type ItemUnequipRequest = {
+    equipSlot?: string;
   };
 
   type joinRoomUsingPOSTParams = {
@@ -2119,6 +2131,7 @@ declare namespace API {
 
   type PetVO = {
     createTime?: string;
+    equippedItems?: Record<string, any>;
     exp?: number;
     hunger?: number;
     level?: number;
