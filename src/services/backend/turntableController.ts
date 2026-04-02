@@ -49,7 +49,7 @@ export async function listDrawRecordsUsingGet(
   params: API.listDrawRecordsUsingGETParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.BaseResponseListDrawRecordVO_>('/api/turntable/records', {
+  return request<API.BaseResponsePageDrawRecordVO_>('/api/turntable/records', {
     method: 'GET',
     params: {
       ...params,

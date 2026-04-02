@@ -25,6 +25,7 @@ interface Pet {
   avatar: string;
   exp: number;
   maxExp: number;
+  equippedItems?: Record<string, API.ItemInstanceVO>;
 }
 
 // BOSS数据接口
@@ -42,6 +43,17 @@ interface Boss {
     exp: number;
     items: string[];
   };
+  // 新增战斗属性
+  critRate?: number;
+  critResistance?: number;
+  dodgeRate?: number;
+  dodgeResistance?: number;
+  blockRate?: number;
+  blockResistance?: number;
+  comboRate?: number;
+  comboResistance?: number;
+  lifesteal?: number;
+  lifestealResistance?: number;
 }
 
 // 战斗消息类型
@@ -68,6 +80,9 @@ const PetFight: React.FC = () => {
   const [petHurt, setPetHurt] = useState(false);
   const [bossHurt, setBossHurt] = useState(false);
   const [showCollisionEffect, setShowCollisionEffect] = useState(false);
+  
+  // 装备攻击动画状态 - 当前飞出的装备索引
+  const [attackingEquipIndex, setAttackingEquipIndex] = useState<number>(0);
 
   // 宠物数据
   const [pet, setPet] = useState<Pet>({
@@ -139,7 +154,18 @@ const PetFight: React.FC = () => {
                 coins: bossInfo.rewardPoints || 500,
                 exp: 300, // API中没有exp，使用默认值
                 items: ['自由勋章', '摸鱼许可证'] // API中没有items，使用默认值
-              }
+              },
+              // 新增战斗属性
+              critRate: bossInfo.critRate || 0,
+              critResistance: bossInfo.critResistance || 0,
+              dodgeRate: bossInfo.dodgeRate || 0,
+              dodgeResistance: bossInfo.dodgeResistance || 0,
+              blockRate: bossInfo.blockRate || 0,
+              blockResistance: bossInfo.blockResistance || 0,
+              comboRate: bossInfo.comboRate || 0,
+              comboResistance: bossInfo.comboResistance || 0,
+              lifesteal: bossInfo.lifesteal || 0,
+              lifestealResistance: bossInfo.lifestealResistance || 0
             });
           }
           
@@ -155,7 +181,8 @@ const PetFight: React.FC = () => {
               defense: 5, // API中没有defense，使用默认值
               avatar: petInfo.avatar || '🐠',
               exp: 0, // API中没有exp，使用默认值
-              maxExp: 100 // API中没有maxExp，使用默认值
+              maxExp: 100, // API中没有maxExp，使用默认值
+              equippedItems: petInfo.equippedItems
             });
           }
         } else {
@@ -202,6 +229,11 @@ const PetFight: React.FC = () => {
       setPetAttacking(true);
       setTimeout(() => setPetAttacking(false), 500);
       setCurrentTurn('pet');
+      // 触发装备飞出攻击动画
+      const equipCount = pet.equippedItems ? Object.keys(pet.equippedItems).length : 0;
+      if (equipCount > 0) {
+        setAttackingEquipIndex(prev => (prev + 1) % equipCount);
+      }
     } else {
       setBossAttacking(true);
       setTimeout(() => setBossAttacking(false), 500);
@@ -404,6 +436,34 @@ const PetFight: React.FC = () => {
             strokeWidth={12}
           />
           <div className={styles.hpText}>{pet.hp} / {pet.maxHp}</div>
+          {/* 宠物装备显示 */}
+          {pet.equippedItems && Object.keys(pet.equippedItems).length > 0 && (
+            <div className={styles.petEquipment}>
+              {Object.entries(pet.equippedItems).map(([slot, item], index) => {
+                const rarity = item.template?.rarity || 1;
+                const rarityClass = styles[`rarity${rarity}`];
+                const isAttacking = index === attackingEquipIndex && petAttacking;
+                return (
+                  <div 
+                    key={slot} 
+                    className={`${styles.equipmentItem} ${rarityClass} ${isAttacking ? styles.attacking : ''}`} 
+                    title={`${item.template?.name || '装备'} (品级${rarity})`}
+                  >
+                    {item.template?.icon ? (
+                      <img 
+                        src={item.template.icon} 
+                        alt={item.template.name || '装备'} 
+                        className={styles.equipmentImg}
+                        onError={(e) => { e.currentTarget.src = ''; e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <span className={styles.equipmentFallback}>⚔️</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className={styles.vsIndicatorSmall}>
@@ -426,6 +486,13 @@ const PetFight: React.FC = () => {
               <div className={styles.healthBarStats}>
                 <FireOutlined /> {boss.attack} <SafetyOutlined /> {boss.defense}
               </div>
+              <div className={styles.bossExtraStats}>
+                {boss.critRate ? <span title="暴击率">💥{(boss.critRate * 100).toFixed(0)}%</span> : null}
+                {boss.dodgeRate ? <span title="闪避率">💨{(boss.dodgeRate * 100).toFixed(0)}%</span> : null}
+                {boss.blockRate ? <span title="格挡率">🛡️{(boss.blockRate * 100).toFixed(0)}%</span> : null}
+                {boss.comboRate ? <span title="连击率">⚡{(boss.comboRate * 100).toFixed(0)}%</span> : null}
+                {boss.lifesteal ? <span title="吸血">🩸{(boss.lifesteal * 100).toFixed(0)}%</span> : null}
+              </div>
             </div>
             <Avatar 
               size={40} 
@@ -446,6 +513,14 @@ const PetFight: React.FC = () => {
             strokeWidth={12}
           />
           <div className={styles.hpText}>{boss.hp} / {boss.maxHp}</div>
+          {/* BOSS装备占位符 */}
+          <div className={styles.bossEquipment}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className={styles.equipmentPlaceholder}>
+                <span className={styles.equipmentPlaceholderIcon}>🔒</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

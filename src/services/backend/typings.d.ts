@@ -156,12 +156,6 @@ declare namespace API {
     message?: string;
   };
 
-  type BaseResponseListDrawRecordVO_ = {
-    code?: number;
-    data?: DrawRecordVO[];
-    message?: string;
-  };
-
   type BaseResponseListDrawRoomVO_ = {
     code?: number;
     data?: DrawRoomVO[];
@@ -303,6 +297,12 @@ declare namespace API {
   type BaseResponsePageDonationRecordsVO_ = {
     code?: number;
     data?: PageDonationRecordsVO_;
+    message?: string;
+  };
+
+  type BaseResponsePageDrawRecordVO_ = {
+    code?: number;
+    data?: PageDrawRecordVO_;
     message?: string;
   };
 
@@ -604,8 +604,18 @@ declare namespace API {
   type BossVO = {
     attack?: number;
     avatar?: string;
+    blockRate?: number;
+    blockResistance?: number;
+    comboRate?: number;
+    comboResistance?: number;
+    critRate?: number;
+    critResistance?: number;
+    dodgeRate?: number;
+    dodgeResistance?: number;
     health?: number;
     id?: number;
+    lifesteal?: number;
+    lifestealResistance?: number;
     name?: string;
     rewardPoints?: number;
   };
@@ -1349,6 +1359,7 @@ declare namespace API {
     createTime?: string;
     durability?: number;
     enhanceLevel?: number;
+    equipStats?: SingleEquipStatsVO;
     extraData?: Record<string, any>;
     id?: number;
     ownerUserId?: number;
@@ -1814,6 +1825,19 @@ declare namespace API {
     total?: number;
   };
 
+  type PageDrawRecordVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: DrawRecordVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
   type PageEmoticonFavour_ = {
     countId?: string;
     current?: number;
@@ -2094,6 +2118,7 @@ declare namespace API {
   type PetInfo = {
     attack?: number;
     avatar?: string;
+    equippedItems?: Record<string, any>;
     health?: number;
     level?: number;
     name?: string;
@@ -2384,6 +2409,22 @@ declare namespace API {
   type SimpleHeroVO = {
     cname?: string;
     id?: number;
+  };
+
+  type SingleEquipStatsVO = {
+    baseAttack?: number;
+    baseDefense?: number;
+    baseHp?: number;
+    blockRate?: number;
+    blockResistance?: number;
+    comboRate?: number;
+    comboResistance?: number;
+    critRate?: number;
+    critResistance?: number;
+    dodgeRate?: number;
+    dodgeResistance?: number;
+    lifesteal?: number;
+    lifestealResistance?: number;
   };
 
   type startGameUsingPOST1Params = {

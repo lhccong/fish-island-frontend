@@ -49,19 +49,25 @@ interface Turntable {
 const Lottery: React.FC = () => {
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
-  
+
   // 计算可用积分
   const availablePoints = (currentUser?.points ?? 0) - (currentUser?.usedPoints ?? 0);
-  
+
   const [loading, setLoading] = useState<boolean>(false);
   const [drawing, setDrawing] = useState<boolean>(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [selectedPrizeIndex, setSelectedPrizeIndex] = useState<number | null>(null);
   const [lotteryRecords, setLotteryRecords] = useState<LotteryRecord[]>([]);
+  // 分页相关状态
+  const [recordsPagination, setRecordsPagination] = useState({
+    current: 1,
+    pageSize: 13,
+    total: 0,
+  });
   const [isTenDraw, setIsTenDraw] = useState<boolean>(false);
   const [tenDrawResults, setTenDrawResults] = useState<LotteryRecord[]>([]);
   const [showTenDrawModal, setShowTenDrawModal] = useState<boolean>(false);
-  
+
   // 转盘相关状态
   const [turntableList, setTurntableList] = useState<Turntable[]>([]);
   const [currentTurntable, setCurrentTurntable] = useState<Turntable | null>(null);
@@ -122,11 +128,11 @@ const Lottery: React.FC = () => {
   }, [activeTabKey]);
 
   // 获取抽奖记录
-  const fetchDrawRecords = async (turntableId?: number) => {
+  const fetchDrawRecords = async (turntableId?: number, page: number = 1) => {
     try {
       const params: API.listDrawRecordsUsingGETParams = {
-        current: 1,
-        pageSize: 10,
+        current: page,
+        pageSize: recordsPagination.pageSize,
         sortField: 'createTime',
         sortOrder: 'descend',
       };
@@ -136,15 +142,21 @@ const Lottery: React.FC = () => {
       const res = await listDrawRecordsUsingGet(params);
       if (res.data) {
         // 将 DrawRecordVO 转换为 LotteryRecord
-        const records: LotteryRecord[] = res.data.map((item) => ({
+        const records: LotteryRecord[] = (res.data.records || []).map((item) => ({
           id: item.id || Date.now(),
           prizeName: item.name || '',
-          prizeIcon: item.icon || '�',
+          prizeIcon: item.icon || '🎁',
           drawTime: item.createTime || '',
           quality: item.quality,
           qualityName: item.qualityName,
         }));
         setLotteryRecords(records);
+        // 更新分页信息
+        setRecordsPagination((prev: { current: number; pageSize: number; total: number }) => ({
+          ...prev,
+          current: page,
+          total: res.data?.total || 0,
+        }));
       }
     } catch (error) {
       console.error('获取抽奖记录失败:', error);
@@ -202,11 +214,11 @@ const Lottery: React.FC = () => {
 
       if (res.data && res.data.prizeList && res.data.prizeList.length > 0) {
         const wonPrize = res.data.prizeList[0];
-        
+
         // 找到奖品在9宫格中的位置
         const prizeIndex = prizes.findIndex(p => p.prizeId === wonPrize.prizeId || p.id === wonPrize.prizeId);
         const targetIndex = prizeIndex >= 0 ? prizeIndex : animationSequence[Math.floor(Math.random() * animationSequence.length)];
-        
+
         await runLotteryAnimation(targetIndex);
 
         message.success(`恭喜获得：${wonPrize.name}！`);
@@ -287,10 +299,25 @@ const Lottery: React.FC = () => {
     }
   };
 
+  // 处理分页变化
+  const handlePageChange = (page: number) => {
+    if (currentTurntable?.id) {
+      fetchDrawRecords(currentTurntable.id, page);
+    }
+  };
+
   const handleCloseTenDrawModal = () => {
     setShowTenDrawModal(false);
     setTenDrawResults([]);
   };
+
+  // 判断是否每日第一次免费
+  const isDailyFirstFree = React.useMemo(() => {
+    if (!currentTurntable?.userProgress?.lastDrawTime) return true;
+    const lastDraw = new Date(currentTurntable.userProgress.lastDrawTime);
+    const today = new Date();
+    return lastDraw.toDateString() !== today.toDateString();
+  }, [currentTurntable?.userProgress?.lastDrawTime]);
 
   const getQualityClass = (quality?: number) => {
     switch (quality) {
@@ -332,7 +359,7 @@ const Lottery: React.FC = () => {
             </div>
           )}
 
-     
+
 
           <Spin spinning={turntableLoading}>
             <div className={styles.gridContainer}>
@@ -362,7 +389,7 @@ const Lottery: React.FC = () => {
                   </div>
                 ))}
               </div>
-            
+
             {/* 抽奖按钮放下面 */}
             <div className={styles.drawButtonsContainer}>
               <Button
@@ -371,7 +398,13 @@ const Lottery: React.FC = () => {
                 disabled={drawing || !currentTurntable}
               >
                 <span>单抽</span>
-                <span className={styles.btnCost}>💎 {currentTurntable?.costPoints || 0}</span>
+                <span className={styles.btnCost}>
+                  {isDailyFirstFree ? (
+                    <span className={styles.freeTag}>🎁 免费</span>
+                  ) : (
+                    <>💎 {currentTurntable?.costPoints || 0}</>
+                  )}
+                </span>
               </Button>
               <Button
                 className={styles.tenDrawBtn}
@@ -401,7 +434,7 @@ const Lottery: React.FC = () => {
                 </span>
               </div>
               <div className={styles.luckyTip}>
-                * 抽奖{currentTurntable.guaranteeCount}次必出稀有奖励
+                * 抽奖{currentTurntable.guaranteeCount}次必出传说奖励
               </div>
             </>
           )}
@@ -424,25 +457,58 @@ const Lottery: React.FC = () => {
                   className={styles.emptyRecords}
                 />
               ) : (
-                lotteryRecords.map((record) => (
-                  <div key={record.id} className={styles.winnerItem}>
-                    <div className={styles.winnerIcon}>
-                      {record.prizeIcon?.startsWith('http') ? (
-                        <img src={record.prizeIcon} alt={record.prizeName} className={styles.winnerIconImg} />
-                      ) : (
-                        record.prizeIcon
-                      )}
+                <>
+                  {lotteryRecords.map((record) => (
+                    <div key={record.id} className={styles.winnerItem}>
+                      <div className={styles.winnerIcon}>
+                        {record.prizeIcon?.startsWith('http') ? (
+                          <img src={record.prizeIcon} alt={record.prizeName} className={styles.winnerIconImg} />
+                        ) : (
+                          record.prizeIcon
+                        )}
+                      </div>
+                      <div className={styles.winnerInfo}>
+                        <span className={styles.winnerLabel}>恭喜</span>
+                        <span className={styles.winnerName}>我</span>
+                        <span className={styles.winnerLabel}>抽中</span>
+                        <span className={styles.winnerPrize}>{record.prizeName}</span>
+                      </div>
                     </div>
-                    <div className={styles.winnerInfo}>
-                      <span className={styles.winnerLabel}>恭喜</span>
-                      <span className={styles.winnerName}>我</span>
-                      <span className={styles.winnerLabel}>抽中</span>
-                      <span className={styles.winnerPrize}>{record.prizeName}</span>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </>
               )}
             </div>
+            {/* 分页 */}
+            {recordsPagination.total > recordsPagination.pageSize && (
+              <div className={styles.pagination}>
+                <span
+                  className={styles.pageArrow}
+                  onClick={() => handlePageChange(recordsPagination.current - 1)}
+                  style={{ visibility: recordsPagination.current > 1 ? 'visible' : 'hidden' }}
+                >
+                  {'<'}
+                </span>
+                <span className={`${styles.pageNum} ${styles.pageActive}`}>
+                  {recordsPagination.current}
+                </span>
+                <span>/</span>
+                <span className={styles.pageNum}>
+                  {Math.ceil(recordsPagination.total / recordsPagination.pageSize)}
+                </span>
+                <span
+                  className={styles.pageArrow}
+                  onClick={() => handlePageChange(recordsPagination.current + 1)}
+                  style={{
+                    visibility:
+                      recordsPagination.current < Math.ceil(recordsPagination.total / recordsPagination.pageSize)
+                        ? 'visible'
+                        : 'hidden',
+                  }}
+                >
+                  {'>'}
+                </span>
+              </div>
+            )}
           </Card>
         </div>
       </div>
@@ -462,13 +528,19 @@ const Lottery: React.FC = () => {
             确定
           </Button>
         ]}
-        width={600}
+        width={750}
         className={styles.tenDrawModal}
       >
         <div className={styles.tenDrawResults}>
           {tenDrawResults.map((result) => (
             <div key={result.id} className={styles.resultItem}>
-              <div className={styles.resultIcon}>{result.prizeIcon}</div>
+              <div className={styles.resultIcon}>
+                {result.prizeIcon?.startsWith('http') ? (
+                  <img src={result.prizeIcon} alt={result.prizeName} className={styles.resultIconImg} />
+                ) : (
+                  result.prizeIcon
+                )}
+              </div>
               <div className={styles.resultName}>{result.prizeName}</div>
             </div>
           ))}

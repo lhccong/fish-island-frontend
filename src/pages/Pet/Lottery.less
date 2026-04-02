@@ -327,6 +327,11 @@
   gap: 2px;
 }
 
+.freeTag {
+  color: #52c41a;
+  font-weight: bold;
+}
+
 // 幸运值
 .luckyBar {
   display: flex;
@@ -400,6 +405,27 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: 550px;
+  overflow-y: auto;
+  padding-right: 4px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f0f0f0;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 2px;
+
+    &:hover {
+      background: #aaa;
+    }
+  }
 }
 
 .winnerItem {

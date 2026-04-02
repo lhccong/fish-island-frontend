@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Modal, Tabs, Button, Progress, Card, Avatar, Row, Col, Input, Form, message, Tooltip, Popover, Spin, Radio } from 'antd';
+import { Modal, Tabs, Button, Progress, Card, Avatar, Row, Col, Input, Form, message, Tooltip, Popover, Spin, Radio, Pagination } from 'antd';
 import {
   HeartOutlined,
   ThunderboltOutlined,
@@ -76,7 +76,87 @@ interface MoyuPetProps {
   isPageComponent?: boolean; // 是否作为页面组件直接显示，而不是弹窗
 }
 
-// 宠物规则说明组件
+// 装备属性 Tooltip 渲染函数
+const renderEquipStatsTooltip = (equippedItem: API.ItemInstanceVO, slotName: string) => {
+  const rarityNames: Record<number, string> = {
+    1: '优良',
+    2: '精良',
+    3: '史诗',
+    4: '传说',
+    5: '神话',
+    6: '至尊',
+    7: '神器',
+  };
+
+  const rarity = equippedItem?.template?.rarity || 1;
+  const rarityName = rarityNames[rarity] || '未知';
+  const itemName = equippedItem?.template?.name || slotName;
+  const enhanceLevel = equippedItem?.enhanceLevel || 0;
+  const stats = equippedItem?.equipStats;
+
+  if (!stats) {
+    return (
+      <div>
+        <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+          {itemName} {enhanceLevel > 0 && <span style={{ color: '#faad14' }}>+{enhanceLevel}</span>}
+        </div>
+        <div style={{ color: '#999', fontSize: '12px' }}>暂无属性信息</div>
+        <div style={{ marginTop: '8px', color: '#1890ff', fontSize: '12px' }}>点击卸下</div>
+      </div>
+    );
+  }
+
+  const statItems = [
+    { key: 'baseAttack', label: '攻击力', value: stats.baseAttack },
+    { key: 'baseDefense', label: '防御力', value: stats.baseDefense },
+    { key: 'baseHp', label: '生命值', value: stats.baseHp },
+    { key: 'critRate', label: '暴击率', value: stats.critRate, isPercent: true },
+    { key: 'critResistance', label: '暴击抗性', value: stats.critResistance, isPercent: true },
+    { key: 'dodgeRate', label: '闪避率', value: stats.dodgeRate, isPercent: true },
+    { key: 'dodgeResistance', label: '闪避抗性', value: stats.dodgeResistance, isPercent: true },
+    { key: 'comboRate', label: '连击率', value: stats.comboRate, isPercent: true },
+    { key: 'comboResistance', label: '连击抗性', value: stats.comboResistance, isPercent: true },
+    { key: 'blockRate', label: '格挡率', value: stats.blockRate, isPercent: true },
+    { key: 'blockResistance', label: '格挡抗性', value: stats.blockResistance, isPercent: true },
+    { key: 'lifesteal', label: '生命偷取', value: stats.lifesteal, isPercent: true },
+    { key: 'lifestealResistance', label: '吸血抗性', value: stats.lifestealResistance, isPercent: true },
+  ].filter((item): item is { key: string; label: string; value: number; isPercent?: boolean } =>
+    item.value !== undefined && item.value !== null
+  );
+
+  return (
+    <div style={{ minWidth: '180px' }}>
+      <div style={{ fontWeight: 'bold', marginBottom: '8px', borderBottom: '1px solid #eee', paddingBottom: '4px' }}>
+        <span style={{ color: rarity === 7 ? '#fadb14' : rarity === 6 ? '#eb2f96' : rarity === 5 ? '#f5222d' : rarity === 4 ? '#fa8c16' : rarity === 3 ? '#722ed1' : rarity === 2 ? '#1890ff' : '#52c41a' }}>
+          [{rarityName}]
+        </span>{' '}
+        {itemName}
+        {enhanceLevel > 0 && <span style={{ color: '#faad14', marginLeft: '4px' }}>+{enhanceLevel}</span>}
+      </div>
+      {statItems.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px', fontSize: '12px' }}>
+          {statItems.map(stat => {
+            const value = stat.value;
+            const displayValue = stat.isPercent ? value * 100 : value;
+            return (
+            <div key={stat.key}>
+              <span style={{ color: '#666' }}>{stat.label}:</span>{' '}
+              <span style={{ color: value > 0 ? '#52c41a' : value < 0 ? '#ff4d4f' : '#666', fontWeight: 'bold' }}>
+                {value > 0 ? '+' : ''}{displayValue}{stat.isPercent ? '%' : ''}
+              </span>
+            </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ color: '#999', fontSize: '12px' }}>无额外属性</div>
+      )}
+      <div style={{ marginTop: '8px', paddingTop: '4px', borderTop: '1px solid #eee', color: '#1890ff', fontSize: '12px' }}>
+        点击卸下
+      </div>
+    </div>
+  );
+};
 const PetRules = () => (
   <div className={styles.petRules}>
     <h3>宠物系统规则</h3>
@@ -173,16 +253,18 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   const [skinLoading, setSkinLoading] = useState(false);
   const [exchangeLoading, setExchangeLoading] = useState<number | null>(null);
   const [setCurrentSkinLoading, setSetCurrentSkinLoading] = useState<number | null>(null);
-  
+
   // 物品列表相关状态
   const [items, setItems] = useState<API.ItemInstanceVO[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [itemsTotal, setItemsTotal] = useState(0);
   const [itemsCurrent, setItemsCurrent] = useState(1);
-  const [itemsPageSize, setItemsPageSize] = useState(10);
+  const [itemsPageSize, setItemsPageSize] = useState(30);
   const [decomposeLoading, setDecomposeLoading] = useState<number | null>(null); // 分解中的物品ID
   const [equipLoading, setEquipLoading] = useState<number | null>(null); // 穿戴中的物品ID
   const [unequipLoading, setUnequipLoading] = useState<string | null>(null); // 卸下中的装备槽位
+  const [contextMenuItemId, setContextMenuItemId] = useState<number | null>(null); // 右键菜单显示的物品ID
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 }); // 右键菜单位置
 
   // 获取宠物数据
   const fetchPetData = async () => {
@@ -513,7 +595,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   const handleDecomposeItem = (item: API.ItemInstanceVO) => {
     const removePoint = item.template?.removePoint || 0;
     const itemName = item.template?.name || '未知物品';
-    
+
     Modal.confirm({
       title: '确认分解物品',
       content: (
@@ -621,6 +703,19 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPageComponent, visible, itemsCurrent, itemsPageSize]);
+
+  // 全局阻止右键菜单（当自定义菜单打开时）
+  useEffect(() => {
+    if (contextMenuItemId) {
+      const preventContextMenu = (e: MouseEvent) => {
+        e.preventDefault();
+      };
+      document.addEventListener('contextmenu', preventContextMenu);
+      return () => {
+        document.removeEventListener('contextmenu', preventContextMenu);
+      };
+    }
+  }, [contextMenuItemId]);
 
   // 创建宠物表单
   if (isCreating) {
@@ -949,7 +1044,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedWeapon?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={`点击卸下${enhanceLevel > 0 ? ` (+${enhanceLevel})` : ''}`}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedWeapon, '武器')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
                             className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
                             onClick={() => !isOtherUser && handleUnequipItem('weapon')}
@@ -993,7 +1088,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedHand?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={`点击卸下${enhanceLevel > 0 ? ` (+${enhanceLevel})` : ''}`}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedHand, '手套')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
                             className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
                             onClick={() => !isOtherUser && handleUnequipItem('hand')}
@@ -1037,7 +1132,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedFoot?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={`点击卸下${enhanceLevel > 0 ? ` (+${enhanceLevel})` : ''}`}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedFoot, '鞋子')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
                             className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
                             onClick={() => !isOtherUser && handleUnequipItem('foot')}
@@ -1093,7 +1188,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedHead?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={`点击卸下${enhanceLevel > 0 ? ` (+${enhanceLevel})` : ''}`}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedHead, '头盔')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
                             className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
                             onClick={() => !isOtherUser && handleUnequipItem('head')}
@@ -1245,54 +1340,95 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 <div className={styles.itemsContainer}>
                   <Spin spinning={itemsLoading}>
                     {items.length > 0 ? (
-                      <Row gutter={[16, 16]}>
-                        {items.map((item) => (
-                          <Col span={8} key={item.id}>
-                            <Card 
-                              className={styles.itemCard}
-                              bodyStyle={{ padding: '12px 8px' }}
-                            >
-                              <div className={styles.itemIcon}>
-                                {item.template?.icon ? (
-                                  <img src={item.template.icon} alt={item.template.name} style={{ width: 40, height: 40 }} />
-                                ) : (
-                                  '📦'
-                                )}
-                              </div>
-                              <div className={styles.itemName}>{item.template?.name || '未知物品'}</div>
-                              <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
-                              <div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>
-                              <div className={styles.itemActions}>
-                                {item.template?.equipSlot ? (
-                                  <Button
-                                    type="primary"
-                                    size="small"
-                                    loading={equipLoading === item.id}
-                                    onClick={() => handleEquipItem(item)}
-                                  >
-                                    穿戴
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    type="primary"
-                                    size="small"
-                                    disabled
-                                  >
-                                    使用
-                                  </Button>
-                                )}
-                                <Button
-                                  danger
-                                  size="small"
-                                  loading={decomposeLoading === item.id}
-                                  onClick={() => handleDecomposeItem(item)}
+                      <Row gutter={[12, 12]}>
+                        {items.map((item) => {
+                          const rarity = item.template?.rarity || 1;
+                          const rarityClass = styles[`itemCardRarity${rarity}`];
+                          const rarityColors: Record<number, string> = {
+                            1: '#52c41a', // 优良-绿色
+                            2: '#1890ff', // 精良-蓝色
+                            3: '#722ed1', // 史诗-紫色
+                            4: '#fa8c16', // 传说-橙色
+                            5: '#f5222d', // 神话-红色
+                            6: '#eb2f96', // 至尊-粉色
+                            7: '#fadb14', // 神器-金色
+                          };
+                          const rarityNames: Record<number, string> = {
+                            1: '优良',
+                            2: '精良',
+                            3: '史诗',
+                            4: '传说',
+                            5: '神话',
+                            6: '至尊',
+                            7: '神器',
+                          };
+                          // 检查物品是否已穿戴
+                          const isEquipped = (() => {
+                            const petData = pet as API.PetVO;
+                            const equippedItems = petData?.equippedItems;
+                            if (!equippedItems) return false;
+                            return Object.values(equippedItems).some(
+                              (equipped: any) => equipped?.id === item.id
+                            );
+                          })();
+                          return (
+                            <Col span={4} key={item.id}>
+                              <Card
+                                className={`${styles.itemCard} ${rarityClass}`}
+                                bodyStyle={{ padding: '12px 8px', position: 'relative' }}
+                                onContextMenu={(e) => {
+                                  e.preventDefault();
+                                  setContextMenuItemId(item.id || null);
+                                  setContextMenuPosition({ x: e.clientX, y: e.clientY });
+                                }}
+                              >
+                                <div
+                                  className={styles.itemRarity}
+                                  style={{ backgroundColor: rarityColors[rarity] }}
                                 >
-                                  分解
-                                </Button>
-                              </div>
-                            </Card>
-                          </Col>
-                        ))}
+                                  {rarityNames[rarity]}
+                                </div>
+                                <div className={styles.itemIcon}>
+                                  {item.template?.icon ? (
+                                    <img src={item.template.icon} alt={item.template.name} style={{ width: 40, height: 40 }} />
+                                  ) : (
+                                    '📦'
+                                  )}
+                                </div>
+                                <div className={styles.itemName}>{item.template?.name || '未知物品'}</div>
+                                <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
+                                {/*<div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>*/}
+                                <div className={styles.itemActions}>
+                                  {item.template?.equipSlot && !isEquipped ? (
+                                    <Button
+                                      type="primary"
+                                      size="small"
+                                      loading={equipLoading === item.id}
+                                      onClick={() => handleEquipItem(item)}
+                                    >
+                                      穿戴
+                                    </Button>
+                                  ) : item.template?.equipSlot ? (
+                                    <Button
+                                      size="small"
+                                      disabled
+                                    >
+                                      已穿戴
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      type="primary"
+                                      size="small"
+                                      disabled
+                                    >
+                                      使用
+                                    </Button>
+                                  )}
+                                </div>
+                              </Card>
+                            </Col>
+                          );
+                        })}
                       </Row>
                     ) : (
                       <div className={styles.shopEmpty} style={{ textAlign: 'center', padding: '50px 0' }}>
@@ -1301,6 +1437,73 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       </div>
                     )}
                   </Spin>
+                  {/* 右键悬浮菜单 */}
+                  {contextMenuItemId && (
+                    <>
+                      {/* 遮罩层，点击关闭菜单 */}
+                      <div 
+                        style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          zIndex: 999,
+                        }}
+                        onClick={() => setContextMenuItemId(null)}
+                      />
+                      {/* 菜单 */}
+                      <div
+                        style={{
+                          position: 'fixed',
+                          left: contextMenuPosition.x,
+                          top: contextMenuPosition.y,
+                          zIndex: 1000,
+                          background: '#fff',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                          padding: '8px',
+                          minWidth: '100px',
+                        }}
+                      >
+                        <Button
+                          danger
+                          size="small"
+                          loading={decomposeLoading === contextMenuItemId}
+                          onClick={() => {
+                            const item = items.find(i => i.id === contextMenuItemId);
+                            if (item) handleDecomposeItem(item);
+                            setContextMenuItemId(null);
+                          }}
+                          style={{ width: '100%' }}
+                        >
+                          分解
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                  {itemsTotal > 0 && (
+                    <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+                      <Pagination
+                        current={itemsCurrent}
+                        pageSize={itemsPageSize}
+                        total={itemsTotal}
+                        showSizeChanger
+                        showQuickJumper
+                        showTotal={(total) => `共 ${total} 条`}
+                        onChange={(page, pageSize) => {
+                          setItemsCurrent(page);
+                          if (pageSize !== itemsPageSize) {
+                            setItemsPageSize(pageSize);
+                          }
+                        }}
+                        onShowSizeChange={(current, size) => {
+                          setItemsCurrent(1);
+                          setItemsPageSize(size);
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ),
             }]),
@@ -1456,8 +1659,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
       open={visible}
       onCancel={onClose}
       footer={null}
-      width={700}
-      className={styles.petModal}
+        width={700}
+        className={styles.petModal}
     >
       <div className={styles.petContainer}>
         <div className={styles.petInfo}>
@@ -1568,7 +1771,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                         status="active"
                         strokeColor="#1890ff"
                         size="small"
-                        format={() => `${Math.floor((pet as any).exp || 0)}/${(pet as any)?.maxExp || 100}`}
+                        format={() => `${Math.floor((pet as any)?.exp || 0)}/${(pet as any)?.maxExp || 100}`}
                       />
                     </>
                   )}
@@ -1620,54 +1823,95 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 <div className={styles.itemsContainer}>
                   <Spin spinning={itemsLoading}>
                     {items.length > 0 ? (
-                      <Row gutter={[16, 16]}>
-                        {items.map((item) => (
-                          <Col span={8} key={item.id}>
-                            <Card 
-                              className={styles.itemCard}
-                              bodyStyle={{ padding: '12px 8px' }}
-                            >
-                              <div className={styles.itemIcon}>
-                                {item.template?.icon ? (
-                                  <img src={item.template.icon} alt={item.template.name} style={{ width: 40, height: 40 }} />
-                                ) : (
-                                  '📦'
-                                )}
-                              </div>
-                              <div className={styles.itemName}>{item.template?.name || '未知物品'}</div>
-                              <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
-                              <div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>
-                              <div className={styles.itemActions}>
-                                {item.template?.equipSlot ? (
-                                  <Button
-                                    type="primary"
-                                    size="small"
-                                    loading={equipLoading === item.id}
-                                    onClick={() => handleEquipItem(item)}
-                                  >
-                                    穿戴
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    type="primary"
-                                    size="small"
-                                    disabled
-                                  >
-                                    使用
-                                  </Button>
-                                )}
-                                <Button
-                                  danger
-                                  size="small"
-                                  loading={decomposeLoading === item.id}
-                                  onClick={() => handleDecomposeItem(item)}
+                      <Row gutter={[12, 12]}>
+                        {items.map((item) => {
+                          const rarity = item.template?.rarity || 1;
+                          const rarityClass = styles[`itemCardRarity${rarity}`];
+                          const rarityColors: Record<number, string> = {
+                            1: '#52c41a', // 优良-绿色
+                            2: '#1890ff', // 精良-蓝色
+                            3: '#722ed1', // 史诗-紫色
+                            4: '#fa8c16', // 传说-橙色
+                            5: '#f5222d', // 神话-红色
+                            6: '#eb2f96', // 至尊-粉色
+                            7: '#fadb14', // 神器-金色
+                          };
+                          const rarityNames: Record<number, string> = {
+                            1: '优良',
+                            2: '精良',
+                            3: '史诗',
+                            4: '传说',
+                            5: '神话',
+                            6: '至尊',
+                            7: '神器',
+                          };
+                          // 检查物品是否已穿戴
+                          const isEquipped = (() => {
+                            const petData = pet as API.PetVO;
+                            const equippedItems = petData?.equippedItems;
+                            if (!equippedItems) return false;
+                            return Object.values(equippedItems).some(
+                              (equipped: any) => equipped?.id === item.id
+                            );
+                          })();
+                          return (
+                            <Col span={4} key={item.id}>
+                              <Card
+                                className={`${styles.itemCard} ${rarityClass}`}
+                                bodyStyle={{ padding: '12px 8px', position: 'relative' }}
+                                onContextMenu={(e) => {
+                                  e.preventDefault();
+                                  setContextMenuItemId(item.id || null);
+                                  setContextMenuPosition({ x: e.clientX, y: e.clientY });
+                                }}
+                              >
+                                <div
+                                  className={styles.itemRarity}
+                                  style={{ backgroundColor: rarityColors[rarity] }}
                                 >
-                                  分解
-                                </Button>
-                              </div>
-                            </Card>
-                          </Col>
-                        ))}
+                                  {rarityNames[rarity]}
+                                </div>
+                                <div className={styles.itemIcon}>
+                                  {item.template?.icon ? (
+                                    <img src={item.template.icon} alt={item.template.name} style={{ width: 40, height: 40 }} />
+                                  ) : (
+                                    '📦'
+                                  )}
+                                </div>
+                                <div className={styles.itemName}>{item.template?.name || '未知物品'}</div>
+                                <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
+                                {/*<div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>*/}
+                                <div className={styles.itemActions}>
+                                  {item.template?.equipSlot && !isEquipped ? (
+                                    <Button
+                                      type="primary"
+                                      size="small"
+                                      loading={equipLoading === item.id}
+                                      onClick={() => handleEquipItem(item)}
+                                    >
+                                      穿戴
+                                    </Button>
+                                  ) : item.template?.equipSlot ? (
+                                    <Button
+                                      size="small"
+                                      disabled
+                                    >
+                                      已穿戴
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      type="primary"
+                                      size="small"
+                                      disabled
+                                    >
+                                      使用
+                                    </Button>
+                                  )}
+                                </div>
+                              </Card>
+                            </Col>
+                          );
+                        })}
                       </Row>
                     ) : (
                       <div className={styles.shopEmpty} style={{ textAlign: 'center', padding: '50px 0' }}>
@@ -1676,6 +1920,73 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       </div>
                     )}
                   </Spin>
+                  {/* 右键悬浮菜单 */}
+                  {contextMenuItemId && (
+                    <>
+                      {/* 遮罩层，点击关闭菜单 */}
+                      <div 
+                        style={{
+                          position: 'fixed',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          zIndex: 999,
+                        }}
+                        onClick={() => setContextMenuItemId(null)}
+                      />
+                      {/* 菜单 */}
+                      <div
+                        style={{
+                          position: 'fixed',
+                          left: contextMenuPosition.x,
+                          top: contextMenuPosition.y,
+                          zIndex: 1000,
+                          background: '#fff',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                          padding: '8px',
+                          minWidth: '100px',
+                        }}
+                      >
+                        <Button
+                          danger
+                          size="small"
+                          loading={decomposeLoading === contextMenuItemId}
+                          onClick={() => {
+                            const item = items.find(i => i.id === contextMenuItemId);
+                            if (item) handleDecomposeItem(item);
+                            setContextMenuItemId(null);
+                          }}
+                          style={{ width: '100%' }}
+                        >
+                          分解
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                  {itemsTotal > 0 && (
+                    <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+                      <Pagination
+                        current={itemsCurrent}
+                        pageSize={itemsPageSize}
+                        total={itemsTotal}
+                        showSizeChanger
+                        showQuickJumper
+                        showTotal={(total) => `共 ${total} 条`}
+                        onChange={(page, pageSize) => {
+                          setItemsCurrent(page);
+                          if (pageSize !== itemsPageSize) {
+                            setItemsPageSize(pageSize);
+                          }
+                        }}
+                        onShowSizeChange={(current, size) => {
+                          setItemsCurrent(1);
+                          setItemsPageSize(size);
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ),
             }]),

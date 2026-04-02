@@ -482,6 +482,24 @@ const PetPage: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  {/* 新增战斗属性 */}
+                  <div className={styles.bossExtraStats}>
+                    {boss.critRate ? (
+                      <span className={styles.extraStat} title="暴击率">💥{(boss.critRate * 100).toFixed(0)}%</span>
+                    ) : null}
+                    {boss.dodgeRate ? (
+                      <span className={styles.extraStat} title="闪避率">💨{(boss.dodgeRate * 100).toFixed(0)}%</span>
+                    ) : null}
+                    {boss.blockRate ? (
+                      <span className={styles.extraStat} title="格挡率">🛡️{(boss.blockRate * 100).toFixed(0)}%</span>
+                    ) : null}
+                    {boss.comboRate ? (
+                      <span className={styles.extraStat} title="连击率">⚡{(boss.comboRate * 100).toFixed(0)}%</span>
+                    ) : null}
+                    {boss.lifesteal ? (
+                      <span className={styles.extraStat} title="吸血">🩸{(boss.lifesteal * 100).toFixed(0)}%</span>
+                    ) : null}
+                  </div>
                   {boss.rewardPoints !== undefined && (
                     <div className={styles.bossRewards}>
                       <div className={styles.rewardTitle}>讨伐奖励:</div>

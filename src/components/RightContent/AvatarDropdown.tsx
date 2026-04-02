@@ -385,7 +385,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   // 获取假期信息
   const fetchHolidayInfo = async () => {
     try {
-      const response = await fetch('/data/2025-holiday.json');
+      const response = await fetch('/data/2026-holiday.json');
       const data = await response.json();
 
       // 获取当前日期

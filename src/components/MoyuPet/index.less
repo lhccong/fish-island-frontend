@@ -478,9 +478,9 @@
 }
 
 .itemsContainer {
-  padding: 20px;
-  height: 420px;
-  max-height: 420px;
+  padding: 12px;
+  height: 500px;
+  max-height: 500px;
   overflow-y: auto;
   box-sizing: border-box;
   
@@ -507,59 +507,223 @@
   transition: all 0.3s ease;
   background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
   border: 1px solid #e6f0ff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.08);
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
 
   &:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 12px 24px rgba(24, 144, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
     border-color: #1890ff;
   }
 
+  :global(.ant-card-body) {
+    padding: 8px 4px !important;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
   .itemIcon {
-    font-size: 36px;
-    margin-bottom: 12px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    font-size: 20px;
+    margin-bottom: 4px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    
+    img {
+      width: 28px;
+      height: 28px;
+    }
   }
 
   .itemName {
     font-weight: bold;
-    margin-bottom: 8px;
+    margin-bottom: 2px;
     color: #1890ff;
-    font-size: 16px;
+    font-size: 11px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 90%;
   }
 
   .itemCount {
     color: #52c41a;
-    margin-bottom: 8px;
+    margin-bottom: 2px;
     font-weight: 500;
+    font-size: 10px;
     background: rgba(82, 196, 26, 0.1);
-    padding: 4px 8px;
-    border-radius: 12px;
+    padding: 1px 4px;
+    border-radius: 6px;
     display: inline-block;
   }
 
   .itemDesc {
     color: #666;
     margin-bottom: 4px;
-    font-size: 13px;
-    line-height: 1.4;
+    font-size: 9px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    line-clamp: 1;
+    height: 11px;
   }
 
   .itemActions {
-    margin-top: 4px;
+    margin-top: 2px;
+    display: flex;
+    gap: 4px;
     
     button {
-      border-radius: 16px;
+      border-radius: 10px;
       font-weight: 500;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      margin: 0 4px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      padding: 0 6px;
+      height: 22px;
+      font-size: 11px;
       
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
       }
     }
+  }
+
+  // 稀有度标签
+  .itemRarity {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    padding: 1px 4px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    line-height: 1.2;
+  }
+}
+
+// 物品卡片稀有度样式 - 优良(1级)
+.itemCardRarity1 {
+  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+  border: 2px solid #52c41a;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.15);
+
+  &:hover {
+    border-color: #389e0d;
+    box-shadow: 0 8px 20px rgba(82, 196, 26, 0.25);
+  }
+
+  .itemName {
+    color: #52c41a;
+  }
+}
+
+// 物品卡片稀有度样式 - 精良(2级)
+.itemCardRarity2 {
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  border: 2px solid #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+
+  &:hover {
+    border-color: #096dd9;
+    box-shadow: 0 8px 20px rgba(24, 144, 255, 0.25);
+  }
+
+  .itemName {
+    color: #1890ff;
+  }
+}
+
+// 物品卡片稀有度样式 - 史诗(3级)
+.itemCardRarity3 {
+  background: linear-gradient(135deg, #f9f0ff 0%, #efdbff 100%);
+  border: 2px solid #722ed1;
+  box-shadow: 0 4px 12px rgba(114, 46, 209, 0.15);
+
+  &:hover {
+    border-color: #531dab;
+    box-shadow: 0 8px 20px rgba(114, 46, 209, 0.25);
+  }
+
+  .itemName {
+    color: #722ed1;
+  }
+}
+
+// 物品卡片稀有度样式 - 传说(4级)
+.itemCardRarity4 {
+  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
+  border: 2px solid #fa8c16;
+  box-shadow: 0 4px 12px rgba(250, 140, 22, 0.15);
+
+  &:hover {
+    border-color: #d46b08;
+    box-shadow: 0 8px 20px rgba(250, 140, 22, 0.25);
+  }
+
+  .itemName {
+    color: #fa8c16;
+  }
+}
+
+// 物品卡片稀有度样式 - 神话(5级)
+.itemCardRarity5 {
+  background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%);
+  border: 2px solid #f5222d;
+  box-shadow: 0 4px 12px rgba(245, 34, 45, 0.15);
+
+  &:hover {
+    border-color: #cf1322;
+    box-shadow: 0 8px 20px rgba(245, 34, 45, 0.25);
+  }
+
+  .itemName {
+    color: #f5222d;
+  }
+}
+
+// 物品卡片稀有度样式 - 至尊(6级)
+.itemCardRarity6 {
+  background: linear-gradient(135deg, #fff0f6 0%, #ffd6e7 100%);
+  border: 2px solid #eb2f96;
+  box-shadow: 0 4px 12px rgba(235, 47, 150, 0.15);
+
+  &:hover {
+    border-color: #c41d7f;
+    box-shadow: 0 8px 20px rgba(235, 47, 150, 0.25);
+  }
+
+  .itemName {
+    color: #eb2f96;
+  }
+}
+
+// 物品卡片稀有度样式 - 神器(7级)
+.itemCardRarity7 {
+  background: linear-gradient(135deg, #feffe6 0%, #fffb8f 100%);
+  border: 2px solid #fadb14;
+  box-shadow: 0 4px 12px rgba(250, 219, 20, 0.2), 0 0 20px rgba(250, 219, 20, 0.1);
+
+  &:hover {
+    border-color: #d4b106;
+    box-shadow: 0 8px 24px rgba(250, 219, 20, 0.3), 0 0 30px rgba(250, 219, 20, 0.2);
+  }
+
+  .itemName {
+    color: #d4b106;
   }
 }
 
