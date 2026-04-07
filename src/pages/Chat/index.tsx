@@ -171,6 +171,7 @@ const ChatRoom: React.FC = () => {
   const pageSize = 10;
   const [loadedMessageIds] = useState<Set<string>>(new Set());
   const loadingRef = useRef(false); // 添加loadingRef防止重复请求
+  const currentPageRef = useRef(1); // 使用 ref 来同步页码状态
 
   const [announcement, setAnnouncement] = useState<string>(
     '欢迎来到摸鱼聊天室！🎉 这里是一个充满快乐的地方~。致谢服务商：<a href="https://crash.work/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; text-decoration: none; margin-left: 4px;"><img src="/img/posuiyun.png" alt="破碎工坊云" style="height: 20px; vertical-align: middle; margin-right: 4px;" /></a>',
@@ -185,6 +186,7 @@ const ChatRoom: React.FC = () => {
   const [isPageVisible, setIsPageVisible] = useState(!document.hidden);
   const pageHiddenTimeRef = useRef<number | null>(null);
   const visibilityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isReloadingRef = useRef(false); // 防止页面可见性恢复时重复加载
 
   const [uploading, setUploading] = useState(false);
 
@@ -303,7 +305,7 @@ const ChatRoom: React.FC = () => {
 
   const [isSpeedMode, setIsSpeedMode] = useState<boolean>(false);
 
-  // 添加搜索音乐的函数
+  // 添加搜索音乐的函数 - 使用新API
   const handleMusicSearch = async () => {
     if (!searchKey.trim()) {
       messageApi.warning('请输入搜索关键词');
@@ -315,22 +317,34 @@ const ChatRoom: React.FC = () => {
       setMusicApiError(null);
       setHasSearched(true); // 标记已执行搜索
 
-      const response = await fetch(
-        `https://api.kxzjoker.cn/api/163_search?name=${encodeURIComponent(searchKey)}&limit=20`,
-      );
+      // 使用新的网易云API
+      const response = await fetch('https://musicapi.lxchen.cn/Search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `keyword=${encodeURIComponent(searchKey)}&limit=30`,
+      });
 
       if (!response.ok) {
         throw new Error(`搜索请求失败: ${response.status}`);
       }
 
       const data = await response.json();
-      if (data.code !== 200) {
+      if (data.status !== 200 || !Array.isArray(data.data)) {
         throw new Error('音乐API返回错误');
       }
 
-      setSearchResults(data.data || []);
+      // 转换新API的数据格式为旧格式，保持兼容性
+      const formattedResults = data.data.map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        artists: Array.isArray(s.artists) ? s.artists : (s.artist_string ? [{ name: s.artist_string }] : []),
+        album: s.album || { name: '' },
+        picUrl: s.picUrl,
+      }));
 
-      if (data.data?.length === 0) {
+      setSearchResults(formattedResults);
+
+      if (formattedResults.length === 0) {
         messageApi.info('未找到相关歌曲');
       }
     } catch (error) {
@@ -342,7 +356,7 @@ const ChatRoom: React.FC = () => {
     }
   };
 
-  // 添加选择音乐的函数（带防抖）
+  // 添加选择音乐的函数（带防抖）- 使用新API
   const handleSelectMusic = async (music: any) => {
     // 如果已经在处理中，直接返回
     if (isSelectingMusic) {
@@ -362,16 +376,11 @@ const ChatRoom: React.FC = () => {
       // 设置防抖延迟
       selectMusicDebounceRef.current = setTimeout(async () => {
         try {
-          const response = await fetch('https://api.kxzjoker.cn/api/163_music', {
+          // 使用新的网易云API获取音乐链接
+          const response = await fetch('https://musicapi.lxchen.cn/Song_V1', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            },
-            body: new URLSearchParams({
-              url: music.id,
-              level: 'lossless',
-              type: 'json',
-            }).toString(),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `url=${encodeURIComponent(music.id)}&level=standard&type=json`,
           });
 
           if (!response.ok) {
@@ -379,14 +388,18 @@ const ChatRoom: React.FC = () => {
           }
 
           const data = await response.json();
-          if (!data.url) {
+          if (data.status !== 200 || !data.data) {
             throw new Error('未能获取到音乐链接');
           }
 
+          const songData = data.data;
+          // 处理artists字段，兼容字符串和数组格式
+          const artistStr = typeof music.artists === 'string' 
+            ? music.artists 
+            : (music.artists?.map((a: any) => a.name || a).join(', ') || '未知歌手');
+
           // 发送消息
-          const musicMessage = `🎵 ${music.name} - ${music.artists
-            .map((a: any) => a.name)
-            .join(',')} [music]${data.url}[/music][cover]${data.pic}[/cover]`;
+          const musicMessage = `🎵 ${music.name} - ${artistStr} [music]${songData.url}[/music][cover]${songData.pic || music.picUrl}[/cover]`;
           handleSend(musicMessage);
           setIsMusicSearchVisible(false);
           setSearchKey('');
@@ -843,14 +856,15 @@ const ChatRoom: React.FC = () => {
         }
 
         // 处理历史消息，确保正确的时间顺序（旧消息在上，新消息在下）
+        // 注意：使用 slice() 创建副本再反转，避免修改原数组
         if (isFirstLoad) {
           // 首次加载时，反转消息顺序，使最旧的消息在上面
-          setMessages(historyMessages.reverse() as Message[]);
+          setMessages(historyMessages.slice().reverse() as Message[]);
         } else {
           // 加载更多历史消息时，新的历史消息应该在当前消息的上面
           // 只有在有新消息时才更新状态
           if (historyMessages.length > 0) {
-            setMessages((prev) => [...(historyMessages.reverse() as Message[]), ...prev]);
+            setMessages((prev) => [...(historyMessages.slice().reverse() as Message[]), ...prev]);
           }
         }
 
@@ -858,21 +872,12 @@ const ChatRoom: React.FC = () => {
 
         // 更新是否还有更多消息
         const currentTotal = loadedMessageIds.size;
-        setHasMore(currentTotal < (response.data.total || 0));
+        const hasMoreMessages = currentTotal < (response.data.total || 0);
+        setHasMore(hasMoreMessages);
 
-        // 重要修改：无论是否有新消息，都更新页码
-        // 这样可以避免一直请求同一页
+        // 同步更新 ref 和 state
+        currentPageRef.current = page;
         setCurrent(page);
-
-        // 如果没有新消息但服务器返回的总数大于已加载的消息数，
-        // 可能是由于重复消息导致的，尝试请求下一页
-        if (historyMessages.length === 0 && currentTotal < (response.data.total || 0)) {
-          console.log('未获取到新消息，尝试请求下一页', page + 1);
-          // 等待当前请求完成后再尝试下一页
-          setTimeout(() => {
-            loadHistoryMessages(page + 1);
-          }, 300);
-        }
 
         // 如果是首次加载，将滚动条设置到底部
         if (isFirstLoad) {
@@ -921,28 +926,30 @@ const ChatRoom: React.FC = () => {
   };
 
   // 修改滚动处理函数
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     // 如果是自动滚动触发的，不执行其他逻辑
     if (isAutoScrollingRef.current) return;
 
     const container = messageContainerRef.current;
-    if (!container || loadingRef.current || !hasMore) return;
+    if (!container || loadingRef.current) return;
 
     // 检查是否在底部
     checkIfNearBottom();
 
     // 当滚动到顶部时加载更多
     if (container.scrollTop === 0) {
-      // 更新当前页码，加载下一页
-      const nextPage = current + 1;
+      // 使用 ref 获取最新的页码，避免闭包问题
+      const nextPage = currentPageRef.current + 1;
       if (hasMore) {
         loadHistoryMessages(nextPage);
       }
     }
-  };
+  }, [hasMore]); // 只依赖 hasMore，current 使用 ref 获取
 
   // 初始化时加载历史消息
   useEffect(() => {
+    // 重置页码 ref
+    currentPageRef.current = 1;
     loadHistoryMessages(1, true);
   }, []);
 
@@ -953,7 +960,7 @@ const ChatRoom: React.FC = () => {
       container.addEventListener('scroll', handleScroll);
       return () => container.removeEventListener('scroll', handleScroll);
     }
-  }, [loadingRef.current, hasMore, current]);
+  }, [handleScroll]); // 只依赖 handleScroll，使用 ref 获取最新状态
 
   // 处理图片上传
   const handleImageUpload = async (file: File) => {
@@ -1179,10 +1186,8 @@ const ChatRoom: React.FC = () => {
             }, 1000);
           }
 
-          // 只有在底部时才限制消息数量
-          if (isNearBottom && newMessages.length > 25) {
-            return newMessages.slice(-25);
-          }
+          // 移除消息数量限制，避免消息断层问题
+          // 历史消息应该完整保留，不应该截断
         }
         return newMessages;
       });
@@ -2290,22 +2295,17 @@ const ChatRoom: React.FC = () => {
     };
   }, []);
 
-  // 添加歌曲到歌单
+  // 添加歌曲到歌单 - 使用新API
   const addToPlaylist = async (music: any) => {
     try {
       setAddingToPlaylistId(music.id);
       setMusicApiError(null);
 
-      const response = await fetch('https://api.kxzjoker.cn/api/163_music', {
+      // 使用新的网易云API获取音乐链接
+      const response = await fetch('https://musicapi.lxchen.cn/Song_V1', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        },
-        body: new URLSearchParams({
-          url: music.id,
-          level: 'lossless',
-          type: 'json',
-        }).toString(),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `url=${encodeURIComponent(music.id)}&level=standard&type=json`,
       });
 
       if (!response.ok) {
@@ -2313,17 +2313,23 @@ const ChatRoom: React.FC = () => {
       }
 
       const data = await response.json();
-      if (!data.url) {
+      if (data.status !== 200 || !data.data) {
         throw new Error('未能获取到音乐链接');
       }
+
+      const songData = data.data;
+      // 处理artists字段，兼容字符串和数组格式
+      const artistStr = typeof music.artists === 'string'
+        ? music.artists
+        : (music.artists?.map((a: any) => a.name || a).join(', ') || '未知歌手');
 
       const newSong: Song = {
         id: music.id,
         name: music.name,
-        artist: music.artists.map((a: any) => a.name).join(','),
-        url: data.url,
-        cover: data.pic,
-        album: music.album.name,
+        artist: artistStr,
+        url: songData.url,
+        cover: songData.pic || music.picUrl,
+        album: typeof music.album === 'string' ? music.album : (music.album?.name || '未知专辑'),
       };
 
       setPlaylist((prev) => {
@@ -2348,13 +2354,52 @@ const ChatRoom: React.FC = () => {
     }
   };
 
+  // 刷新歌曲URL（处理音频过期）
+  const refreshSongUrl = async (song: Song): Promise<string | null> => {
+    try {
+      messageApi.info('正在刷新音频链接...');
+      const response = await fetch('https://musicapi.lxchen.cn/Song_V1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `url=${encodeURIComponent(song.id)}&level=standard&type=json`,
+      });
+
+      if (!response.ok) {
+        throw new Error('刷新音频链接失败');
+      }
+
+      const data = await response.json();
+      if (data.status === 200 && data.data?.url) {
+        // 更新歌单中的URL
+        setPlaylist((prev) => {
+          const updated = prev.map((s) =>
+            s.id === song.id ? { ...s, url: data.data.url } : s
+          );
+          localStorage.setItem('music_playlist', JSON.stringify(updated));
+          return updated;
+        });
+        messageApi.success('音频链接已刷新');
+        return data.data.url;
+      }
+      throw new Error('未能获取到新的音频链接');
+    } catch (error) {
+      console.error('刷新音频链接失败:', error);
+      messageApi.error('刷新音频链接失败，请稍后重试');
+      return null;
+    }
+  };
+
   // 播放歌单中的歌曲
-  const playFromPlaylist = (song: Song) => {
+  const playFromPlaylist = async (song: Song) => {
     // 确保APlayer已加载
     if (typeof window.APlayer === 'undefined') {
       messageApi.error('播放器加载中，请稍后再试');
       return;
     }
+
+    // 检查URL是否过期（简单检查：如果URL包含过期时间戳或特定标记）
+    // 网易云的URL通常有几分钟到几小时的有效期
+    // 这里我们尝试播放，如果失败会自动刷新
 
     // 初始化APlayer（如果还没有实例）
     if (!aPlayerInstanceRef.current && aPlayerContainerRef.current) {
@@ -2365,6 +2410,21 @@ const ChatRoom: React.FC = () => {
         theme: '#41b883',
         listFolded: false,
         listMaxHeight: '200px',
+      });
+
+      // 添加错误监听，处理音频过期
+      aPlayerInstanceRef.current.on('error', async () => {
+        const currentSong = aPlayerInstanceRef.current?.list.audios[
+          aPlayerInstanceRef.current.list.index
+        ];
+        if (currentSong) {
+          const newUrl = await refreshSongUrl(currentSong);
+          if (newUrl) {
+            // 更新播放器中的URL并重新播放
+            currentSong.url = newUrl;
+            aPlayerInstanceRef.current?.play();
+          }
+        }
       });
     } else if (aPlayerInstanceRef.current) {
       // 如果已有实例，直接添加并播放歌曲
@@ -2407,6 +2467,21 @@ const ChatRoom: React.FC = () => {
         theme: '#41b883',
         listFolded: false,
         listMaxHeight: '200px',
+      });
+
+      // 添加错误监听，处理音频过期
+      aPlayerInstanceRef.current.on('error', async () => {
+        const currentSong = aPlayerInstanceRef.current?.list.audios[
+          aPlayerInstanceRef.current.list.index
+        ];
+        if (currentSong) {
+          const newUrl = await refreshSongUrl(currentSong);
+          if (newUrl) {
+            // 更新播放器中的URL并重新播放
+            currentSong.url = newUrl;
+            aPlayerInstanceRef.current?.play();
+          }
+        }
       });
     }
   };
@@ -2756,6 +2831,10 @@ const ChatRoom: React.FC = () => {
     }
   }, []);
 
+  // 使用 ref 存储 loadHistoryMessages，避免 useEffect 依赖问题
+  const loadHistoryMessagesRef = useRef(loadHistoryMessages);
+  loadHistoryMessagesRef.current = loadHistoryMessages;
+
   // 监听页面可见性变化
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -2778,15 +2857,28 @@ const ChatRoom: React.FC = () => {
           const THIRTY_SECONDS = 30 * 1000;
 
           if (hiddenDuration >= THIRTY_SECONDS) {
+            // 防止重复加载
+            if (isReloadingRef.current) {
+              console.log('正在重新加载中，跳过重复请求');
+              return;
+            }
+
             // 离开超过30秒，执行恢复和重新加载
             console.log(`页面离开了 ${Math.round(hiddenDuration / 1000)} 秒，重新获取聊天记录`);
             wsService.resumeMessageProcessing();
+
+            // 清空已加载消息ID集合 - 关键修复！否则会导致消息无法加载
+            loadedMessageIds.clear();
 
             // 清空当前消息列表并重新加载最新消息
             setMessages([]);
             setCurrent(1);
             setHasMore(true);
-            loadHistoryMessages(1, true);
+
+            isReloadingRef.current = true;
+            loadHistoryMessagesRef.current(1, true).finally(() => {
+              isReloadingRef.current = false;
+            });
 
             // 显示恢复提示
             messageApi.info(`页面离开了 ${Math.round(hiddenDuration / 1000)} 秒，已重新获取最新聊天记录`);
@@ -2824,7 +2916,7 @@ const ChatRoom: React.FC = () => {
         visibilityTimeoutRef.current = null;
       }
     };
-  }, []);
+  }, []); // 空依赖数组，使用 ref 避免闭包问题
 
   // 保存用户备注
   const saveUserRemark = (userId: string, remark: string) => {
@@ -3927,6 +4019,7 @@ const ChatRoom: React.FC = () => {
                               size="small"
                               icon={<PlayCircleOutlined />}
                               onClick={() => playFromPlaylist(song)}
+                              title="播放"
                             />
                             <Button
                               type="text"
@@ -3934,6 +4027,7 @@ const ChatRoom: React.FC = () => {
                               icon={<DeleteOutlined />}
                               onClick={() => removeFromPlaylist(song.id)}
                               danger
+                              title="删除"
                             />
                           </div>
                         </div>
