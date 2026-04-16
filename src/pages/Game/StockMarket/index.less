@@ -1,0 +1,267 @@
+.stock-market-container {
+  min-height: 100vh;
+  background: #f0f2f5;
+
+  .stock-market-header {
+    background: #fff;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+
+      .header-icon {
+        font-size: 28px;
+        margin-right: 12px;
+        color: #cf1322;
+      }
+
+      .header-title {
+        margin: 0;
+      }
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .stock-market-content {
+    padding: 24px;
+
+    .ant-card {
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .ant-statistic-title {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.65);
+    }
+
+    .ant-statistic-content {
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+      background: #fafafa;
+      border: 1px solid #f0f0f0;
+    }
+
+    .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+      background: #fff;
+      border-color: #1890ff;
+    }
+  }
+}
+
+// 指数卡片样式
+.index-card {
+  .index-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+
+    .index-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #262626;
+    }
+
+    .index-code {
+      font-size: 12px;
+      color: #8c8c8c;
+      background: #f5f5f5;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+  }
+
+  .index-value {
+    text-align: center;
+    padding: 16px 0;
+
+    .current-value {
+      font-size: 32px;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .change-info {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+
+      .ant-tag {
+        font-size: 14px;
+        padding: 4px 12px;
+      }
+    }
+  }
+
+  .ant-card-actions {
+    background: #fafafa;
+
+    button {
+      width: 80%;
+    }
+  }
+}
+
+// 持仓卡片样式
+.position-card {
+  .position-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+
+    .position-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #262626;
+    }
+
+    .position-code {
+      font-size: 12px;
+      color: #8c8c8c;
+      margin-top: 4px;
+    }
+
+    .ant-badge {
+      .ant-badge-count {
+        font-size: 12px;
+        padding: 0 8px;
+        border-radius: 12px;
+      }
+    }
+  }
+
+  .position-stats {
+    padding: 8px 0;
+
+    .stat-label {
+      font-size: 12px;
+      color: #8c8c8c;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #262626;
+    }
+  }
+
+  .position-actions {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: center;
+
+    .ant-space {
+      width: 100%;
+      justify-content: space-around;
+
+      button {
+        min-width: 100px;
+      }
+    }
+  }
+}
+
+// 交易弹窗样式
+.trade-info {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-top: 16px;
+
+  .ant-typography {
+    display: block;
+    margin-bottom: 4px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .ant-typography-warning {
+    color: #faad14;
+    font-weight: 500;
+  }
+}
+
+// 响应式设计
+@media (max-width: 768px) {
+  .stock-market-container {
+    .stock-market-header {
+      flex-direction: column;
+      padding: 16px;
+      height: auto;
+
+      .header-left {
+        margin-bottom: 12px;
+      }
+
+      .header-right {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+
+    .stock-market-content {
+      padding: 16px;
+
+      .ant-statistic-content {
+        font-size: 20px;
+      }
+    }
+  }
+
+  .index-card {
+    .current-value {
+      font-size: 24px;
+    }
+  }
+
+  .position-card {
+    .position-actions {
+      .ant-space {
+        flex-direction: column;
+        gap: 8px !important;
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+// 表格样式优化
+.ant-table {
+  .ant-table-thead > tr > th {
+    background: #fafafa;
+    font-weight: 600;
+  }
+
+  .ant-table-tbody > tr:hover > td {
+    background: #f5f5f5;
+  }
+}

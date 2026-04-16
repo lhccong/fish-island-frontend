@@ -7,6 +7,7 @@ import {
   userEmailSendUsingPost,
   userLogoutUsingPost
 } from '@/services/backend/userController';
+import {getCurrentUserVipUsingGet, checkPermanentVipUsingGet} from '@/services/backend/userVipController';
 import {listAvailableFramesUsingGet1, setCurrentFrameUsingPost1} from '@/services/backend/userTitleController';
 import {uploadFileByMinioUsingPost} from '@/services/backend/fileController';
 import {
@@ -241,6 +242,8 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const [emailCountdown, setEmailCountdown] = useState(0);
   const [emailCode, setEmailCode] = useState('');
   const [availableTitles, setAvailableTitles] = useState<API.UserTitle[]>([]);
+  const [userVipInfo, setUserVipInfo] = useState<API.UserVipVO | null>(null);
+  const [isPermanentVip, setIsPermanentVip] = useState<boolean>(false);
 
   // 获取可用称号列表
   const fetchAvailableTitles = async () => {
@@ -285,6 +288,31 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   useEffect(() => {
     fetchAvailableTitles();
   }, []);
+
+  // 获取用户VIP信息
+  const fetchUserVipInfo = async () => {
+    try {
+      const [vipRes, permanentRes] = await Promise.all([
+        getCurrentUserVipUsingGet(),
+        checkPermanentVipUsingGet()
+      ]);
+      if (vipRes.data) {
+        setUserVipInfo(vipRes.data);
+      }
+      if (permanentRes.data) {
+        setIsPermanentVip(permanentRes.data);
+      }
+    } catch (error) {
+      console.error('获取VIP信息失败:', error);
+    }
+  };
+
+  // 会员类型映射
+  const vipTypeMap: Record<number, string> = {
+    0: '普通会员',
+    1: '月度会员',
+    2: '永久会员',
+  };
 
   // 处理称号设置
   const handleSetTitle = async (titleId: number) => {
@@ -878,6 +906,8 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       }
       if (key === 'edit') {
         setIsEditProfileOpen(true);
+        // 获取VIP信息
+        fetchUserVipInfo();
         // 设置初始头像预览
         if (currentUser?.userAvatar && !defaultAvatars.includes(currentUser.userAvatar)) {
           setPreviewAvatar(currentUser.userAvatar);
@@ -1688,6 +1718,83 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
               )}
             </div>
           </Form.Item>
+
+          {/* 会员信息展示 */}
+          {currentUser?.vip && userVipInfo && (
+            <Form.Item label="会员信息">
+              <div style={{
+                padding: '12px 16px',
+                background: '#fff7e6',
+                border: '1px solid #ffd591',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px'
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #ffd591 0%, #ffbb6e 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  fontSize: '20px'
+                }}>
+                  👑
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontWeight: 600,
+                    fontSize: '16px',
+                    color: '#d46b08',
+                    marginBottom: '4px'
+                  }}>
+                    {vipTypeMap[userVipInfo.type || 0] || '普通会员'}
+                  </div>
+                  <div style={{
+                    fontSize: '14px',
+                    color: '#666',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <span>到期时间：</span>
+                    {isPermanentVip ? (
+                      <span style={{
+                        color: '#d46b08',
+                        fontWeight: 500,
+                        background: '#fff1e6',
+                        padding: '2px 8px',
+                        borderRadius: '4px'
+                      }}>
+                        永久有效
+                      </span>
+                    ) : userVipInfo.validDays ? (
+                      <>
+                        <span style={{ color: '#333' }}>
+                          {moment(userVipInfo.validDays).format('YYYY年MM月DD日')}
+                        </span>
+                        <span style={{
+                          color: '#d46b08',
+                          fontWeight: 500,
+                          background: '#fff1e6',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          marginLeft: '8px'
+                        }}>
+                          还剩 {moment(userVipInfo.validDays).diff(moment(), 'days')} 天
+                        </span>
+                      </>
+                    ) : (
+                      <span style={{ color: '#999' }}>未设置</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </Form.Item>
+          )}
 
           {currentUser?.createTime && (
             <Form.Item label="破蛋日">

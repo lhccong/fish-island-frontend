@@ -126,6 +126,20 @@
       "description": "土黑娃专属",
       "titleImg": "https://oss.cqbo.com/moyu/title/土黑娃.png"
 
+    },
+    {
+      "id": "21",
+      "name": "心转手上层巅峰",
+      "description": "充本順专属",
+      "titleImg": "https://oss.cqbo.com/moyu/title/badge-心转手上层巅峰.png"
+
+    },
+    {
+      "id": "22",
+      "name": "kuzwlu",
+      "description": "kuzwlu专属",
+      "titleImg": "https://oss.cqbo.com/moyu/title/badge-kuzwlu.png"
+
     }
   ]
 }

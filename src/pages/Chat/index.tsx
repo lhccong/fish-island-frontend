@@ -16,6 +16,7 @@ import {
   grabRedPacketUsingPost,
 } from '@/services/backend/redPacketController';
 import { muteUserUsingPost, getUserMuteInfoUsingGet, unmuteUserUsingPost } from '@/services/backend/userMuteController';
+import { getRemarkUsingGet, saveRemarkUsingPost } from '@/services/backend/userRemarkController';
 import { generateAnnualReportUsingGet } from '@/services/backend/userController';
 import {
   getActiveVoteIdsUsingGet,
@@ -2744,16 +2745,50 @@ const ChatRoom: React.FC = () => {
     }
   }, []);
 
-  // 加载用户备注
+  // 加载用户备注 - 从后端获取
   useEffect(() => {
-    const savedRemarks = localStorage.getItem('user_remarks');
-    if (savedRemarks) {
+    const loadUserRemarks = async () => {
       try {
-        setUserRemarks(JSON.parse(savedRemarks));
+        // 先尝试从后端获取
+        const response = await getRemarkUsingGet();
+        if (response.data?.content) {
+          // 后端返回的是备注内容的JSON字符串，解析它
+          try {
+            const remarksData = JSON.parse(response.data.content);
+            setUserRemarks(remarksData);
+          } catch (e) {
+            console.error('解析后端备注数据失败:', e);
+          }
+        } else {
+          // 后端没有数据，尝试从localStorage迁移
+          const savedRemarks = localStorage.getItem('user_remarks');
+          if (savedRemarks) {
+            try {
+              const localData = JSON.parse(savedRemarks);
+              setUserRemarks(localData);
+              // 将本地数据同步到后端
+              await saveRemarkUsingPost({ content: savedRemarks });
+              console.log('已将本地备注数据迁移到后端');
+            } catch (error) {
+              console.error('迁移本地备注数据失败:', error);
+            }
+          }
+        }
       } catch (error) {
-        console.error('加载用户备注失败:', error);
+        console.error('从后端加载备注失败:', error);
+        // 失败后回退到localStorage
+        const savedRemarks = localStorage.getItem('user_remarks');
+        if (savedRemarks) {
+          try {
+            setUserRemarks(JSON.parse(savedRemarks));
+          } catch (e) {
+            console.error('加载本地备注失败:', e);
+          }
+        }
       }
-    }
+    };
+
+    loadUserRemarks();
   }, []);
 
   // 监听页面可见性变化
@@ -2826,11 +2861,19 @@ const ChatRoom: React.FC = () => {
     };
   }, []);
 
-  // 保存用户备注
-  const saveUserRemark = (userId: string, remark: string) => {
+  // 保存用户备注 - 保存到后端并更新本地状态
+  const saveUserRemark = async (userId: string, remark: string) => {
     const newRemarks = { ...userRemarks, [userId]: remark };
     setUserRemarks(newRemarks);
-    localStorage.setItem('user_remarks', JSON.stringify(newRemarks));
+    const remarksJson = JSON.stringify(newRemarks);
+    localStorage.setItem('user_remarks', remarksJson);
+    
+    try {
+      // 同步保存到后端
+      await saveRemarkUsingPost({ content: remarksJson });
+    } catch (error) {
+      console.error('保存备注到后端失败:', error);
+    }
   };
 
   // 获取用户显示名称

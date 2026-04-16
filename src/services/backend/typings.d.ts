@@ -102,6 +102,18 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseIndexPositionVO_ = {
+    code?: number;
+    data?: IndexPositionVO;
+    message?: string;
+  };
+
+  type BaseResponseIndexTradeResultVO_ = {
+    code?: number;
+    data?: IndexTradeResultVO;
+    message?: string;
+  };
+
   type BaseResponseInt_ = {
     code?: number;
     data?: number;
@@ -186,6 +198,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListPetBattleResultVO_ = {
+    code?: number;
+    data?: PetBattleResultVO[];
+    message?: string;
+  };
+
   type BaseResponseListPetRankVO_ = {
     code?: number;
     data?: PetRankVO[];
@@ -201,6 +219,12 @@ declare namespace API {
   type BaseResponseListString_ = {
     code?: number;
     data?: string[];
+    message?: string;
+  };
+
+  type BaseResponseListTournamentRankVO_ = {
+    code?: number;
+    data?: TournamentRankVO[];
     message?: string;
   };
 
@@ -318,6 +342,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageIndexTransactionVO_ = {
+    code?: number;
+    data?: PageIndexTransactionVO_;
+    message?: string;
+  };
+
   type BaseResponsePageItemInstances_ = {
     code?: number;
     data?: PageItemInstances_;
@@ -426,6 +456,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePetBattleInfoVO_ = {
+    code?: number;
+    data?: PetBattleInfoVO;
+    message?: string;
+  };
+
   type BaseResponsePetVO_ = {
     code?: number;
     data?: PetVO;
@@ -468,6 +504,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseTournamentChallengeResultVO_ = {
+    code?: number;
+    data?: TournamentChallengeResultVO;
+    message?: string;
+  };
+
   type BaseResponseTurntableVO_ = {
     code?: number;
     data?: TurntableVO;
@@ -507,6 +549,12 @@ declare namespace API {
   type BaseResponseUserMuteVO_ = {
     code?: number;
     data?: UserMuteVO;
+    message?: string;
+  };
+
+  type BaseResponseUserRemark_ = {
+    code?: number;
+    data?: UserRemark;
     message?: string;
   };
 
@@ -569,6 +617,11 @@ declare namespace API {
     isNormalAttack?: boolean;
     /** 宠物剩余血量 */
     petRemainingHealth?: number;
+  };
+
+  type battleUsingGET1Params = {
+    /** opponentUserId */
+    opponentUserId: number;
   };
 
   type battleUsingGETParams = {
@@ -673,6 +726,11 @@ declare namespace API {
     state?: string;
     /** source */
     source: string;
+  };
+
+  type challengeUsingPOSTParams = {
+    /** targetRank */
+    targetRank: number;
   };
 
   type ChildCommentQueryRequest = {
@@ -1104,6 +1162,11 @@ declare namespace API {
     otherUserId: number;
   };
 
+  type getPetBattleInfoUsingGETParams = {
+    /** opponentUserId */
+    opponentUserId: number;
+  };
+
   type getPetRankListUsingGETParams = {
     /** limit */
     limit?: number;
@@ -1264,6 +1327,105 @@ declare namespace API {
     type?: string;
     typeName?: string;
     updateTime?: string;
+  };
+
+  type IndexBuyRequest = {
+    amount?: number;
+    indexCode?: string;
+  };
+
+  type IndexPositionVO = {
+    /** 可用份额（可卖出） */
+    availableShares?: number;
+    /** 平均成本（净值） */
+    avgCost?: number;
+    /** 涨跌幅（%） */
+    changePercent?: number;
+    /** 当前净值 */
+    currentNav?: number;
+    /** 冻结份额（卖出待结算） */
+    frozenShares?: number;
+    /** 指数代码 */
+    indexCode?: string;
+    /** 指数名称 */
+    indexName?: string;
+    /** 锁定份额（当日买入，次日解锁） */
+    lockedShares?: number;
+    /** 持仓市值（积分） */
+    marketValue?: number;
+    /** 持有收益率（%） */
+    profitRate?: number;
+    /** 累计盈亏（积分） */
+    totalProfit?: number;
+    /** 总份额 */
+    totalShares?: number;
+    /** 更新时间 */
+    updateTime?: string;
+  };
+
+  type IndexSellRequest = {
+    indexCode?: string;
+    shares?: number;
+  };
+
+  type IndexTradeResultVO = {
+    /** 交易金额（积分） */
+    amount?: number;
+    /** 预计结算日期（仅卖出有效） */
+    expectedSettleDate?: string;
+    /** 提示信息 */
+    message?: string;
+    /** 成交净值 */
+    nav?: number;
+    /** 成交份额 */
+    shares?: number;
+    /** 交易类型：1-买入，2-卖出 */
+    tradeType?: number;
+    /** 交易类型名称 */
+    tradeTypeName?: string;
+    /** 交易记录ID */
+    transactionId?: number;
+  };
+
+  type IndexTransactionQueryRequest = {
+    current?: number;
+    indexCode?: string;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    status?: number;
+    tradeType?: number;
+  };
+
+  type IndexTransactionVO = {
+    /** 实际结算时间（仅卖出） */
+    actualSettleTime?: string;
+    /** 交易金额（积分） */
+    amount?: number;
+    /** 下单时间 */
+    createTime?: string;
+    /** 预计结算日期（仅卖出） */
+    expectedSettleDate?: string;
+    /** 交易记录ID */
+    id?: number;
+    /** 指数代码 */
+    indexCode?: string;
+    /** 指数名称 */
+    indexName?: string;
+    /** 成交净值 */
+    nav?: number;
+    /** 盈亏金额（积分，仅卖出） */
+    profitLoss?: number;
+    /** 成交份额 */
+    shares?: number;
+    /** 状态：0-待结算，1-已完成 */
+    status?: number;
+    /** 状态名称 */
+    statusName?: string;
+    /** 交易类型：1-买入，2-卖出 */
+    tradeType?: number;
+    /** 交易类型名称 */
+    tradeTypeName?: string;
   };
 
   type ItemEquipRequest = {
@@ -1749,6 +1911,8 @@ declare namespace API {
 
   type OtherUserPetVO = {
     createTime?: string;
+    equipStats?: PetEquipStatsVO;
+    equippedItems?: Record<string, any>;
     exp?: number;
     hunger?: number;
     level?: number;
@@ -1859,6 +2023,19 @@ declare namespace API {
     orders?: OrderItem[];
     pages?: number;
     records?: EventRemindVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
+  type PageIndexTransactionVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: IndexTransactionVO[];
     searchCount?: boolean;
     size?: number;
     total?: number;
@@ -2115,6 +2292,46 @@ declare namespace API {
     petId: number;
   };
 
+  type PetBattleInfoVO = {
+    myPet?: PetInfo1;
+    opponentPet?: PetInfo1;
+  };
+
+  type PetBattleResultVO = {
+    /** 当前攻击方类型：MY_PET-我的宠物攻击，OPPONENT_PET-对手宠物攻击 */
+    attackerType?: string;
+    /** 扣血量 */
+    damage?: number;
+    /** 是否连击 */
+    isCombo?: boolean;
+    /** 是否暴击 */
+    isCritical?: boolean;
+    /** 是否闪避 */
+    isDodge?: boolean;
+    /** 是否普通攻击 */
+    isNormalAttack?: boolean;
+    /** 我的宠物剩余血量 */
+    myPetRemainingHealth?: number;
+    /** 对手宠物剩余血量 */
+    opponentPetRemainingHealth?: number;
+  };
+
+  type PetEquipStatsVO = {
+    blockRate?: number;
+    blockResistance?: number;
+    comboRate?: number;
+    comboResistance?: number;
+    critRate?: number;
+    critResistance?: number;
+    dodgeRate?: number;
+    dodgeResistance?: number;
+    lifesteal?: number;
+    lifestealResistance?: number;
+    totalBaseAttack?: number;
+    totalBaseDefense?: number;
+    totalBaseHp?: number;
+  };
+
   type PetInfo = {
     attack?: number;
     avatar?: string;
@@ -2123,6 +2340,17 @@ declare namespace API {
     level?: number;
     name?: string;
     petId?: number;
+  };
+
+  type PetInfo1 = {
+    attack?: number;
+    avatar?: string;
+    equippedItems?: Record<string, any>;
+    health?: number;
+    level?: number;
+    name?: string;
+    petId?: number;
+    userId?: number;
   };
 
   type PetRankVO = {
@@ -2511,6 +2739,41 @@ declare namespace API {
     vip?: boolean;
   };
 
+  type TournamentChallengeResultVO = {
+    /** 是否胜利 */
+    isWin?: boolean;
+    /** 挑战成功后我的排名（失败则为原排名，无排名为null） */
+    myRank?: number;
+    /** 被挑战者的userId（目标坑位有人时） */
+    opponentUserId?: number;
+    /** 对战回合详情 */
+    rounds?: PetBattleResultVO[];
+    /** 挑战的目标位数 */
+    targetRank?: number;
+  };
+
+  type TournamentRankVO = {
+    /** 实际攻击力（含装备） */
+    attack?: number;
+    equipStats?: PetEquipStatsVO;
+    /** 实际生命值（含装备） */
+    health?: number;
+    /** 宠物等级 */
+    petLevel?: number;
+    /** 宠物名称 */
+    petName?: string;
+    /** 宠物图片 */
+    petUrl?: string;
+    /** 名次 */
+    rank?: number;
+    /** 用户头像 */
+    userAvatar?: string;
+    /** 用户ID */
+    userId?: number;
+    /** 用户昵称 */
+    userName?: string;
+  };
+
   type TurntablePrizeVO = {
     icon?: string;
     id?: number;
@@ -2785,6 +3048,20 @@ declare namespace API {
     email?: string;
     userAccount?: string;
     userPassword?: string;
+  };
+
+  type UserRemark = {
+    content?: string;
+    createTime?: string;
+    id?: number;
+    isDelete?: number;
+    updateTime?: string;
+    userId?: number;
+  };
+
+  type UserRemarkAddRequest = {
+    /** Remark content */
+    content: string;
   };
 
   type UserRewardVO = {

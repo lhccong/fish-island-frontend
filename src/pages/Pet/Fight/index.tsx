@@ -11,6 +11,8 @@ import {
 } from '@ant-design/icons';
 import { useSearchParams, history } from '@umijs/max';
 import { getBossBattleInfoUsingGet, battleUsingGet } from '@/services/backend/bossController';
+import { getPetBattleInfoUsingGet, battleUsingGet1 } from '@/services/backend/petBattleController';
+import { challengeUsingPost } from '@/services/backend/petTournamentController';
 import styles from './index.less';
 
 // 宠物数据接口
@@ -65,6 +67,12 @@ type BattleStatus = 'idle' | 'fighting' | 'victory' | 'defeat';
 const PetFight: React.FC = () => {
   const [searchParams] = useSearchParams();
   const bossId = searchParams.get('bossId');
+  const opponentUserId = searchParams.get('opponentUserId');
+  const targetRank = searchParams.get('targetRank');
+  const isTournament = searchParams.get('from') === 'tournament';
+  const isPetBattle = !!opponentUserId || isTournament;
+  const from = searchParams.get('from') || 'ranking'; // 从哪个页面进入：ranking, tournament
+  const [opponent, setOpponent] = useState<Pet | null>(null);
   
   // 状态管理
   const [battleStatus, setBattleStatus] = useState<BattleStatus>('idle');
@@ -121,83 +129,146 @@ const PetFight: React.FC = () => {
     return str.startsWith('http://') || str.startsWith('https://') || str.startsWith('/');
   };
 
-  // 获取Boss对战信息
+  // 获取对战信息（Boss对战或宠物对战）
   useEffect(() => {
     const fetchBattleInfo = async () => {
-      if (!bossId) {
-        message.error('缺少Boss ID参数');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const res = await getBossBattleInfoUsingGet({ 
-          bossId: Number(bossId) 
-        });
-        
-        if (res.code === 0 && res.data) {
-          const { bossInfo, petInfo } = res.data;
-          
-          // 更新Boss数据
-          if (bossInfo) {
-            setBoss({
-              id: bossInfo.id || 1,
-              name: bossInfo.name || '未知BOSS',
-              level: 30, // API中没有level，使用默认值
-              hp: bossInfo.currentHealth || bossInfo.maxHealth || 1200,
-              maxHp: bossInfo.maxHealth || 1200,
-              attack: bossInfo.attack || 150,
-              defense: 100, // API中没有defense，使用默认值
-              avatar: bossInfo.avatar || '👔',
-              rewards: {
-                coins: bossInfo.rewardPoints || 500,
-                exp: 300, // API中没有exp，使用默认值
-                items: ['自由勋章', '摸鱼许可证'] // API中没有items，使用默认值
-              },
-              // 新增战斗属性
-              critRate: bossInfo.critRate || 0,
-              critResistance: bossInfo.critResistance || 0,
-              dodgeRate: bossInfo.dodgeRate || 0,
-              dodgeResistance: bossInfo.dodgeResistance || 0,
-              blockRate: bossInfo.blockRate || 0,
-              blockResistance: bossInfo.blockResistance || 0,
-              comboRate: bossInfo.comboRate || 0,
-              comboResistance: bossInfo.comboResistance || 0,
-              lifesteal: bossInfo.lifesteal || 0,
-              lifestealResistance: bossInfo.lifestealResistance || 0
-            });
-          }
-          
-          // 更新宠物数据
-          if (petInfo) {
-            setPet({
-              id: petInfo.petId || 1,
-              name: petInfo.name || '摸鱼小精灵',
-              level: petInfo.level || 1,
-              hp: petInfo.health || 100,
-              maxHp: petInfo.health || 100,
-              attack: petInfo.attack || 10,
-              defense: 5, // API中没有defense，使用默认值
-              avatar: petInfo.avatar || '🐠',
-              exp: 0, // API中没有exp，使用默认值
-              maxExp: 100, // API中没有maxExp，使用默认值
-              equippedItems: petInfo.equippedItems
-            });
-          }
-        } else {
-          message.error(res.message || '获取对战信息失败');
+      // 判断对战类型
+      if (isPetBattle) {
+        // 宠物对战模式（包括普通宠物对战和武道大会）
+        if (!opponentUserId) {
+          message.error('缺少对手用户ID参数');
+          setLoading(false);
+          return;
         }
-      } catch (error: any) {
-        console.error('获取Boss对战信息失败:', error);
-        message.error(error.message || '获取对战信息失败');
-      } finally {
-        setLoading(false);
+
+        try {
+          setLoading(true);
+          const res = await getPetBattleInfoUsingGet({
+            opponentUserId: opponentUserId as any
+          });
+
+          if (res.code === 0 && res.data) {
+            const { myPet, opponentPet } = res.data;
+
+            // 更新我的宠物数据
+            if (myPet) {
+              setPet({
+                id: myPet.petId || 1,
+                name: myPet.name || '我的宠物',
+                level: myPet.level || 1,
+                hp: myPet.health || 100,
+                maxHp: myPet.health || 100,
+                attack: myPet.attack || 10,
+                defense: 5,
+                avatar: myPet.avatar || '🐠',
+                exp: 0,
+                maxExp: 100,
+                equippedItems: myPet.equippedItems as Record<string, API.ItemInstanceVO>
+              });
+            }
+
+            // 更新对手宠物数据
+            if (opponentPet) {
+              setOpponent({
+                id: opponentPet.petId || 1,
+                name: opponentPet.name || '对手宠物',
+                level: opponentPet.level || 1,
+                hp: opponentPet.health || 100,
+                maxHp: opponentPet.health || 100,
+                attack: opponentPet.attack || 10,
+                defense: 5,
+                avatar: opponentPet.avatar || '🐱',
+                exp: 0,
+                maxExp: 100,
+                equippedItems: opponentPet.equippedItems as Record<string, API.ItemInstanceVO>
+              });
+            }
+          } else {
+            message.error(res.message || '获取对战信息失败');
+          }
+        } catch (error: any) {
+          console.error('获取宠物对战信息失败:', error);
+          message.error(error.message || '获取对战信息失败');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Boss对战模式
+        if (!bossId) {
+          message.error('缺少Boss ID参数');
+          setLoading(false);
+          return;
+        }
+
+        try {
+          setLoading(true);
+          const res = await getBossBattleInfoUsingGet({ 
+            bossId: Number(bossId) 
+          });
+          
+          if (res.code === 0 && res.data) {
+            const { bossInfo, petInfo } = res.data;
+            
+            // 更新Boss数据
+            if (bossInfo) {
+              const bossData = bossInfo as any;
+              setBoss({
+                id: bossInfo.id || 1,
+                name: bossInfo.name || '未知BOSS',
+                level: 30,
+                hp: bossInfo.currentHealth || bossInfo.maxHealth || 1200,
+                maxHp: bossInfo.maxHealth || 1200,
+                attack: bossInfo.attack || 150,
+                defense: 100,
+                avatar: bossInfo.avatar || '👔',
+                rewards: {
+                  coins: bossInfo.rewardPoints || 500,
+                  exp: 300,
+                  items: ['自由勋章', '摸鱼许可证']
+                },
+                critRate: bossData.critRate || 0,
+                critResistance: bossData.critResistance || 0,
+                dodgeRate: bossData.dodgeRate || 0,
+                dodgeResistance: bossData.dodgeResistance || 0,
+                blockRate: bossData.blockRate || 0,
+                blockResistance: bossData.blockResistance || 0,
+                comboRate: bossData.comboRate || 0,
+                comboResistance: bossData.comboResistance || 0,
+                lifesteal: bossData.lifesteal || 0,
+                lifestealResistance: bossData.lifestealResistance || 0
+              });
+            }
+            
+            // 更新宠物数据
+            if (petInfo) {
+              setPet({
+                id: petInfo.petId || 1,
+                name: petInfo.name || '摸鱼小精灵',
+                level: petInfo.level || 1,
+                hp: petInfo.health || 100,
+                maxHp: petInfo.health || 100,
+                attack: petInfo.attack || 10,
+                defense: 5,
+                avatar: petInfo.avatar || '🐠',
+                exp: 0,
+                maxExp: 100,
+                equippedItems: petInfo.equippedItems
+              });
+            }
+          } else {
+            message.error(res.message || '获取对战信息失败');
+          }
+        } catch (error: any) {
+          console.error('获取Boss对战信息失败:', error);
+          message.error(error.message || '获取对战信息失败');
+        } finally {
+          setLoading(false);
+        }
       }
     };
 
     fetchBattleInfo();
-  }, [bossId]);
+  }, [bossId, opponentUserId, isPetBattle]);
 
   // 显示战斗提示
   const showBattleMessage = (messageText: string, type: BattleMessageType) => {
@@ -213,11 +284,12 @@ const PetFight: React.FC = () => {
 
 
   // 处理单个回合的战斗结果
-  const processBattleRound = (result: API.BattleResultVO, roundIndex: number) => {
-    const attackerType = result.attackerType || '';
-    const isPetAttack = attackerType === 'PET';
-    const attacker = isPetAttack ? pet : boss;
-    const defender = isPetAttack ? boss : pet;
+  const processBattleRound = (result: API.BattleResultVO | API.PetBattleResultVO, roundIndex: number) => {
+    const attackerType = (result as any).attackerType || '';
+    const isPetAttack = isPetBattle ? attackerType === 'MY_PET' : attackerType === 'PET';
+    const currentOpponent = isPetBattle ? opponent : boss;
+    const attacker = isPetAttack ? pet : currentOpponent!;
+    const defender = isPetAttack ? currentOpponent! : pet;
     const damage = result.damage || 0;
     
     // 触发碰撞效果
@@ -271,17 +343,35 @@ const PetFight: React.FC = () => {
     }
 
     // 更新血量
-    if (result.petRemainingHealth !== undefined) {
-      setPet(prev => ({ ...prev, hp: result.petRemainingHealth || 0 }));
-    }
-    if (result.bossRemainingHealth !== undefined) {
-      setBoss(prev => ({ ...prev, hp: result.bossRemainingHealth || 0 }));
+    if (isPetBattle) {
+      // 宠物对战模式
+      const petBattleResult = result as API.PetBattleResultVO;
+      if (petBattleResult.myPetRemainingHealth !== undefined) {
+        setPet(prev => ({ ...prev, hp: petBattleResult.myPetRemainingHealth || 0 }));
+      }
+      if (petBattleResult.opponentPetRemainingHealth !== undefined && opponent) {
+        setOpponent(prev => prev ? ({ ...prev, hp: petBattleResult.opponentPetRemainingHealth || 0 }) : null);
+      }
+    } else {
+      // Boss对战模式
+      const bossBattleResult = result as API.BattleResultVO;
+      if (bossBattleResult.petRemainingHealth !== undefined) {
+        setPet(prev => ({ ...prev, hp: bossBattleResult.petRemainingHealth || 0 }));
+      }
+      if (bossBattleResult.bossRemainingHealth !== undefined) {
+        setBoss(prev => ({ ...prev, hp: bossBattleResult.bossRemainingHealth || 0 }));
+      }
     }
   };
 
   // 开始战斗（逐个处理战斗结果）
   const startBattle = async () => {
-    if (!bossId) {
+    // 检查参数
+    if (isPetBattle && !opponentUserId) {
+      message.error('缺少对手用户ID参数');
+      return;
+    }
+    if (!isPetBattle && !bossId) {
       message.error('缺少Boss ID参数');
       return;
     }
@@ -292,13 +382,34 @@ const PetFight: React.FC = () => {
       showBattleMessage('战斗开始！', 'attack');
 
       // 调用接口获取所有战斗结果
-      const res = await battleUsingGet({ 
-        bossId: Number(bossId) 
-      });
+      let battleResults: any[] = [];
+      
+      if (isTournament && targetRank) {
+        // 武道大会挑战
+        const res = await challengeUsingPost({ targetRank: Number(targetRank) });
+        if (res.code === 0 && res.data && res.data.rounds) {
+          battleResults = res.data.rounds;
+        }
+      } else if (isPetBattle) {
+        // 普通宠物对战
+        const res = await battleUsingGet1({
+          opponentUserId: opponentUserId as any
+        });
+        if (res.code === 0 && res.data) {
+          battleResults = res.data;
+        }
+      } else {
+        // Boss对战
+        const res = await battleUsingGet({ 
+          bossId: Number(bossId) 
+        });
+        if (res.code === 0 && res.data) {
+          battleResults = res.data;
+        }
+      }
 
-      if (res.code === 0 && res.data && res.data.length > 0) {
+      if (battleResults.length > 0) {
         setLoading(false);
-        const battleResults = res.data;
         
         // 逐个处理每个回合，每个回合之间延迟1.5秒
         for (let i = 0; i < battleResults.length; i++) {
@@ -308,10 +419,20 @@ const PetFight: React.FC = () => {
           processBattleRound(result, i);
 
           // 检查是否已经分出胜负（提前结束）
-          const petHp = result.petRemainingHealth || 0;
-          const bossHp = result.bossRemainingHealth || 0;
+          let petHp: number;
+          let opponentHp: number;
           
-          if (petHp <= 0 || bossHp <= 0) {
+          if (isPetBattle) {
+            const petBattleResult = result as API.PetBattleResultVO;
+            petHp = petBattleResult.myPetRemainingHealth || 0;
+            opponentHp = petBattleResult.opponentPetRemainingHealth || 0;
+          } else {
+            const bossBattleResult = result as API.BattleResultVO;
+            petHp = bossBattleResult.petRemainingHealth || 0;
+            opponentHp = bossBattleResult.bossRemainingHealth || 0;
+          }
+          
+          if (petHp <= 0 || opponentHp <= 0) {
             // 等待最后一击的动画完成
             await new Promise(resolve => setTimeout(resolve, 1000));
             break;
@@ -320,14 +441,31 @@ const PetFight: React.FC = () => {
 
         // 获取最后一回合的结果来判断胜负
         const lastResult = battleResults[battleResults.length - 1];
-        const petWon = (lastResult.petRemainingHealth || 0) > 0 && (lastResult.bossRemainingHealth || 0) <= 0;
+        let petWon: boolean;
+        
+        if (isPetBattle) {
+          const petBattleResult = lastResult as API.PetBattleResultVO;
+          petWon = (petBattleResult.myPetRemainingHealth || 0) > 0 && (petBattleResult.opponentPetRemainingHealth || 0) <= 0;
+        } else {
+          const bossBattleResult = lastResult as API.BattleResultVO;
+          petWon = (bossBattleResult.petRemainingHealth || 0) > 0 && (bossBattleResult.bossRemainingHealth || 0) <= 0;
+        }
+        
+        const opponentName = isPetBattle ? opponent?.name : boss.name;
         
         if (petWon) {
           setBattleStatus('victory');
           setBattleResult('victory');
-          showBattleMessage(`恭喜！${boss.name} 被击败了！`, 'attack');
+          showBattleMessage(`恭喜！${opponentName} 被击败了！`, 'attack');
           message.success('战斗胜利！');
-          setShowRewards(true);
+          if (!isPetBattle) {
+            setShowRewards(true);
+          } else {
+            // 宠物对战不需要领取奖励，直接显示退出提示
+            setTimeout(() => {
+              setShowExitModal(true);
+            }, 1500);
+          }
         } else {
           setBattleStatus('defeat');
           setBattleResult('defeat');
@@ -339,7 +477,7 @@ const PetFight: React.FC = () => {
           }, 2000);
         }
       } else {
-        message.error(res.message || '战斗失败');
+        message.error('战斗失败');
         setBattleStatus('idle');
         setLoading(false);
       }
@@ -367,10 +505,18 @@ const PetFight: React.FC = () => {
     }, 1000);
   };
 
-  // 退出并返回 pet 页面的 boss tab
+  // 退出并返回来源页面
   const handleExit = () => {
     setShowExitModal(false);
-    history.push('/pet?tab=boss');
+    if (isPetBattle) {
+      if (from === 'tournament') {
+        history.push('/point/tournament'); // 返回武道大会
+      } else {
+        history.push('/pet?tab=ranking'); // 返回排行榜
+      }
+    } else {
+      history.push('/pet?tab=boss');
+    }
   };
 
   if (loading) {
@@ -398,10 +544,20 @@ const PetFight: React.FC = () => {
         <Button
           type="primary"
           icon={<ArrowLeftOutlined />}
-          onClick={() => history.push('/pet?tab=boss')}
+          onClick={() => {
+            if (isPetBattle) {
+              if (from === 'tournament') {
+                history.push('/point/tournament'); // 返回武道大会
+              } else {
+                history.push('/pet?tab=ranking'); // 返回排行榜
+              }
+            } else {
+              history.push('/pet?tab=boss');
+            }
+          }}
           className={styles.backButton}
         >
-          返回BOSS
+          {isPetBattle ? (from === 'tournament' ? '返回武道大会' : '返回排行榜') : '返回BOSS'}
         </Button>
       </div>
       
@@ -477,51 +633,111 @@ const PetFight: React.FC = () => {
           )}
         </div>
 
-        <div className={styles.bossHealthBar}>
-          <div className={styles.healthBarHeader}>
-            <div className={styles.healthBarInfo}>
-              <div className={styles.healthBarName}>
-                <Badge count={boss.level} color="#f5222d" size="small" /> {boss.name}
+        {isPetBattle && opponent ? (
+          <div className={styles.bossHealthBar} style={{ borderColor: 'rgba(24, 144, 255, 0.4)', background: 'linear-gradient(135deg, rgba(240, 245, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%)' }}>
+            <div className={styles.healthBarHeader}>
+              <div className={styles.healthBarInfo}>
+                <div className={styles.healthBarName}>
+                  <Badge count={opponent.level} color="#1890ff" size="small" /> {opponent.name}
+                </div>
+                <div className={styles.healthBarStats}>
+                  <FireOutlined /> {opponent.attack} <SafetyOutlined /> {opponent.defense}
+                </div>
               </div>
-              <div className={styles.healthBarStats}>
-                <FireOutlined /> {boss.attack} <SafetyOutlined /> {boss.defense}
-              </div>
-              <div className={styles.bossExtraStats}>
-                {boss.critRate ? <span title="暴击率">💥{(boss.critRate * 100).toFixed(0)}%</span> : null}
-                {boss.dodgeRate ? <span title="闪避率">💨{(boss.dodgeRate * 100).toFixed(0)}%</span> : null}
-                {boss.blockRate ? <span title="格挡率">🛡️{(boss.blockRate * 100).toFixed(0)}%</span> : null}
-                {boss.comboRate ? <span title="连击率">⚡{(boss.comboRate * 100).toFixed(0)}%</span> : null}
-                {boss.lifesteal ? <span title="吸血">🩸{(boss.lifesteal * 100).toFixed(0)}%</span> : null}
-              </div>
+              <Avatar 
+                size={40} 
+                className={styles.petAvatarSmall}
+                src={isUrl(opponent.avatar) ? opponent.avatar : undefined}
+              >
+                {!isUrl(opponent.avatar) ? opponent.avatar : undefined}
+              </Avatar>
             </div>
-            <Avatar 
-              size={40} 
-              className={styles.bossAvatarSmall}
-              src={isUrl(boss.avatar) ? boss.avatar : undefined}
-            >
-              {!isUrl(boss.avatar) ? boss.avatar : undefined}
-            </Avatar>
-          </div>
-          <Progress
-            percent={(boss.hp / boss.maxHp) * 100}
-            strokeColor={{
-              '0%': '#ff4d4f',
-              '50%': '#faad14',
-              '100%': '#52c41a',
-            }}
-            showInfo={false}
-            strokeWidth={12}
-          />
-          <div className={styles.hpText}>{boss.hp} / {boss.maxHp}</div>
-          {/* BOSS装备占位符 */}
-          <div className={styles.bossEquipment}>
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={styles.equipmentPlaceholder}>
-                <span className={styles.equipmentPlaceholderIcon}>🔒</span>
+            <Progress
+              percent={(opponent.hp / opponent.maxHp) * 100}
+              strokeColor={{
+                '0%': '#ff4d4f',
+                '50%': '#faad14',
+                '100%': '#52c41a',
+              }}
+              showInfo={false}
+              strokeWidth={12}
+            />
+            <div className={styles.hpText}>{opponent.hp} / {opponent.maxHp}</div>
+            {/* 对手装备显示 */}
+            {opponent.equippedItems && Object.keys(opponent.equippedItems).length > 0 && (
+              <div className={styles.bossEquipment}>
+                {Object.entries(opponent.equippedItems).map(([slot, item]) => {
+                  const rarity = item.template?.rarity || 1;
+                  const rarityClass = styles[`rarity${rarity}`];
+                  return (
+                    <div 
+                      key={slot} 
+                      className={`${styles.equipmentItem} ${rarityClass}`} 
+                      title={`${item.template?.name || '装备'} (品级${rarity})`}
+                    >
+                      {item.template?.icon ? (
+                        <img 
+                          src={item.template.icon} 
+                          alt={item.template.name || '装备'} 
+                          className={styles.equipmentImg}
+                          onError={(e) => { e.currentTarget.src = ''; e.currentTarget.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <span className={styles.equipmentFallback}>⚔️</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            ))}
+            )}
           </div>
-        </div>
+        ) : (
+          <div className={styles.bossHealthBar}>
+            <div className={styles.healthBarHeader}>
+              <div className={styles.healthBarInfo}>
+                <div className={styles.healthBarName}>
+                  <Badge count={boss.level} color="#f5222d" size="small" /> {boss.name}
+                </div>
+                <div className={styles.healthBarStats}>
+                  <FireOutlined /> {boss.attack} <SafetyOutlined /> {boss.defense}
+                </div>
+                <div className={styles.bossExtraStats}>
+                  {boss.critRate ? <span title="暴击率">💥{(boss.critRate * 100).toFixed(0)}%</span> : null}
+                  {boss.dodgeRate ? <span title="闪避率">💨{(boss.dodgeRate * 100).toFixed(0)}%</span> : null}
+                  {boss.blockRate ? <span title="格挡率">🛡️{(boss.blockRate * 100).toFixed(0)}%</span> : null}
+                  {boss.comboRate ? <span title="连击率">⚡{(boss.comboRate * 100).toFixed(0)}%</span> : null}
+                  {boss.lifesteal ? <span title="吸血">🩸{(boss.lifesteal * 100).toFixed(0)}%</span> : null}
+                </div>
+              </div>
+              <Avatar 
+                size={40} 
+                className={styles.bossAvatarSmall}
+                src={isUrl(boss.avatar) ? boss.avatar : undefined}
+              >
+                {!isUrl(boss.avatar) ? boss.avatar : undefined}
+              </Avatar>
+            </div>
+            <Progress
+              percent={(boss.hp / boss.maxHp) * 100}
+              strokeColor={{
+                '0%': '#ff4d4f',
+                '50%': '#faad14',
+                '100%': '#52c41a',
+              }}
+              showInfo={false}
+              strokeWidth={12}
+            />
+            <div className={styles.hpText}>{boss.hp} / {boss.maxHp}</div>
+            {/* BOSS装备占位符 */}
+            <div className={styles.bossEquipment}>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className={styles.equipmentPlaceholder}>
+                  <span className={styles.equipmentPlaceholderIcon}>🔒</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 战斗场景 */}
@@ -549,22 +765,22 @@ const PetFight: React.FC = () => {
           </div>
         </div>
 
-        {/* BOSS区域 */}
+        {/* 对手区域 (BOSS或对方宠物) */}
         <div className={styles.bossArea}>
           <div className={`${styles.combatant} ${currentTurn === 'boss' ? styles.activeTurn : ''}`}>
             <Avatar 
               size={120} 
-              className={`${styles.bossAvatar} ${bossAttacking ? styles.attacking : ''} ${bossHurt ? styles.hurt : ''}`}
-              src={isUrl(boss.avatar) ? boss.avatar : undefined}
+              className={`${isPetBattle ? styles.petAvatar : styles.bossAvatar} ${bossAttacking ? styles.attacking : ''} ${bossHurt ? styles.hurt : ''}`}
+              src={isUrl(isPetBattle && opponent ? opponent.avatar : boss.avatar) ? (isPetBattle && opponent ? opponent.avatar : boss.avatar) : undefined}
             >
-              {!isUrl(boss.avatar) ? boss.avatar : undefined}
+              {!isUrl(isPetBattle && opponent ? opponent.avatar : boss.avatar) ? (isPetBattle && opponent ? opponent.avatar : boss.avatar) : undefined}
             </Avatar>
             {currentTurn === 'boss' && battleStatus === 'fighting' && (
               <div className={styles.turnIndicator}>
                 <FireOutlined />
               </div>
             )}
-            <div className={styles.combatantLabel}>{boss.name}</div>
+            <div className={styles.combatantLabel}>{isPetBattle && opponent ? opponent.name : boss.name}</div>
           </div>
         </div>
       </div>
@@ -676,10 +892,12 @@ const PetFight: React.FC = () => {
       >
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
           <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>
-            正在退出 boss 秘境
+            {isPetBattle ? '正在退出宠物对战' : '正在退出 boss 秘境'}
           </div>
           <div style={{ fontSize: '16px', color: '#666' }}>
-            摸鱼小勇士们明天见
+            {isPetBattle 
+              ? (from === 'tournament' ? '返回武道大会，继续挑战更高排名' : '期待下一次精彩对决') 
+              : '摸鱼小勇士们每天有两次挑战机会别忘记喔'}
           </div>
         </div>
       </Modal>

@@ -1,0 +1,704 @@
+.tournament-container {
+  min-height: 100vh;
+  background: #fff7e6;
+  border: none;
+  box-shadow: none;
+
+  .ant-card-body {
+    padding: 0;
+    background: transparent;
+  }
+
+  .tournament-content {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    // 页面标题
+    .page-header {
+      text-align: center;
+      margin-bottom: 32px;
+      position: relative;
+      padding: 20px 0;
+
+      .header-title-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 8px;
+
+        .title-icon {
+          font-size: 36px;
+          color: #fa8c16;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+          animation: float 3s ease-in-out infinite;
+        }
+
+        .page-title {
+          margin: 0;
+          color: #262626;
+          font-size: 32px;
+          font-weight: 700;
+          background: linear-gradient(to right, #fa8c16, #ffa940);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+      }
+
+      .page-subtitle {
+        color: #8c8c8c;
+        font-size: 14px;
+        display: block;
+        margin-top: 4px;
+      }
+
+      .refresh-btn {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #8c8c8c;
+        font-size: 18px;
+
+        &:hover {
+          color: #fa8c16;
+          background: rgba(250, 140, 22, 0.1);
+        }
+      }
+    }
+
+    // 统计卡片区域
+    .ant-row {
+      .ant-col {
+        .ant-card {
+          background: rgba(255,255,255,0.95);
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+          border: none;
+          overflow: hidden;
+          transition: all 0.3s ease;
+
+          &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+          }
+
+          .ant-card-body {
+            padding: 24px;
+            background: transparent;
+          }
+
+          // 不同卡片的渐变背景
+          &:nth-child(1) .ant-statistic {
+            .ant-statistic-title { color: #1890ff; }
+            .ant-statistic-content { color: #1890ff; }
+          }
+
+          &:nth-child(2) .ant-statistic {
+            .ant-statistic-title { color: #52c41a; }
+            .ant-statistic-content { color: #52c41a; }
+          }
+
+          &:nth-child(3) .ant-statistic {
+            .ant-statistic-title { color: #fa8c16; }
+            .ant-statistic-content { color: #fa8c16; }
+          }
+        }
+      }
+    }
+
+    .ant-statistic {
+      text-align: center;
+
+      .ant-statistic-title {
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .ant-statistic-content {
+        font-size: 32px;
+        font-weight: 700;
+
+        .anticon {
+          font-size: 24px;
+          margin-right: 8px;
+        }
+      }
+    }
+
+    // 前三名区域
+    .top-three-wrapper {
+      margin-bottom: 32px;
+      padding: 24px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 24px;
+      border: 1px solid #ffd8bf;
+      box-shadow: 0 4px 20px rgba(250, 140, 22, 0.08);
+    }
+
+    .top-three-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .top-three-item {
+      flex: 0 0 200px;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      position: relative;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      }
+
+      // 第一名居中且更大
+      &.rank-1 {
+        flex: 0 0 220px;
+        min-height: 220px;
+        z-index: 2;
+        order: 2;
+        padding-top: 28px;
+
+        .rank-badge {
+          top: -16px;
+        }
+      }
+
+      // 第二名在左
+      &.rank-2 {
+        order: 1;
+        min-height: 200px;
+        margin-top: 30px;
+      }
+
+      // 第三名在右
+      &.rank-3 {
+        order: 3;
+        min-height: 200px;
+        margin-top: 30px;
+      }
+
+      // 空状态样式
+      &.empty {
+        background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+        border: 2px dashed #d9d9d9;
+
+        .empty-content {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          min-height: 160px;
+
+          .empty-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+
+          .empty-text {
+            font-size: 14px;
+            color: #999;
+            font-weight: 500;
+          }
+
+          .empty-subtext {
+            font-size: 12px;
+            color: #bfbfbf;
+            margin-top: 4px;
+          }
+
+          .empty-challenge-btn {
+            background: #1890ff;
+            border: none;
+            color: #fff;
+            margin-top: 12px;
+
+            &:hover {
+              background: #40a9ff;
+            }
+          }
+        }
+      }
+
+      .rank-badge {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 40px;
+        background: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      .player-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+
+        .avatar-group {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          margin-bottom: 8px;
+
+          .player-avatar {
+            border: 3px solid #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+
+            &:hover {
+              transform: scale(1.05);
+            }
+          }
+
+          .pet-avatar {
+            position: absolute;
+            bottom: -8px;
+            right: -16px;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            background: #fff;
+          }
+        }
+
+        .player-name {
+          color: #fff;
+          font-size: 15px;
+          max-width: 160px;
+          font-weight: 600;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .player-score-display {
+          background: rgba(255,255,255,0.2);
+          padding: 4px 12px;
+          border-radius: 20px;
+          color: #fff;
+          font-size: 13px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          backdrop-filter: blur(4px);
+          border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .pet-name {
+          background: rgba(255, 255, 255, 0.95);
+          border: none;
+          font-size: 12px;
+          padding: 4px 12px;
+          border-radius: 16px;
+          font-weight: 500;
+        }
+
+        .challenge-btn {
+          background: #fff;
+          border: none;
+          color: #262626;
+          font-weight: 600;
+          border-radius: 20px;
+          padding: 0 20px;
+          height: 32px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: #f5f5f5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          }
+
+          &:disabled {
+            background: rgba(255, 255, 255, 0.5);
+            color: rgba(0, 0, 0, 0.3);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+          }
+        }
+      }
+    }
+
+    // 其他排名卡片
+    .rest-ranking-card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      border: none;
+      overflow: hidden;
+
+      .ant-card-body {
+        padding: 24px;
+        background: #fff;
+      }
+
+      .rest-ranking-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 8px;
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .trophy-icon-wrapper {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(255, 165, 0, 0.3);
+
+            .trophy-icon {
+              font-size: 24px;
+              color: #fff;
+            }
+          }
+
+          .header-text {
+            display: flex;
+            flex-direction: column;
+
+            .header-title {
+              font-size: 18px;
+              font-weight: 700;
+              color: #262626;
+            }
+
+            .header-subtitle {
+              font-size: 13px;
+            }
+          }
+        }
+
+        .header-badge {
+          background: linear-gradient(135deg, #fa8c16 0%, #ffa940 100%);
+          color: #fff;
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: 600;
+        }
+      }
+
+      .ranking-list-item {
+        padding: 12px 16px;
+        transition: all 0.3s ease;
+        border-radius: 12px;
+        margin-bottom: 4px;
+
+        &:nth-child(even) {
+          background: #fafbfc;
+        }
+
+        &:hover {
+          background: #f0f4ff;
+          transform: translateX(4px);
+        }
+
+        &.empty-item {
+          background: #fafafa;
+          opacity: 0.7;
+
+          &:hover {
+            background: #f0f0f0;
+          }
+        }
+
+        &.my-rank {
+          background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+          border: 1px solid #91d5ff;
+        }
+
+        // 排名徽章样式
+        .rank-badge-medal {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 14px;
+          border: 2px solid;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .rank-badge-normal {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 600;
+          font-size: 14px;
+          color: #8c8c8c;
+          background: #f5f5f5;
+        }
+
+        .player-info {
+          align-items: flex-start;
+
+          .player-avatar-list {
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+
+            &:hover {
+              transform: scale(1.1);
+              box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+          }
+
+          .player-details {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            .player-name-list {
+              font-size: 14px;
+              color: #262626;
+            }
+
+            .player-meta {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+
+              .pet-tag {
+                font-size: 11px;
+                padding: 2px 10px;
+                border-radius: 12px;
+              }
+
+              .score-badge {
+                font-size: 12px;
+                color: #fa8c16;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+
+                .anticon {
+                  font-size: 10px;
+                }
+              }
+            }
+          }
+        }
+
+        .player-info-empty {
+          .empty-avatar-small {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+
+        .challenge-btn-small {
+          border-radius: 16px;
+          font-weight: 500;
+          padding: 0 16px;
+
+          &:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+          }
+
+          &:disabled {
+            opacity: 0.6;
+          }
+        }
+
+        .ant-list-item-meta {
+          align-items: center;
+        }
+
+        .ant-list-item-meta-title {
+          margin-bottom: 0 !important;
+        }
+
+        .ant-list-item-action {
+          margin-left: 16px;
+        }
+      }
+    }
+  }
+}
+
+// 动画关键帧
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+// 响应式适配
+@media (max-width: 992px) {
+  .tournament-container {
+    .tournament-content {
+      padding: 16px;
+
+      .page-header {
+        .page-title {
+          font-size: 24px;
+        }
+
+        .title-icon {
+          font-size: 28px;
+        }
+
+        .refresh-btn {
+          right: -8px;
+        }
+      }
+
+      .top-three-wrapper {
+        padding: 16px;
+      }
+
+      .top-three-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .top-three-item {
+        flex: 0 0 auto !important;
+        width: 100%;
+        max-width: 320px;
+        margin-top: 0 !important;
+        order: unset !important;
+        min-height: 160px;
+
+        &.rank-1 {
+          order: 1 !important;
+          min-height: 180px;
+        }
+
+        &.rank-2 {
+          order: 2 !important;
+        }
+
+        &.rank-3 {
+          order: 3 !important;
+        }
+      }
+
+      .rest-ranking-card {
+        .rest-ranking-header {
+          .header-left {
+            gap: 12px;
+
+            .trophy-icon-wrapper {
+              width: 40px;
+              height: 40px;
+
+              .trophy-icon {
+                font-size: 20px;
+              }
+            }
+          }
+        }
+
+        .ranking-list-item {
+          padding: 10px 12px;
+
+          .player-info {
+            .player-details {
+              .player-meta {
+                flex-wrap: wrap;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .tournament-container {
+    .tournament-header {
+      padding: 0 16px;
+
+      .header-left {
+        .header-icon {
+          font-size: 24px;
+        }
+
+        .header-title {
+          font-size: 18px;
+        }
+      }
+    }
+
+    .tournament-content {
+      padding: 16px;
+
+      .ant-card .ant-card-body {
+        padding: 16px;
+      }
+
+      .top-three-item {
+        padding: 12px;
+
+        &.rank-1 {
+          min-height: 160px;
+        }
+
+        &.rank-2,
+        &.rank-3 {
+          min-height: 140px;
+        }
+      }
+    }
+  }
+}

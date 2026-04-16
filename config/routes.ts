@@ -16,9 +16,21 @@ export default [
   {path: '/post/:id',component: './Post/Detail', requireAuth: true},
   {path: '/reader', icon: 'BookOutlined', component: './Reader', name: '摸鱼阅读', requireAuth: true},
   {path: '/pet', icon: 'HeartOutlined', component: './Pet', name: '摸鱼宠物', requireAuth: true},
-  {path: '/pet/fight', icon: 'HeartOutlined', component: './Pet/Fight', requireAuth: true},
+  {path: '/pet/fight', icon: 'HeartOutlined', component: './Pet/Fight',requireAuth: true},
+  {path: '/pet/battle', icon: 'ThunderboltOutlined', component: './Pet/Fight', requireAuth: true},
   { path: '/draw', icon: 'FundViewOutlined', component: './Draw', name: '你画我猜', requireAuth: true },
   {path: '/draw/:id',component: './Draw/Detail', requireAuth: true},
+  {
+    path: '/point',
+    icon: 'DollarOutlined',
+    name: '积分玩法',
+    requireAuth: true,
+    routes: [
+      {path: '/point', redirect: '/point/stock', requireAuth: true},
+      {icon: 'LineChartOutlined', path: '/point/stock', component: './Game/StockMarket', name: '摸鱼股市', requireAuth: true},
+      {icon: 'TrophyOutlined', path: '/point/tournament', component: './Game/Tournament', name: '武道大会', requireAuth: true}
+    ]
+  },
   {
     path: '/game',
     icon: 'DesktopOutlined',

@@ -17,6 +17,14 @@ export async function addItemInstanceUsingPost(
   });
 }
 
+/** 批量分解蓝绿装备 POST /api/itemInstances/batchDecomposeBlueGreen */
+export async function batchDecomposeBlueGreenEquipmentsUsingPost(options?: { [key: string]: any }) {
+  return request<API.BaseResponseLong_>('/api/itemInstances/batchDecomposeBlueGreen', {
+    method: 'POST',
+    ...(options || {}),
+  });
+}
+
 /** 分解物品 POST /api/itemInstances/decompose */
 export async function decomposeItemInstanceUsingPost(
   body: API.ItemInstanceDecomposeRequest,

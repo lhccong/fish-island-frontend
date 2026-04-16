@@ -14,7 +14,7 @@ import {
   CloseOutlined,
   QuestionCircleOutlined,
   InfoCircleOutlined,
-
+  SafetyOutlined,
   StarOutlined,
   CrownOutlined,
   FireOutlined,
@@ -22,8 +22,8 @@ import {
 import styles from './index.less';
 import { getPetDetailUsingGet, createPetUsingPost, feedPetUsingPost, patPetUsingPost, updatePetNameUsingPost, getOtherUserPetUsingGet } from '@/services/backend/fishPetController';
 import { listPetSkinsUsingGet, exchangePetSkinUsingPost, setPetSkinUsingPost } from '@/services/backend/petSkinController';
-import { listMyItemInstancesByPageUsingPost, decomposeItemInstanceUsingPost, equipItemUsingPost, unequipItemUsingPost } from '@/services/backend/itemInstancesController';
-import { useModel } from '@umijs/max';
+import { listMyItemInstancesByPageUsingPost, decomposeItemInstanceUsingPost, equipItemUsingPost, unequipItemUsingPost, batchDecomposeBlueGreenEquipmentsUsingPost } from '@/services/backend/itemInstancesController';
+import { useModel, history } from '@umijs/max';
 
 export interface PetInfo {
   id: string;
@@ -261,6 +261,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   const [itemsCurrent, setItemsCurrent] = useState(1);
   const [itemsPageSize, setItemsPageSize] = useState(30);
   const [decomposeLoading, setDecomposeLoading] = useState<number | null>(null); // 分解中的物品ID
+  const [batchDecomposeLoading, setBatchDecomposeLoading] = useState(false); // 批量分解加载状态
   const [equipLoading, setEquipLoading] = useState<number | null>(null); // 穿戴中的物品ID
   const [unequipLoading, setUnequipLoading] = useState<string | null>(null); // 卸下中的装备槽位
   const [contextMenuItemId, setContextMenuItemId] = useState<number | null>(null); // 右键菜单显示的物品ID
@@ -589,6 +590,43 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
     } finally {
       setItemsLoading(false);
     }
+  };
+
+  // 批量分解蓝绿装备
+  const handleBatchDecomposeBlueGreen = () => {
+    Modal.confirm({
+      title: '确认批量分解',
+      content: (
+        <div>
+          <p>确定要批量分解所有<strong>蓝色（精良）</strong>和<strong>绿色（优良）</strong>品质的装备吗？</p>
+          <p style={{ color: '#52c41a', fontSize: '12px', marginTop: '8px' }}>💡 已穿戴的装备不会被分解</p>
+          <p style={{ color: '#ff4d4f', fontSize: '12px', marginTop: '8px' }}>此操作不可撤销！</p>
+        </div>
+      ),
+      okText: '确认分解',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        setBatchDecomposeLoading(true);
+        try {
+          const res = await batchDecomposeBlueGreenEquipmentsUsingPost();
+
+          if (res.code === 0) {
+            const totalPoints = res.data || 0;
+            message.success(`批量分解成功，共获得 ${totalPoints} 积分`);
+            // 刷新物品列表
+            fetchItems();
+          } else {
+            message.error(res.message || '批量分解失败');
+          }
+        } catch (error) {
+          console.error('批量分解装备失败', error);
+          message.error('批量分解装备失败');
+        } finally {
+          setBatchDecomposeLoading(false);
+        }
+      },
+    });
   };
 
   // 分解物品
@@ -1327,7 +1365,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
           {/* 右侧Tab内容 */}
           <Col span={14} className={styles.petRightColumn}>
             <Tabs
-          defaultActiveKey={isOtherUser ? "skills" : "items"}
+          defaultActiveKey={isOtherUser ? "equipment" : "items"}
           items={[
             ...(isOtherUser ? [] : [{
               key: 'items',
@@ -1338,6 +1376,17 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
               ),
               children: (
                 <div className={styles.itemsContainer}>
+                  {/* 批量分解按钮 */}
+                  <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      danger
+                      loading={batchDecomposeLoading}
+                      onClick={handleBatchDecomposeBlueGreen}
+                      disabled={isOtherUser}
+                    >
+                      批量分解蓝绿装备
+                    </Button>
+                  </div>
                   <Spin spinning={itemsLoading}>
                     {items.length > 0 ? (
                       <Row gutter={[12, 12]}>
@@ -1507,6 +1556,138 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 </div>
               ),
             }]),
+            // 装备标签页 - 查看他人宠物时显示
+            ...(isOtherUser ? [{
+              key: 'equipment',
+              label: (
+                <span>
+                  <SafetyOutlined /> 装备
+                </span>
+              ),
+              children: (
+                <div className={styles.equipmentContainer}>
+                  {/* 装备属性统计 */}
+                  {(() => {
+                    const otherPetData = pet as API.OtherUserPetVO;
+                    const equipStats = otherPetData?.equipStats;
+                    const equippedItems = (otherPetData as any)?.equippedItems;
+                    
+                    return (
+                      <>
+                        {/* 已装备物品展示 */}
+                        {equippedItems && Object.keys(equippedItems).length > 0 ? (
+                          <div className={styles.equippedItemsSection} style={{ marginBottom: '24px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '16px', fontSize: '16px' }}>
+                              <GiftOutlined style={{ marginRight: '8px' }} />
+                              已装备物品
+                            </div>
+                            <Row gutter={[12, 12]}>
+                              {Object.entries(equippedItems).map(([slot, item]: [string, any]) => {
+                                const rarity = item.template?.rarity || 1;
+                                const rarityColors: Record<number, string> = {
+                                  1: '#52c41a', 2: '#1890ff', 3: '#722ed1', 4: '#fa8c16',
+                                  5: '#f5222d', 6: '#eb2f96', 7: '#fadb14',
+                                };
+                                const rarityNames: Record<number, string> = {
+                                  1: '优良', 2: '精良', 3: '史诗', 4: '传说', 5: '神话', 6: '至尊', 7: '神器',
+                                };
+                                const slotNames: Record<string, string> = {
+                                  'head': '头盔', 'armor': '护甲', 'weapon': '武器', 'shield': '盾牌',
+                                  'ring': '戒指', 'necklace': '项链', 'gloves': '手套', 'boots': '靴子',
+                                  'foot': '鞋子', 'hand': '手套',
+                                };
+                                return (
+                                  <Col span={8} key={slot}>
+                                    <Card size="small" style={{ borderColor: rarityColors[rarity] }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        {item.template?.icon ? (
+                                          <img src={item.template.icon} alt={item.template.name} style={{ width: 32, height: 32 }} />
+                                        ) : (
+                                          <span style={{ fontSize: '24px' }}>⚔️</span>
+                                        )}
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ fontWeight: 'bold' }}>{item.template?.name || '未知装备'}</div>
+                                          <div style={{ fontSize: '12px', color: rarityColors[rarity] }}>
+                                            {slotNames[slot] || slot} · {rarityNames[rarity]}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {item.template?.attributes && (
+                                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                                          {Object.entries(item.template.attributes).map(([attr, value]: [string, any]) => (
+                                            <div key={attr}>{attr}: +{value}</div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </Card>
+                                  </Col>
+                                );
+                              })}
+                            </Row>
+                          </div>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '30px 0', marginBottom: '24px' }}>
+                            <div style={{ fontSize: '36px', marginBottom: '12px' }}>🎒</div>
+                            <div style={{ fontSize: '14px', color: '#999' }}>暂无装备</div>
+                          </div>
+                        )}
+                        
+                        {/* 装备属性统计 */}
+                        {equipStats && (
+                          <div>
+                            <div style={{ fontWeight: 'bold', marginBottom: '16px', fontSize: '16px' }}>
+                              <FireOutlined style={{ marginRight: '8px' }} />
+                              装备属性加成
+                            </div>
+                            <Row gutter={[16, 12]}>
+                              {equipStats.totalBaseAttack !== undefined && equipStats.totalBaseAttack > 0 && (
+                                <Col span={8}><span style={{ color: '#1890ff' }}>💥 攻击加成: +{equipStats.totalBaseAttack}</span></Col>
+                              )}
+                              {equipStats.totalBaseDefense !== undefined && equipStats.totalBaseDefense > 0 && (
+                                <Col span={8}><span style={{ color: '#52c41a' }}>🛡️ 防御加成: +{equipStats.totalBaseDefense}</span></Col>
+                              )}
+                              {equipStats.totalBaseHp !== undefined && equipStats.totalBaseHp > 0 && (
+                                <Col span={8}><span style={{ color: '#fa8c16' }}>❤️ 生命加成: +{equipStats.totalBaseHp}</span></Col>
+                              )}
+                              {equipStats.critRate !== undefined && equipStats.critRate > 0 && (
+                                <Col span={8}><span>💥 暴击率: +{(equipStats.critRate * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.dodgeRate !== undefined && equipStats.dodgeRate > 0 && (
+                                <Col span={8}><span>💨 闪避率: +{(equipStats.dodgeRate * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.blockRate !== undefined && equipStats.blockRate > 0 && (
+                                <Col span={8}><span>🛡️ 格挡率: +{(equipStats.blockRate * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.comboRate !== undefined && equipStats.comboRate > 0 && (
+                                <Col span={8}><span>⚡ 连击率: +{(equipStats.comboRate * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.lifesteal !== undefined && equipStats.lifesteal > 0 && (
+                                <Col span={8}><span>🩸 吸血: +{(equipStats.lifesteal * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.critResistance !== undefined && equipStats.critResistance > 0 && (
+                                <Col span={8}><span>🔰 暴击抵抗: +{(equipStats.critResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.dodgeResistance !== undefined && equipStats.dodgeResistance > 0 && (
+                                <Col span={8}><span>👁️ 闪避抵抗: +{(equipStats.dodgeResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.blockResistance !== undefined && equipStats.blockResistance > 0 && (
+                                <Col span={8}><span>🛡️ 格挡抵抗: +{(equipStats.blockResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.comboResistance !== undefined && equipStats.comboResistance > 0 && (
+                                <Col span={8}><span>⚡ 连击抵抗: +{(equipStats.comboResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.lifestealResistance !== undefined && equipStats.lifestealResistance > 0 && (
+                                <Col span={8}><span>🩸 吸血抵抗: +{(equipStats.lifestealResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                            </Row>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              ),
+            }] : []),
             {
               key: 'skills',
               label: (
@@ -1781,7 +1962,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 </div>
               </div>
             </div>
-            {!isOtherUser && (
+            {!isOtherUser ? (
               <div className={styles.petActions} style={{ marginTop: 10 }}>
                 <Button
                   type="primary"
@@ -1805,12 +1986,28 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                   <span className={styles.expBadge}>+1经验</span>
                 </Button>
               </div>
+            ) : (
+              <div className={styles.petActions} style={{ marginTop: 10 }}>
+                <Button
+                  type="primary"
+                  danger
+                  style={{ marginRight: 8 }}
+                  icon={<ThunderboltOutlined />}
+                  className={styles.actionButton}
+                  onClick={() => {
+                    onClose?.();
+                    history.push(`/pet/battle?opponentUserId=${otherUserId}`);
+                  }}
+                >
+                  发起对战
+                </Button>
+              </div>
             )}
           </div>
         </div>
 
         <Tabs
-          defaultActiveKey={isOtherUser ? "skills" : "items"}
+          defaultActiveKey={isOtherUser ? "equipment" : "items"}
           items={[
             ...(isOtherUser ? [] : [{
               key: 'items',
@@ -1821,6 +2018,17 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
               ),
               children: (
                 <div className={styles.itemsContainer}>
+                  {/* 批量分解按钮 */}
+                  <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                      danger
+                      loading={batchDecomposeLoading}
+                      onClick={handleBatchDecomposeBlueGreen}
+                      disabled={isOtherUser}
+                    >
+                      批量分解蓝绿装备
+                    </Button>
+                  </div>
                   <Spin spinning={itemsLoading}>
                     {items.length > 0 ? (
                       <Row gutter={[12, 12]}>
@@ -1990,6 +2198,138 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 </div>
               ),
             }]),
+            // 装备标签页 - 查看他人宠物时显示
+            ...(isOtherUser ? [{
+              key: 'equipment',
+              label: (
+                <span>
+                  <SafetyOutlined /> 装备
+                </span>
+              ),
+              children: (
+                <div className={styles.equipmentContainer}>
+                  {/* 装备属性统计 */}
+                  {(() => {
+                    const otherPetData = pet as API.OtherUserPetVO;
+                    const equipStats = otherPetData?.equipStats;
+                    const equippedItems = (otherPetData as any)?.equippedItems;
+                    
+                    return (
+                      <>
+                        {/* 已装备物品展示 */}
+                        {equippedItems && Object.keys(equippedItems).length > 0 ? (
+                          <div className={styles.equippedItemsSection} style={{ marginBottom: '24px' }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: '16px', fontSize: '16px' }}>
+                              <GiftOutlined style={{ marginRight: '8px' }} />
+                              已装备物品
+                            </div>
+                            <Row gutter={[12, 12]}>
+                              {Object.entries(equippedItems).map(([slot, item]: [string, any]) => {
+                                const rarity = item.template?.rarity || 1;
+                                const rarityColors: Record<number, string> = {
+                                  1: '#52c41a', 2: '#1890ff', 3: '#722ed1', 4: '#fa8c16',
+                                  5: '#f5222d', 6: '#eb2f96', 7: '#fadb14',
+                                };
+                                const rarityNames: Record<number, string> = {
+                                  1: '优良', 2: '精良', 3: '史诗', 4: '传说', 5: '神话', 6: '至尊', 7: '神器',
+                                };
+                                const slotNames: Record<string, string> = {
+                                  'head': '头盔', 'armor': '护甲', 'weapon': '武器', 'shield': '盾牌',
+                                  'ring': '戒指', 'necklace': '项链', 'gloves': '手套', 'boots': '靴子',
+                                  'foot': '鞋子', 'hand': '手套',
+                                };
+                                return (
+                                  <Col span={8} key={slot}>
+                                    <Card size="small" style={{ borderColor: rarityColors[rarity] }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        {item.template?.icon ? (
+                                          <img src={item.template.icon} alt={item.template.name} style={{ width: 32, height: 32 }} />
+                                        ) : (
+                                          <span style={{ fontSize: '24px' }}>⚔️</span>
+                                        )}
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ fontWeight: 'bold' }}>{item.template?.name || '未知装备'}</div>
+                                          <div style={{ fontSize: '12px', color: rarityColors[rarity] }}>
+                                            {slotNames[slot] || slot} · {rarityNames[rarity]}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {item.template?.attributes && (
+                                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                                          {Object.entries(item.template.attributes).map(([attr, value]: [string, any]) => (
+                                            <div key={attr}>{attr}: +{value}</div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </Card>
+                                  </Col>
+                                );
+                              })}
+                            </Row>
+                          </div>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '30px 0', marginBottom: '24px' }}>
+                            <div style={{ fontSize: '36px', marginBottom: '12px' }}>🎒</div>
+                            <div style={{ fontSize: '14px', color: '#999' }}>暂无装备</div>
+                          </div>
+                        )}
+                        
+                        {/* 装备属性统计 */}
+                        {equipStats && (
+                          <div>
+                            <div style={{ fontWeight: 'bold', marginBottom: '16px', fontSize: '16px' }}>
+                              <FireOutlined style={{ marginRight: '8px' }} />
+                              装备属性加成
+                            </div>
+                            <Row gutter={[16, 12]}>
+                              {equipStats.totalBaseAttack !== undefined && equipStats.totalBaseAttack > 0 && (
+                                <Col span={8}><span style={{ color: '#1890ff' }}>💥 攻击加成: +{equipStats.totalBaseAttack}</span></Col>
+                              )}
+                              {equipStats.totalBaseDefense !== undefined && equipStats.totalBaseDefense > 0 && (
+                                <Col span={8}><span style={{ color: '#52c41a' }}>🛡️ 防御加成: +{equipStats.totalBaseDefense}</span></Col>
+                              )}
+                              {equipStats.totalBaseHp !== undefined && equipStats.totalBaseHp > 0 && (
+                                <Col span={8}><span style={{ color: '#fa8c16' }}>❤️ 生命加成: +{equipStats.totalBaseHp}</span></Col>
+                              )}
+                              {equipStats.critRate !== undefined && equipStats.critRate > 0 && (
+                                <Col span={8}><span>💥 暴击率: +{(equipStats.critRate * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.dodgeRate !== undefined && equipStats.dodgeRate > 0 && (
+                                <Col span={8}><span>💨 闪避率: +{(equipStats.dodgeRate * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.blockRate !== undefined && equipStats.blockRate > 0 && (
+                                <Col span={8}><span>🛡️ 格挡率: +{(equipStats.blockRate * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.comboRate !== undefined && equipStats.comboRate > 0 && (
+                                <Col span={8}><span>⚡ 连击率: +{(equipStats.comboRate * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.lifesteal !== undefined && equipStats.lifesteal > 0 && (
+                                <Col span={8}><span>🩸 吸血: +{(equipStats.lifesteal * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.critResistance !== undefined && equipStats.critResistance > 0 && (
+                                <Col span={8}><span>🔰 暴击抵抗: +{(equipStats.critResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.dodgeResistance !== undefined && equipStats.dodgeResistance > 0 && (
+                                <Col span={8}><span>👁️ 闪避抵抗: +{(equipStats.dodgeResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.blockResistance !== undefined && equipStats.blockResistance > 0 && (
+                                <Col span={8}><span>🛡️ 格挡抵抗: +{(equipStats.blockResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.comboResistance !== undefined && equipStats.comboResistance > 0 && (
+                                <Col span={8}><span>⚡ 连击抵抗: +{(equipStats.comboResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                              {equipStats.lifestealResistance !== undefined && equipStats.lifestealResistance > 0 && (
+                                <Col span={8}><span>🩸 吸血抵抗: +{(equipStats.lifestealResistance * 100).toFixed(1)}%</span></Col>
+                              )}
+                            </Row>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              ),
+            }] : []),
             {
               key: 'skills',
               label: (
