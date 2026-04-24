@@ -1007,6 +1007,64 @@
   display: flex;
   gap: 12px;
   justify-content: center;
+  align-items: center;
+}
+
+.skipButton {
+  margin-left: 12px;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 250, 245, 0.95) 100%);
+  border: 2px solid rgba(255, 167, 104, 0.6);
+  color: #ff7a45;
+  box-shadow:
+    0 2px 8px rgba(255, 122, 69, 0.15),
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &::before {
+    content: '⏩';
+    font-size: 12px;
+    filter: grayscale(0.3);
+  }
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(255, 167, 104, 0.15) 0%, rgba(255, 200, 150, 0.2) 100%);
+    border-color: rgba(255, 122, 69, 0.8);
+    color: #ff5722;
+    transform: translateY(-1px);
+    box-shadow:
+      0 4px 12px rgba(255, 122, 69, 0.25),
+      0 2px 4px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow:
+      0 1px 4px rgba(255, 122, 69, 0.2),
+      inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  &:disabled {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0.05) 100%);
+    color: rgba(0, 0, 0, 0.35);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: none;
+    cursor: not-allowed;
+
+    &::before {
+      content: '⏳';
+      font-size: 12px;
+    }
+  }
 }
 
 .startButton, .restartButton {
@@ -1265,6 +1323,345 @@
   border-radius: 12px;
   border: 1px solid rgba(245, 34, 45, 0.2);
   box-shadow: 0 2px 4px rgba(245, 34, 45, 0.1);
+}
+
+// 战斗效果样式 - 伤害数字、闪避、格挡等
+.battleEffect {
+  position: absolute;
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: effect-float 1.5s ease-out forwards;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+  // 左侧位置（宠物方）
+  &.left {
+    left: 25%;
+    top: 35%;
+  }
+
+  // 右侧位置（对手方）
+  &.right {
+    right: 25%;
+    top: 30%;
+  }
+}
+
+// 普通伤害
+.damage {
+  .effectValue {
+    font-size: 48px;
+    font-weight: 900;
+    color: #fff;
+    background: linear-gradient(135deg, #ff4d4f 0%, #f5222d 100%);
+    padding: 8px 16px;
+    border-radius: 12px;
+    box-shadow:
+      0 4px 12px rgba(245, 34, 45, 0.4),
+      0 0 20px rgba(245, 34, 45, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    animation: damage-pop 0.5s ease-out, effect-shake 0.3s ease-in-out 0.2s;
+  }
+}
+
+// 暴击伤害
+.critical {
+  .effectValue {
+    font-size: 56px;
+    font-weight: 900;
+    color: #fff;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff0000 50%, #ff6b6b 100%);
+    padding: 10px 20px;
+    border-radius: 16px;
+    box-shadow:
+      0 6px 20px rgba(255, 0, 0, 0.5),
+      0 0 30px rgba(255, 0, 0, 0.4),
+      0 0 60px rgba(255, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    animation: critical-pop 0.6s ease-out, critical-glow 0.6s ease-in-out;
+  }
+
+  .effectText {
+    font-size: 20px;
+    font-weight: 800;
+    color: #ff0000;
+    background: linear-gradient(135deg, #fff 0%, #ffe8e8 100%);
+    padding: 4px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
+    animation: text-pop 0.4s ease-out 0.1s both;
+  }
+}
+
+// 连击伤害
+.combo {
+  .effectValue {
+    font-size: 52px;
+    font-weight: 900;
+    color: #fff;
+    background: linear-gradient(135deg, #ffa940 0%, #ff7a45 100%);
+    padding: 8px 18px;
+    border-radius: 14px;
+    box-shadow:
+      0 4px 16px rgba(255, 122, 69, 0.5),
+      0 0 25px rgba(255, 122, 69, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    animation: combo-pop 0.5s ease-out;
+  }
+
+  .effectText {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ff7a45;
+    background: linear-gradient(135deg, #fff 0%, #fff2e8 100%);
+    padding: 4px 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(255, 122, 69, 0.3);
+  }
+}
+
+// 闪避
+.miss {
+  .effectText {
+    font-size: 32px;
+    font-weight: 800;
+    color: #1890ff;
+    background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+    padding: 12px 24px;
+    border-radius: 16px;
+    box-shadow:
+      0 4px 12px rgba(24, 144, 255, 0.3),
+      0 0 20px rgba(24, 144, 255, 0.2);
+    border: 2px solid rgba(24, 144, 255, 0.3);
+    animation: miss-slide 0.8s ease-out;
+  }
+}
+
+// 格挡
+.block {
+  .effectText {
+    font-size: 28px;
+    font-weight: 800;
+    color: #52c41a;
+    background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+    padding: 12px 24px;
+    border-radius: 16px;
+    box-shadow:
+      0 4px 12px rgba(82, 196, 26, 0.3),
+      0 0 20px rgba(82, 196, 26, 0.2);
+    border: 2px solid rgba(82, 196, 26, 0.3);
+    animation: block-bounce 0.6s ease-out;
+  }
+}
+
+// 吸血治疗
+.heal {
+  .effectValue {
+    font-size: 32px;
+    font-weight: 800;
+    color: #52c41a;
+  }
+
+  .effectText {
+    font-size: 18px;
+    font-weight: 700;
+    color: #389e0d;
+    background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+    padding: 8px 16px;
+    border-radius: 12px;
+    box-shadow:
+      0 4px 12px rgba(82, 196, 26, 0.3),
+      0 0 15px rgba(82, 196, 26, 0.2);
+    border: 2px solid rgba(82, 196, 26, 0.3);
+
+    &::before {
+      content: '+';
+      color: #52c41a;
+      margin-right: 4px;
+    }
+  }
+}
+
+// 伤害数字浮动动画
+@keyframes effect-float {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    transform: translateY(-10px) scale(1);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-50px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-70px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+// 伤害弹出动画
+@keyframes damage-pop {
+  0% {
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// 暴击弹出动画
+@keyframes critical-pop {
+  0% {
+    transform: scale(0.3) rotate(-5deg);
+  }
+  50% {
+    transform: scale(1.3) rotate(3deg);
+  }
+  70% {
+    transform: scale(0.9) rotate(-2deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+// 暴击发光动画
+@keyframes critical-glow {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 10px rgba(255, 0, 0, 0.5));
+  }
+  50% {
+    filter: brightness(1.3) drop-shadow(0 0 30px rgba(255, 0, 0, 0.8));
+  }
+}
+
+// 连击弹出动画
+@keyframes combo-pop {
+  0% {
+    transform: scale(0.3);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// 文字弹出动画
+@keyframes text-pop {
+  0% {
+    transform: scale(0) translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+// 闪避滑动动画
+@keyframes miss-slide {
+  0% {
+    transform: translateX(0) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    transform: translateX(-20px) scale(1);
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(20px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(40px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+// 格挡弹跳动画
+@keyframes block-bounce {
+  0% {
+    transform: scale(0.5) translateY(20px);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.1) translateY(-10px);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(0.95) translateY(5px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+// 震动效果
+@keyframes effect-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+// 移动端适配
+@media (max-width: 768px) {
+  .battleEffect {
+    &.left {
+      left: 15%;
+      top: 40%;
+    }
+
+    &.right {
+      right: 15%;
+      top: 35%;
+    }
+  }
+
+  .damage .effectValue {
+    font-size: 36px;
+    padding: 6px 12px;
+  }
+
+  .critical .effectValue {
+    font-size: 42px;
+    padding: 8px 16px;
+  }
+
+  .critical .effectText {
+    font-size: 16px;
+  }
+
+  .combo .effectValue {
+    font-size: 38px;
+    padding: 6px 14px;
+  }
+
+  .miss .effectText,
+  .block .effectText {
+    font-size: 24px;
+    padding: 8px 16px;
+  }
 }
 
 // 奖励弹窗

@@ -6,7 +6,8 @@
   background: #f5f7fa;
 
   .card-link {
-    display: block;
+    display: flex;
+    height: 100%;
     text-decoration: none;
     color: inherit;
     transition: all 0.3s ease;
@@ -55,6 +56,9 @@
     overflow: hidden;
     background: #fff;
     cursor: pointer;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 
     .ant-card-head {
       border-bottom: 1px solid #f0f0f0;
@@ -67,6 +71,13 @@
 
     .ant-card-body {
       padding: 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      .ant-typography:first-of-type {
+        flex: 1;
+      }
     }
 
     .ant-card-cover {

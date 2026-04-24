@@ -61,8 +61,17 @@ interface Boss {
 // 战斗消息类型
 type BattleMessageType = 'attack' | 'critical' | 'miss' | 'heal';
 
-  // 战斗状态
+// 战斗状态
 type BattleStatus = 'idle' | 'fighting' | 'victory' | 'defeat';
+
+// 战斗效果类型
+interface BattleEffect {
+  id: string;
+  type: 'damage' | 'critical' | 'miss' | 'block' | 'heal' | 'combo';
+  value?: number;
+  text?: string;
+  position: 'left' | 'right'; // left=宠物方(我方), right=对手方(敌方)
+}
 
 const PetFight: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -91,6 +100,13 @@ const PetFight: React.FC = () => {
   
   // 装备攻击动画状态 - 当前飞出的装备索引
   const [attackingEquipIndex, setAttackingEquipIndex] = useState<number>(0);
+
+  // 战斗效果状态 - 用于显示伤害数字、闪避、格挡等
+  const [battleEffects, setBattleEffects] = useState<BattleEffect[]>([]);
+
+  // 跳过战斗动画状态 - 使用 ref 实现同步更新
+  const isSkippingRef = useRef(false);
+  const [skipButtonText, setSkipButtonText] = useState<'跳过' | '跳过中...'>('跳过');
 
   // 宠物数据
   const [pet, setPet] = useState<Pet>({
@@ -270,15 +286,16 @@ const PetFight: React.FC = () => {
     fetchBattleInfo();
   }, [bossId, opponentUserId, isPetBattle]);
 
-  // 显示战斗提示
-  const showBattleMessage = (messageText: string, type: BattleMessageType) => {
-    if (type === 'critical') {
-      message.error(messageText, 2);
-    } else if (type === 'miss') {
-      message.warning(messageText, 2);
-    } else {
-      message.info(messageText, 2);
-    }
+  // 添加战斗效果到界面
+  const addBattleEffect = (effect: Omit<BattleEffect, 'id'>) => {
+    const id = `${Date.now()}_${Math.random()}`;
+    const newEffect: BattleEffect = { ...effect, id };
+    setBattleEffects(prev => [...prev, newEffect]);
+
+    // 1.5秒后移除效果
+    setTimeout(() => {
+      setBattleEffects(prev => prev.filter(e => e.id !== id));
+    }, 1500);
   };
 
 
@@ -325,21 +342,55 @@ const PetFight: React.FC = () => {
       }, 200);
     }
 
-    // 显示战斗消息
+    // 显示战斗效果 - 在界面上显示伤害数字/闪避/格挡等
+    const targetPosition = isPetAttack ? 'right' : 'left'; // 攻击目标是对手
+
     if (result.isDodge) {
-      showBattleMessage(
-        `${defender.name} 闪避了 ${attacker.name} 的攻击！`,
-        'miss'
-      );
+      addBattleEffect({
+        type: 'miss',
+        text: '闪避!',
+        position: targetPosition
+      });
+    } else if (result.isBlock) {
+      addBattleEffect({
+        type: 'block',
+        text: '格挡!',
+        position: targetPosition
+      });
     } else {
-      const criticalText = result.isCritical ? ' 暴击！' : '';
-      const comboText = result.isCombo ? ' 连击！' : '';
-      const messageType = result.isCritical ? 'critical' : 'attack';
-      
-      showBattleMessage(
-        `${attacker.name} 对 ${defender.name} 造成了 ${damage} 点伤害！${criticalText}${comboText}`,
-        messageType
-      );
+      // 正常伤害 - 根据是否暴击显示不同效果
+      if (result.isCritical) {
+        addBattleEffect({
+          type: 'critical',
+          value: damage,
+          text: result.isCombo ? '暴击连击!' : '暴击!',
+          position: targetPosition
+        });
+      } else if (result.isCombo) {
+        addBattleEffect({
+          type: 'combo',
+          value: damage,
+          text: '连击!',
+          position: targetPosition
+        });
+      } else {
+        addBattleEffect({
+          type: 'damage',
+          value: damage,
+          position: targetPosition
+        });
+      }
+    }
+
+    // 显示吸血回复效果
+    if (result.lifestealHeal && result.lifestealHeal > 0) {
+      const healerPosition = isPetAttack ? 'left' : 'right'; // 吸血者是攻击方
+      addBattleEffect({
+        type: 'heal',
+        value: result.lifestealHeal,
+        text: '吸血',
+        position: healerPosition
+      });
     }
 
     // 更新血量
@@ -366,6 +417,9 @@ const PetFight: React.FC = () => {
 
   // 开始战斗（逐个处理战斗结果）
   const startBattle = async () => {
+    // 重置跳过状态
+    isSkippingRef.current = false;
+    setSkipButtonText('跳过');
     // 检查参数
     if (isPetBattle && !opponentUserId) {
       message.error('缺少对手用户ID参数');
@@ -379,7 +433,7 @@ const PetFight: React.FC = () => {
     try {
       setBattleStatus('fighting');
       setLoading(true);
-      showBattleMessage('战斗开始！', 'attack');
+      message.info('战斗开始！');
 
       // 调用接口获取所有战斗结果
       let battleResults: any[] = [];
@@ -413,15 +467,33 @@ const PetFight: React.FC = () => {
         
         // 逐个处理每个回合，每个回合之间延迟1.5秒
         for (let i = 0; i < battleResults.length; i++) {
+          // 如果点击了跳过，则快速执行剩余回合
+          if (isSkippingRef.current) {
+            // 快速处理剩余回合，只更新最终血量
+            const lastResult = battleResults[battleResults.length - 1];
+            if (isPetBattle) {
+              const petBattleResult = lastResult as API.PetBattleResultVO;
+              setPet(prev => ({ ...prev, hp: petBattleResult.myPetRemainingHealth || 0 }));
+              if (opponent) {
+                setOpponent(prev => prev ? ({ ...prev, hp: petBattleResult.opponentPetRemainingHealth || 0 }) : null);
+              }
+            } else {
+              const bossBattleResult = lastResult as API.BattleResultVO;
+              setPet(prev => ({ ...prev, hp: bossBattleResult.petRemainingHealth || 0 }));
+              setBoss(prev => ({ ...prev, hp: bossBattleResult.bossRemainingHealth || 0 }));
+            }
+            break;
+          }
+
           await new Promise(resolve => setTimeout(resolve, i === 0 ? 500 : 1500));
-          
+
           const result = battleResults[i];
           processBattleRound(result, i);
 
           // 检查是否已经分出胜负（提前结束）
           let petHp: number;
           let opponentHp: number;
-          
+
           if (isPetBattle) {
             const petBattleResult = result as API.PetBattleResultVO;
             petHp = petBattleResult.myPetRemainingHealth || 0;
@@ -431,7 +503,7 @@ const PetFight: React.FC = () => {
             petHp = bossBattleResult.petRemainingHealth || 0;
             opponentHp = bossBattleResult.bossRemainingHealth || 0;
           }
-          
+
           if (petHp <= 0 || opponentHp <= 0) {
             // 等待最后一击的动画完成
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -456,7 +528,7 @@ const PetFight: React.FC = () => {
         if (petWon) {
           setBattleStatus('victory');
           setBattleResult('victory');
-          showBattleMessage(`恭喜！${opponentName} 被击败了！`, 'attack');
+          message.success(`恭喜！${opponentName} 被击败了！`);
           message.success('战斗胜利！');
           if (!isPetBattle) {
             setShowRewards(true);
@@ -469,7 +541,7 @@ const PetFight: React.FC = () => {
         } else {
           setBattleStatus('defeat');
           setBattleResult('defeat');
-          showBattleMessage(`${pet.name} 被击败了...`, 'attack');
+          message.error(`${pet.name} 被击败了...`);
           message.error('战斗失败！');
           // 失败后延迟显示退出提示
           setTimeout(() => {
@@ -768,8 +840,8 @@ const PetFight: React.FC = () => {
         {/* 对手区域 (BOSS或对方宠物) */}
         <div className={styles.bossArea}>
           <div className={`${styles.combatant} ${currentTurn === 'boss' ? styles.activeTurn : ''}`}>
-            <Avatar 
-              size={120} 
+            <Avatar
+              size={120}
               className={`${isPetBattle ? styles.petAvatar : styles.bossAvatar} ${bossAttacking ? styles.attacking : ''} ${bossHurt ? styles.hurt : ''}`}
               src={isUrl(isPetBattle && opponent ? opponent.avatar : boss.avatar) ? (isPetBattle && opponent ? opponent.avatar : boss.avatar) : undefined}
             >
@@ -783,6 +855,17 @@ const PetFight: React.FC = () => {
             <div className={styles.combatantLabel}>{isPetBattle && opponent ? opponent.name : boss.name}</div>
           </div>
         </div>
+
+        {/* 战斗效果层 - 伤害数字、闪避、格挡等 */}
+        {battleEffects.map((effect) => (
+          <div
+            key={effect.id}
+            className={`${styles.battleEffect} ${styles[effect.type]} ${styles[effect.position]}`}
+          >
+            {effect.value !== undefined && <span className={styles.effectValue}>{effect.value}</span>}
+            {effect.text && <span className={styles.effectText}>{effect.text}</span>}
+          </div>
+        ))}
       </div>
 
       {/* 控制面板 */}
@@ -806,6 +889,18 @@ const PetFight: React.FC = () => {
               <div className={styles.fightingControls}>
                 <Spin size="large" />
                 <span style={{ marginLeft: 10 }}>战斗中...</span>
+                <Button
+                  type="default"
+                  size="small"
+                  onClick={() => {
+                    isSkippingRef.current = true;
+                    setSkipButtonText('跳过中...');
+                  }}
+                  className={styles.skipButton}
+                  disabled={skipButtonText === '跳过中...'}
+                >
+                  {skipButtonText}
+                </Button>
               </div>
             )}
 

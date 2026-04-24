@@ -607,6 +607,8 @@ declare namespace API {
     bossRemainingHealth?: number;
     /** 扣血量 */
     damage?: number;
+    /** 是否格挡 */
+    isBlock?: boolean;
     /** 是否连击 */
     isCombo?: boolean;
     /** 是否暴击 */
@@ -615,6 +617,8 @@ declare namespace API {
     isDodge?: boolean;
     /** 是否普通攻击 */
     isNormalAttack?: boolean;
+    /** 吸血回复量 */
+    lifestealHeal?: number;
     /** 宠物剩余血量 */
     petRemainingHealth?: number;
   };
@@ -2302,6 +2306,8 @@ declare namespace API {
     attackerType?: string;
     /** 扣血量 */
     damage?: number;
+    /** 是否格挡 */
+    isBlock?: boolean;
     /** 是否连击 */
     isCombo?: boolean;
     /** 是否暴击 */
@@ -2310,6 +2316,8 @@ declare namespace API {
     isDodge?: boolean;
     /** 是否普通攻击 */
     isNormalAttack?: boolean;
+    /** 吸血回复量 */
+    lifestealHeal?: number;
     /** 我的宠物剩余血量 */
     myPetRemainingHealth?: number;
     /** 对手宠物剩余血量 */
@@ -2753,11 +2761,6 @@ declare namespace API {
   };
 
   type TournamentRankVO = {
-    /** 实际攻击力（含装备） */
-    attack?: number;
-    equipStats?: PetEquipStatsVO;
-    /** 实际生命值（含装备） */
-    health?: number;
     /** 宠物等级 */
     petLevel?: number;
     /** 宠物名称 */
