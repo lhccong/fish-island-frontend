@@ -35,6 +35,7 @@ import {
   ReloadOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
+import { useModel } from '@umijs/max';
 import {
   buyIndexUsingPost,
   sellIndexUsingPost,
@@ -59,6 +60,12 @@ const parseNumericValue = (value: string | number | undefined): number => {
 };
 
 const StockMarket: React.FC = () => {
+  const { initialState } = useModel('@@initialState');
+  const currentUser = initialState?.currentUser;
+
+  // 计算可用积分
+  const availablePoints = (currentUser?.points ?? 0) - (currentUser?.usedPoints ?? 0);
+
   const [loading, setLoading] = useState(false);
   const [marketIndices, setMarketIndices] = useState<API.MarketIndexVO[]>([]);
   const [positions, setPositions] = useState<API.IndexPositionVO[]>([]);
@@ -554,7 +561,7 @@ const StockMarket: React.FC = () => {
                 label="买入金额（积分）"
                 name="amount"
                 rules={[{ required: true, message: '请输入买入金额' }]}
-                extra="最小买入金额为100积分"
+                extra={`最小买入金额为100积分，剩余积分：${availablePoints}`}
               >
                 <InputNumber
                   placeholder="请输入买入金额"
