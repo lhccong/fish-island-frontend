@@ -21,6 +21,7 @@ import * as itemInstancesController from './itemInstancesController';
 import * as itemTemplatesController from './itemTemplatesController';
 import * as mockInterviewController from './mockInterviewController';
 import * as petBattleController from './petBattleController';
+import * as petEquipForgeController from './petEquipForgeController';
 import * as petRankController from './petRankController';
 import * as petSkinController from './petSkinController';
 import * as petTournamentController from './petTournamentController';
@@ -32,6 +33,7 @@ import * as redPacketController from './redPacketController';
 import * as restAuthController from './restAuthController';
 import * as tagsController from './tagsController';
 import * as todoController from './todoController';
+import * as towerClimbController from './towerClimbController';
 import * as turntableController from './turntableController';
 import * as undercoverGameController from './undercoverGameController';
 import * as userController from './userController';
@@ -67,6 +69,7 @@ export default {
   restAuthController,
   petBattleController,
   fishPetController,
+  petEquipForgeController,
   petTournamentController,
   postController,
   postFavourController,
@@ -75,6 +78,7 @@ export default {
   redPacketController,
   tagsController,
   todoController,
+  towerClimbController,
   turntableController,
   undercoverGameController,
   userController,

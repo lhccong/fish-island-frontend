@@ -13,6 +13,8 @@ import { useSearchParams, history } from '@umijs/max';
 import { getBossBattleInfoUsingGet, battleUsingGet } from '@/services/backend/bossController';
 import { getPetBattleInfoUsingGet, battleUsingGet1 } from '@/services/backend/petBattleController';
 import { challengeUsingPost } from '@/services/backend/petTournamentController';
+import { challengeUsingPost1, getProgressUsingGet } from '@/services/backend/towerClimbController';
+import { getPetDetailUsingGet } from '@/services/backend/fishPetController';
 import styles from './index.less';
 
 // 宠物数据接口
@@ -79,8 +81,9 @@ const PetFight: React.FC = () => {
   const opponentUserId = searchParams.get('opponentUserId');
   const targetRank = searchParams.get('targetRank');
   const isTournament = searchParams.get('from') === 'tournament';
+  const isTower = searchParams.get('from') === 'tower';
   const isPetBattle = !!opponentUserId || isTournament;
-  const from = searchParams.get('from') || 'ranking'; // 从哪个页面进入：ranking, tournament
+  const from = searchParams.get('from') || 'ranking'; // 从哪个页面进入：ranking, tournament, tower
   const [opponent, setOpponent] = useState<Pet | null>(null);
   
   // 状态管理
@@ -107,6 +110,9 @@ const PetFight: React.FC = () => {
   // 跳过战斗动画状态 - 使用 ref 实现同步更新
   const isSkippingRef = useRef(false);
   const [skipButtonText, setSkipButtonText] = useState<'跳过' | '跳过中...'>('跳过');
+
+  // 爬塔模式：战斗结果（用于判断胜负）
+  const towerResultRef = useRef<API.TowerClimbResultVO | null>(null);
 
   // 宠物数据
   const [pet, setPet] = useState<Pet>({
@@ -148,6 +154,69 @@ const PetFight: React.FC = () => {
   // 获取对战信息（Boss对战或宠物对战）
   useEffect(() => {
     const fetchBattleInfo = async () => {
+      // 爬塔模式
+      if (isTower) {
+        try {
+          setLoading(true);
+          // 并行获取爬塔进度（含怪物信息）和用户宠物信息
+          const [progressRes, petRes] = await Promise.all([
+            getProgressUsingGet(),
+            getPetDetailUsingGet(),
+          ]);
+
+          if (progressRes.code === 0 && progressRes.data) {
+            const { nextMonster } = progressRes.data;
+            if (nextMonster) {
+              setBoss({
+                id: nextMonster.floor ?? 1,
+                name: nextMonster.name ?? `第${nextMonster.floor ?? 1}层守卫`,
+                level: nextMonster.floor ?? 1,
+                hp: nextMonster.health ?? 100,
+                maxHp: nextMonster.health ?? 100,
+                attack: nextMonster.attack ?? 10,
+                defense: 0,
+                avatar: nextMonster.avatarUrl ?? '👹',
+                rewards: {
+                  coins: nextMonster.rewardPoints ?? 0,
+                  exp: 0,
+                  items: [],
+                },
+                critRate: nextMonster.critRate ?? 0,
+                dodgeRate: nextMonster.dodgeRate ?? 0,
+                blockRate: nextMonster.blockRate ?? 0,
+                comboRate: nextMonster.comboRate ?? 0,
+                lifesteal: nextMonster.lifesteal ?? 0,
+              });
+            }
+          } else {
+            message.error(progressRes.message || '获取爬塔信息失败');
+          }
+
+          if (petRes.code === 0 && petRes.data) {
+            const petData = petRes.data;
+            setPet({
+              id: petData.petId || 1,
+              name: petData.name || '摸鱼小精灵',
+              level: petData.level || 1,
+              hp: 100,
+              maxHp: 100,
+              attack: 10,
+              defense: 5,
+              avatar: petData.petUrl || '🐠',
+              exp: petData.exp || 0,
+              maxExp: 100,
+              equippedItems: petData.equippedItems as Record<string, API.ItemInstanceVO>,
+            });
+          }
+        } catch (error: any) {
+          console.error('获取爬塔信息失败:', error);
+          message.error(error.message || '获取爬塔信息失败');
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
       // 判断对战类型
       if (isPetBattle) {
         // 宠物对战模式（包括普通宠物对战和武道大会）
@@ -284,7 +353,7 @@ const PetFight: React.FC = () => {
     };
 
     fetchBattleInfo();
-  }, [bossId, opponentUserId, isPetBattle]);
+  }, [bossId, opponentUserId, isPetBattle, isTower]);
 
   // 添加战斗效果到界面
   const addBattleEffect = (effect: Omit<BattleEffect, 'id'>) => {
@@ -425,7 +494,7 @@ const PetFight: React.FC = () => {
       message.error('缺少对手用户ID参数');
       return;
     }
-    if (!isPetBattle && !bossId) {
+    if (!isPetBattle && !isTower && !bossId) {
       message.error('缺少Boss ID参数');
       return;
     }
@@ -438,7 +507,23 @@ const PetFight: React.FC = () => {
       // 调用接口获取所有战斗结果
       let battleResults: any[] = [];
       
-      if (isTournament && targetRank) {
+      if (isTower) {
+        // 爬塔挑战
+        const res = await challengeUsingPost1();
+        if (res.code === 0 && res.data) {
+          const towerResult = res.data;
+          battleResults = towerResult.battleRounds ?? [];
+          towerResultRef.current = towerResult;
+          // 从第一回合推算宠物最大血量并更新
+          const firstRound = battleResults[0] as API.BattleResultVO | undefined;
+          if (firstRound) {
+            const petMaxHp = firstRound.attackerType === 'BOSS'
+              ? (firstRound.petRemainingHealth ?? 0) + (firstRound.damage ?? 0)
+              : firstRound.petRemainingHealth ?? 100;
+            setPet(prev => ({ ...prev, maxHp: petMaxHp, hp: petMaxHp }));
+          }
+        }
+      } else if (isTournament && targetRank) {
         // 武道大会挑战
         const res = await challengeUsingPost({ targetRank: Number(targetRank) });
         if (res.code === 0 && res.data && res.data.rounds) {
@@ -515,7 +600,10 @@ const PetFight: React.FC = () => {
         const lastResult = battleResults[battleResults.length - 1];
         let petWon: boolean;
         
-        if (isPetBattle) {
+        if (isTower) {
+          // 爬塔模式：从 towerResultRef 中获取胜负
+          petWon = towerResultRef.current?.win ?? ((lastResult as API.BattleResultVO).petRemainingHealth || 0) > 0;
+        } else if (isPetBattle) {
           const petBattleResult = lastResult as API.PetBattleResultVO;
           petWon = (petBattleResult.myPetRemainingHealth || 0) > 0 && (petBattleResult.opponentPetRemainingHealth || 0) <= 0;
         } else {
@@ -530,7 +618,12 @@ const PetFight: React.FC = () => {
           setBattleResult('victory');
           message.success(`恭喜！${opponentName} 被击败了！`);
           message.success('战斗胜利！');
-          if (!isPetBattle) {
+          if (isTower) {
+            // 爬塔胜利，延迟显示退出提示
+            setTimeout(() => {
+              setShowExitModal(true);
+            }, 1500);
+          } else if (!isPetBattle) {
             setShowRewards(true);
           } else {
             // 宠物对战不需要领取奖励，直接显示退出提示
@@ -580,7 +673,9 @@ const PetFight: React.FC = () => {
   // 退出并返回来源页面
   const handleExit = () => {
     setShowExitModal(false);
-    if (isPetBattle) {
+    if (isTower) {
+      history.push('/point/tower'); // 返回爬塔页面
+    } else if (isPetBattle) {
       if (from === 'tournament') {
         history.push('/point/tournament'); // 返回武道大会
       } else {
@@ -617,7 +712,9 @@ const PetFight: React.FC = () => {
           type="primary"
           icon={<ArrowLeftOutlined />}
           onClick={() => {
-            if (isPetBattle) {
+            if (isTower) {
+              history.push('/point/tower');
+            } else if (isPetBattle) {
               if (from === 'tournament') {
                 history.push('/point/tournament'); // 返回武道大会
               } else {
@@ -629,7 +726,7 @@ const PetFight: React.FC = () => {
           }}
           className={styles.backButton}
         >
-          {isPetBattle ? (from === 'tournament' ? '返回武道大会' : '返回排行榜') : '返回BOSS'}
+          {isTower ? '返回爬塔' : isPetBattle ? (from === 'tournament' ? '返回武道大会' : '返回排行榜') : '返回BOSS'}
         </Button>
       </div>
       
@@ -987,11 +1084,13 @@ const PetFight: React.FC = () => {
       >
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
           <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>
-            {isPetBattle ? '正在退出宠物对战' : '正在退出 boss 秘境'}
+            {isTower ? '正在退出爬塔对战' : isPetBattle ? '正在退出宠物对战' : '正在退出 boss 秘境'}
           </div>
           <div style={{ fontSize: '16px', color: '#666' }}>
-            {isPetBattle 
-              ? (from === 'tournament' ? '返回武道大会，继续挑战更高排名' : '期待下一次精彩对决') 
+            {isTower
+              ? '返回爬塔，继续挑战更高层数'
+              : isPetBattle
+              ? (from === 'tournament' ? '返回武道大会，继续挑战更高排名' : '期待下一次精彩对决')
               : '摸鱼小勇士们每天有两次挑战机会别忘记喔'}
           </div>
         </div>

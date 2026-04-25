@@ -1,0 +1,917 @@
+.tower-climb-container {
+  min-height: 100vh;
+  background: #f0f2f5;
+
+  .tower-content {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+
+    // ===== 页面标题 =====
+    .page-header {
+      text-align: center;
+      margin-bottom: 24px;
+      position: relative;
+      padding: 16px 0;
+
+      .header-title-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 6px;
+
+        .title-icon {
+          font-size: 36px;
+          animation: float 3s ease-in-out infinite;
+          display: inline-block;
+        }
+
+        .page-title {
+          margin: 0 !important;
+          font-size: 30px !important;
+          font-weight: 700 !important;
+          background: linear-gradient(135deg, #722ed1, #1890ff);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+      }
+
+      .page-subtitle {
+        color: #8c8c8c;
+        font-size: 14px;
+      }
+
+      .refresh-btn {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #8c8c8c;
+        font-size: 18px;
+
+        &:hover {
+          color: #722ed1;
+          background: rgba(114, 46, 209, 0.08);
+        }
+      }
+    }
+
+    // ===== 统计卡片 =====
+    .stats-row {
+      margin-bottom: 16px;
+
+      .stat-card {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+
+        &:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .ant-card-body {
+          padding: 16px 20px;
+        }
+
+        .ant-statistic-title {
+          font-size: 12px;
+          font-weight: 500;
+          color: #8c8c8c;
+          margin-bottom: 8px;
+        }
+
+        .ant-statistic-content {
+          font-size: 24px;
+          font-weight: 700;
+        }
+
+        &.stat-card-blue {
+          background: linear-gradient(135deg, #e6f7ff, #f0f9ff);
+          .ant-statistic-content { color: #1890ff; }
+          .ant-statistic-title { color: #1890ff; }
+        }
+
+        &.stat-card-purple {
+          background: linear-gradient(135deg, #f9f0ff, #f0e6ff);
+          .ant-statistic-content { color: #722ed1; }
+          .ant-statistic-title { color: #722ed1; }
+        }
+
+        &.stat-card-orange {
+          background: linear-gradient(135deg, #fff7e6, #fff3d6);
+          .ant-statistic-content { color: #fa8c16; }
+          .ant-statistic-title { color: #fa8c16; }
+        }
+
+        &.stat-card-green {
+          background: linear-gradient(135deg, #f6ffed, #edfce0);
+          .ant-statistic-content { color: #52c41a; }
+          .ant-statistic-title { color: #52c41a; }
+        }
+      }
+    }
+
+    // ===== 挑战卡片 =====
+    .challenge-card {
+      border-radius: 20px;
+      border: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      margin-bottom: 16px;
+      overflow: hidden;
+
+      .ant-card-body {
+        padding: 0;
+      }
+
+      .floor-banner {
+        padding: 24px;
+        text-align: center;
+        border-radius: 20px 20px 0 0;
+
+        .floor-number-display {
+          display: flex;
+          align-items: baseline;
+          justify-content: center;
+          gap: 6px;
+          margin-bottom: 8px;
+
+          .floor-label {
+            font-size: 18px;
+            color: #595959;
+            font-weight: 500;
+          }
+
+          .floor-number {
+            font-size: 64px;
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          }
+        }
+
+        .floor-zone-tag {
+          font-size: 13px;
+          padding: 4px 16px;
+          border-radius: 20px;
+          font-weight: 600;
+          border: none;
+        }
+      }
+
+      .monster-preview-section {
+        padding: 20px 24px;
+
+        .monster-header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+
+          .monster-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            animation: pulse 2s ease-in-out infinite;
+          }
+
+          .monster-info {
+            flex: 1;
+
+            .ant-typography {
+              margin-bottom: 8px !important;
+            }
+          }
+
+          .monster-reward {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            padding: 8px 12px;
+            background: rgba(250, 173, 20, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(250, 173, 20, 0.3);
+          }
+        }
+      }
+
+      .no-monster {
+        padding: 40px;
+        text-align: center;
+      }
+
+      .challenge-actions {
+        padding: 16px 24px 24px;
+        display: flex;
+        gap: 12px;
+
+        .challenge-btn {
+          flex: 1;
+          height: 48px;
+          font-size: 16px;
+          font-weight: 600;
+          border-radius: 12px;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+          transition: all 0.3s ease;
+
+          &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+          }
+        }
+
+        .preview-btn {
+          height: 48px;
+          border-radius: 12px;
+          font-weight: 500;
+        }
+      }
+    }
+
+    // ===== 怪物属性网格 =====
+    .monster-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 8px;
+        background: #fafafa;
+        border-radius: 10px;
+        border: 1px solid #f0f0f0;
+        transition: all 0.2s ease;
+        cursor: default;
+
+        &:hover {
+          background: #f5f5f5;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-icon {
+          font-size: 18px;
+          margin-bottom: 4px;
+        }
+
+        .stat-label {
+          font-size: 11px;
+          color: #8c8c8c;
+          margin-bottom: 2px;
+        }
+
+        .stat-value {
+          font-size: 13px;
+          font-weight: 700;
+        }
+      }
+    }
+
+    // ===== 爬塔进度可视化 =====
+    .progress-card {
+      border-radius: 20px;
+      border: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+      .ant-card-head {
+        border-bottom: 1px solid #f0f0f0;
+        padding: 0 20px;
+      }
+
+      .ant-card-body {
+        padding: 16px 20px;
+      }
+
+      .tower-visual {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .tower-floor {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          padding: 6px 8px;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: rgba(0, 0, 0, 0.04);
+          }
+
+          &.current {
+            background: rgba(114, 46, 209, 0.06);
+          }
+
+          .tower-floor-num {
+            font-size: 12px;
+            font-weight: 600;
+            color: #595959;
+            width: 28px;
+            text-align: right;
+            flex-shrink: 0;
+          }
+
+          .tower-floor-bar {
+            flex: 1;
+            height: 20px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+          }
+
+          .current-marker {
+            font-size: 11px;
+            color: #722ed1;
+            font-weight: 600;
+            flex-shrink: 0;
+          }
+
+          .passed-marker {
+            font-size: 12px;
+            color: #52c41a;
+            font-weight: 700;
+            flex-shrink: 0;
+          }
+        }
+      }
+    }
+
+    // ===== 排行榜卡片 =====
+    .ranking-card {
+      border-radius: 20px;
+      border: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      height: 100%;
+
+      .ant-card-head {
+        border-bottom: 1px solid #f0f0f0;
+        padding: 0 16px;
+      }
+
+      .ant-card-body {
+        padding: 8px 0;
+      }
+
+      .ranking-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 4px 0;
+
+        .ranking-title-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+
+          .trophy-icon-wrapper {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #722ed1, #1890ff);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(114, 46, 209, 0.3);
+
+            .trophy-icon {
+              font-size: 20px;
+              color: #fff;
+            }
+          }
+
+          .ranking-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #262626;
+          }
+        }
+      }
+
+      .ranking-item {
+        padding: 10px 16px;
+        transition: all 0.2s ease;
+        border-radius: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f5f5f5;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:hover {
+          background: #fafafa;
+        }
+
+        &.my-rank {
+          background: linear-gradient(135deg, #f9f0ff, #f0e6ff);
+          border-left: 3px solid #722ed1;
+        }
+
+        .rank-left {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          .medal-emoji {
+            font-size: 22px;
+            width: 28px;
+            text-align: center;
+            flex-shrink: 0;
+          }
+
+          .rank-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #8c8c8c;
+            flex-shrink: 0;
+          }
+
+          .rank-avatar {
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+          }
+
+          .rank-user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+
+            .rank-username {
+              font-size: 13px;
+              color: #262626;
+            }
+          }
+        }
+
+        .rank-right {
+          .rank-floor {
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ===== 战斗结果弹窗 =====
+.battle-result-modal {
+  .ant-modal-content {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .ant-modal-header {
+    border-bottom: none;
+    padding: 20px 24px 0;
+  }
+
+  .ant-modal-body {
+    padding: 16px 24px;
+  }
+
+  .ant-modal-footer {
+    border-top: none;
+    padding: 0 24px 20px;
+  }
+
+  .battle-modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+
+    .win-title {
+      color: #52c41a;
+    }
+
+    .lose-title {
+      color: #ff4d4f;
+    }
+  }
+
+  .battle-result-content {
+    .result-summary {
+      padding: 16px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+
+      &.win {
+        background: linear-gradient(135deg, #f6ffed, #d9f7be);
+        border: 1px solid #b7eb8f;
+      }
+
+      &.lose {
+        background: linear-gradient(135deg, #fff1f0, #ffccc7);
+        border: 1px solid #ffa39e;
+      }
+
+      .result-stat {
+        .result-stat-value {
+          font-size: 24px;
+          font-weight: 800;
+          color: #262626;
+        }
+
+        .result-stat-label {
+          font-size: 12px;
+          color: #8c8c8c;
+          margin-top: 4px;
+        }
+      }
+
+      .win-banner {
+        text-align: center;
+        margin-top: 12px;
+        font-size: 13px;
+        color: #52c41a;
+        font-weight: 500;
+      }
+    }
+
+    .battle-log-section {
+      .battle-log-header {
+        font-size: 14px;
+        font-weight: 600;
+        color: #262626;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .battle-log-container {
+        max-height: 320px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-right: 4px;
+
+        &::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: #f5f5f5;
+          border-radius: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: #d9d9d9;
+          border-radius: 4px;
+        }
+
+        .battle-log-item {
+          padding: 10px 12px;
+          border-radius: 10px;
+          border-left: 3px solid;
+          animation: slideIn 0.3s ease;
+
+          &.pet-attack {
+            background: #f6ffed;
+            border-left-color: #52c41a;
+          }
+
+          &.boss-attack {
+            background: #fff1f0;
+            border-left-color: #ff4d4f;
+          }
+
+          .log-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+
+            .round-badge {
+              font-size: 11px;
+              color: #8c8c8c;
+              background: rgba(0, 0, 0, 0.06);
+              padding: 1px 8px;
+              border-radius: 10px;
+            }
+
+            .attacker-tag {
+              font-size: 12px;
+              font-weight: 600;
+
+              &.pet { color: #52c41a; }
+              &.boss { color: #ff4d4f; }
+            }
+          }
+
+          .log-damage {
+            font-size: 13px;
+            margin-bottom: 8px;
+
+            .damage-text {
+              color: #595959;
+
+              strong {
+                color: #ff4d4f;
+                font-size: 15px;
+              }
+
+              &.critical strong {
+                color: #722ed1;
+                font-size: 17px;
+              }
+            }
+
+            .dodge-text {
+              color: #13c2c2;
+              font-style: italic;
+            }
+
+            .heal-text {
+              color: #52c41a;
+              font-size: 12px;
+            }
+          }
+
+          .log-hp {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+
+            .hp-bar-row {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+
+              .hp-label {
+                font-size: 11px;
+                color: #8c8c8c;
+                width: 36px;
+                flex-shrink: 0;
+              }
+
+              .hp-progress {
+                flex: 1;
+              }
+
+              .hp-value {
+                font-size: 11px;
+                font-weight: 600;
+                color: #595959;
+                width: 36px;
+                text-align: right;
+                flex-shrink: 0;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// ===== 怪物预览弹窗 =====
+.monster-preview-modal {
+  .ant-modal-content {
+    border-radius: 20px;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .ant-modal-close {
+    top: 12px;
+    right: 12px;
+    color: #595959;
+
+    &:hover {
+      color: #262626;
+      background: rgba(0, 0, 0, 0.06);
+    }
+  }
+
+  .monster-preview-content {
+    display: flex;
+    flex-direction: column;
+
+    // 顶部 banner
+    .preview-banner {
+      padding: 28px 24px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border-radius: 20px 20px 0 0;
+      position: relative;
+      overflow: hidden;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: rgba(0, 0, 0, 0.06);
+      }
+
+      .preview-avatar-wrap {
+        flex-shrink: 0;
+        animation: pulse 2.5s ease-in-out infinite;
+      }
+
+      .preview-avatar-img {
+        border-radius: 50% !important;
+      }
+
+      .preview-avatar-placeholder {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid currentColor;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .preview-monster-name {
+        flex: 1;
+
+        .ant-typography {
+          margin-bottom: 10px !important;
+          font-weight: 800 !important;
+          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-badges {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+
+          .preview-zone-tag,
+          .preview-floor-tag {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 20px;
+            border: none;
+          }
+        }
+      }
+    }
+
+    // 属性区域
+    .preview-stats-body {
+      padding: 20px 24px;
+      background: #fff;
+
+      // 覆盖网格为 4 列
+      .monster-stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+
+        .stat-item {
+          background: #fafafa;
+          border: 1px solid #f0f0f0;
+          border-radius: 12px;
+          padding: 12px 8px;
+          transition: all 0.2s ease;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          }
+
+          .stat-icon {
+            font-size: 20px;
+            margin-bottom: 6px;
+          }
+
+          .stat-label {
+            font-size: 11px;
+            color: #8c8c8c;
+            margin-bottom: 4px;
+          }
+
+          .stat-value {
+            font-size: 14px;
+            font-weight: 800;
+          }
+        }
+      }
+    }
+
+    // 底部按钮区
+    .preview-footer {
+      padding: 16px 24px 20px;
+      display: flex;
+      gap: 12px;
+      background: #fff;
+      border-top: 1px solid #f0f0f0;
+      border-radius: 0 0 20px 20px;
+
+      .ant-btn {
+        height: 44px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+// ===== 动画 =====
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// ===== 响应式 =====
+@media (max-width: 768px) {
+  .tower-climb-container {
+    .tower-content {
+      padding: 12px;
+
+      .page-header {
+        .page-title {
+          font-size: 22px !important;
+        }
+      }
+
+      .monster-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .challenge-card {
+        .floor-banner {
+          .floor-number {
+            font-size: 48px;
+          }
+        }
+
+        .monster-preview-section {
+          .monster-header {
+            flex-wrap: wrap;
+          }
+        }
+
+        .challenge-actions {
+          flex-direction: column;
+        }
+      }
+    }
+  }
+
+  .monster-preview-modal {
+    .monster-preview-content {
+      .preview-stats-body {
+        .monster-stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      .preview-footer {
+        flex-direction: column;
+      }
+    }
+  }
+}

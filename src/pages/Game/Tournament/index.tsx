@@ -228,12 +228,13 @@ const Tournament: React.FC = () => {
     return top3;
   };
 
-  // 获取第4-10名的数据（带空位占位）
+  // 获取第4名及以后的数据（带空位占位，最多显示到当前最大排名+1的空位）
   const getRestData = (): RankListItem[] => {
-    const existing = leaderboard.filter(item => item.rank > 3 && item.rank <= 10).sort((a, b) => a.rank - b.rank);
-    // 生成4-10名的完整列表，空位用标记对象占位
+    const existing = leaderboard.filter(item => item.rank > 3).sort((a, b) => a.rank - b.rank);
+    // 找出最大排名，至少显示到第10名
+    const maxRank = Math.max(10, existing.length > 0 ? existing[existing.length - 1].rank : 3);
     const result: RankListItem[] = [];
-    for (let i = 4; i <= 10; i++) {
+    for (let i = 4; i <= maxRank; i++) {
       const item = existing.find(d => d.rank === i);
       if (item) {
         result.push({ ...item, key: `rank-${i}` });
@@ -341,10 +342,12 @@ const Tournament: React.FC = () => {
               </div>
               <div className="header-text">
                 <Text strong className="header-title">排名榜</Text>
-                <Text type="secondary" className="header-subtitle">第4-10名</Text>
+                <Text type="secondary" className="header-subtitle">
+                  第4名及以后
+                </Text>
               </div>
             </div>
-            <div className="header-badge">{leaderboard.filter(i => i.rank > 3 && i.rank <= 10).length}/7</div>
+            <div className="header-badge">{leaderboard.filter(i => i.rank > 3).length} 人</div>
           </div>
           <Divider style={{ margin: '16px 0' }} />
           <List

@@ -204,6 +204,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListPetEquipForgeVO_ = {
+    code?: number;
+    data?: PetEquipForgeVO[];
+    message?: string;
+  };
+
   type BaseResponseListPetRankVO_ = {
     code?: number;
     data?: PetRankVO[];
@@ -225,6 +231,12 @@ declare namespace API {
   type BaseResponseListTournamentRankVO_ = {
     code?: number;
     data?: TournamentRankVO[];
+    message?: string;
+  };
+
+  type BaseResponseListTowerRankVO_ = {
+    code?: number;
+    data?: TowerRankVO[];
     message?: string;
   };
 
@@ -462,6 +474,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePetEquipForgeVO_ = {
+    code?: number;
+    data?: PetEquipForgeVO;
+    message?: string;
+  };
+
   type BaseResponsePetVO_ = {
     code?: number;
     data?: PetVO;
@@ -507,6 +525,24 @@ declare namespace API {
   type BaseResponseTournamentChallengeResultVO_ = {
     code?: number;
     data?: TournamentChallengeResultVO;
+    message?: string;
+  };
+
+  type BaseResponseTowerClimbResultVO_ = {
+    code?: number;
+    data?: TowerClimbResultVO;
+    message?: string;
+  };
+
+  type BaseResponseTowerFloorMonsterVO_ = {
+    code?: number;
+    data?: TowerFloorMonsterVO;
+    message?: string;
+  };
+
+  type BaseResponseTowerProgressVO_ = {
+    code?: number;
+    data?: TowerProgressVO;
     message?: string;
   };
 
@@ -1011,6 +1047,13 @@ declare namespace API {
     roomId: string;
   };
 
+  type EquipEntry = {
+    attr?: string;
+    grade?: number;
+    locked?: boolean;
+    value?: number;
+  };
+
   type EventRemindQueryRequest = {
     action?: string;
     current?: number;
@@ -1051,6 +1094,17 @@ declare namespace API {
 
   type FluxString_ = {
     prefetch?: number;
+  };
+
+  type ForgeRefreshRequest = {
+    equipSlot?: number;
+    lockedEntries?: number[];
+    petId?: number;
+  };
+
+  type ForgeUpgradeRequest = {
+    equipSlot?: number;
+    petId?: number;
   };
 
   type FundItemVO = {
@@ -1136,6 +1190,11 @@ declare namespace API {
     id?: number;
   };
 
+  type getFloorMonsterUsingGETParams = {
+    /** floor */
+    floor: number;
+  };
+
   type getHeroByIdUsingGETParams = {
     /** id */
     id?: number;
@@ -1198,6 +1257,11 @@ declare namespace API {
   type getPostVoByIdUsingGETParams = {
     /** id */
     id?: number;
+  };
+
+  type getRankingUsingGETParams = {
+    /** limit */
+    limit?: number;
   };
 
   type getRedPacketDetailUsingGETParams = {
@@ -1661,6 +1725,11 @@ declare namespace API {
     code?: string;
     /** state */
     state?: string;
+  };
+
+  type listByPetIdUsingGETParams = {
+    /** petId */
+    petId: number;
   };
 
   type listDrawRecordsUsingGETParams = {
@@ -2324,6 +2393,18 @@ declare namespace API {
     opponentPetRemainingHealth?: number;
   };
 
+  type PetEquipForgeVO = {
+    entry1?: EquipEntry;
+    entry2?: EquipEntry;
+    entry3?: EquipEntry;
+    entry4?: EquipEntry;
+    equipLevel?: number;
+    equipSlot?: number;
+    equipSlotName?: string;
+    id?: number;
+    petId?: number;
+  };
+
   type PetEquipStatsVO = {
     blockRate?: number;
     blockResistance?: number;
@@ -2767,6 +2848,67 @@ declare namespace API {
     petName?: string;
     /** 宠物图片 */
     petUrl?: string;
+    /** 名次 */
+    rank?: number;
+    /** 用户头像 */
+    userAvatar?: string;
+    /** 用户ID */
+    userId?: number;
+    /** 用户昵称 */
+    userName?: string;
+  };
+
+  type TowerClimbResultVO = {
+    /** 本次战斗回合详情 */
+    battleRounds?: BattleResultVO[];
+    /** 挑战层数 */
+    floor?: number;
+    /** 历史最高通关层数 */
+    maxFloor?: number;
+    /** 宠物剩余血量 */
+    petHpLeft?: number;
+    /** 获得积分奖励 */
+    rewardPoints?: number;
+    /** 是否胜利 */
+    win?: boolean;
+  };
+
+  type TowerFloorMonsterVO = {
+    /** 怪物攻击力 */
+    attack?: number;
+    /** 怪物头像 */
+    avatarUrl?: string;
+    /** 格挡率 */
+    blockRate?: number;
+    /** 连击率 */
+    comboRate?: number;
+    /** 暴击率 */
+    critRate?: number;
+    /** 闪避率 */
+    dodgeRate?: number;
+    /** 层数 */
+    floor?: number;
+    /** 怪物血量 */
+    health?: number;
+    /** 吸血率 */
+    lifesteal?: number;
+    /** 怪物名称 */
+    name?: string;
+    /** 通关奖励积分 */
+    rewardPoints?: number;
+  };
+
+  type TowerProgressVO = {
+    /** 历史最高通关层数 */
+    maxFloor?: number;
+    /** 下一层挑战层数（maxFloor + 1） */
+    nextFloor?: number;
+    nextMonster?: TowerFloorMonsterVO;
+  };
+
+  type TowerRankVO = {
+    /** 历史最高通关层数 */
+    maxFloor?: number;
     /** 名次 */
     rank?: number;
     /** 用户头像 */
