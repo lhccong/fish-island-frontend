@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Modal, Tabs, Button, Progress, Card, Avatar, Row, Col, Input, Form, message, Tooltip, Popover, Spin, Radio, Pagination } from 'antd';
+import { Modal, Tabs, Button, Progress, Card, Avatar, Row, Col, Input, Form, message, Tooltip, Popover, Spin, Radio, Pagination, Divider, Tag, Badge } from 'antd';
 import {
   HeartOutlined,
   ThunderboltOutlined,
@@ -18,11 +18,16 @@ import {
   StarOutlined,
   CrownOutlined,
   FireOutlined,
+  ToolOutlined,
+  LockOutlined,
+  UnlockOutlined,
+  ArrowUpOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 import { getPetDetailUsingGet, createPetUsingPost, feedPetUsingPost, patPetUsingPost, updatePetNameUsingPost, getOtherUserPetUsingGet } from '@/services/backend/fishPetController';
 import { listPetSkinsUsingGet, exchangePetSkinUsingPost, setPetSkinUsingPost } from '@/services/backend/petSkinController';
 import { listMyItemInstancesByPageUsingPost, decomposeItemInstanceUsingPost, equipItemUsingPost, unequipItemUsingPost, batchDecomposeBlueGreenEquipmentsUsingPost } from '@/services/backend/itemInstancesController';
+import { getForgeDetailUsingPost, upgradeEquipUsingPost, refreshEntriesUsingPost, lockEntriesUsingPost } from '@/services/backend/petEquipForgeController';
 import { useModel, history } from '@umijs/max';
 
 export interface PetInfo {
@@ -110,7 +115,7 @@ const renderEquipStatsTooltip = (equippedItem: API.ItemInstanceVO, slotName: str
     { key: 'baseAttack', label: '攻击力', value: stats.baseAttack },
     { key: 'baseDefense', label: '防御力', value: stats.baseDefense },
     { key: 'baseHp', label: '生命值', value: stats.baseHp },
-    { key: 'baseSpeed', label: '速度', value: equippedItem?.template?.baseSpeed },
+    { key: 'baseSpeed', label: '速度', value: stats.baseSpeed },
     { key: 'critRate', label: '暴击率', value: stats.critRate, isPercent: true },
     { key: 'critResistance', label: '暴击抗性', value: stats.critResistance, isPercent: true },
     { key: 'dodgeRate', label: '闪避率', value: stats.dodgeRate, isPercent: true },
@@ -239,6 +244,278 @@ const ShopTabs: React.FC<ShopTabsProps> = ({ renderSkinsList }) => {
   );
 };
 
+// ── 装备强化弹窗辅助常量 ──────────────────────────────────────────────────────
+const ENTRY_GRADE_COLOR: Record<number, string> = {
+  1: '#8c8c8c', 2: '#1890ff', 3: '#722ed1', 4: '#fa8c16', 5: '#f5222d',
+};
+
+// 强化 tier → 角标背景色（用于无法命中 CSS Modules scoped class 的场景）
+const ENHANCE_BADGE_BG: Record<number, string> = {
+  1: 'linear-gradient(135deg, #e0e0e0 0%, #9e9e9e 100%)',
+  2: 'linear-gradient(135deg, #ffe57f 0%, #ffa000 100%)',
+  3: 'linear-gradient(135deg, #ce93d8 0%, #7b1fa2 100%)',
+  4: 'linear-gradient(135deg, #ff6f00 0%, #ff1744 100%)',
+  5: 'linear-gradient(135deg, #f44336, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0)',
+};
+
+// 强化等级 → 视觉 tier（用于角标颜色和装备框特效）
+// tier1: +1~+3  tier2: +4~+6  tier3: +7~+9  tier4: +10~+14  tier5: +15+
+const getEnhanceTier = (level: number): number => {
+  if (level <= 0) return 0;
+  if (level <= 3) return 1;
+  if (level <= 6) return 2;
+  if (level <= 9) return 3;
+  if (level <= 14) return 4;
+  return 5;
+};
+const ENTRY_GRADE_NAME: Record<number, string> = { 1: '白', 2: '蓝', 3: '紫', 4: '金', 5: '红' };
+const ENTRY_ATTR_NAME: Record<string, string> = {
+  attack: '攻击力', defense: '防御力', hp: '生命值', speed: '速度',
+  critRate: '暴击率', critResistance: '暴击抗性', antiCrit: '暴击抗性',
+  dodgeRate: '闪避率', dodgeResistance: '闪避抗性', antiDodge: '闪避抗性',
+  comboRate: '连击率', comboResistance: '连击抗性', antiCombo: '连击抗性',
+  blockRate: '格挡率', blockResistance: '格挡抗性', antiBlock: '格挡抗性',
+  lifesteal: '生命偷取', lifestealResistance: '吸血抗性', antiLifesteal: '吸血抗性',
+};
+const IS_PERCENT_ATTR = (attr: string) =>
+  ['critRate','critResistance','antiCrit',
+   'dodgeRate','dodgeResistance','antiDodge',
+   'comboRate','comboResistance','antiCombo',
+   'blockRate','blockResistance','antiBlock',
+   'lifesteal','lifestealResistance','antiLifesteal'].includes(attr);
+
+interface ForgeModalProps {
+  visible: boolean;
+  slotName: string;
+  detail: API.PetEquipForgeDetailVO | null;
+  detailLoading: boolean;
+  upgradeLoading: boolean;
+  refreshLoading: boolean;
+  lockLoading: boolean;
+  lockedEntries: number[];
+  onClose: () => void;
+  onUpgrade: () => void;
+  onRefresh: () => void;
+  onToggleLock: (entryIndex: number) => void;
+}
+
+const ForgeModal: React.FC<ForgeModalProps> = React.memo(({
+  visible, slotName, detail, detailLoading, upgradeLoading, refreshLoading,
+  lockLoading, lockedEntries, onClose, onUpgrade, onRefresh, onToggleLock,
+}) => {
+  const entries = detail
+    ? [detail.entry1, detail.entry2, detail.entry3, detail.entry4]
+    : [];
+
+  return (
+    <Modal
+      title={
+        <span>
+          <ToolOutlined style={{ marginRight: 8, color: '#fa8c16' }} />
+          装备强化 - {slotName}
+        </span>
+      }
+      open={visible}
+      onCancel={onClose}
+      footer={null}
+      width={480}
+    >
+      <Spin spinning={detailLoading}>
+        {detail ? (
+          <div>
+            {/* 装备等级 */}
+            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontWeight: 'bold', fontSize: 15 }}>
+                装备等级：
+                <Tag color="blue" style={{ fontSize: 14, padding: '2px 10px' }}>
+                  Lv.{detail.equipLevel ?? 0}
+                </Tag>
+              </span>
+              {detail.maxLevel && <Tag color="gold">已达最高等级</Tag>}
+            </div>
+
+            <Divider style={{ margin: '12px 0' }}>词条属性</Divider>
+
+            {/* 词条列表 */}
+            <div style={{ marginBottom: 16 }}>
+              {entries.map((entry, idx) => {
+                if (!entry) return null;
+                const entryNum = idx + 1;
+                const isLocked = lockedEntries.includes(entryNum);
+                const attrName = ENTRY_ATTR_NAME[entry.attr || ''] || entry.attr || '未知';
+                const isPercent = IS_PERCENT_ATTR(entry.attr || '');
+                const displayVal = isPercent
+                  ? `${Number((entry.value || 0).toFixed(2))}%`
+                  : `+${entry.value}`;
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '8px 12px', marginBottom: 8, borderRadius: 8,
+                      border: `1px solid ${isLocked ? '#fa8c16' : '#f0f0f0'}`,
+                      background: isLocked ? '#fffbe6' : '#fafafa',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Tag color={ENTRY_GRADE_COLOR[entry.grade || 1]} style={{ minWidth: 28, textAlign: 'center' }}>
+                        {ENTRY_GRADE_NAME[entry.grade || 1]}
+                      </Tag>
+                      <span style={{ fontWeight: 500 }}>{attrName}</span>
+                      <span style={{ color: '#52c41a', fontWeight: 'bold' }}>{displayVal}</span>
+                    </div>
+                    <Tooltip title={isLocked ? '点击解锁（刷新时不消耗额外积分）' : '点击锁定（刷新时额外消耗50积分）'}>
+                      <Button
+                        size="small"
+                        type={isLocked ? 'primary' : 'default'}
+                        icon={isLocked ? <LockOutlined /> : <UnlockOutlined />}
+                        loading={lockLoading}
+                        onClick={() => onToggleLock(entryNum)}
+                        style={{ borderColor: isLocked ? '#fa8c16' : undefined, color: isLocked ? '#fa8c16' : undefined }}
+                        ghost={isLocked}
+                      >
+                        {isLocked ? '已锁定' : '锁定'}
+                      </Button>
+                    </Tooltip>
+                  </div>
+                );
+              })}
+              {entries.every(e => !e) && (
+                <div style={{ textAlign: 'center', color: '#999', padding: '20px 0' }}>暂无词条，升级后解锁</div>
+              )}
+            </div>
+
+            <Divider style={{ margin: '12px 0' }} />
+
+            {/* 升级信息 */}
+            {!detail.maxLevel && (
+              <div style={{ marginBottom: 16, padding: '12px', background: '#f6ffed', borderRadius: 8, border: '1px solid #b7eb8f' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span>升级消耗：<strong style={{ color: '#fa8c16' }}>{detail.nextUpgradeCost} 积分</strong></span>
+                  <span>成功概率：<strong style={{ color: '#1890ff' }}>{detail.successRate}%</strong></span>
+                </div>
+                <Button
+                  type="primary"
+                  icon={<ArrowUpOutlined />}
+                  loading={upgradeLoading}
+                  onClick={onUpgrade}
+                  block
+                  style={{ background: 'linear-gradient(135deg, #fa8c16, #faad14)', border: 'none' }}
+                >
+                  升级强化（消耗 {detail.nextUpgradeCost} 积分）
+                </Button>
+              </div>
+            )}
+
+            {/* 刷新词条 */}
+            <div style={{ padding: '12px', background: '#e6f7ff', borderRadius: 8, border: '1px solid #91d5ff' }}>
+              <div style={{ marginBottom: 8, fontSize: 12, color: '#666' }}>
+                刷新词条消耗 <strong>100 积分</strong>，已锁定的词条不会被刷新，每锁定一条额外 +50 积分
+              </div>
+              <Button icon={<FireOutlined />} loading={refreshLoading} onClick={onRefresh} block>
+                刷新词条
+              </Button>
+            </div>
+          </div>
+        ) : (
+          !detailLoading && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+              <ToolOutlined style={{ fontSize: 40, marginBottom: 12 }} />
+              <div>暂无强化数据，请先穿戴装备</div>
+            </div>
+          )
+        )}
+      </Spin>
+    </Modal>
+  );
+});
+
+// ── 只读词条查看弹窗（查看他人装备时使用）────────────────────────────────────
+interface ViewForgeModalProps {
+  visible: boolean;
+  slotName: string;
+  detail: API.PetEquipForgeDetailVO | null;
+  loading: boolean;
+  onClose: () => void;
+}
+
+const ViewForgeModal: React.FC<ViewForgeModalProps> = React.memo(({ visible, slotName, detail, loading, onClose }) => {
+  const entries = detail
+    ? [detail.entry1, detail.entry2, detail.entry3, detail.entry4]
+    : [];
+
+  return (
+    <Modal
+      title={
+        <span>
+          <SafetyOutlined style={{ marginRight: 8, color: '#722ed1' }} />
+          装备词条 - {slotName}
+        </span>
+      }
+      open={visible}
+      onCancel={onClose}
+      footer={null}
+      width={400}
+    >
+      <Spin spinning={loading}>
+        {detail ? (
+          <div>
+            <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontWeight: 'bold' }}>
+                装备等级：
+                <Tag color="blue">Lv.{detail.equipLevel ?? 0}</Tag>
+              </span>
+              {detail.maxLevel && <Tag color="gold">已达最高等级</Tag>}
+            </div>
+            <Divider style={{ margin: '10px 0' }}>词条属性</Divider>
+            {entries.map((entry, idx) => {
+              if (!entry) return null;
+              const attrName = ENTRY_ATTR_NAME[entry.attr || ''] || entry.attr || '未知';
+              const isPercent = IS_PERCENT_ATTR(entry.attr || '');
+              const displayVal = isPercent
+                ? `${Number((entry.value || 0).toFixed(2))}%`
+                : `+${entry.value}`;
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '8px 12px', marginBottom: 8, borderRadius: 8,
+                    border: `1px solid ${entry.locked ? '#fa8c16' : '#f0f0f0'}`,
+                    background: entry.locked ? '#fffbe6' : '#fafafa',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Tag color={ENTRY_GRADE_COLOR[entry.grade || 1]} style={{ minWidth: 28, textAlign: 'center' }}>
+                      {ENTRY_GRADE_NAME[entry.grade || 1]}
+                    </Tag>
+                    <span style={{ fontWeight: 500 }}>{attrName}</span>
+                    <span style={{ color: '#52c41a', fontWeight: 'bold' }}>{displayVal}</span>
+                  </div>
+                  {entry.locked && (
+                    <Tag icon={<LockOutlined />} color="warning">已锁定</Tag>
+                  )}
+                </div>
+              );
+            })}
+            {entries.every(e => !e) && (
+              <div style={{ textAlign: 'center', color: '#999', padding: '20px 0' }}>暂无词条</div>
+            )}
+          </div>
+        ) : (
+          !loading && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+              <SafetyOutlined style={{ fontSize: 40, marginBottom: 12 }} />
+              <div>暂无词条数据</div>
+            </div>
+          )
+        )}
+      </Spin>
+    </Modal>
+  );
+});
+
 const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherUserName, isPageComponent = false }) => {
   const { initialState } = useModel('@@initialState');
   const [pet, setPet] = useState<API.PetVO | API.OtherUserPetVO | null>(null);
@@ -269,6 +546,24 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   const [unequipLoading, setUnequipLoading] = useState<string | null>(null); // 卸下中的装备槽位
   const [contextMenuItemId, setContextMenuItemId] = useState<number | null>(null); // 右键菜单显示的物品ID
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 }); // 右键菜单位置
+
+  // 装备强化相关状态
+  const [forgeModalVisible, setForgeModalVisible] = useState(false);
+  const [forgeSlot, setForgeSlot] = useState<number | null>(null); // 当前强化的装备槽位编号
+  const [forgeSlotName, setForgeSlotName] = useState<string>(''); // 当前强化的装备槽位名称
+  const [forgeDetail, setForgeDetail] = useState<API.PetEquipForgeDetailVO | null>(null);
+  const [forgeDetailLoading, setForgeDetailLoading] = useState(false);
+  const [forgeUpgradeLoading, setForgeUpgradeLoading] = useState(false);
+  const [forgeRefreshLoading, setForgeRefreshLoading] = useState(false);
+  const [lockedEntries, setLockedEntries] = useState<number[]>([]); // 锁定的词条序号
+  const [forgeLockLoading, setForgeLockLoading] = useState(false);
+  // 装备格右键菜单
+  const [equipSlotContextMenu, setEquipSlotContextMenu] = useState<{ slot: string; slotNum: number; x: number; y: number } | null>(null);
+  // 查看他人装备词条弹窗
+  const [viewForgeModalVisible, setViewForgeModalVisible] = useState(false);
+  const [viewForgeDetail, setViewForgeDetail] = useState<API.PetEquipForgeDetailVO | null>(null);
+  const [viewForgeSlotName, setViewForgeSlotName] = useState('');
+  const [viewForgeLoading, setViewForgeLoading] = useState(false);
 
   // 获取宠物数据
   const fetchPetData = async () => {
@@ -726,6 +1021,161 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
     }
   };
 
+  // 装备槽位名称 -> 槽位编号映射
+  const equipSlotNameToNum: Record<string, number> = {
+    weapon: 1,
+    hand: 2,
+    foot: 3,
+    head: 4,
+    necklace: 5,
+  };
+
+  const slotDisplayNames: Record<string, string> = {
+    weapon: '武器', hand: '手套', foot: '鞋子', head: '头盔', necklace: '项链',
+    armor: '护甲', shield: '盾牌', ring: '戒指', gloves: '手套', boots: '靴子',
+  };
+
+  // 查看他人装备词条（只读）
+  const openViewForgeModal = async (slot: string, petId: number) => {
+    const slotNum = equipSlotNameToNum[slot];
+    if (!slotNum) return;
+    setViewForgeSlotName(slotDisplayNames[slot] || slot);
+    setViewForgeDetail(null);
+    setViewForgeModalVisible(true);
+    setViewForgeLoading(true);
+    try {
+      const res = await getForgeDetailUsingPost({ petId, equipSlot: slotNum });
+      if (res.code === 0 && res.data) {
+        setViewForgeDetail(res.data);
+      } else {
+        message.error(res.message || '获取词条失败');
+      }
+    } catch {
+      message.error('获取词条失败');
+    } finally {
+      setViewForgeLoading(false);
+    }
+  };
+
+  // 打开装备强化弹窗
+  const openForgeModal = async (slotKey: string, slotNum: number, slotDisplayName: string) => {
+    if (!pet?.petId) return;
+    setForgeSlot(slotNum);
+    setForgeSlotName(slotDisplayName);
+    setLockedEntries([]);
+    setForgeModalVisible(true);
+    setForgeDetailLoading(true);
+    try {
+      const res = await getForgeDetailUsingPost({ petId: pet.petId, equipSlot: slotNum });
+      if (res.code === 0 && res.data) {
+        setForgeDetail(res.data);
+        // 从服务端 locked 字段初始化锁定状态
+        const entries = [res.data.entry1, res.data.entry2, res.data.entry3, res.data.entry4];
+        const serverLocked = entries
+          .map((e, i) => (e?.locked ? i + 1 : null))
+          .filter((i): i is number => i !== null);
+        setLockedEntries(serverLocked);
+      } else {
+        message.error(res.message || '获取强化详情失败');
+      }
+    } catch (error) {
+      console.error('获取强化详情失败', error);
+      message.error('获取强化详情失败');
+    } finally {
+      setForgeDetailLoading(false);
+    }
+  };
+
+  // 装备升级
+  const handleForgeUpgrade = async () => {
+    if (!pet?.petId || forgeSlot === null) return;
+    setForgeUpgradeLoading(true);
+    try {
+      const res = await upgradeEquipUsingPost({ petId: pet.petId, equipSlot: forgeSlot });
+      if (res.code === 0) {
+        if (res.data) {
+          message.success('升级成功！');
+        } else {
+          message.warning('升级失败，运气不佳，下次再试！');
+        }
+        // 刷新强化详情
+        const detailRes = await getForgeDetailUsingPost({ petId: pet.petId, equipSlot: forgeSlot });
+        if (detailRes.code === 0 && detailRes.data) {
+          setForgeDetail(detailRes.data);
+        }
+      } else {
+        message.error(res.message || '升级失败');
+      }
+    } catch (error) {
+      console.error('装备升级失败', error);
+      message.error('装备升级失败');
+    } finally {
+      setForgeUpgradeLoading(false);
+    }
+  };
+
+  // 刷新词条
+  const handleForgeRefresh = async () => {
+    if (!pet?.petId || forgeSlot === null) return;
+    setForgeRefreshLoading(true);
+    try {
+      const res = await refreshEntriesUsingPost({ petId: pet.petId, equipSlot: forgeSlot });
+      if (res.code === 0 && res.data) {
+        message.success('词条刷新成功！');
+        // 直接用返回数据更新词条，不触发 fetchPetData
+        setForgeDetail(prev => prev ? {
+          ...prev,
+          entry1: res.data!.entry1,
+          entry2: res.data!.entry2,
+          entry3: res.data!.entry3,
+          entry4: res.data!.entry4,
+        } : prev);
+        // 同步锁定状态
+        const entries = [res.data.entry1, res.data.entry2, res.data.entry3, res.data.entry4];
+        const serverLocked = entries
+          .map((e, i) => (e?.locked ? i + 1 : null))
+          .filter((i): i is number => i !== null);
+        setLockedEntries(serverLocked);
+      } else {
+        message.error(res.message || '刷新失败');
+      }
+    } catch (error) {
+      console.error('刷新词条失败', error);
+      message.error('刷新词条失败');
+    } finally {
+      setForgeRefreshLoading(false);
+    }
+  };
+
+  // 切换词条锁定（调接口）
+  const toggleEntryLock = async (entryIndex: number) => {
+    if (!pet?.petId || forgeSlot === null || forgeLockLoading) return;
+    const newLocked = lockedEntries.includes(entryIndex)
+      ? lockedEntries.filter(i => i !== entryIndex)
+      : [...lockedEntries, entryIndex];
+    setForgeLockLoading(true);
+    try {
+      const res = await lockEntriesUsingPost({ petId: pet.petId, equipSlot: forgeSlot, lockedEntries: newLocked });
+      if (res.code === 0 && res.data) {
+        // 以接口返回的 locked 字段为准
+        const entries = [res.data.entry1, res.data.entry2, res.data.entry3, res.data.entry4];
+        const serverLocked = entries
+          .map((e, i) => (e?.locked ? i + 1 : null))
+          .filter((i): i is number => i !== null);
+        setLockedEntries(serverLocked);
+        // 同步更新 forgeDetail 词条
+        setForgeDetail(prev => prev ? { ...prev, entry1: res.data!.entry1, entry2: res.data!.entry2, entry3: res.data!.entry3, entry4: res.data!.entry4 } : prev);
+      } else {
+        message.error(res.message || '锁定失败');
+      }
+    } catch (error) {
+      console.error('锁定词条失败', error);
+      message.error('锁定词条失败');
+    } finally {
+      setForgeLockLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isPageComponent || visible) {
       // 重置状态，避免显示上一次的结果
@@ -747,7 +1197,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
 
   // 全局阻止右键菜单（当自定义菜单打开时）
   useEffect(() => {
-    if (contextMenuItemId) {
+    if (contextMenuItemId || equipSlotContextMenu) {
       const preventContextMenu = (e: MouseEvent) => {
         e.preventDefault();
       };
@@ -756,7 +1206,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
         document.removeEventListener('contextmenu', preventContextMenu);
       };
     }
-  }, [contextMenuItemId]);
+  }, [contextMenuItemId, equipSlotContextMenu]);
 
   // 创建宠物表单
   if (isCreating) {
@@ -880,6 +1330,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   }
 
   // 渲染宠物列表
+
+  // 渲染强化弹窗
   const renderSkinsList = (showAll = false) => {
     // 如果showAll为true，显示所有宠物（商店），否则只显示已拥有的宠物（宠物馆）
     const filteredSkins = showAll ? skins : skins.filter(skin => skin.owned);
@@ -1085,10 +1537,16 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedWeapon?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={renderEquipStatsTooltip(equippedWeapon, '武器', '点击卸下')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedWeapon, '武器', '点击卸下 | 右键强化')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
-                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}${getEnhanceTier(enhanceLevel) > 0 ? ` ${styles[`enhance-tier${getEnhanceTier(enhanceLevel)}`]}` : ''}`}
                             onClick={() => !isOtherUser && handleUnequipItem('weapon')}
+                            onContextMenu={(e) => {
+                              if (isOtherUser) return;
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEquipSlotContextMenu({ slot: 'weapon', slotNum: 1, x: e.clientX, y: e.clientY });
+                            }}
                             style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
                           >
                             <Spin spinning={unequipLoading === 'weapon'} size="small">
@@ -1100,7 +1558,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                     className={styles.equippedItemIcon}
                                   />
                                   {enhanceLevel > 0 && (
-                                    <div className={styles.enhanceLevelBadge}>+{enhanceLevel}</div>
+                                    <div className={`${styles.enhanceLevelBadge} ${styles[`enhance-badge-tier${getEnhanceTier(enhanceLevel)}`]}`}>+{enhanceLevel}</div>
                                   )}
                                 </div>
                               ) : (
@@ -1129,10 +1587,16 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedHand?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={renderEquipStatsTooltip(equippedHand, '手套', '点击卸下')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedHand, '手套', '点击卸下 | 右键强化')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
-                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}${getEnhanceTier(enhanceLevel) > 0 ? ` ${styles[`enhance-tier${getEnhanceTier(enhanceLevel)}`]}` : ''}`}
                             onClick={() => !isOtherUser && handleUnequipItem('hand')}
+                            onContextMenu={(e) => {
+                              if (isOtherUser) return;
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEquipSlotContextMenu({ slot: 'hand', slotNum: 2, x: e.clientX, y: e.clientY });
+                            }}
                             style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
                           >
                             <Spin spinning={unequipLoading === 'hand'} size="small">
@@ -1144,7 +1608,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                     className={styles.equippedItemIcon}
                                   />
                                   {enhanceLevel > 0 && (
-                                    <div className={styles.enhanceLevelBadge}>+{enhanceLevel}</div>
+                                    <div className={`${styles.enhanceLevelBadge} ${styles[`enhance-badge-tier${getEnhanceTier(enhanceLevel)}`]}`}>+{enhanceLevel}</div>
                                   )}
                                 </div>
                               ) : (
@@ -1173,10 +1637,16 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedFoot?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={renderEquipStatsTooltip(equippedFoot, '鞋子', '点击卸下')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedFoot, '鞋子', '点击卸下 | 右键强化')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
-                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}${getEnhanceTier(enhanceLevel) > 0 ? ` ${styles[`enhance-tier${getEnhanceTier(enhanceLevel)}`]}` : ''}`}
                             onClick={() => !isOtherUser && handleUnequipItem('foot')}
+                            onContextMenu={(e) => {
+                              if (isOtherUser) return;
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEquipSlotContextMenu({ slot: 'foot', slotNum: 3, x: e.clientX, y: e.clientY });
+                            }}
                             style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
                           >
                             <Spin spinning={unequipLoading === 'foot'} size="small">
@@ -1188,7 +1658,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                     className={styles.equippedItemIcon}
                                   />
                                   {enhanceLevel > 0 && (
-                                    <div className={styles.enhanceLevelBadge}>+{enhanceLevel}</div>
+                                    <div className={`${styles.enhanceLevelBadge} ${styles[`enhance-badge-tier${getEnhanceTier(enhanceLevel)}`]}`}>+{enhanceLevel}</div>
                                   )}
                                 </div>
                               ) : (
@@ -1229,10 +1699,16 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedHead?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={renderEquipStatsTooltip(equippedHead, '头盔', '点击卸下')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedHead, '头盔', '点击卸下 | 右键强化')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
-                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}${getEnhanceTier(enhanceLevel) > 0 ? ` ${styles[`enhance-tier${getEnhanceTier(enhanceLevel)}`]}` : ''}`}
                             onClick={() => !isOtherUser && handleUnequipItem('head')}
+                            onContextMenu={(e) => {
+                              if (isOtherUser) return;
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEquipSlotContextMenu({ slot: 'head', slotNum: 4, x: e.clientX, y: e.clientY });
+                            }}
                             style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
                           >
                             <Spin spinning={unequipLoading === 'head'} size="small">
@@ -1244,7 +1720,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                     className={styles.equippedItemIcon}
                                   />
                                   {enhanceLevel > 0 && (
-                                    <div className={styles.enhanceLevelBadge}>+{enhanceLevel}</div>
+                                    <div className={`${styles.enhanceLevelBadge} ${styles[`enhance-badge-tier${getEnhanceTier(enhanceLevel)}`]}`}>+{enhanceLevel}</div>
                                   )}
                                 </div>
                               ) : (
@@ -1272,6 +1748,44 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                   </div>
                 </div>
               </div>
+
+              {/* 装备格右键菜单 */}
+              {equipSlotContextMenu && !isOtherUser && (
+                <>
+                  <div
+                    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }}
+                    onClick={() => setEquipSlotContextMenu(null)}
+                    onContextMenu={(e) => { e.preventDefault(); setEquipSlotContextMenu(null); }}
+                  />
+                  <div
+                    style={{
+                      position: 'fixed',
+                      left: equipSlotContextMenu.x,
+                      top: equipSlotContextMenu.y,
+                      zIndex: 1000,
+                      background: '#fff',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                      padding: '4px',
+                      minWidth: '120px',
+                    }}
+                  >
+                    <Button
+                      type="primary"
+                      size="small"
+                      icon={<ToolOutlined />}
+                      onClick={() => {
+                        const slotDisplayNames: Record<string, string> = { weapon: '武器', hand: '手套', foot: '鞋子', head: '头盔', necklace: '项链' };
+                        openForgeModal(equipSlotContextMenu.slot, equipSlotContextMenu.slotNum, slotDisplayNames[equipSlotContextMenu.slot] || equipSlotContextMenu.slot);
+                        setEquipSlotContextMenu(null);
+                      }}
+                      style={{ width: '100%' }}
+                    >
+                      装备强化
+                    </Button>
+                  </div>
+                </>
+              )}
 
 
 
@@ -1510,7 +2024,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                   {contextMenuItemId && (
                     <>
                       {/* 遮罩层，点击关闭菜单 */}
-                      <div 
+                      <div
                         style={{
                           position: 'fixed',
                           top: 0,
@@ -1591,7 +2105,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                     const otherPetData = pet as API.OtherUserPetVO;
                     const equipStats = otherPetData?.equipStats;
                     const equippedItems = (otherPetData as any)?.equippedItems;
-                    
+                    const viewPetId = (otherPetData as any)?.petId;
+
                     return (
                       <>
                         {/* 已装备物品展示 */}
@@ -1600,6 +2115,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                             <div style={{ fontWeight: 'bold', marginBottom: '16px', fontSize: '16px' }}>
                               <GiftOutlined style={{ marginRight: '8px' }} />
                               已装备物品
+                              <span style={{ fontSize: '12px', color: '#999', fontWeight: 'normal', marginLeft: 8 }}>右键装备可查看词条</span>
                             </div>
                             <Row gutter={[12, 12]}>
                               {Object.entries(equippedItems).map(([slot, item]: [string, any]) => {
@@ -1611,35 +2127,66 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                 const rarityNames: Record<number, string> = {
                                   1: '优良', 2: '精良', 3: '史诗', 4: '传说', 5: '神话', 6: '至尊', 7: '神器',
                                 };
-                                const slotNames: Record<string, string> = {
-                                  'head': '头盔', 'armor': '护甲', 'weapon': '武器', 'shield': '盾牌',
-                                  'ring': '戒指', 'necklace': '项链', 'gloves': '手套', 'boots': '靴子',
-                                  'foot': '鞋子', 'hand': '手套',
-                                };
+                                const enhanceLevel = item.enhanceLevel || 0;
+                                const tier = getEnhanceTier(enhanceLevel);
                                 return (
                                   <Col span={8} key={slot}>
-                                    <Card size="small" style={{ borderColor: rarityColors[rarity] }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        {item.template?.icon ? (
-                                          <img src={item.template.icon} alt={item.template.name} style={{ width: 32, height: 32 }} />
-                                        ) : (
-                                          <span style={{ fontSize: '24px' }}>⚔️</span>
-                                        )}
-                                        <div style={{ flex: 1 }}>
-                                          <div style={{ fontWeight: 'bold' }}>{item.template?.name || '未知装备'}</div>
-                                          <div style={{ fontSize: '12px', color: rarityColors[rarity] }}>
-                                            {slotNames[slot] || slot} · {rarityNames[rarity]}
+                                    <Tooltip
+                                      title={renderEquipStatsTooltip(item, slotDisplayNames[slot] || slot)}
+                                      overlayInnerStyle={{ backgroundColor: '#fff' }}
+                                    >
+                                      <Card
+                                        size="small"
+                                        style={{
+                                          borderColor: rarityColors[rarity],
+                                          cursor: 'context-menu',
+                                          position: 'relative',
+                                          overflow: 'visible',
+                                        }}
+                                        onContextMenu={(e) => {
+                                          e.preventDefault();
+                                          if (viewPetId) openViewForgeModal(slot, viewPetId);
+                                        }}
+                                      >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <div style={{ position: 'relative', flexShrink: 0 }}>
+                                            {item.template?.icon ? (
+                                              <img src={item.template.icon} alt={item.template.name} style={{ width: 36, height: 36, display: 'block' }} />
+                                            ) : (
+                                              <span style={{ fontSize: '28px', display: 'block' }}>⚔️</span>
+                                            )}
+                                            {enhanceLevel > 0 && (
+                                              <div style={{
+                                                position: 'absolute',
+                                                top: -8,
+                                                right: -10,
+                                                background: ENHANCE_BADGE_BG[tier] || 'linear-gradient(135deg,#ff4444,#cc0000)',
+                                                color: '#fff',
+                                                fontSize: 10,
+                                                fontWeight: 800,
+                                                padding: '2px 5px',
+                                                borderRadius: 8,
+                                                border: '1.5px solid #fff',
+                                                boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                                                lineHeight: 1,
+                                                zIndex: 10,
+                                                whiteSpace: 'nowrap',
+                                              }}>
+                                                +{enhanceLevel}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                              {item.template?.name || '未知装备'}
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: rarityColors[rarity] }}>
+                                              {slotDisplayNames[slot] || slot} · {rarityNames[rarity]}
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
-                                      {item.template?.attributes && (
-                                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
-                                          {Object.entries(item.template.attributes).map(([attr, value]: [string, any]) => (
-                                            <div key={attr}>{attr}: +{value}</div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </Card>
+                                      </Card>
+                                    </Tooltip>
                                   </Col>
                                 );
                               })}
@@ -1651,7 +2198,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                             <div style={{ fontSize: '14px', color: '#999' }}>暂无装备</div>
                           </div>
                         )}
-                        
+
                         {/* 装备属性统计 */}
                         {equipStats && (
                           <div>
@@ -1828,6 +2375,30 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
         />
           </Col>
         </Row>
+
+        {/* 装备强化弹窗 */}
+        <ForgeModal
+          visible={forgeModalVisible}
+          slotName={forgeSlotName}
+          detail={forgeDetail}
+          detailLoading={forgeDetailLoading}
+          upgradeLoading={forgeUpgradeLoading}
+          refreshLoading={forgeRefreshLoading}
+          lockLoading={forgeLockLoading}
+          lockedEntries={lockedEntries}
+          onClose={() => { setForgeModalVisible(false); setForgeDetail(null); setLockedEntries([]); }}
+          onUpgrade={handleForgeUpgrade}
+          onRefresh={handleForgeRefresh}
+          onToggleLock={toggleEntryLock}
+        />
+        {/* 查看他人装备词条弹窗（只读） */}
+        <ViewForgeModal
+          visible={viewForgeModalVisible}
+          slotName={viewForgeSlotName}
+          detail={viewForgeDetail}
+          loading={viewForgeLoading}
+          onClose={() => { setViewForgeModalVisible(false); setViewForgeDetail(null); }}
+        />
       </div>
     );
   }
@@ -2172,7 +2743,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                   {contextMenuItemId && (
                     <>
                       {/* 遮罩层，点击关闭菜单 */}
-                      <div 
+                      <div
                         style={{
                           position: 'fixed',
                           top: 0,
@@ -2253,7 +2824,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                     const otherPetData = pet as API.OtherUserPetVO;
                     const equipStats = otherPetData?.equipStats;
                     const equippedItems = (otherPetData as any)?.equippedItems;
-                    
+                    const viewPetId = (otherPetData as any)?.petId;
+
                     return (
                       <>
                         {/* 已装备物品展示 */}
@@ -2262,6 +2834,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                             <div style={{ fontWeight: 'bold', marginBottom: '16px', fontSize: '16px' }}>
                               <GiftOutlined style={{ marginRight: '8px' }} />
                               已装备物品
+                              <span style={{ fontSize: '12px', color: '#999', fontWeight: 'normal', marginLeft: 8 }}>右键装备可查看词条</span>
                             </div>
                             <Row gutter={[12, 12]}>
                               {Object.entries(equippedItems).map(([slot, item]: [string, any]) => {
@@ -2273,35 +2846,66 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                 const rarityNames: Record<number, string> = {
                                   1: '优良', 2: '精良', 3: '史诗', 4: '传说', 5: '神话', 6: '至尊', 7: '神器',
                                 };
-                                const slotNames: Record<string, string> = {
-                                  'head': '头盔', 'armor': '护甲', 'weapon': '武器', 'shield': '盾牌',
-                                  'ring': '戒指', 'necklace': '项链', 'gloves': '手套', 'boots': '靴子',
-                                  'foot': '鞋子', 'hand': '手套',
-                                };
+                                const enhanceLevel = item.enhanceLevel || 0;
+                                const tier = getEnhanceTier(enhanceLevel);
                                 return (
                                   <Col span={8} key={slot}>
-                                    <Card size="small" style={{ borderColor: rarityColors[rarity] }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        {item.template?.icon ? (
-                                          <img src={item.template.icon} alt={item.template.name} style={{ width: 32, height: 32 }} />
-                                        ) : (
-                                          <span style={{ fontSize: '24px' }}>⚔️</span>
-                                        )}
-                                        <div style={{ flex: 1 }}>
-                                          <div style={{ fontWeight: 'bold' }}>{item.template?.name || '未知装备'}</div>
-                                          <div style={{ fontSize: '12px', color: rarityColors[rarity] }}>
-                                            {slotNames[slot] || slot} · {rarityNames[rarity]}
+                                    <Tooltip
+                                      title={renderEquipStatsTooltip(item, slotDisplayNames[slot] || slot)}
+                                      overlayInnerStyle={{ backgroundColor: '#fff' }}
+                                    >
+                                      <Card
+                                        size="small"
+                                        style={{
+                                          borderColor: rarityColors[rarity],
+                                          cursor: 'context-menu',
+                                          position: 'relative',
+                                          overflow: 'visible',
+                                        }}
+                                        onContextMenu={(e) => {
+                                          e.preventDefault();
+                                          if (viewPetId) openViewForgeModal(slot, viewPetId);
+                                        }}
+                                      >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <div style={{ position: 'relative', flexShrink: 0 }}>
+                                            {item.template?.icon ? (
+                                              <img src={item.template.icon} alt={item.template.name} style={{ width: 36, height: 36, display: 'block' }} />
+                                            ) : (
+                                              <span style={{ fontSize: '28px', display: 'block' }}>⚔️</span>
+                                            )}
+                                            {enhanceLevel > 0 && (
+                                              <div style={{
+                                                position: 'absolute',
+                                                top: -8,
+                                                right: -10,
+                                                background: ENHANCE_BADGE_BG[tier] || 'linear-gradient(135deg,#ff4444,#cc0000)',
+                                                color: '#fff',
+                                                fontSize: 10,
+                                                fontWeight: 800,
+                                                padding: '2px 5px',
+                                                borderRadius: 8,
+                                                border: '1.5px solid #fff',
+                                                boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                                                lineHeight: 1,
+                                                zIndex: 10,
+                                                whiteSpace: 'nowrap',
+                                              }}>
+                                                +{enhanceLevel}
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                              {item.template?.name || '未知装备'}
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: rarityColors[rarity] }}>
+                                              {slotDisplayNames[slot] || slot} · {rarityNames[rarity]}
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
-                                      {item.template?.attributes && (
-                                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
-                                          {Object.entries(item.template.attributes).map(([attr, value]: [string, any]) => (
-                                            <div key={attr}>{attr}: +{value}</div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </Card>
+                                      </Card>
+                                    </Tooltip>
                                   </Col>
                                 );
                               })}
@@ -2313,7 +2917,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                             <div style={{ fontSize: '14px', color: '#999' }}>暂无装备</div>
                           </div>
                         )}
-                        
+
                         {/* 装备属性统计 */}
                         {equipStats && (
                           <div>
@@ -2489,6 +3093,29 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
           ]}
         />
       </div>
+      {/* 装备强化弹窗 */}
+      <ForgeModal
+        visible={forgeModalVisible}
+        slotName={forgeSlotName}
+        detail={forgeDetail}
+        detailLoading={forgeDetailLoading}
+        upgradeLoading={forgeUpgradeLoading}
+        refreshLoading={forgeRefreshLoading}
+        lockLoading={forgeLockLoading}
+        lockedEntries={lockedEntries}
+        onClose={() => { setForgeModalVisible(false); setForgeDetail(null); setLockedEntries([]); }}
+        onUpgrade={handleForgeUpgrade}
+        onRefresh={handleForgeRefresh}
+        onToggleLock={toggleEntryLock}
+      />
+      {/* 查看他人装备词条弹窗（只读） */}
+      <ViewForgeModal
+        visible={viewForgeModalVisible}
+        slotName={viewForgeSlotName}
+        detail={viewForgeDetail}
+        loading={viewForgeLoading}
+        onClose={() => { setViewForgeModalVisible(false); setViewForgeDetail(null); }}
+      />
     </Modal>
   );
 };

@@ -474,6 +474,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePetEquipForgeDetailVO_ = {
+    code?: number;
+    data?: PetEquipForgeDetailVO;
+    message?: string;
+  };
+
   type BaseResponsePetEquipForgeVO_ = {
     code?: number;
     data?: PetEquipForgeVO;
@@ -1048,9 +1054,13 @@ declare namespace API {
   };
 
   type EquipEntry = {
+    /** 词条属性，如：attack、critRate、antiCrit */
     attr?: string;
+    /** 词条等级：1-白 2-蓝 3-紫 4-金 5-红 */
     grade?: number;
+    /** 是否锁定，锁定后刷新该词条额外消耗 50 积分 */
     locked?: boolean;
+    /** 词条属性数值，百分比类精度为 0.01%，如攻击力 120、暴击率 3.50（表示 3.50%） */
     value?: number;
   };
 
@@ -1096,15 +1106,34 @@ declare namespace API {
     prefetch?: number;
   };
 
-  type ForgeRefreshRequest = {
-    equipSlot?: number;
+  type ForgeDetailRequest = {
+    /** 装备位置：1-武器 2-手套 3-鞋子 4-头盔 5-项链 6-翅膀 */
+    equipSlot: number;
+    /** 宠物ID */
+    petId: number;
+  };
+
+  type ForgeLockRequest = {
+    /** 装备位置：1-武器 2-手套 3-鞋子 4-头盔 5-项链 6-翅膀 */
+    equipSlot: number;
+    /** 需要锁定的词条序号列表（1~4），不在列表中的词条将被解锁，传空列表表示解锁全部 */
     lockedEntries?: number[];
-    petId?: number;
+    /** 宠物ID */
+    petId: number;
+  };
+
+  type ForgeRefreshRequest = {
+    /** 装备位置：1-武器 2-手套 3-鞋子 4-头盔 5-项链 6-翅膀 */
+    equipSlot: number;
+    /** 宠物ID */
+    petId: number;
   };
 
   type ForgeUpgradeRequest = {
-    equipSlot?: number;
-    petId?: number;
+    /** 装备位置：1-武器 2-手套 3-鞋子 4-头盔 5-项链 6-翅膀 */
+    equipSlot: number;
+    /** 宠物ID */
+    petId: number;
   };
 
   type FundItemVO = {
@@ -1733,7 +1762,7 @@ declare namespace API {
   };
 
   type listByPetIdUsingGETParams = {
-    /** petId */
+    /** 宠物ID */
     petId: number;
   };
 
@@ -2398,15 +2427,43 @@ declare namespace API {
     opponentPetRemainingHealth?: number;
   };
 
+  type PetEquipForgeDetailVO = {
+    entry1?: EquipEntry;
+    entry2?: EquipEntry;
+    entry3?: EquipEntry;
+    entry4?: EquipEntry;
+    /** 装备等级，武器为 null */
+    equipLevel?: number;
+    /** 装备位置：1-武器 2-手套 3-鞋子 4-头盔 5-项链 6-翅膀 */
+    equipSlot?: number;
+    /** 装备位置名称，如：武器、手套、鞋子等 */
+    equipSlotName?: string;
+    /** 记录ID */
+    id?: number;
+    /** 是否已达最高等级 */
+    maxLevel?: boolean;
+    /** 本次升级所需积分（已达最高等级时为 0） */
+    nextUpgradeCost?: number;
+    /** 宠物ID */
+    petId?: number;
+    /** 本次升级成功概率（百分比，已达最高等级时为 0） */
+    successRate?: number;
+  };
+
   type PetEquipForgeVO = {
     entry1?: EquipEntry;
     entry2?: EquipEntry;
     entry3?: EquipEntry;
     entry4?: EquipEntry;
+    /** 装备等级，武器为 null */
     equipLevel?: number;
+    /** 装备位置：1-武器 2-手套 3-鞋子 4-头盔 5-项链 6-翅膀 */
     equipSlot?: number;
+    /** 装备位置名称，如：武器、手套、鞋子等 */
     equipSlotName?: string;
+    /** 记录ID */
     id?: number;
+    /** 宠物ID */
     petId?: number;
   };
 
@@ -2738,6 +2795,7 @@ declare namespace API {
     baseAttack?: number;
     baseDefense?: number;
     baseHp?: number;
+    baseSpeed?: number;
     blockRate?: number;
     blockResistance?: number;
     comboRate?: number;
@@ -2748,7 +2806,6 @@ declare namespace API {
     dodgeResistance?: number;
     lifesteal?: number;
     lifestealResistance?: number;
-    speed?: number;
   };
 
   type startGameUsingPOST1Params = {
