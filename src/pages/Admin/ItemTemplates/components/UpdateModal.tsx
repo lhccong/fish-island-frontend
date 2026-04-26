@@ -72,6 +72,7 @@ const UpdateModal: React.FC<Props> = (props) => {
             baseAttack: values.baseAttack !== undefined ? Number(values.baseAttack) : undefined,
             baseDefense: values.baseDefense !== undefined ? Number(values.baseDefense) : undefined,
             baseHp: values.baseHp !== undefined ? Number(values.baseHp) : undefined,
+            baseSpeed: values.baseSpeed !== undefined ? Number(values.baseSpeed) : undefined,
             levelReq: values.levelReq !== undefined ? Number(values.levelReq) : undefined,
             removePoint: values.removePoint !== undefined ? Number(values.removePoint) : undefined,
           });

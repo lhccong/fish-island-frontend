@@ -163,8 +163,8 @@ const Lottery: React.FC = () => {
     }
   };
 
-  // 抽奖动画序列（9宫格外圈高亮顺序：0→1→2→5→8→7→6→3）
-  const animationSequence = [0, 1, 2, 5, 8, 7, 6, 3];
+  // 抽奖动画序列（9宫格外圈高亮顺序：0→1→2→5→8→7→6→3→4）
+  const animationSequence = [0, 1, 2, 5, 8, 7, 6, 3, 4];
 
   // 执行抽奖动画
   const runLotteryAnimation = async (targetIndex: number): Promise<void> => {
@@ -369,7 +369,7 @@ const Lottery: React.FC = () => {
                     key={prize.id}
                     className={`${styles.prizeItem} ${getQualityClass(prize.quality)} ${
                       activeIndex === index ? styles.active : ''
-                    }`}
+                    } ${drawing && index === 4 ? styles.centerSpin : ''}`}
                   >
                     <div className={styles.prizeIcon}>
                       {prize.icon?.startsWith('http') ? (

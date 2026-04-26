@@ -235,6 +235,24 @@
   color: #ff7043;
 }
 
+// 中间格子抽奖时的脉冲发光特效
+.centerSpin {
+  animation: centerPulse 0.6s ease-in-out infinite;
+  border-color: #ff9800 !important;
+  box-shadow: 0 0 12px rgba(255, 152, 0, 0.5), inset 0 0 8px rgba(255, 152, 0, 0.15);
+}
+
+@keyframes centerPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba(255, 152, 0, 0.4), inset 0 0 6px rgba(255, 152, 0, 0.1);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.8), inset 0 0 12px rgba(255, 152, 0, 0.3);
+  }
+}
+
 .lockIcon {
   font-size: 16px;
   color: #bbb;

@@ -59,6 +59,7 @@ const CreateModal: React.FC<Props> = (props) => {
             baseAttack: 0,
             baseDefense: 0,
             baseHp: 0,
+            baseSpeed: 0,
             levelReq: 1,
             removePoint: 0,
           },

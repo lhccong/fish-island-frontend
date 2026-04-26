@@ -220,6 +220,13 @@ const ItemTemplatesAdminPage: React.FC = () => {
       hideInTable: true,
     },
     {
+      title: '基础速度',
+      dataIndex: 'baseSpeed',
+      valueType: 'digit',
+      hideInSearch: true,
+      hideInTable: true,
+    },
+    {
       title: '使用等级需求',
       dataIndex: 'levelReq',
       valueType: 'digit',

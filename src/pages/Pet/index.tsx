@@ -368,7 +368,8 @@ const PetPage: React.FC = () => {
                   {/* 只有当有属性值大于0时才显示属性区域 */}
                   {(isValidNumber(item.baseAttack) || 
                     isValidNumber(item.baseDefense) || 
-                    isValidNumber(item.baseHp)) && (
+                    isValidNumber(item.baseHp) ||
+                    isValidNumber(item.baseSpeed)) && (
                     <div className={styles.itemStats}>
                       {isValidNumber(item.baseAttack) && (
                         <div className={styles.itemStat}>
@@ -386,6 +387,12 @@ const PetPage: React.FC = () => {
                         <div className={styles.itemStat}>
                           <span className={styles.statIcon}>❤️</span>
                           <span>生命: {item.baseHp}</span>
+                        </div>
+                      )}
+                      {isValidNumber(item.baseSpeed) && (
+                        <div className={styles.itemStat}>
+                          <span className={styles.statIcon}>⚡</span>
+                          <span>速度: {item.baseSpeed}</span>
                         </div>
                       )}
                     </div>

@@ -77,7 +77,7 @@ interface MoyuPetProps {
 }
 
 // 装备属性 Tooltip 渲染函数
-const renderEquipStatsTooltip = (equippedItem: API.ItemInstanceVO, slotName: string) => {
+const renderEquipStatsTooltip = (equippedItem: API.ItemInstanceVO, slotName: string, actionText?: string) => {
   const rarityNames: Record<number, string> = {
     1: '优良',
     2: '精良',
@@ -110,6 +110,7 @@ const renderEquipStatsTooltip = (equippedItem: API.ItemInstanceVO, slotName: str
     { key: 'baseAttack', label: '攻击力', value: stats.baseAttack },
     { key: 'baseDefense', label: '防御力', value: stats.baseDefense },
     { key: 'baseHp', label: '生命值', value: stats.baseHp },
+    { key: 'baseSpeed', label: '速度', value: equippedItem?.template?.baseSpeed },
     { key: 'critRate', label: '暴击率', value: stats.critRate, isPercent: true },
     { key: 'critResistance', label: '暴击抗性', value: stats.critResistance, isPercent: true },
     { key: 'dodgeRate', label: '闪避率', value: stats.dodgeRate, isPercent: true },
@@ -137,7 +138,7 @@ const renderEquipStatsTooltip = (equippedItem: API.ItemInstanceVO, slotName: str
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 8px', fontSize: '12px' }}>
           {statItems.map(stat => {
             const value = stat.value;
-            const displayValue = stat.isPercent ? value * 100 : value;
+            const displayValue = stat.isPercent ? Number((value * 100).toFixed(2)) : value;
             return (
             <div key={stat.key}>
               <span style={{ color: '#666' }}>{stat.label}:</span>{' '}
@@ -151,9 +152,11 @@ const renderEquipStatsTooltip = (equippedItem: API.ItemInstanceVO, slotName: str
       ) : (
         <div style={{ color: '#999', fontSize: '12px' }}>无额外属性</div>
       )}
-      <div style={{ marginTop: '8px', paddingTop: '4px', borderTop: '1px solid #eee', color: '#1890ff', fontSize: '12px' }}>
-        点击卸下
-      </div>
+      {actionText && (
+        <div style={{ marginTop: '8px', paddingTop: '4px', borderTop: '1px solid #eee', color: '#1890ff', fontSize: '12px' }}>
+          {actionText}
+        </div>
+      )}
     </div>
   );
 };
@@ -1082,7 +1085,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedWeapon?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={renderEquipStatsTooltip(equippedWeapon, '武器')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedWeapon, '武器', '点击卸下')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
                             className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
                             onClick={() => !isOtherUser && handleUnequipItem('weapon')}
@@ -1126,7 +1129,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedHand?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={renderEquipStatsTooltip(equippedHand, '手套')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedHand, '手套', '点击卸下')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
                             className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
                             onClick={() => !isOtherUser && handleUnequipItem('hand')}
@@ -1170,7 +1173,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedFoot?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={renderEquipStatsTooltip(equippedFoot, '鞋子')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedFoot, '鞋子', '点击卸下')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
                             className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
                             onClick={() => !isOtherUser && handleUnequipItem('foot')}
@@ -1226,7 +1229,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
                       const enhanceLevel = equippedHead?.enhanceLevel || 0;
                       return (
-                        <Tooltip title={renderEquipStatsTooltip(equippedHead, '头盔')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                        <Tooltip title={renderEquipStatsTooltip(equippedHead, '头盔', '点击卸下')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
                           <div
                             className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}`}
                             onClick={() => !isOtherUser && handleUnequipItem('head')}
@@ -1422,15 +1425,31 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                           })();
                           return (
                             <Col span={4} key={item.id}>
-                              <Card
-                                className={`${styles.itemCard} ${rarityClass}`}
-                                bodyStyle={{ padding: '12px 8px', position: 'relative' }}
-                                onContextMenu={(e) => {
-                                  e.preventDefault();
-                                  setContextMenuItemId(item.id || null);
-                                  setContextMenuPosition({ x: e.clientX, y: e.clientY });
-                                }}
+                              <Tooltip
+                                title={
+                                  item.equipStats
+                                    ? renderEquipStatsTooltip(item, item.template?.name || '')
+                                    : (
+                                      <div style={{ minWidth: '160px' }}>
+                                        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                                          {item.template?.name || '未知物品'}
+                                          {(item.enhanceLevel || 0) > 0 && <span style={{ color: '#faad14' }}>+{item.enhanceLevel}</span>}
+                                        </div>
+                                        <div style={{ color: '#666', fontSize: '12px' }}>{item.template?.description || '暂无描述'}</div>
+                                      </div>
+                                    )
+                                }
+                                overlayInnerStyle={{ backgroundColor: '#fff' }}
                               >
+                                <Card
+                                  className={`${styles.itemCard} ${rarityClass}`}
+                                  bodyStyle={{ padding: '12px 8px', position: 'relative' }}
+                                  onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    setContextMenuItemId(item.id || null);
+                                    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+                                  }}
+                                >
                                 <div
                                   className={styles.itemRarity}
                                   style={{ backgroundColor: rarityColors[rarity] }}
@@ -1474,7 +1493,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                     </Button>
                                   )}
                                 </div>
-                              </Card>
+                                </Card>
+                              </Tooltip>
                             </Col>
                           );
                         })}
@@ -1648,6 +1668,9 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                               )}
                               {equipStats.totalBaseHp !== undefined && equipStats.totalBaseHp > 0 && (
                                 <Col span={8}><span style={{ color: '#fa8c16' }}>❤️ 生命加成: +{equipStats.totalBaseHp}</span></Col>
+                              )}
+                              {equipStats.totalBaseSpeed !== undefined && equipStats.totalBaseSpeed > 0 && (
+                                <Col span={8}><span style={{ color: '#722ed1' }}>⚡ 速度加成: +{equipStats.totalBaseSpeed}</span></Col>
                               )}
                               {equipStats.critRate !== undefined && equipStats.critRate > 0 && (
                                 <Col span={8}><span>💥 暴击率: +{(equipStats.critRate * 100).toFixed(1)}%</span></Col>
@@ -2064,15 +2087,31 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                           })();
                           return (
                             <Col span={4} key={item.id}>
-                              <Card
-                                className={`${styles.itemCard} ${rarityClass}`}
-                                bodyStyle={{ padding: '12px 8px', position: 'relative' }}
-                                onContextMenu={(e) => {
-                                  e.preventDefault();
-                                  setContextMenuItemId(item.id || null);
-                                  setContextMenuPosition({ x: e.clientX, y: e.clientY });
-                                }}
+                              <Tooltip
+                                title={
+                                  item.equipStats
+                                    ? renderEquipStatsTooltip(item, item.template?.name || '')
+                                    : (
+                                      <div style={{ minWidth: '160px' }}>
+                                        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                                          {item.template?.name || '未知物品'}
+                                          {(item.enhanceLevel || 0) > 0 && <span style={{ color: '#faad14' }}>+{item.enhanceLevel}</span>}
+                                        </div>
+                                        <div style={{ color: '#666', fontSize: '12px' }}>{item.template?.description || '暂无描述'}</div>
+                                      </div>
+                                    )
+                                }
+                                overlayInnerStyle={{ backgroundColor: '#fff' }}
                               >
+                                <Card
+                                  className={`${styles.itemCard} ${rarityClass}`}
+                                  bodyStyle={{ padding: '12px 8px', position: 'relative' }}
+                                  onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    setContextMenuItemId(item.id || null);
+                                    setContextMenuPosition({ x: e.clientX, y: e.clientY });
+                                  }}
+                                >
                                 <div
                                   className={styles.itemRarity}
                                   style={{ backgroundColor: rarityColors[rarity] }}
@@ -2116,7 +2155,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                     </Button>
                                   )}
                                 </div>
-                              </Card>
+                                </Card>
+                              </Tooltip>
                             </Col>
                           );
                         })}
@@ -2290,6 +2330,9 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                               )}
                               {equipStats.totalBaseHp !== undefined && equipStats.totalBaseHp > 0 && (
                                 <Col span={8}><span style={{ color: '#fa8c16' }}>❤️ 生命加成: +{equipStats.totalBaseHp}</span></Col>
+                              )}
+                              {equipStats.totalBaseSpeed !== undefined && equipStats.totalBaseSpeed > 0 && (
+                                <Col span={8}><span style={{ color: '#722ed1' }}>⚡ 速度加成: +{equipStats.totalBaseSpeed}</span></Col>
                               )}
                               {equipStats.critRate !== undefined && equipStats.critRate > 0 && (
                                 <Col span={8}><span>💥 暴击率: +{(equipStats.critRate * 100).toFixed(1)}%</span></Col>

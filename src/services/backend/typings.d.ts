@@ -1606,6 +1606,8 @@ declare namespace API {
     baseDefense?: number;
     /** 基础生命值 */
     baseHp?: number;
+    /** 基础速度（决定战斗先手，速度高的一方先攻击） */
+    baseSpeed?: number;
     /** 物品大类：equipment-装备类（能穿戴的）、consumable-消耗品（药水/卷轴/食物）、material-材料（强化石/合成材料） */
     category?: string;
     /** 模板唯一码，例如 sword_iron_01 */
@@ -1639,6 +1641,8 @@ declare namespace API {
     baseDefense?: number;
     /** 基础生命值 */
     baseHp?: number;
+    /** 基础速度（决定战斗先手，速度高的一方先攻击） */
+    baseSpeed?: number;
     /** 物品大类 */
     category: string;
     /** 模板唯一码 */
@@ -1696,6 +1700,7 @@ declare namespace API {
     baseAttack?: number;
     baseDefense?: number;
     baseHp?: number;
+    baseSpeed?: number;
     category?: string;
     code?: string;
     description?: string;
@@ -2416,6 +2421,7 @@ declare namespace API {
     dodgeResistance?: number;
     lifesteal?: number;
     lifestealResistance?: number;
+    speed?: number;
     totalBaseAttack?: number;
     totalBaseDefense?: number;
     totalBaseHp?: number;
@@ -2742,6 +2748,7 @@ declare namespace API {
     dodgeResistance?: number;
     lifesteal?: number;
     lifestealResistance?: number;
+    speed?: number;
   };
 
   type startGameUsingPOST1Params = {
