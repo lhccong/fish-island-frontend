@@ -270,7 +270,7 @@ const getEnhanceTier = (level: number): number => {
 };
 const ENTRY_GRADE_NAME: Record<number, string> = { 1: '白', 2: '蓝', 3: '紫', 4: '金', 5: '红' };
 const ENTRY_ATTR_NAME: Record<string, string> = {
-  attack: '攻击力', defense: '防御力', hp: '生命值', speed: '速度',
+  attack: '攻击力', defense: '防御力', hp: '生命值', maxHp: '生命值', speed: '速度',
   critRate: '暴击率', critResistance: '暴击抗性', antiCrit: '暴击抗性',
   dodgeRate: '闪避率', dodgeResistance: '闪避抗性', antiDodge: '闪避抗性',
   comboRate: '连击率', comboResistance: '连击抗性', antiCombo: '连击抗性',
@@ -345,7 +345,7 @@ const ForgeModal: React.FC<ForgeModalProps> = React.memo(({
                 const attrName = ENTRY_ATTR_NAME[entry.attr || ''] || entry.attr || '未知';
                 const isPercent = IS_PERCENT_ATTR(entry.attr || '');
                 const displayVal = isPercent
-                  ? `${Number((entry.value || 0).toFixed(2))}%`
+                  ? `${Number((( entry.value || 0) * 100).toFixed(2))}%`
                   : `+${entry.value}`;
                 return (
                   <div
@@ -474,7 +474,7 @@ const ViewForgeModal: React.FC<ViewForgeModalProps> = React.memo(({ visible, slo
               const attrName = ENTRY_ATTR_NAME[entry.attr || ''] || entry.attr || '未知';
               const isPercent = IS_PERCENT_ATTR(entry.attr || '');
               const displayVal = isPercent
-                ? `${Number((entry.value || 0).toFixed(2))}%`
+                ? `${Number((( entry.value || 0) * 100).toFixed(2))}%`
                 : `+${entry.value}`;
               return (
                 <div
