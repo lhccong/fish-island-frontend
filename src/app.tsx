@@ -10,6 +10,7 @@ import AnnouncementModal from '@/components/AnnouncementModal';
 import BossKeySettings from '@/components/BossKeySettings';
 import SideAnnouncement from '@/components/SideAnnouncement';
 import GlobalReader from '@/components/GlobalFloatingReader';
+import FishBattleFloatingWindow from '@/components/FishBattleFloatingWindow';
 import routes from '../config/routes';
 import GlobalTitle from '@/components/GlobalTitle';
 import {Board, Player, Position, Move, WinningLine} from '@/game';
@@ -388,6 +389,7 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
             visible={isReaderVisible}
             onClose={hideReader}
           />
+          <FishBattleFloatingWindow />
         </>
       );
     },

@@ -36,3 +36,38 @@ export const UNDERCOVER_NOTIFICATION = {
   NONE: 'NONE',        // 无通知
   NEW_ROOM: 'NEW_ROOM' // 新房间通知
 };
+
+/**
+ * 摸鱼大乱斗 Socket.IO 地址
+ */
+export const FISH_BATTLE_SOCKET_URL_LOCAL = 'ws://127.0.0.1:8091';
+export const FISH_BATTLE_SOCKET_URL_PROD = 'wss://api.yucoder.cn';
+
+/**
+ * 摸鱼大乱斗房间状态
+ */
+export const FISH_BATTLE_ROOM_STATUS = {
+  WAITING: 0,       // 等待中
+  HERO_PICKING: 1,  // 选英雄中
+  PLAYING: 2,       // 对局中
+  ENDED: 3          // 已结束
+};
+
+/**
+ * 摸鱼大乱斗英雄职业
+ */
+export const FISH_BATTLE_HERO_ROLES: Record<string, string> = {
+  tank: '坦克',
+  fighter: '战士',
+  mage: '法师',
+  marksman: '射手',
+  support: '辅助',
+};
+
+/**
+ * 摸鱼大乱斗队伍
+ */
+export const FISH_BATTLE_TEAMS = {
+  BLUE: 'blue',
+  RED: 'red',
+};

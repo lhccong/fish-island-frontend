@@ -1,0 +1,907 @@
+/* ========================================
+   Fish Battle Hero Select — LOL-inspired champion select
+   Dark theme with team colors
+   ======================================== */
+
+.hero-select-page {
+  height: calc(100vh - 56px);
+  background: linear-gradient(135deg, #0a0e1a 0%, #1a1030 50%, #0a0e1a 100%);
+  color: #e0e0e0;
+  font-family: 'Fredoka', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  border-radius: 8px;
+
+  svg { vertical-align: middle; }
+}
+
+/* ===== Top Timer Bar ===== */
+.pick-timer-bar {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.pick-timer-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #c89b3c, #f0e6d2);
+  transition: width 1s linear;
+}
+
+.pick-timer-progress.urgent {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  animation: timerPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.pick-timer-text {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #c89b3c;
+  text-shadow: 0 0 20px rgba(200, 155, 60, 0.5);
+  z-index: 1;
+}
+
+.pick-timer-text.urgent {
+  color: #ef4444;
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+.pick-phase-label {
+  position: absolute;
+  left: 32px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8b8589;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ===== Main Content Area ===== */
+.pick-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* ===== Team Sidebars ===== */
+.team-sidebar {
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 8px;
+  flex-shrink: 0;
+}
+
+.team-sidebar.blue {
+  background: linear-gradient(180deg, rgba(30, 58, 95, 0.6) 0%, rgba(15, 30, 50, 0.4) 100%);
+  border-right: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.team-sidebar.red {
+  background: linear-gradient(180deg, rgba(95, 30, 30, 0.6) 0%, rgba(50, 15, 15, 0.4) 100%);
+  border-left: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.team-sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.blue .team-sidebar-title { color: #60a5fa; }
+.red .team-sidebar-title { color: #f87171; }
+
+/* ===== Player Pick Slot ===== */
+.pick-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.3s;
+  min-height: 60px;
+}
+
+.pick-slot.is-me {
+  border-color: rgba(200, 155, 60, 0.4);
+  background: rgba(200, 155, 60, 0.08);
+}
+
+.pick-slot.confirmed {
+  border-color: rgba(74, 222, 128, 0.3);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.pick-slot.selecting {
+  border-color: rgba(200, 155, 60, 0.5);
+  animation: slotGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes slotGlow {
+  0%, 100% { box-shadow: 0 0 4px rgba(200, 155, 60, 0.2); }
+  50% { box-shadow: 0 0 12px rgba(200, 155, 60, 0.4); }
+}
+
+.pick-slot-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  position: relative;
+}
+
+.pick-slot-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pick-slot-avatar .confirmed-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #0a0e1a;
+}
+
+.pick-slot-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pick-slot-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pick-slot-hero {
+  font-size: 0.72rem;
+  color: #888;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pick-slot-status {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.status-picking {
+  color: #c89b3c;
+}
+
+.status-confirmed {
+  color: #4ade80;
+}
+
+.me-tag {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #c89b3c;
+  border: 1px solid rgba(200, 155, 60, 0.4);
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+
+/* ===== Center Area — 3D Model Showcase ===== */
+.pick-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.pick-model-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center bottom, rgba(200, 155, 60, 0.06) 0%, transparent 70%);
+}
+
+/* 3D Canvas 容器 */
+.hero-model-canvas-wrapper {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+/* 立绘回退 */
+.hero-model-fallback {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-model-fallback-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0.5;
+}
+
+.hero-model-fallback-emoji {
+  font-size: 8rem;
+  opacity: 0.2;
+}
+
+/* 动画切换按钮 */
+.anim-cycle-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(200, 155, 60, 0.4);
+  background: rgba(10, 14, 26, 0.75);
+  backdrop-filter: blur(8px);
+  color: #f0e6d2;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+
+  &:hover {
+    background: rgba(200, 155, 60, 0.25);
+    border-color: rgba(200, 155, 60, 0.7);
+  }
+}
+
+/* 英雄信息叠加层 */
+.model-hero-info {
+  position: absolute;
+  bottom: 60px;
+  left: 24px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.model-hero-name {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #f0e6d2;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+  letter-spacing: 2px;
+}
+
+.model-hero-role {
+  font-size: 0.85rem;
+  color: #c89b3c;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.model-hero-skin {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* 技能预览（模型区底部居中） */
+.model-skills {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+}
+
+/* 空状态 */
+.pick-model-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.4;
+}
+
+.pick-model-empty-icon {
+  font-size: 5rem;
+}
+
+.pick-model-empty-text {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* ===== Right Panel — Hero Grid ===== */
+.pick-grid-panel {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  min-height: 0;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.hero-grid-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.hero-search-input {
+  flex: 1;
+  width: 100%;
+  max-width: 100%;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus { border-color: #c89b3c; }
+  &::placeholder { color: #666; }
+}
+
+.hero-role-filters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.role-filter-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: #888;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  &:hover { color: #ccc; border-color: rgba(255, 255, 255, 0.15); }
+
+  &.active {
+    background: rgba(200, 155, 60, 0.15);
+    border-color: rgba(200, 155, 60, 0.4);
+    color: #c89b3c;
+  }
+}
+
+.hero-grid-scroll {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px;
+}
+
+.hero-grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(200, 155, 60, 0.3);
+    transform: translateY(-2px);
+  }
+
+  &.selected {
+    background: rgba(200, 155, 60, 0.15);
+    border-color: #c89b3c;
+    box-shadow: 0 0 12px rgba(200, 155, 60, 0.3);
+  }
+
+  &.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.hero-grid-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-bottom: 4px;
+}
+
+.hero-grid-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-grid-name {
+  font-size: 0.68rem;
+  color: #999;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.hero-grid-item.selected .hero-grid-name {
+  color: #c89b3c;
+}
+
+/* ===== Bottom Detail & Confirm Area ===== */
+.pick-bottom {
+  height: 120px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 0 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* -- 皮肤切换区 -- */
+.pick-skin-area {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: 360px;
+}
+
+.skin-area-title, .spell-area-title {
+  font-size: 0.7rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.skin-list {
+  display: flex;
+  gap: 6px;
+}
+
+.skin-item {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:hover {
+    border-color: rgba(200, 155, 60, 0.5);
+    transform: scale(1.08);
+  }
+
+  &.active {
+    border-color: #c89b3c;
+    box-shadow: 0 0 10px rgba(200, 155, 60, 0.4);
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.skin-item-text {
+  font-size: 0.7rem;
+  color: #888;
+  font-weight: 600;
+}
+
+.skin-area-empty {
+  font-size: 0.75rem;
+  color: #555;
+  padding: 12px 0;
+  text-align: center;
+}
+
+/* -- 召唤师技能区 -- */
+.pick-spell-area {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.spell-slots {
+  display: flex;
+  gap: 8px;
+}
+
+.spell-slot {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+
+  &:hover {
+    border-color: rgba(200, 155, 60, 0.5);
+  }
+
+  &.editing {
+    border-color: #c89b3c;
+    box-shadow: 0 0 12px rgba(200, 155, 60, 0.4);
+  }
+}
+
+.spell-slot-icon {
+  font-size: 1.2rem;
+}
+
+.spell-slot-key {
+  position: absolute;
+  right: 3px;
+  bottom: 1px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+  z-index: 1;
+}
+
+.spell-slot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.spell-picker {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(20, 24, 40, 0.95);
+  border: 1px solid rgba(200, 155, 60, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  flex-wrap: wrap;
+  max-width: 260px;
+}
+
+.spell-picker-item {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  overflow: hidden;
+
+  &:hover {
+    border-color: rgba(200, 155, 60, 0.5);
+    background: rgba(200, 155, 60, 0.1);
+    transform: scale(1.1);
+  }
+
+  &.selected {
+    border-color: #c89b3c;
+    background: rgba(200, 155, 60, 0.2);
+  }
+}
+
+.spell-picker-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.pick-skill {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #999;
+  cursor: default;
+  position: relative;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(200, 155, 60, 0.4);
+  }
+}
+
+.pick-skill-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  position: absolute;
+  inset: 0;
+}
+
+.pick-skill-key {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-size: 0.55rem;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  z-index: 1;
+}
+
+/* -- 确认按钮区 -- */
+.pick-confirm-area {
+  width: 200px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-confirm-hero {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 8px;
+  border: 2px solid #c89b3c;
+  background: linear-gradient(135deg, rgba(200, 155, 60, 0.2), rgba(200, 155, 60, 0.1));
+  color: #c89b3c;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(200, 155, 60, 0.4), rgba(200, 155, 60, 0.2));
+    box-shadow: 0 0 20px rgba(200, 155, 60, 0.3);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &.confirmed {
+    border-color: #22c55e;
+    color: #22c55e;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+    cursor: pointer;
+
+    &:hover {
+      border-color: #ef4444;
+      color: #ef4444;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+  }
+
+  &.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.confirm-hint {
+  font-size: 0.75rem;
+  color: #666;
+  text-align: center;
+}
+
+/* ===== Empty / No Hero State ===== */
+.no-hero-hint {
+  font-size: 0.85rem;
+  color: #555;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* ===== Loading Overlay ===== */
+.hero-select-loading {
+  height: calc(100vh - 56px);
+  background: #0a0e1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+/* ===== Transition Overlay ===== */
+.pick-complete-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.pick-complete-countdown {
+  font-size: 6rem;
+  font-weight: 900;
+  color: #c89b3c;
+  text-shadow: 0 0 40px rgba(200, 155, 60, 0.6), 0 0 80px rgba(200, 155, 60, 0.3);
+  line-height: 1;
+  animation: countdownPulse 1s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.85; }
+}
+
+.pick-complete-text {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #c89b3c;
+  text-shadow: 0 0 20px rgba(200, 155, 60, 0.5);
+  letter-spacing: 4px;
+  animation: completeTextPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes completeTextPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+.pick-complete-sub {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .pick-grid-panel { width: 260px; }
+  .hero-role-filters { flex-wrap: wrap; }
+}
+
+@media (max-width: 1024px) {
+  .team-sidebar { width: 160px; }
+  .pick-grid-panel { width: 220px; }
+  .pick-confirm-area { width: 160px; }
+  .pick-skin-area { max-width: 200px; }
+  .hero-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
+}
+
+@media (max-width: 768px) {
+  .pick-main { flex-direction: column; }
+  .team-sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 8px; }
+  .pick-slot { min-width: 140px; }
+  .pick-center { min-height: 300px; }
+  .pick-grid-panel { width: 100%; max-height: 240px; }
+  .pick-bottom { height: auto; flex-wrap: wrap; padding: 12px; }
+  .pick-confirm-area { width: 100%; }
+  .pick-skin-area { max-width: 100%; }
+  .spell-picker { max-width: 100%; }
+}

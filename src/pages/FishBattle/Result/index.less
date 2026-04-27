@@ -1,0 +1,402 @@
+/* ========================================
+   Fish Battle Result — matches 06-result.html prototype
+   ======================================== */
+
+.fish-battle-result {
+  min-height: 100vh;
+  color: #1a1025;
+  padding: 40px 20px;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Fredoka', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  // Lucide 图标全局垂直居中
+  svg { vertical-align: middle; }
+}
+
+/* ===== Confetti ===== */
+.confetti-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  animation: confettiFall linear infinite;
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* ===== Content ===== */
+.result-content {
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== Banner ===== */
+.result-banner {
+  text-align: center;
+  padding: 40px 24px;
+  border-radius: 20px;
+  margin-bottom: 24px;
+
+  &.win-blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.02));
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+
+  &.win-red {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.02));
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+}
+
+.banner-icon {
+  font-size: 3.5rem;
+  margin-bottom: 12px;
+}
+
+.banner-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffd93d, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 12px;
+}
+
+.banner-score {
+  font-size: 2.5rem;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.score-blue { color: #64b5f6; }
+.score-sep { color: #ccc; margin: 0 12px; font-size: 1.2rem; }
+.score-red { color: #ef5350; }
+
+.banner-meta {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  color: #999;
+  font-size: 0.85rem;
+}
+
+/* ===== Points Card ===== */
+.points-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.points-icon { font-size: 2rem; }
+
+.points-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.points-label { font-size: 0.82rem; color: #999; }
+.points-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffd93d;
+}
+
+.points-breakdown {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.points-item {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #f5f5f5;
+  color: #666;
+
+  &.win-bonus { color: #4ade80; background: rgba(74, 222, 128, 0.1); }
+}
+
+/* ===== MVP Card ===== */
+.mvp-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(255, 217, 61, 0.06), rgba(255, 107, 53, 0.04));
+  border: 1px solid rgba(255, 217, 61, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-radius: 14px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.mvp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  padding: 3px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffd93d, #ff6b35);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.mvp-avatar { font-size: 2.2rem; }
+
+.mvp-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.mvp-name { font-weight: 700; font-size: 1rem; color: #1a1025; }
+.mvp-kda { font-size: 0.82rem; color: #999; }
+
+.mvp-stats {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.mvp-stat {
+  font-size: 0.78rem;
+  color: #999;
+  padding: 4px 10px;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+
+.btn-like-mvp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 217, 61, 0.3);
+  background: rgba(255, 217, 61, 0.1);
+  color: #ffd93d;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  &:hover { background: rgba(255, 217, 61, 0.2); }
+}
+
+/* ===== Stats Section ===== */
+.stats-section {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.stats-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.stats-tab {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: #999;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+
+  &:hover { color: #333; }
+  &.active {
+    color: #ff6b35;
+    background: rgba(255, 107, 53, 0.06);
+    border-bottom: 2px solid #ff6b35;
+  }
+}
+
+.stats-table-header {
+  display: flex;
+  padding: 10px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #999;
+}
+
+.stats-table-row {
+  display: flex;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 0.85rem;
+  align-items: center;
+  transition: background 0.2s;
+
+  &:hover { background: #fafafa; }
+
+  &.mvp-row {
+    background: rgba(255, 217, 61, 0.04);
+    border-left: 3px solid #ffd93d;
+  }
+}
+
+.col-hero { flex: 2; display: flex; align-items: center; gap: 6px; }
+.col-kda { flex: 1; }
+.col-damage, .col-taken, .col-heal { flex: 1; }
+.col-bar { flex: 3; display: flex; align-items: center; gap: 8px; }
+.col-like { flex: 1; text-align: right; }
+
+.row-emoji { font-size: 1.1rem; }
+.row-team-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  &.blue { background: #64b5f6; }
+  &.red { background: #ef5350; }
+}
+
+.row-mvp {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  background: rgba(255, 217, 61, 0.15);
+  color: #ffd93d;
+}
+
+.bar-track {
+  flex: 1;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  &.damage { background: linear-gradient(90deg, #ef4444, #f87171); }
+  &.taken { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+}
+
+.bar-value {
+  font-size: 0.75rem;
+  color: #999;
+  min-width: 50px;
+  text-align: right;
+}
+
+.btn-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e5e5;
+  background: white;
+  color: #999;
+  font-size: 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  &:hover { background: rgba(255, 217, 61, 0.08); color: #f59e0b; border-color: rgba(255, 217, 61, 0.3); }
+}
+
+/* ===== Actions ===== */
+.result-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-play-again {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 32px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #ff6b35, #ff8f5e);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4);
+  transition: all 0.2s;
+  &:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(255, 107, 53, 0.5); }
+}
+
+.btn-view-data {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 28px;
+  border-radius: 999px;
+  border: 1px solid #e5e5e5;
+  background: white;
+  color: #333;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  &:hover { background: #f5f5f5; border-color: #ccc; }
+}
+
+.btn-go-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 28px;
+  border-radius: 999px;
+  border: 1px solid #e5e5e5;
+  background: white;
+  color: #333;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  &:hover { background: #f5f5f5; border-color: #ccc; }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .points-card, .mvp-card { flex-wrap: wrap; }
+  .points-breakdown, .mvp-stats { margin-left: 0; margin-top: 8px; }
+  .stats-table-header, .stats-table-row { font-size: 0.75rem; }
+}

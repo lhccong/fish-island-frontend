@@ -1,0 +1,240 @@
+/* ===== 浮动窗口响应式样式 =====
+ * 通过 JS 在 .fb-content 上添加 size class:
+ *   fb-lg: > 1024px   fb-md: 861~1024px   fb-sm: 701~860px   fb-xs: <= 700px
+ *
+ * 注意：这里直接使用全局 class 名称（非 CSS Modules），
+ * 因为游戏页面的 less 文件也是以全局 class 方式引入的。
+ */
+
+/* ============================================================
+   HeroSelect — 中等宽度 (fb-md, <= 1024px)
+   ============================================================ */
+.fb-md .team-sidebar {
+  width: 160px !important;
+}
+.fb-md .pick-grid-panel {
+  width: 240px !important;
+}
+.fb-md .hero-grid {
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)) !important;
+}
+.fb-md .hero-grid-avatar {
+  width: 44px !important;
+  height: 44px !important;
+}
+.fb-md .pick-bottom {
+  gap: 8px !important;
+}
+.fb-md .pick-skin-area {
+  max-width: 180px !important;
+}
+
+/* ============================================================
+   HeroSelect — 较窄 (fb-sm, <= 860px)
+   ============================================================ */
+.fb-sm .team-sidebar {
+  width: 130px !important;
+  padding: 8px 4px !important;
+}
+.fb-sm .pick-grid-panel {
+  width: 200px !important;
+  padding: 8px !important;
+}
+.fb-sm .hero-grid {
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)) !important;
+  gap: 4px !important;
+}
+.fb-sm .hero-grid-avatar {
+  width: 40px !important;
+  height: 40px !important;
+}
+.fb-sm .hero-grid-name {
+  font-size: 0.6rem !important;
+}
+.fb-sm .pick-timer-text {
+  font-size: 1.1rem !important;
+}
+.fb-sm .pick-slot {
+  min-height: 48px !important;
+  padding: 4px 6px !important;
+}
+.fb-sm .pick-slot-avatar {
+  width: 32px !important;
+  height: 32px !important;
+}
+.fb-sm .pick-bottom {
+  min-height: 56px;
+  padding: 6px 8px !important;
+  gap: 6px !important;
+}
+.fb-sm .pick-confirm-btn {
+  padding: 6px 16px !important;
+  font-size: 0.85rem !important;
+}
+.fb-sm .pick-skin-area {
+  max-width: 130px !important;
+}
+.fb-sm .pick-complete-countdown {
+  font-size: 3.5rem !important;
+}
+.fb-sm .pick-complete-text {
+  font-size: 1.1rem !important;
+}
+
+/* ============================================================
+   HeroSelect — 极窄 (fb-xs, <= 700px)
+   ============================================================ */
+.fb-xs .team-sidebar {
+  width: 100px !important;
+  padding: 6px 2px !important;
+}
+.fb-xs .pick-grid-panel {
+  width: 160px !important;
+  padding: 6px !important;
+}
+.fb-xs .hero-grid {
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)) !important;
+}
+.fb-xs .hero-grid-avatar {
+  width: 34px !important;
+  height: 34px !important;
+}
+.fb-xs .hero-grid-name {
+  display: none !important;
+}
+.fb-xs .pick-timer-text {
+  font-size: 0.95rem !important;
+}
+.fb-xs .pick-slot-name {
+  font-size: 0.7rem !important;
+}
+.fb-xs .pick-slot-hero {
+  font-size: 0.65rem !important;
+}
+.fb-xs .team-sidebar-title {
+  font-size: 0.7rem !important;
+}
+.fb-xs .pick-skin-area {
+  display: none !important;
+}
+.fb-xs .spell-picker {
+  max-width: 160px !important;
+}
+.fb-xs .pick-complete-countdown {
+  font-size: 2.5rem !important;
+}
+.fb-xs .pick-complete-text {
+  font-size: 0.95rem !important;
+}
+
+/* ============================================================
+   Loading — 中等宽度 (fb-md, <= 1024px)
+   ============================================================ */
+.fb-md .summoner-card {
+  flex: 1 1 calc(25% - 12px) !important;
+  min-width: 140px !important;
+}
+.fb-md .champion-splash {
+  aspect-ratio: 1 / 1 !important;
+}
+.fb-md .loading-mode-text {
+  font-size: 1.3rem !important;
+}
+.fb-md .teams-rows {
+  gap: 10px !important;
+}
+
+/* ============================================================
+   Loading — 较窄 (fb-sm, <= 860px)
+   ============================================================ */
+.fb-sm .summoner-card {
+  flex: 1 1 calc(33.3% - 10px) !important;
+  min-width: 110px !important;
+}
+.fb-sm .champion-splash {
+  aspect-ratio: 4 / 3 !important;
+}
+.fb-sm .teams-rows {
+  gap: 8px !important;
+}
+.fb-sm .team-row {
+  gap: 4px !important;
+}
+.fb-sm .loading-header {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+}
+.fb-sm .loading-mode-text {
+  font-size: 1.1rem !important;
+  letter-spacing: 2px !important;
+}
+.fb-sm .loading-mode-icon {
+  width: 32px !important;
+  height: 32px !important;
+}
+.fb-sm .player-grid {
+  gap: 8px !important;
+}
+.fb-sm .summoner-avatar {
+  width: 24px !important;
+  height: 24px !important;
+}
+.fb-sm .summoner-name {
+  font-size: 0.85rem !important;
+}
+.fb-sm .spell-icon {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+/* ============================================================
+   Loading — 极窄 (fb-xs, <= 700px)
+   ============================================================ */
+.fb-xs .summoner-card {
+  flex: 1 1 calc(50% - 8px) !important;
+  min-width: 90px !important;
+  padding: 6px !important;
+}
+.fb-xs .champion-splash {
+  aspect-ratio: 1 / 1 !important;
+}
+.fb-xs .teams-rows {
+  gap: 6px !important;
+}
+.fb-xs .team-row {
+  gap: 3px !important;
+}
+.fb-xs .team-header {
+  padding: 0 6px 4px !important;
+}
+.fb-xs .loading-mode-text {
+  font-size: 0.95rem !important;
+}
+.fb-xs .summoner-name {
+  font-size: 0.75rem !important;
+}
+.fb-xs .spell-icon {
+  width: 18px !important;
+  height: 18px !important;
+}
+.fb-xs .summoner-avatar {
+  width: 20px !important;
+  height: 20px !important;
+}
+.fb-xs .loading-footer {
+  font-size: 0.7rem !important;
+  flex-wrap: wrap;
+}
+.fb-xs .summoner-details {
+  gap: 3px !important;
+}
+.fb-xs .loading-screen {
+  padding: 8px !important;
+}
+.fb-xs .champion-name {
+  display: none !important;
+}
+.fb-xs .runes {
+  display: none !important;
+}

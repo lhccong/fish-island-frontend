@@ -1,0 +1,564 @@
+﻿/* ========================================
+   Fish Battle Loading — scoped under .fish-battle-loading
+   to prevent global CSS pollution
+   ======================================== */
+
+.fish-battle-loading-wrapper {
+  background: linear-gradient(135deg, #1a2a3a 0%, #2a1a35 50%, #1a2a3a 100%);
+  padding: 10px;
+  border-radius: 16px;
+}
+
+.fish-battle-loading {
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d6ecff;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Segoe UI', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+  padding: 20px 24px;
+  background:
+    radial-gradient(ellipse 70% 50% at 25% 15%, rgba(40, 110, 170, 0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 55% at 75% 85%, rgba(120, 60, 140, 0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 55% 45%, rgba(20, 80, 130, 0.1) 0%, transparent 60%),
+    linear-gradient(160deg, #0b1520 0%, #101e2c 40%, #0d1925 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(80, 140, 200, 0.15);
+  box-shadow:
+    0 0 40px rgba(30, 80, 120, 0.15),
+    0 0 80px rgba(60, 40, 100, 0.08);
+
+  svg { vertical-align: middle; }
+
+  /* ===== Grid Background ===== */
+  .loading-grid-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: url('data:image/svg+xml,%3Csvg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="M10 10 L 20 20 M 30 10 L 40 20 M 50 10 L 60 20 M 70 10 L 80 20 M 90 10 L 90 20 M 10 30 L 20 40 M 30 30 L 40 40" stroke="%233a7ca5" stroke-width="0.5" opacity="0.08" /%3E%3C/svg%3E');
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== Particles ===== */
+  .loading-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .l-particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(120, 198, 240, 0.45);
+    box-shadow: 0 0 10px rgba(120, 198, 240, 0.5);
+    animation: fbl-sparkle 4s ease-in-out infinite;
+  }
+
+  /* ===== Content ===== */
+  .loading-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  /* ===== Loading Screen Panel ===== */
+  .loading-screen {
+    width: 100%;
+    background: rgba(2, 18, 28, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 2px solid #1e4f6e;
+    border-top-color: #3a8ab0;
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.8),
+      0 0 0 1px #0e3045 inset,
+      0 0 30px rgba(30, 95, 128, 0.2);
+    padding: 20px 18px 18px;
+    border-radius: 12px;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #3a8ab0, #1e4f6e 30%, #4a2a6e 70%, #1e4f6e);
+      z-index: -1;
+      opacity: 0.7;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: 8%;
+      right: 8%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #6bc4f0, #b0e0ff, #6bc4f0, transparent);
+      filter: blur(3px);
+      opacity: 0.8;
+    }
+  }
+
+  .loading-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding: 0 6px;
+    gap: 12px;
+  }
+
+  .loading-mode-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .loading-mode-icon {
+    width: 40px;
+    height: 40px;
+    background: #0e2c40;
+    border: 2px solid #4a9fc0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 15px #2a9fd6, inset 0 1px 4px rgba(160, 208, 240, 0.6);
+    color: #c2e4ff;
+  }
+
+  .loading-mode-text {
+    color: #d6ecff;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-shadow: 0 2px 8px #0a202e, 0 0 15px #1e6a9a;
+    text-transform: uppercase;
+  }
+
+  .loading-connection-status {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .loading-ping {
+    color: #c2e0ff;
+    font-size: 0.9rem;
+    background: #0f232f;
+    padding: 5px 16px;
+    border-radius: 24px;
+    border: 1px solid #2f7a9f;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.53);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .loading-spinner {
+    width: 26px;
+    height: 26px;
+    border: 3px solid #1f4e6a;
+    border-top-color: #8ad4ff;
+    border-radius: 50%;
+    animation: fbl-spin 1s linear infinite;
+    box-shadow: 0 0 12px #2a9fd6;
+  }
+
+  /* ===== Teams ===== */
+  .teams-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .team-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .team-header {
+    display: flex;
+    align-items: baseline;
+    padding: 0 10px 6px;
+    border-bottom: 2px solid #1a4a62;
+  }
+
+  .my-team-chip {
+    margin-left: 10px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(253, 224, 71, 0.45);
+    background: rgba(253, 224, 71, 0.12);
+    color: #fde68a;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    box-shadow: 0 0 10px rgba(253, 224, 71, 0.18);
+  }
+
+  .team-name {
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .blue-team .team-name {
+    color: #7fc1f0;
+    text-shadow: 0 0 12px #1e90ff;
+  }
+
+  .red-team .team-name {
+    color: #f09a9a;
+    text-shadow: 0 0 12px #d04040;
+  }
+
+  .player-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* ===== Summoner Card ===== */
+  .summoner-card {
+    flex: 1 1 calc(20% - 12px);
+    min-width: 170px;
+    background: linear-gradient(145deg, #0c202e 0%, #06131c 100%);
+    border: 2px solid #1f4e68;
+    border-radius: 10px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow:
+      0 6px 0 #030a0f,
+      0 0 0 1px #2f7a9f inset,
+      0 0 12px #0a2e40;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    position: relative;
+    backdrop-filter: blur(5px);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 10px 0 #030a0f,
+        0 0 0 1px #2f7a9f inset,
+        0 0 18px rgba(58, 168, 224, 0.35);
+    }
+  }
+
+  .blue-team .summoner-card {
+    border-top: 4px solid #2f9fd6;
+  }
+
+  .red-team .summoner-card {
+    border-bottom: 4px solid #c75a5a;
+  }
+
+  .placeholder-card {
+    opacity: 0.58;
+  }
+
+  .my-summoner-card {
+    border-color: #d9b84b;
+    box-shadow:
+      0 8px 0 #030a0f,
+      0 0 0 1px rgba(253, 224, 71, 0.45) inset,
+      0 0 20px rgba(253, 224, 71, 0.22),
+      0 0 34px rgba(59, 130, 246, 0.12);
+    transform: translateY(-2px);
+
+    .champion-splash {
+      border-color: #f5d76e;
+      box-shadow: 0 0 0 2px rgba(245, 215, 110, 0.2) inset, 0 8px 16px rgba(0, 0, 0, 0.7);
+    }
+  }
+
+  /* ===== Champion Splash — ratio ~2:3 to match LoL splash standard ===== */
+  .champion-splash {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background: #0b1b26;
+    border: 2px solid #2a6a8a;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 0 2px #102c3e inset, 0 6px 8px rgba(0, 0, 0, 0.67);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      filter: brightness(1.08) contrast(1.12);
+    }
+  }
+
+  .placeholder-splash {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7eaec9;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(145deg, rgba(10, 28, 40, 0.9), rgba(6, 19, 28, 0.95));
+  }
+
+  /* ===== Summoner Details ===== */
+  .summoner-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .summoner-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .summoner-avatar {
+    width: 28px;
+    height: 28px;
+    background: #1a4055;
+    border-radius: 50%;
+    border: 2px solid #4fa5d0;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9bc2db;
+    font-size: 14px;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  .summoner-name {
+    color: #ecf5fc;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+  }
+
+  .champion-name {
+    color: #9bc2db;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: auto;
+    max-width: 72px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .my-player-badge {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(253, 224, 71, 0.28), rgba(245, 158, 11, 0.18));
+    border: 1px solid rgba(253, 224, 71, 0.45);
+    color: #fff4c2;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    box-shadow: 0 0 8px rgba(253, 224, 71, 0.22);
+  }
+
+  .my-player-hint {
+    color: #fde68a;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 8px rgba(253, 224, 71, 0.2);
+  }
+
+  /* ===== Spells ===== */
+  .spells-runes {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .summoner-spells {
+    display: flex;
+    gap: 4px;
+  }
+
+  .spell-icon {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    background: #0e2533;
+    border: 1.5px solid #2f7a9f;
+    border-radius: 5px;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ddf0ff;
+    font-size: 11px;
+    font-weight: bold;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  .spell-fallback-text {
+    font-size: 10px;
+    font-weight: 800;
+    color: #ddf0ff;
+    letter-spacing: 0.5px;
+
+    &.has-icon {
+      display: none;
+    }
+  }
+
+  .runes {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+    min-width: 50px;
+  }
+
+  /* ===== Loading Progress ===== */
+  .loading-progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .progress-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: #061016;
+    border-radius: 20px;
+    border: 1px solid #1a4a62;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.87);
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #1e7aa0, #4cb6e8, #a0dcff);
+    border-radius: 20px;
+    box-shadow: 0 0 10px #3aa8e0;
+    animation: fbl-progressPulse 2s infinite;
+    transition: width 0.35s ease;
+  }
+
+  .progress-percent {
+    color: #c0e4ff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 38px;
+    text-align: right;
+  }
+
+  /* ===== Footer ===== */
+  .loading-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 10px 8px 0;
+    color: #7eaec9;
+    font-size: 0.8rem;
+    border-top: 1px solid #1e4f68;
+  }
+
+  .loading-tip {
+    color: #b7defa;
+    text-shadow: 0 0 6px #1e90ff;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 1200px) {
+    .summoner-card {
+      flex: 1 1 calc(25% - 16px);
+    }
+  }
+
+  @media (max-width: 900px) {
+    .loading-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .loading-connection-status {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .summoner-card {
+      flex: 1 1 calc(33.33% - 16px);
+    }
+  }
+
+  @media (max-width: 600px) {
+    padding: 6px;
+
+    .loading-screen {
+      padding: 12px 10px;
+    }
+
+    .loading-mode-text {
+      font-size: 1.15rem;
+      letter-spacing: 2px;
+    }
+
+    .summoner-card {
+      flex: 1 1 calc(50% - 12px);
+      min-width: 130px;
+    }
+
+    .loading-footer {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+}
+
+/* Keyframes must be global */
+@keyframes fbl-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+
+@keyframes fbl-spin {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fbl-progressPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; box-shadow: 0 0 14px #6ac8ff; }
+}

@@ -10,6 +10,23 @@ export default [
   {path: '/home', layout: false, icon: 'smile', component: './Home', name: '浏览器页面', requireAuth: false},
   {path: '/todo', icon: 'CalendarOutlined', component: './TODO', name: '每日待办', requireAuth: true},
   {path: '/chat', icon: 'MessageOutlined', component: './Chat', name: '摸鱼室', requireAuth: true},
+  {
+    path: '/fishBattle',
+    icon: 'ThunderboltOutlined',
+    name: '摸鱼大乱斗',
+    requireAuth: true,
+    routes: [
+      {path: '/fishBattle', redirect: '/fishBattle/home', requireAuth: true},
+      {path: '/fishBattle/home', component: './FishBattle/Home', name: '游戏首页', requireAuth: false},
+      {path: '/fishBattle/lobby', component: './FishBattle/Lobby', name: '游戏大厅', requireAuth: true},
+      {path: '/fishBattle/room/:roomCode', component: './FishBattle/Room', requireAuth: true},
+      {path: '/fishBattle/heroSelect/:roomCode', redirect: '/fishBattle/lobby', requireAuth: true},
+      {path: '/fishBattle/loading/:roomCode', redirect: '/fishBattle/lobby', requireAuth: true},
+      {path: '/fishBattle/result/:gameId', component: './FishBattle/Result', layout: false, requireAuth: true},
+      {path: '/fishBattle/profile', component: './FishBattle/Profile', name: '个人数据', requireAuth: true},
+      {path: '/fishBattle/battle3d/:roomCode', redirect: '/fishBattle/lobby', requireAuth: true},
+    ]
+  },
   {path: '/post', icon: 'InstagramOutlined', component: './Post', name: '摸鱼论坛', requireAuth: true},
   {path: '/post/create', layout: false, icon: 'EditOutlined', component: './Post/Create', requireAuth: true},
   {path: '/post/edit/:id', layout: false, component: './Post/Edit', requireAuth: true},
