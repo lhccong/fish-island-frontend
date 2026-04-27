@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useParams, history } from '@umijs/max';
 import { useModel } from '@umijs/max';
 import type { FishBattlePhase } from '@/models/fishBattleWindow';
-import { Spin, message, Tooltip } from 'antd';
-import { Search, Check, Shield, Heart, Swords, Clock, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Spin, message, Tooltip, ConfigProvider } from 'antd';
+import { Search, Check, Shield, Heart, Swords, RefreshCw } from 'lucide-react';
 import { useFishBattleSocket } from '@/hooks/useFishBattleSocket';
 import { useFishBattleGuard } from '@/hooks/useFishBattleGuard';
 import { getFishBattleSocket } from '@/services/fishBattleSocket';
@@ -15,7 +15,6 @@ import type {
   HeroPickStartPayload,
   HeroPickUpdatePayload,
   HeroPickCompletePayload,
-  HeroSkills,
   SummonerSpell,
   HeroSkin,
 } from '../types';
@@ -97,8 +96,8 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
 
   // 筛选状态
   const [searchText, setSearchText] = useState('');
-  const [filterRole, setFilterRole] = useState<string>('all');
 
+  const pageRef = useRef<HTMLDivElement>(null);
   const countdownRef = useRef<NodeJS.Timer | null>(null);
   const serverTimeRef = useRef<number>(0);
   const deadlineRef = useRef<number>(0);
@@ -111,16 +110,14 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
     [players, myUserId],
   );
 
-  // 我方队伍
-  const myTeam = useMemo(() => myPlayer?.team || 'blue', [myPlayer]);
-
-  // 只显示我方队伍的玩家
-  const myTeamPlayers = useMemo(
-    () =>
-      players
-        .filter((p) => p.team === myTeam)
-        .sort((a, b) => a.slotIndex - b.slotIndex),
-    [players, myTeam],
+  // 蓝方和红方队伍
+  const blueTeamPlayers = useMemo(
+    () => players.filter((p) => p.team === 'blue').sort((a, b) => a.slotIndex - b.slotIndex),
+    [players],
+  );
+  const redTeamPlayers = useMemo(
+    () => players.filter((p) => p.team === 'red').sort((a, b) => a.slotIndex - b.slotIndex),
+    [players],
   );
 
   // 当前选中的英雄详情
@@ -128,16 +125,6 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
     () => heroes.find((h) => h.heroId === selectedHeroId),
     [heroes, selectedHeroId],
   );
-
-  // 解析技能JSON
-  const selectedHeroSkills: HeroSkills | null = useMemo(() => {
-    if (!selectedHero?.skills) return null;
-    try {
-      return JSON.parse(selectedHero.skills);
-    } catch {
-      return null;
-    }
-  }, [selectedHero]);
 
   // 当前英雄可用皮肤
   const currentSkins = useMemo(
@@ -167,15 +154,14 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
   // 筛选英雄列表
   const filteredHeroes = useMemo(() => {
     return heroes.filter((h) => {
-      const matchSearch =
+      return (
         !searchText ||
         h.name.toLowerCase().includes(searchText.toLowerCase()) ||
         h.nameEn?.toLowerCase().includes(searchText.toLowerCase()) ||
-        h.heroId.toLowerCase().includes(searchText.toLowerCase());
-      const matchRole = filterRole === 'all' || h.role === filterRole;
-      return matchSearch && matchRole;
+        h.heroId.toLowerCase().includes(searchText.toLowerCase())
+      );
     });
-  }, [heroes, searchText, filterRole]);
+  }, [heroes, searchText]);
 
   // 倒计时逻辑
   const startCountdown = useCallback((durationSec: number, serverTime: number) => {
@@ -351,7 +337,6 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
         heroAvatarUrl: hero.avatarUrl || '',
         heroSplashArt: hero.splashArt || '',
         heroRole: hero.role,
-        heroSkills: hero.skills || '',
       });
       if (defaultSkin) {
         emit('hero:selectSkin', {
@@ -419,7 +404,7 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
     }
   }, [emit, selectedHeroId, myConfirmed]);
 
-  // 渲染玩家槽位
+  // 渲染玩家槽位（横排：头像 + 名字 + 状态）
   const renderPickSlot = (player: HeroPickPlayer, side: 'blue' | 'red') => {
     const isMe = player.userId === myUserId;
     const slotClass = [
@@ -432,42 +417,45 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
       .join(' ');
 
     return (
-      <div key={`${side}-${player.slotIndex}`} className={slotClass}>
-        <div className="pick-slot-avatar">
-          {player.heroAvatarUrl ? (
-            <img src={player.heroAvatarUrl} alt={player.heroName || ''} />
-          ) : player.heroEmoji ? (
-            <span>{player.heroEmoji}</span>
-          ) : (
-            <span style={{ color: '#444', fontSize: '1rem' }}>?</span>
-          )}
-          {player.heroConfirmed && (
-            <div className="confirmed-badge">
-              <Check size={10} color="#fff" />
-            </div>
-          )}
-        </div>
-        <div className="pick-slot-info">
+      <Tooltip key={`${side}-${player.slotIndex}`} title={player.heroName ? `${player.playerName} — ${player.heroName}` : undefined}>
+        <div className={slotClass}>
+          <div className="pick-slot-avatar">
+            {player.heroAvatarUrl ? (
+              <img src={player.heroAvatarUrl} alt={player.heroName || ''} />
+            ) : (
+              <span style={{ color: '#555', fontSize: '0.7rem' }}>?</span>
+            )}
+            {player.heroConfirmed && (
+              <div className="confirmed-badge">
+                <Check size={6} color="#fff" />
+              </div>
+            )}
+          </div>
           <div className="pick-slot-name">
-            {player.playerName || '等待中...'}
+            {player.playerName?.slice(0, 6) || '等待中'}
             {isMe && <span className="me-tag">我</span>}
           </div>
-          <div className="pick-slot-hero">
-            {player.heroName || '未选择英雄'}
+          <div className="pick-slot-status">
+            {player.heroConfirmed ? (
+              <span className="status-confirmed">✓</span>
+            ) : player.selectedHeroId ? (
+              <span className="status-picking">●</span>
+            ) : null}
           </div>
         </div>
-        <div className="pick-slot-status">
-          {player.heroConfirmed ? (
-            <span className="status-confirmed">
-              <Check size={12} /> 已锁定
-            </span>
-          ) : player.selectedHeroId ? (
-            <span className="status-picking">选择中</span>
-          ) : null}
-        </div>
-      </div>
+      </Tooltip>
     );
   };
+
+  // 渲染空位占位
+  const renderEmptySlot = (side: string, i: number) => (
+    <div key={`${side}-empty-${i}`} className="pick-slot" style={{ opacity: 0.3 }}>
+      <div className="pick-slot-avatar">
+        <span style={{ color: '#333', fontSize: '0.7rem' }}>?</span>
+      </div>
+      <div className="pick-slot-name" style={{ color: '#555' }}>空位</div>
+    </div>
+  );
 
   // 获取召唤师技能信息
   const getSpellInfo = useCallback(
@@ -484,48 +472,39 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
     );
   }
 
-  const teamLabel = myTeam === 'blue' ? '蓝色方' : '红色方';
-  const TeamIcon = myTeam === 'blue' ? Shield : Heart;
-
   return (
-    <div className="hero-select-page">
-      {/* 顶部倒计时 */}
-      <div className="pick-timer-bar">
-        <div className="pick-phase-label">
-          <Swords size={14} style={{ marginRight: 6 }} />
-          英雄选择
+    <ConfigProvider getPopupContainer={() => pageRef.current || document.body}>
+    <div className="hero-select-page" ref={pageRef}>
+      {/* === 顶部：双方队伍横排 + 倒计时 === */}
+      <div className="pick-header">
+        <div className="team-row blue">
+          <div className="team-row-label"><Shield size={14} /> 蓝方</div>
+          <div className="team-row-slots">
+            {blueTeamPlayers.map((p) => renderPickSlot(p, 'blue'))}
+            {Array.from({ length: Math.max(0, 5 - blueTeamPlayers.length) }).map((_, i) => renderEmptySlot('blue', i))}
+          </div>
         </div>
-        <div className={`pick-timer-text ${countdown <= 10 ? 'urgent' : ''}`}>
-          {countdown}
+        <div className="pick-timer">
+          <div className={`pick-timer-text ${countdown <= 10 ? 'urgent' : ''}`}>{countdown}</div>
+          <div className="pick-timer-label">
+            <Swords size={12} /> 选择英雄
+          </div>
+          <div
+            className={`pick-timer-progress ${countdown <= 10 ? 'urgent' : ''}`}
+            style={{ width: `${(countdown / duration) * 100}%` }}
+          />
         </div>
-        <div
-          className={`pick-timer-progress ${countdown <= 10 ? 'urgent' : ''}`}
-          style={{ width: `${(countdown / duration) * 100}%` }}
-        />
+        <div className="team-row red">
+          <div className="team-row-label"><Heart size={14} /> 红方</div>
+          <div className="team-row-slots">
+            {redTeamPlayers.map((p) => renderPickSlot(p, 'red'))}
+            {Array.from({ length: Math.max(0, 5 - redTeamPlayers.length) }).map((_, i) => renderEmptySlot('red', i))}
+          </div>
+        </div>
       </div>
 
-      {/* 主内容区：三栏布局 */}
+      {/* === 中间主区域：左侧模型 + 右侧英雄网格 === */}
       <div className="pick-main">
-        {/* 左侧：我方队伍 */}
-        <div className={`team-sidebar ${myTeam}`}>
-          <div className="team-sidebar-title">
-            <TeamIcon size={16} />
-            {teamLabel}
-          </div>
-          {myTeamPlayers.map((p) => renderPickSlot(p, myTeam))}
-          {Array.from({ length: Math.max(0, 5 - myTeamPlayers.length) }).map((_, i) => (
-            <div key={`empty-${i}`} className="pick-slot" style={{ opacity: 0.3 }}>
-              <div className="pick-slot-avatar">
-                <span style={{ color: '#333', fontSize: '1rem' }}>?</span>
-              </div>
-              <div className="pick-slot-info">
-                <div className="pick-slot-name" style={{ color: '#555' }}>空位</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* 中间：3D 模型展示区 */}
         <div className="pick-center">
           <div className="pick-model-area">
             {selectedHero ? (
@@ -558,26 +537,6 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
                     <div className="model-hero-skin">{currentSkin.skinName}</div>
                   )}
                 </div>
-                {/* 技能预览（模型区下方） */}
-                {selectedHeroSkills && (
-                  <div className="model-skills">
-                    {(['q', 'w', 'e', 'r'] as const).map((key) => {
-                      const skill = selectedHeroSkills[key];
-                      return skill ? (
-                        <Tooltip key={key} title={`${skill.name}: ${skill.description}`}>
-                          <div className="pick-skill">
-                            {skill.icon && skill.icon.startsWith('http') ? (
-                              <img src={skill.icon} alt={skill.name} className="pick-skill-icon" />
-                            ) : (
-                              skill.icon || key.toUpperCase()
-                            )}
-                            <span className="pick-skill-key">{key.toUpperCase()}</span>
-                          </div>
-                        </Tooltip>
-                      ) : null;
-                    })}
-                  </div>
-                )}
               </>
             ) : (
               <div className="pick-model-empty">
@@ -588,24 +547,17 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
           </div>
         </div>
 
-        {/* 右侧：英雄选择网格 */}
         <div className="pick-grid-panel">
           <div className="hero-grid-toolbar">
-            <div style={{ position: 'relative', width: '100%' }}>
-              <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
               <input
                 className="hero-search-input"
-                style={{ paddingLeft: 36 }}
+                style={{ paddingLeft: 32 }}
                 placeholder="搜索英雄..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
               />
-            </div>
-            <div className="hero-role-filters">
-              <button className={`role-filter-btn ${filterRole === 'all' ? 'active' : ''}`} onClick={() => setFilterRole('all')}>全部</button>
-              {Object.entries(FISH_BATTLE_HERO_ROLES).map(([key, label]) => (
-                <button key={key} className={`role-filter-btn ${filterRole === key ? 'active' : ''}`} onClick={() => setFilterRole(key)}>{label}</button>
-              ))}
             </div>
           </div>
           <div className="hero-grid-scroll">
@@ -631,42 +583,36 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
         </div>
       </div>
 
-      {/* 底部操作栏 */}
+      {/* === 底部操作栏 === */}
       <div className="pick-bottom">
-        {/* 皮肤切换区 */}
         <div className="pick-skin-area">
           {currentSkins.length > 0 ? (
-            <>
-              <div className="skin-area-title">皮肤</div>
-              <div className="skin-list">
-                {currentSkins.map((skin) => (
-                  <Tooltip key={skin.skinId} title={skin.skinName}>
-                    <div
-                      className={`skin-item ${selectedSkinId === skin.skinId ? 'active' : ''} ${myConfirmed ? 'disabled' : ''}`}
-                      onClick={() => handleSelectSkin(skin)}
-                    >
-                      {skin.splashArt ? (
-                        <img src={skin.splashArt} alt={skin.skinName} />
-                      ) : (
-                        <span className="skin-item-text">{skin.skinName?.slice(0, 2)}</span>
-                      )}
-                    </div>
-                  </Tooltip>
-                ))}
-              </div>
-            </>
+            <div className="skin-list">
+              {currentSkins.map((skin) => (
+                <Tooltip key={skin.skinId} title={skin.skinName}>
+                  <div
+                    className={`skin-item ${selectedSkinId === skin.skinId ? 'active' : ''} ${myConfirmed ? 'disabled' : ''}`}
+                    onClick={() => handleSelectSkin(skin)}
+                  >
+                    {skin.splashArt ? (
+                      <img src={skin.splashArt} alt={skin.skinName} />
+                    ) : (
+                      <span className="skin-item-text">{skin.skinName?.slice(0, 2)}</span>
+                    )}
+                  </div>
+                </Tooltip>
+              ))}
+            </div>
           ) : (
             <div className="skin-area-empty">
-              {selectedHero ? '暂无可用皮肤' : '选择英雄查看皮肤'}
+              {selectedHero ? '暂无皮肤' : ''}
             </div>
           )}
         </div>
 
-        {/* 召唤师技能选择区 */}
         <div className="pick-spell-area">
-          <div className="spell-area-title">召唤师技能</div>
           <div className="spell-slots">
-            <Tooltip title={getSpellInfo(selectedSpell1)?.name || selectedSpell1} placement="bottom">
+            <Tooltip title={getSpellInfo(selectedSpell1)?.name || selectedSpell1} placement="top">
               <div
                 className={`spell-slot ${editingSpellSlot === 1 ? 'editing' : ''}`}
                 onClick={() => setEditingSpellSlot(editingSpellSlot === 1 ? null : 1)}
@@ -679,7 +625,7 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
                 <span className="spell-slot-key">D</span>
               </div>
             </Tooltip>
-            <Tooltip title={getSpellInfo(selectedSpell2)?.name || selectedSpell2} placement="bottom">
+            <Tooltip title={getSpellInfo(selectedSpell2)?.name || selectedSpell2} placement="top">
               <div
                 className={`spell-slot ${editingSpellSlot === 2 ? 'editing' : ''}`}
                 onClick={() => setEditingSpellSlot(editingSpellSlot === 2 ? null : 2)}
@@ -696,7 +642,7 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
           {editingSpellSlot && (
             <div className="spell-picker">
               {summonerSpells.map((spell) => (
-                <Tooltip key={spell.spellId} title={`${spell.name}: ${spell.description}`} placement="bottom">
+                <Tooltip key={spell.spellId} title={`${spell.name}: ${spell.description}`} placement="top">
                   <div
                     className={`spell-picker-item ${
                       spell.spellId === selectedSpell1 || spell.spellId === selectedSpell2 ? 'selected' : ''
@@ -715,7 +661,6 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
           )}
         </div>
 
-        {/* 确认按钮 */}
         <div className="pick-confirm-area">
           <button
             className={`btn-confirm-hero ${myConfirmed ? 'confirmed' : ''} ${!selectedHeroId ? 'disabled' : ''}`}
@@ -723,18 +668,11 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
             disabled={!selectedHeroId}
           >
             {myConfirmed ? (
-              <><Check size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />已锁定</>
+              <><Check size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />已锁定</>
             ) : (
               '锁定英雄'
             )}
           </button>
-          <div className="confirm-hint">
-            {myConfirmed
-              ? '点击上方按钮可解除锁定'
-              : selectedHeroId
-                ? '点击锁定确认你的英雄'
-                : '请先选择一个英雄'}
-          </div>
         </div>
       </div>
 
@@ -747,6 +685,7 @@ const HeroSelectPage: React.FC<HeroSelectPageProps> = (props) => {
         </div>
       )}
     </div>
+    </ConfigProvider>
   );
 };
 

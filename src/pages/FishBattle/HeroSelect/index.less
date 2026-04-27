@@ -1,6 +1,6 @@
 /* ========================================
    Fish Battle Hero Select — LOL-inspired champion select
-   Dark theme with team colors
+   Layout: top teams + timer | middle model+grid | bottom bar
    ======================================== */
 
 .hero-select-page {
@@ -17,24 +17,84 @@
   svg { vertical-align: middle; }
 }
 
-/* ===== Top Timer Bar ===== */
-.pick-timer-bar {
-  height: 60px;
+/* ===== Top Header: Teams + Timer ===== */
+.pick-header {
+  flex-shrink: 0;
   display: flex;
+  align-items: stretch;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* --- Team Row (horizontal) --- */
+.team-row {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 12px;
+  gap: 2px;
+  min-width: 0;
+}
+
+.team-row-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.team-row.blue .team-row-label { color: #60a5fa; }
+.team-row.red .team-row-label { color: #f87171; }
+
+.team-row-slots {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* --- Timer (center of header) --- */
+.pick-timer {
+  width: 80px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  background: rgba(0, 0, 0, 0.4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  flex-shrink: 0;
-  z-index: 10;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pick-timer-text {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #c89b3c;
+  text-shadow: 0 0 16px rgba(200, 155, 60, 0.5);
+  line-height: 1;
+}
+
+.pick-timer-text.urgent {
+  color: #ef4444;
+  text-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
+}
+
+.pick-timer-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #8b8589;
+  letter-spacing: 1px;
+  margin-top: 2px;
 }
 
 .pick-timer-progress {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 3px;
+  height: 2px;
   background: linear-gradient(90deg, #c89b3c, #f0e6d2);
   transition: width 1s linear;
 }
@@ -49,82 +109,23 @@
   50% { opacity: 0.6; }
 }
 
-.pick-timer-text {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: #c89b3c;
-  text-shadow: 0 0 20px rgba(200, 155, 60, 0.5);
-  z-index: 1;
-}
-
-.pick-timer-text.urgent {
-  color: #ef4444;
-  text-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
-}
-
-.pick-phase-label {
-  position: absolute;
-  left: 32px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #8b8589;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-}
-
-/* ===== Main Content Area ===== */
+/* ===== Main Content: Model + Grid ===== */
 .pick-main {
   flex: 1;
   display: flex;
   min-height: 0;
 }
 
-/* ===== Team Sidebars ===== */
-.team-sidebar {
-  width: 220px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 8px;
-  flex-shrink: 0;
-}
-
-.team-sidebar.blue {
-  background: linear-gradient(180deg, rgba(30, 58, 95, 0.6) 0%, rgba(15, 30, 50, 0.4) 100%);
-  border-right: 1px solid rgba(59, 130, 246, 0.15);
-}
-
-.team-sidebar.red {
-  background: linear-gradient(180deg, rgba(95, 30, 30, 0.6) 0%, rgba(50, 15, 15, 0.4) 100%);
-  border-left: 1px solid rgba(239, 68, 68, 0.15);
-}
-
-.team-sidebar-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  margin-bottom: 8px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.blue .team-sidebar-title { color: #60a5fa; }
-.red .team-sidebar-title { color: #f87171; }
-
-/* ===== Player Pick Slot ===== */
+/* ===== Player Pick Slot (row) ===== */
 .pick-slot {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 4px 8px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   transition: all 0.3s;
-  min-height: 60px;
 }
 
 .pick-slot.is-me {
@@ -148,16 +149,15 @@
 }
 
 .pick-slot-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.05);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
   position: relative;
 }
 
@@ -169,74 +169,58 @@
 
 .pick-slot-avatar .confirmed-badge {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 16px;
-  height: 16px;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
   background: #22c55e;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #0a0e1a;
-}
-
-.pick-slot-info {
-  flex: 1;
-  min-width: 0;
+  border: 1.5px solid #0a0e1a;
 }
 
 .pick-slot-name {
-  font-size: 0.82rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: #ccc;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.pick-slot-hero {
-  font-size: 0.72rem;
-  color: #888;
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 80px;
+  line-height: 1.2;
 }
 
 .pick-slot-status {
   flex-shrink: 0;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: 600;
 }
 
-.status-picking {
-  color: #c89b3c;
-}
-
-.status-confirmed {
-  color: #4ade80;
-}
+.status-picking { color: #c89b3c; }
+.status-confirmed { color: #4ade80; }
 
 .me-tag {
   display: inline-block;
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 700;
   color: #c89b3c;
   border: 1px solid rgba(200, 155, 60, 0.4);
-  padding: 0 4px;
-  border-radius: 3px;
-  margin-left: 4px;
+  padding: 0 3px;
+  border-radius: 2px;
+  margin-left: 3px;
+  vertical-align: middle;
 }
 
-/* ===== Center Area — 3D Model Showcase ===== */
+/* ===== Center Area — 3D Model ===== */
 .pick-center {
-  flex: 1;
+  width: 40%;
+  min-width: 260px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
   position: relative;
-  border-left: 1px solid rgba(255, 255, 255, 0.04);
   border-right: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -376,20 +360,19 @@
 
 /* ===== Right Panel — Hero Grid ===== */
 .pick-grid-panel {
-  width: 320px;
-  flex-shrink: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  min-height: 0;
+  padding: 10px 12px;
+  min-width: 0;
   background: rgba(0, 0, 0, 0.2);
 }
 
 .hero-grid-toolbar {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   flex-shrink: 0;
 }
 
@@ -411,33 +394,6 @@
   &::placeholder { color: #666; }
 }
 
-.hero-role-filters {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-.role-filter-btn {
-  padding: 6px 14px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: transparent;
-  color: #888;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-  white-space: nowrap;
-
-  &:hover { color: #ccc; border-color: rgba(255, 255, 255, 0.15); }
-
-  &.active {
-    background: rgba(200, 155, 60, 0.15);
-    border-color: rgba(200, 155, 60, 0.4);
-    color: #c89b3c;
-  }
-}
 
 .hero-grid-scroll {
   flex: 1;
@@ -448,8 +404,8 @@
 
 .hero-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+  gap: 4px;
 }
 
 .hero-grid-item {
@@ -516,15 +472,15 @@
   color: #c89b3c;
 }
 
-/* ===== Bottom Detail & Confirm Area ===== */
+/* ===== Bottom Bar ===== */
 .pick-bottom {
-  height: 120px;
+  height: 64px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 24px;
-  padding: 0 20px;
+  gap: 16px;
+  padding: 0 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.5);
 }
@@ -533,14 +489,12 @@
 .pick-skin-area {
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 6px;
-  max-width: 360px;
 }
 
 .skin-area-title, .spell-area-title {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #888;
   font-weight: 600;
   text-transform: uppercase;
@@ -549,12 +503,12 @@
 
 .skin-list {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .skin-item {
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   border-radius: 6px;
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.1);
@@ -594,10 +548,8 @@
 }
 
 .skin-area-empty {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #555;
-  padding: 12px 0;
-  text-align: center;
 }
 
 /* -- 召唤师技能区 -- */
@@ -616,8 +568,8 @@
 }
 
 .spell-slot {
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border-radius: 8px;
   border: 2px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.05);
@@ -711,66 +663,20 @@
   border-radius: 4px;
 }
 
-.pick-skill {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #999;
-  cursor: default;
-  position: relative;
-  transition: all 0.2s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(200, 155, 60, 0.4);
-  }
-}
-
-.pick-skill-icon {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 4px;
-  position: absolute;
-  inset: 0;
-}
-
-.pick-skill-key {
-  position: absolute;
-  bottom: 1px;
-  right: 3px;
-  font-size: 0.55rem;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  z-index: 1;
-}
-
 /* -- 确认按钮区 -- */
 .pick-confirm-area {
-  width: 200px;
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
 }
 
 .btn-confirm-hero {
-  width: 100%;
-  padding: 14px 20px;
+  padding: 8px 20px;
   border-radius: 8px;
   border: 2px solid #c89b3c;
   background: linear-gradient(135deg, rgba(200, 155, 60, 0.2), rgba(200, 155, 60, 0.1));
   color: #c89b3c;
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 800;
   cursor: pointer;
   font-family: inherit;
@@ -807,12 +713,6 @@
     cursor: not-allowed;
     pointer-events: none;
   }
-}
-
-.confirm-hint {
-  font-size: 0.75rem;
-  color: #666;
-  text-align: center;
 }
 
 /* ===== Empty / No Hero State ===== */
@@ -880,28 +780,12 @@
   color: #888;
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 1200px) {
-  .pick-grid-panel { width: 260px; }
-  .hero-role-filters { flex-wrap: wrap; }
-}
-
-@media (max-width: 1024px) {
-  .team-sidebar { width: 160px; }
-  .pick-grid-panel { width: 220px; }
-  .pick-confirm-area { width: 160px; }
-  .pick-skin-area { max-width: 200px; }
-  .hero-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
-}
-
-@media (max-width: 768px) {
+/* ===== Responsive (floating window) ===== */
+.fb-xs, .fb-sm {
+  .pick-header { flex-wrap: wrap; }
+  .pick-timer { width: 100%; flex-direction: row; gap: 8px; padding: 4px 0; border: none; border-top: 1px solid rgba(255,255,255,0.06); }
   .pick-main { flex-direction: column; }
-  .team-sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 8px; }
-  .pick-slot { min-width: 140px; }
-  .pick-center { min-height: 300px; }
-  .pick-grid-panel { width: 100%; max-height: 240px; }
-  .pick-bottom { height: auto; flex-wrap: wrap; padding: 12px; }
-  .pick-confirm-area { width: 100%; }
-  .pick-skin-area { max-width: 100%; }
-  .spell-picker { max-width: 100%; }
+  .pick-center { width: 100%; min-width: unset; min-height: 200px; }
+  .pick-grid-panel { max-height: 180px; }
+  .pick-bottom { height: auto; flex-wrap: wrap; padding: 8px; gap: 8px; }
 }

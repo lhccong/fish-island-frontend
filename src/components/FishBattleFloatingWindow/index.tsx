@@ -53,6 +53,7 @@ const FishBattleFloatingWindow: React.FC = () => {
   const LoadingRef = useRef<React.ComponentType<any> | null>(null);
   const Battle3dRef = useRef<React.ComponentType<any> | null>(null);
   const [loadedPhases, setLoadedPhases] = useState<Set<FishBattlePhase>>(new Set());
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // 动态加载子组件
   useEffect(() => {
@@ -79,8 +80,10 @@ const FishBattleFloatingWindow: React.FC = () => {
           }
         }
         setLoadedPhases((prev) => new Set(prev).add(p));
-      } catch (err) {
+      } catch (err: any) {
         console.error(`[FishBattleWindow] Failed to load ${p} component`, err);
+        setLoadError(`加载${p}组件失败: ${err?.message || err}`);
+        setLoadedPhases((prev) => new Set(prev).add(p));
       }
     };
 
@@ -177,6 +180,11 @@ const FishBattleFloatingWindow: React.FC = () => {
   }, []);
 
   const handleReloadJoin = useCallback(() => {
+    setLoadError(null);
+    setLoadedPhases(new Set());
+    HeroSelectRef.current = null;
+    LoadingRef.current = null;
+    Battle3dRef.current = null;
     setReloadNonce((prev) => prev + 1);
   }, []);
 
@@ -287,15 +295,18 @@ const FishBattleFloatingWindow: React.FC = () => {
     switch (phase) {
       case 'heroSelect': {
         const Comp = HeroSelectRef.current;
-        return Comp ? <Comp key={`heroSelect-${roomCode}-${reloadNonce}`} roomCode={roomCode} /> : <PhaseLoading label="英雄选择" />;
+        if (Comp) return <Comp key={`heroSelect-${roomCode}-${reloadNonce}`} roomCode={roomCode} />;
+        return loadedPhases.has('heroSelect') && loadError ? <PhaseError error={loadError} /> : <PhaseLoading label="英雄选择" />;
       }
       case 'loading': {
         const Comp = LoadingRef.current;
-        return Comp ? <Comp key={`loading-${roomCode}-${reloadNonce}`} roomCode={roomCode} /> : <PhaseLoading label="游戏加载" />;
+        if (Comp) return <Comp key={`loading-${roomCode}-${reloadNonce}`} roomCode={roomCode} />;
+        return loadedPhases.has('loading') && loadError ? <PhaseError error={loadError} /> : <PhaseLoading label="游戏加载" />;
       }
       case 'battle3d': {
         const Comp = Battle3dRef.current;
-        return Comp ? <Comp key={`battle3d-${roomCode}-${reloadNonce}`} roomCode={roomCode} /> : <PhaseLoading label="战斗场景" />;
+        if (Comp) return <Comp key={`battle3d-${roomCode}-${reloadNonce}`} roomCode={roomCode} />;
+        return loadedPhases.has('battle3d') && loadError ? <PhaseError error={loadError} /> : <PhaseLoading label="战斗场景" />;
       }
       default:
         return null;
@@ -439,6 +450,30 @@ const PhaseLoading: React.FC<{ label: string }> = ({ label }) => (
   >
     <Swords size={32} style={{ color: '#c89b3c', opacity: 0.6 }} />
     <span style={{ fontSize: 14 }}>正在加载{label}...</span>
+  </div>
+);
+
+/** 阶段加载失败提示 */
+const PhaseError: React.FC<{ error: string }> = ({ error }) => (
+  <div
+    style={{
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#e74c3c',
+      gap: 12,
+      background: 'linear-gradient(160deg, #0b1520 0%, #101e2c 40%, #0d1925 100%)',
+      padding: 24,
+      textAlign: 'center',
+    }}
+  >
+    <X size={32} style={{ color: '#e74c3c', opacity: 0.6 }} />
+    <span style={{ fontSize: 14, color: '#7a8ea0' }}>组件加载失败</span>
+    <span style={{ fontSize: 12, color: '#556070', maxWidth: 400, wordBreak: 'break-all' }}>{error}</span>
+    <span style={{ fontSize: 12, color: '#556070' }}>请检查浏览器控制台获取详细错误信息，或点击标题栏刷新按钮重试</span>
   </div>
 );
 

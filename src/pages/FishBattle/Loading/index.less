@@ -7,9 +7,15 @@
   background: linear-gradient(135deg, #1a2a3a 0%, #2a1a35 50%, #1a2a3a 100%);
   padding: 10px;
   border-radius: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .fish-battle-loading {
+  flex: 1;
   min-height: 0;
   display: flex;
   align-items: center;
@@ -18,7 +24,7 @@
   position: relative;
   overflow: hidden;
   font-family: 'Segoe UI', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
-  padding: 20px 24px;
+  padding: 14px 16px;
   background:
     radial-gradient(ellipse 70% 50% at 25% 15%, rgba(40, 110, 170, 0.18) 0%, transparent 70%),
     radial-gradient(ellipse 60% 55% at 75% 85%, rgba(120, 60, 140, 0.14) 0%, transparent 70%),
@@ -66,11 +72,18 @@
     z-index: 1;
     width: 100%;
     max-width: 1200px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
   /* ===== Loading Screen Panel ===== */
   .loading-screen {
     width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     background: rgba(2, 18, 28, 0.82);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -80,7 +93,7 @@
       0 20px 40px rgba(0, 0, 0, 0.8),
       0 0 0 1px #0e3045 inset,
       0 0 30px rgba(30, 95, 128, 0.2);
-    padding: 20px 18px 18px;
+    padding: 14px 14px 10px;
     border-radius: 12px;
     position: relative;
 
@@ -111,9 +124,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
-    padding: 0 6px;
-    gap: 12px;
+    margin-bottom: 10px;
+    padding: 0 4px;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
   .loading-mode-info {
@@ -123,11 +137,11 @@
   }
 
   .loading-mode-icon {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     background: #0e2c40;
     border: 2px solid #4a9fc0;
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -137,9 +151,9 @@
 
   .loading-mode-text {
     color: #d6ecff;
-    font-size: 1.6rem;
+    font-size: 1.2rem;
     font-weight: 800;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     text-shadow: 0 2px 8px #0a202e, 0 0 15px #1e6a9a;
     text-transform: uppercase;
   }
@@ -176,20 +190,26 @@
   .teams-rows {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .team-row {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
   }
 
   .team-header {
     display: flex;
     align-items: baseline;
-    padding: 0 10px 6px;
+    padding: 0 6px 4px;
     border-bottom: 2px solid #1a4a62;
+    flex-shrink: 0;
   }
 
   .my-team-chip {
@@ -207,8 +227,8 @@
 
   .team-name {
     font-weight: 800;
-    font-size: 1.2rem;
-    letter-spacing: 4px;
+    font-size: 0.95rem;
+    letter-spacing: 3px;
     text-transform: uppercase;
   }
 
@@ -224,21 +244,22 @@
 
   .player-grid {
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
   }
 
   /* ===== Summoner Card ===== */
   .summoner-card {
-    flex: 1 1 calc(20% - 12px);
-    min-width: 170px;
+    flex: 1 1 0;
+    min-width: 0;
     background: linear-gradient(145deg, #0c202e 0%, #06131c 100%);
     border: 2px solid #1f4e68;
-    border-radius: 10px;
-    padding: 8px;
+    border-radius: 8px;
+    padding: 6px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     box-shadow:
       0 6px 0 #030a0f,
       0 0 0 1px #2f7a9f inset,
@@ -283,22 +304,23 @@
     }
   }
 
-  /* ===== Champion Splash — ratio ~2:3 to match LoL splash standard ===== */
+  /* ===== Champion Splash — flex-fill, show face/upper body ===== */
   .champion-splash {
     position: relative;
     width: 100%;
-    aspect-ratio: 3 / 4;
+    flex: 1;
+    min-height: 60px;
     background: #0b1b26;
     border: 2px solid #2a6a8a;
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
-    box-shadow: 0 0 0 2px #102c3e inset, 0 6px 8px rgba(0, 0, 0, 0.67);
+    box-shadow: 0 0 0 2px #102c3e inset, 0 4px 6px rgba(0, 0, 0, 0.67);
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      object-position: top center;
+      object-position: center 20%;
       display: block;
       filter: brightness(1.08) contrast(1.12);
     }
@@ -321,7 +343,8 @@
   .summoner-details {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 3px;
+    flex-shrink: 0;
   }
 
   .summoner-name-row {
@@ -331,8 +354,8 @@
   }
 
   .summoner-avatar {
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     background: #1a4055;
     border-radius: 50%;
     border: 2px solid #4fa5d0;
@@ -355,7 +378,7 @@
   .summoner-name {
     color: #ecf5fc;
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
     white-space: nowrap;
     overflow: hidden;
@@ -365,7 +388,7 @@
 
   .champion-name {
     color: #9bc2db;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
     margin-left: auto;
     max-width: 72px;
@@ -488,12 +511,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    margin-top: 16px;
-    padding: 10px 8px 0;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 6px 6px 0;
     color: #7eaec9;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     border-top: 1px solid #1e4f68;
+    flex-shrink: 0;
   }
 
   .loading-tip {
@@ -501,51 +525,6 @@
     text-shadow: 0 0 6px #1e90ff;
   }
 
-  /* ===== Responsive ===== */
-  @media (max-width: 1200px) {
-    .summoner-card {
-      flex: 1 1 calc(25% - 16px);
-    }
-  }
-
-  @media (max-width: 900px) {
-    .loading-header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .loading-connection-status {
-      width: 100%;
-      justify-content: space-between;
-    }
-
-    .summoner-card {
-      flex: 1 1 calc(33.33% - 16px);
-    }
-  }
-
-  @media (max-width: 600px) {
-    padding: 6px;
-
-    .loading-screen {
-      padding: 12px 10px;
-    }
-
-    .loading-mode-text {
-      font-size: 1.15rem;
-      letter-spacing: 2px;
-    }
-
-    .summoner-card {
-      flex: 1 1 calc(50% - 12px);
-      min-width: 130px;
-    }
-
-    .loading-footer {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-  }
 }
 
 /* Keyframes must be global */
