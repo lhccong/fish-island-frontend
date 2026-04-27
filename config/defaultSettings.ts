@@ -14,10 +14,10 @@ const Settings: ProLayoutProps & {
   navTheme: 'light',
   // 拂晓蓝
   colorPrimary: '#FFA768',
-  layout: 'side',
+  layout: 'top',
   // splitMenus: true, // 将一级菜单拆分到顶部
   contentWidth: 'Fluid',
-  fixedHeader: false,
+  fixedHeader: true,
   fixSiderbar: true,
   colorWeak: false,
   title: userSiteName || '摸鱼岛',

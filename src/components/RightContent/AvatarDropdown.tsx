@@ -750,7 +750,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
     color: '#ffffff',
     fontSize: '16px',
     position: 'fixed',
-    top: '16px',
+    top: '88px',
     right: '16px',
     zIndex: 1000,
     background: '#ffa768',
