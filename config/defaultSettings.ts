@@ -14,7 +14,7 @@ const Settings: ProLayoutProps & {
   navTheme: 'light',
   // 拂晓蓝
   colorPrimary: '#FFA768',
-  layout: 'top',
+  layout: 'side',
   // splitMenus: true, // 将一级菜单拆分到顶部
   contentWidth: 'Fluid',
   fixedHeader: true,

@@ -20,6 +20,7 @@ import * as indexTradeController from './indexTradeController';
 import * as itemInstancesController from './itemInstancesController';
 import * as itemTemplatesController from './itemTemplatesController';
 import * as mockInterviewController from './mockInterviewController';
+import * as momentsController from './momentsController';
 import * as petBattleController from './petBattleController';
 import * as petEquipForgeController from './petEquipForgeController';
 import * as petRankController from './petRankController';
@@ -66,6 +67,7 @@ export default {
   itemInstancesController,
   itemTemplatesController,
   mockInterviewController,
+  momentsController,
   restAuthController,
   petBattleController,
   fishPetController,

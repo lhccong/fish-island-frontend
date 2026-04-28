@@ -10,7 +10,17 @@ export default [
   {path: '/home', layout: false, icon: 'smile', component: './Home', name: '浏览器页面', requireAuth: false},
   {path: '/todo', icon: 'CalendarOutlined', component: './TODO', name: '每日待办', requireAuth: true},
   {path: '/chat', icon: 'MessageOutlined', component: './Chat', name: '摸鱼室', requireAuth: true},
-  {path: '/post', icon: 'InstagramOutlined', component: './Post', name: '摸鱼论坛', requireAuth: true},
+  {
+    path: '/moments',
+    icon: 'TeamOutlined',
+    name: '摸鱼圈',
+    requireAuth: true,
+    routes: [
+      {path: '/moments', redirect: '/moments/post', requireAuth: true},
+      {path: '/moments/post', icon: 'InstagramOutlined', component: './Post', name: '摸鱼论坛', requireAuth: true},
+      {path: '/moments/fish-circle', icon: 'CameraOutlined', component: './FishCircle', name: '鱼小圈', requireAuth: true},
+    ]
+  },
   {path: '/post/create', layout: false, icon: 'EditOutlined', component: './Post/Create', requireAuth: true},
   {path: '/post/edit/:id', layout: false, component: './Post/Edit', requireAuth: true},
   {path: '/post/:id',component: './Post/Detail', requireAuth: true},
