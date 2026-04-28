@@ -224,13 +224,13 @@ export const GAME_CONFIG = {
     /** 全音量范围半径（距离本机英雄），在此半径内音量不衰减。 */
     innerRadius: 15,
     /** 音量完全衰减到 0 的距离。 */
-    outerRadius: 60,
+    outerRadius: 20,
     /** 衰减模型: 'linear' | 'inverse' | 'exponential'。 */
     distanceModel: 'linear' as DistanceModelType,
     /** 衰减因子（仅 inverse / exponential 模型生效）。 */
     rolloffFactor: 1,
     /** 超过此距离的音效直接不播放，节省资源。 */
-    maxAudioDistance: 65,
+    maxAudioDistance: 25,
   },
 
   /** 简易视野配置。敌方英雄超出视距时隐藏，无战争迷雾贴图。 */

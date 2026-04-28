@@ -23,6 +23,10 @@ const Tower: React.FC<{
 
   const colors = TEAM_COLORS[team];
   const assetConfig = getTowerAssetConfig()[`${team}_${type}`];
+  if (!assetConfig) {
+    console.warn(`[Towers] 未找到塔资产配置: team=${team}, type=${type}, key=${team}_${type}`);
+    return null;
+  }
   const activeAsset = isDestroyed && assetConfig.destroyedAsset?.modelPath ? assetConfig.destroyedAsset : assetConfig.asset;
   const animationClipName = isDestroyed
     ? activeAsset.animations?.deathClip ?? assetConfig.asset.animations?.deathClip

@@ -16,13 +16,15 @@ const MINIMAP_HEIGHT = 92;
 /** 内边距 */
 const PADDING = 8;
 
-/** 将世界坐标映射到小地图像素坐标 */
+/** 将世界坐标映射到小地图像素坐标（带边距钳位，确保标记始终可见） */
 function worldToMinimap(worldX: number, worldZ: number): { x: number; y: number } {
   const bounds = MAP_CONFIG.playableBounds;
   const rangeX = bounds.maxX - bounds.minX;
   const rangeZ = bounds.maxZ - bounds.minZ;
-  const x = ((worldX - bounds.minX) / rangeX) * MINIMAP_WIDTH;
-  const y = ((worldZ - bounds.minZ) / rangeZ) * MINIMAP_HEIGHT;
+  if (rangeX <= 0 || rangeZ <= 0) return { x: MINIMAP_WIDTH / 2, y: MINIMAP_HEIGHT / 2 };
+  const margin = 4;
+  const x = Math.max(margin, Math.min(MINIMAP_WIDTH - margin, ((worldX - bounds.minX) / rangeX) * MINIMAP_WIDTH));
+  const y = Math.max(margin, Math.min(MINIMAP_HEIGHT - margin, ((worldZ - bounds.minZ) / rangeZ) * MINIMAP_HEIGHT));
   return { x, y };
 }
 

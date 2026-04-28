@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { Suspense, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { GAME_CONFIG } from '../../config/gameConfig';
 import { useGameStore } from '../../store/useGameStore';
@@ -15,7 +15,10 @@ import Inhibitors from '../world/Inhibitors';
 import HealthRelics from '../world/HealthRelics';
 import SnowParticles from '../world/SnowParticles';
 import Champions from '../entities/Champions';
+import Minions from '../entities/Minions';
 import InputController from '../systems/InputController';
+import ProjectileRenderer from '../effects/ProjectileRenderer';
+import FloatingCombatTextSystem from '../effects/FloatingCombatTextSystem';
 import WorldDebugLabels from '../debug/WorldDebugLabels';
 import { Perf } from 'r3f-perf';
 import { RENDER_CONFIG } from '../../config/renderConfig';
@@ -23,15 +26,23 @@ import { RENDER_CONFIG } from '../../config/renderConfig';
 const BattleRuntimeController: React.FC = () => {
   const tickMovement = useGameStore((s) => s.tickMovement);
   const cleanupExpiredEmotes = useGameStore((s) => s.cleanupExpiredEmotes);
+  const cleanupExpiredCombatFeedback = useGameStore((s) => s.cleanupExpiredCombatFeedback);
   const setMultiplayerDiagnosticsFps = useGameStore((s) => s.setMultiplayerDiagnosticsFps);
   const fpsAccumulatorRef = useRef({ elapsed: 0, frames: 0 });
   const emoteCleanupAccumulatorRef = useRef(0);
+  const combatFeedbackCleanupAccumulatorRef = useRef(0);
 
   useFrame((_, delta) => {
     emoteCleanupAccumulatorRef.current += delta;
     if (emoteCleanupAccumulatorRef.current >= 1.0) {
       cleanupExpiredEmotes();
       emoteCleanupAccumulatorRef.current = 0;
+    }
+
+    combatFeedbackCleanupAccumulatorRef.current += delta;
+    if (combatFeedbackCleanupAccumulatorRef.current >= 0.5) {
+      cleanupExpiredCombatFeedback();
+      combatFeedbackCleanupAccumulatorRef.current = 0;
     }
 
     if (!GAME_CONFIG.multiplayer.enabled) {
@@ -83,6 +94,16 @@ const BattleScene: React.FC = () => {
 
       {/* 英雄 */}
       <Champions />
+
+      {/* 小兵 */}
+      <Minions />
+
+      {/* 投射物弹道 */}
+      <ProjectileRenderer />
+
+      <Suspense fallback={null}>
+        <FloatingCombatTextSystem />
+      </Suspense>
 
       <WorldDebugLabels />
 
