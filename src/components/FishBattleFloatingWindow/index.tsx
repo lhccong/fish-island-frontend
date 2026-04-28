@@ -74,8 +74,8 @@ const FishBattleFloatingWindow: React.FC = () => {
             break;
           }
           case 'battle3d': {
-            // 3D对战页面暂未迁移，使用占位
-            Battle3dRef.current = null;
+            const mod = await import('@/pages/FishBattle/Battle3d');
+            Battle3dRef.current = mod.default;
             break;
           }
         }
@@ -180,11 +180,6 @@ const FishBattleFloatingWindow: React.FC = () => {
   }, []);
 
   const handleReloadJoin = useCallback(() => {
-    setLoadError(null);
-    setLoadedPhases(new Set());
-    HeroSelectRef.current = null;
-    LoadingRef.current = null;
-    Battle3dRef.current = null;
     setReloadNonce((prev) => prev + 1);
   }, []);
 

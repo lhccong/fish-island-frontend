@@ -1,0 +1,8 @@
+@import './tailwind-generated.css';
+
+:root {
+  --game-dark: #080c18;
+  --game-blue: #64b5f6;
+  --game-red: #ef5350;
+  --game-gold: #fde047;
+}

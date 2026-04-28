@@ -94,7 +94,7 @@ const FishBattleLoading: React.FC<FishBattleLoadingProps> = (props) => {
       // 断线重连：status=2 且不在加载阶段 — 暂时停留在加载界面
       // TODO: 恢复跳转 fishBattleWindow.setPhase('battle3d');
       if (data.room.status === 2 && !data.room.isLoadingPhase) {
-        console.log('[Loading] reconnect status=2 — 暂停跳转');
+        fishBattleWindow.setPhase('battle3d');
         return;
       }
     }
@@ -265,9 +265,7 @@ const FishBattleLoading: React.FC<FishBattleLoadingProps> = (props) => {
     };
 
     const handleAllPlayersLoaded = () => {
-      // 全员加载完成 — 暂时停留在加载界面，不跳转
-      // TODO: 恢复跳转 fishBattleWindow.setPhase('battle3d');
-      console.log('[Loading] allPlayersLoaded — 暂停跳转');
+      fishBattleWindow.setPhase('battle3d');
     };
 
     const handleError = (data: { error: string }) => {

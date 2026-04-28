@@ -107,6 +107,29 @@ export async function fishBattleGameLike(body: {
   });
 }
 
+/* ==================== 游戏配置 ==================== */
+
+/** 获取地图场景配置 GET /fishBattle/config/map */
+export async function fishBattleMapConfig() {
+  return request<API.BaseResponseObject>('/api/fishBattle/config/map', {
+    method: 'GET',
+  });
+}
+
+/** 获取游戏主配置 GET /fishBattle/config/game */
+export async function fishBattleGameConfig() {
+  return request<API.BaseResponseObject>('/api/fishBattle/config/game', {
+    method: 'GET',
+  });
+}
+
+/** 根据configKey获取配置 GET /fishBattle/config/:configKey */
+export async function fishBattleConfig(configKey: string) {
+  return request<API.BaseResponseObject>(`/api/fishBattle/config/${configKey}`, {
+    method: 'GET',
+  });
+}
+
 /* ==================== 统计 ==================== */
 
 /** 获取个人总体统计 GET /fishBattle/stats/user */
