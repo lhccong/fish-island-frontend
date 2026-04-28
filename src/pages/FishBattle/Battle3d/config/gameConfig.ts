@@ -281,7 +281,7 @@ export const GAME_CONFIG = {
         /** 表情使用的 emoji 字符。 */
         emoji: '🐾',
         /** UI 中显示的中文名称。 */
-        label: '魄罗1',
+        label: '魄罗',
         /** 表情主色。 */
         color: '#d8f3ff',
         /** 表情强调色。 */

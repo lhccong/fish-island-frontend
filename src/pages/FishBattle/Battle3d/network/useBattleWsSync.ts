@@ -29,6 +29,8 @@ import type {
   ChampionState,
   HeroActionSlot,
   PlayerSessionAssignment,
+  SkillRuntimeState,
+  SpellSlot,
   VoicePlaybackRequest,
   VoicePlaybackSlot,
 } from '../types/game';
@@ -123,6 +125,31 @@ interface CombatSnapshotPayload {
   }>;
 }
 
+interface SpellCastAcceptedPayload {
+  requestId?: string;
+  castInstanceId?: string;
+  casterId?: string;
+  slot?: string;
+}
+
+interface SpellCastRejectedPayload {
+  requestId?: string;
+  castInstanceId?: string;
+  casterId?: string;
+  slot?: string;
+  reasonCode?: string;
+  reasonMessage?: string;
+}
+
+interface SpellCastStartedPayload {
+  requestId?: string;
+  castInstanceId?: string;
+  casterId?: string;
+  slot?: string;
+  lockMovement?: boolean;
+  movementLockDurationMs?: number;
+}
+
 /** 服务端 room:info 中的玩家字段 */
 interface RoomInfoPlayer {
   userId: number;
@@ -141,6 +168,7 @@ interface RoomInfoSummonerSpell {
   icon: string;
   description?: string;
   cooldown?: number;
+  assetConfig?: string;
 }
 
 /** 延迟平滑因子 */
@@ -162,6 +190,90 @@ function toRatePercent(numerator: number, denominator: number): number {
 
 function getNetworkAnomalyPercent(snapshotDiscardRatePercent: number, pingTimeoutRatePercent: number): number {
   return Math.round(Math.max(snapshotDiscardRatePercent, pingTimeoutRatePercent) * 10) / 10;
+}
+
+function readNumberLike(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number(value.trim());
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return fallback;
+}
+
+function readBooleanLike(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'number') {
+    return value !== 0;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') {
+      return true;
+    }
+    if (normalized === 'false') {
+      return false;
+    }
+  }
+  return fallback;
+}
+
+function mapServerSkillStatesToLocal(
+  skillStates: Record<string, unknown> | undefined,
+  previousSkillStates: ChampionState['skillStates'] | undefined,
+): ChampionState['skillStates'] {
+  const nextStates = { ...(previousSkillStates ?? {}) } as ChampionState['skillStates'];
+  if (!skillStates) {
+    return nextStates;
+  }
+  Object.entries(skillStates).forEach(([slot, rawState]) => {
+    if (!rawState || typeof rawState !== 'object') {
+      return;
+    }
+    const state = rawState as Record<string, unknown>;
+    const normalizedSlot = slot as SpellSlot;
+    const previous = nextStates[normalizedSlot];
+    const nextLevel = Math.max(0, readNumberLike(state.level, previous?.level ?? 0));
+    const nextMaxCooldownMs = Math.max(0, readNumberLike(state.maxCooldownMs, previous?.maxCooldownMs ?? 0));
+    const nextRemainingCooldownMs = Math.max(0, readNumberLike(state.remainingCooldownMs, previous?.remainingCooldownMs ?? 0));
+    /* 服务端冷却 > 0 → 一定不可用。
+     * 服务端冷却 = 0 但本地已乐观标记为 isCasting+!isReady（刚发起施法请求）时，
+     * 保留乐观值，防止施法请求被服务端确认前快照把 isReady 覆盖回 true。
+     * 但当服务端明确返回 isCasting=false 时（瞬发技能已在 create() 中直接 finishSpell），
+     * 应立即解除乐观锁，避免永久死锁。 */
+    const serverSaysReady = readBooleanLike(state.isReady, previous?.isReady ?? true);
+    const serverIsCasting = readBooleanLike(state.isCasting, previous?.isCasting ?? false);
+    const localOptimisticBlock = previous?.isCasting === true && previous?.isReady === false && serverIsCasting;
+    const nextIsReady = nextRemainingCooldownMs > 0
+      ? false
+      : (localOptimisticBlock && serverSaysReady)
+        ? false
+        : serverSaysReady;
+    const nextIsCasting = nextRemainingCooldownMs > 0
+      ? readBooleanLike(state.isCasting, previous?.isCasting ?? false)
+      : (localOptimisticBlock && serverSaysReady)
+        ? true
+        : readBooleanLike(state.isCasting, previous?.isCasting ?? false);
+    nextStates[normalizedSlot] = {
+      slot: normalizedSlot,
+      skillId: (state.skillId as string) ?? previous?.skillId ?? normalizedSlot,
+      name: (state.name as string) ?? previous?.name ?? normalizedSlot.toUpperCase(),
+      level: nextLevel,
+      maxCooldownMs: nextMaxCooldownMs,
+      remainingCooldownMs: nextRemainingCooldownMs,
+      isReady: nextIsReady,
+      insufficientResource: readBooleanLike(state.insufficientResource, previous?.insufficientResource ?? false),
+      isSecondPhase: readBooleanLike(state.isSecondPhase, previous?.isSecondPhase ?? false),
+      isCasting: nextIsCasting,
+    } satisfies SkillRuntimeState;
+  });
+  return nextStates;
 }
 
 /** standby 动画默认延迟 */
@@ -403,7 +515,7 @@ function mapServerChampionToLocal(
     lastVoiceRequest: previousChampion?.lastVoiceRequest ?? null,
     shield: serverChampion.shield ?? 0,
     flowValue: serverChampion.flowValue ?? 0,
-    skillStates: previousChampion?.skillStates ?? {} as ChampionState['skillStates'],
+    skillStates: mapServerSkillStatesToLocal(serverChampion.skillStates, previousChampion?.skillStates),
     statusEffects: previousChampion?.statusEffects ?? [],
     activeCastInstanceId: serverChampion.activeCastInstanceId ?? null,
     activeCastPhase: (serverChampion.activeCastPhase ?? 'idle') as ChampionState['activeCastPhase'],
@@ -549,13 +661,14 @@ export function useBattleWsSync(
 
       // 填充召唤师技能元数据
       if (payload.summonerSpells?.length) {
-        const meta: Record<string, { name: string; icon: string; description: string; cooldown: number }> = {};
+        const meta: Record<string, { name: string; icon: string; description: string; cooldown: number; assetConfig?: string }> = {};
         for (const sp of payload.summonerSpells) {
           meta[sp.spellId] = {
             name: sp.name,
             icon: sp.icon,
             description: sp.description ?? '',
             cooldown: sp.cooldown ?? 0,
+            assetConfig: sp.assetConfig,
           };
         }
         store.setSummonerSpellsMeta(meta);
@@ -850,6 +963,87 @@ export function useBattleWsSync(
       useGameStore.getState().setChampionVoiceRequest(championId, request);
     };
 
+    const handleSpellCastAccepted = (payload: SpellCastAcceptedPayload) => {
+      if (!payload.requestId) {
+        return;
+      }
+      useGameStore.getState().acceptLocalSpellPrediction(payload.requestId, payload.castInstanceId ?? null);
+    };
+
+    const handleSpellCastRejected = (payload: SpellCastRejectedPayload) => {
+      const store = useGameStore.getState();
+      const prediction = payload.requestId
+        ? store.findLocalSpellPredictionByRequestId(payload.requestId)
+        : null;
+      const targetChampionId = payload.casterId ?? prediction?.casterId;
+      const targetSlot = (payload.slot ?? prediction?.slot) as 'summonerD' | 'summonerF' | 'basicAttack' | undefined;
+      if (targetChampionId && targetSlot) {
+        store.patchChampionSkillRuntimeState(targetChampionId, targetSlot, {
+          isCasting: false,
+          isReady: true,
+          remainingCooldownMs: 0,
+        });
+      }
+      if (payload.requestId) {
+        store.clearLocalSpellPredictionByRequestId(payload.requestId);
+      }
+      console.warn('[useBattleWsSync] spellCastRejected', payload.reasonCode, payload.reasonMessage);
+    };
+
+    const handleSpellCastStarted = (payload: SpellCastStartedPayload) => {
+      const store = useGameStore.getState();
+      /* 服务端已确认施法 → 立即清理 local prediction（乐观预测完成使命）。
+       * 之后由 isCasting:true + isReady:false 来防止重复施法，
+       * 不再依赖 localSpellPredictions 的 5s 超时阻塞。 */
+      if (payload.castInstanceId) {
+        store.clearLocalSpellPredictionByCastInstanceId(payload.castInstanceId);
+      }
+      const targetSlot = payload.slot as 'summonerD' | 'summonerF' | 'basicAttack' | undefined;
+      if (payload.casterId && targetSlot) {
+        store.patchChampionSkillRuntimeState(payload.casterId, targetSlot, {
+          isCasting: true,
+          isReady: false,
+        });
+      }
+      if (payload.lockMovement && payload.casterId) {
+        applyLocalMovementLock(payload.casterId, payload.movementLockDurationMs);
+      }
+    };
+
+    const handleSpellStageTransition = (payload: Record<string, unknown>) => {
+      const nextStage = payload.nextStage as string | undefined;
+      const casterId = payload.casterId as string | undefined;
+      const castInstanceId = payload.castInstanceId as string | undefined;
+
+      if (nextStage === 'interrupted' && casterId) {
+        useGameStore.getState().clearChampionAnimationClip(casterId);
+        const interruptedSlot = payload.slot as SpellSlot | undefined;
+        if (interruptedSlot) {
+          useGameStore.getState().patchChampionSkillRuntimeState(casterId, interruptedSlot, {
+            isCasting: false,
+            isReady: false,
+          });
+        }
+        if (castInstanceId) {
+          useGameStore.getState().clearLocalSpellPredictionByCastInstanceId(castInstanceId);
+        }
+      }
+
+      if (nextStage === 'finished' && casterId) {
+        useGameStore.getState().clearChampionAnimationClip(casterId);
+        const finishedSlot = payload.slot as SpellSlot | undefined;
+        if (finishedSlot) {
+          useGameStore.getState().patchChampionSkillRuntimeState(casterId, finishedSlot, {
+            isCasting: false,
+            isReady: false,
+          });
+        }
+        if (castInstanceId) {
+          useGameStore.getState().clearLocalSpellPredictionByCastInstanceId(castInstanceId);
+        }
+      }
+    };
+
     /* ========== 注册事件 ========== */
 
     client.on('disconnect', handleDisconnect);
@@ -867,9 +1061,14 @@ export function useBattleWsSync(
     client.on('battle:pong', handleBattlePong);
     client.on('room:playersUpdate', handlePlayersUpdate);
     client.on('combatSnapshot', handleCombatSnapshot);
+    client.on('spellCastAccepted', handleSpellCastAccepted);
+    client.on('spellCastRejected', handleSpellCastRejected);
+    client.on('spellCastStarted', handleSpellCastStarted);
     client.on('champion:animate', handleChampionAnimate);
     client.on('champion:emote', handleChampionEmote);
     client.on('champion:voice', handleChampionVoice);
+    client.on('spellStageTransition', handleSpellStageTransition);
+    client.on('spellStageChanged', handleSpellStageTransition);
 
     /* 监听本地加载完成：当 isLoading 变为 false 时发送 battle:sceneReady */
     const checkAndEmitSceneReady = () => {
@@ -916,9 +1115,14 @@ export function useBattleWsSync(
       client.off('battle:pong', handleBattlePong);
       client.off('room:playersUpdate', handlePlayersUpdate);
       client.off('combatSnapshot', handleCombatSnapshot);
+      client.off('spellCastAccepted', handleSpellCastAccepted);
+      client.off('spellCastRejected', handleSpellCastRejected);
+      client.off('spellCastStarted', handleSpellCastStarted);
       client.off('champion:animate', handleChampionAnimate);
       client.off('champion:emote', handleChampionEmote);
       client.off('champion:voice', handleChampionVoice);
+      client.off('spellStageTransition', handleSpellStageTransition);
+      client.off('spellStageChanged', handleSpellStageTransition);
       clockSync.stop();
       unregisterSyncInstances();
       snapshotBufferRef.current.clear();

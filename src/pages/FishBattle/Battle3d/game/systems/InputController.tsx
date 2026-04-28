@@ -20,12 +20,15 @@ const InputController: React.FC = () => {
   const moveSequenceRef = useRef(0);
   const pendingPointerSampleRef = useRef<{ clientX: number; clientY: number } | null>(null);
   const pointerFrameRequestRef = useRef<number | null>(null);
-  const me = useGameStore((s) => {
+  const clickCursorResetTimerRef = useRef<number | null>(null);
+  const cursorDataUrlsRef = useRef<Record<string, string>>({});
+  const preloadedCursorPathsRef = useRef<Set<string>>(new Set<string>());
+  const meId = useGameStore((s) => {
     const controlledChampionId = s.multiplayerSession.controlledChampionId;
     if (GAME_CONFIG.multiplayer.enabled && controlledChampionId) {
-      return s.champions.find((champion) => champion.id === controlledChampionId) ?? null;
+      return controlledChampionId;
     }
-    return s.champions.find((champion) => champion.isMe) ?? null;
+    return s.champions.find((champion) => champion.isMe)?.id ?? null;
   });
   const togglePlayerCameraLock = useGameStore((s) => s.togglePlayerCameraLock);
   const toggleDirectorMode = useGameStore((s) => s.toggleDirectorMode);
@@ -44,7 +47,23 @@ const InputController: React.FC = () => {
   const debugConfig = GAME_CONFIG.debug.worldCoordinates;
   const multiplayerEnabled = GAME_CONFIG.multiplayer.enabled;
 
-  const meId = me?.id ?? null;
+  const buildCursorValue = (path: string) => {
+    const src = cursorDataUrlsRef.current[path] || path;
+    return `url(${src}) ${cursorConfig.hotspotX} ${cursorConfig.hotspotY}, ${cursorConfig.fallback}`;
+  };
+
+  const applyCursorValue = (value: string) => {
+    gl.domElement.style.cursor = value;
+    const cursorHost = gl.domElement.parentElement;
+    if (cursorHost) {
+      cursorHost.style.cursor = value;
+    }
+  };
+
+  const resetCursor = () => {
+    const value = cursorConfig.enabled ? buildCursorValue(cursorConfig.defaultPath) : cursorConfig.fallback;
+    applyCursorValue(value);
+  };
 
   useEffect(() => {
     const onPointerEnter = () => { pointerInsideRef.current = true; };
@@ -63,8 +82,52 @@ const InputController: React.FC = () => {
   }, [gl.domElement]);
 
   useEffect(() => {
+    const preloadCursor = (path: string) => {
+      if (!path || preloadedCursorPathsRef.current.has(path)) {
+        return;
+      }
+      preloadedCursorPathsRef.current.add(path);
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            cursorDataUrlsRef.current[path] = canvas.toDataURL('image/png');
+          }
+        } catch {}
+      };
+      img.src = path;
+    };
+
+    if (cursorConfig.enabled) {
+      preloadCursor(cursorConfig.defaultPath);
+      preloadCursor(cursorConfig.clickPath);
+    }
+  }, [cursorConfig.clickPath, cursorConfig.defaultPath, cursorConfig.enabled]);
+
+  useEffect(() => {
+    resetCursor();
+
+    return () => {
+      if (clickCursorResetTimerRef.current !== null) {
+        window.clearTimeout(clickCursorResetTimerRef.current);
+        clickCursorResetTimerRef.current = null;
+      }
+      gl.domElement.style.cursor = '';
+      const cursorHost = gl.domElement.parentElement;
+      if (cursorHost) {
+        cursorHost.style.cursor = '';
+      }
+    };
+  }, [cursorConfig.defaultPath, cursorConfig.enabled, cursorConfig.fallback, cursorConfig.hotspotX, cursorConfig.hotspotY, gl.domElement]);
+
+  useEffect(() => {
     if (!meId) return;
-    if (!me) return;
 
     const setPointerFromClient = (clientX: number, clientY: number) => {
       const rect = gl.domElement.getBoundingClientRect();
@@ -177,44 +240,6 @@ const InputController: React.FC = () => {
 
     const cursorHost = gl.domElement.parentElement;
 
-    /* 预加载 cursor 图片并缓存为 data-URL，避免每次赋值 CSS cursor 时浏览器重复发起网络请求 */
-    const cursorDataUrls: Record<string, string> = {};
-    const preloadCursor = (path: string) => {
-      if (!path) return;
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0);
-            cursorDataUrls[path] = canvas.toDataURL('image/png');
-          }
-        } catch { /* 跨域或安全限制，退回原路径 */ }
-      };
-      img.src = path;
-    };
-    if (cursorConfig.enabled) {
-      preloadCursor(cursorConfig.defaultPath);
-      preloadCursor(cursorConfig.clickPath);
-    }
-
-    const buildCursorValue = (path: string) => {
-      const src = cursorDataUrls[path] || path;
-      return `url(${src}) ${cursorConfig.hotspotX} ${cursorConfig.hotspotY}, ${cursorConfig.fallback}`;
-    };
-
-    const resetCursor = () => {
-      const value = cursorConfig.enabled ? buildCursorValue(cursorConfig.defaultPath) : cursorConfig.fallback;
-      gl.domElement.style.cursor = value;
-      if (cursorHost) {
-        cursorHost.style.cursor = value;
-      }
-    };
-
     const flashClickCursor = () => {
       if (!cursorConfig.enabled || !cursorConfig.clickPath) {
         return;
@@ -225,7 +250,13 @@ const InputController: React.FC = () => {
       if (cursorHost) {
         cursorHost.style.cursor = value;
       }
-      window.setTimeout(resetCursor, cursorConfig.clickFeedbackMs);
+      if (clickCursorResetTimerRef.current !== null) {
+        window.clearTimeout(clickCursorResetTimerRef.current);
+      }
+      clickCursorResetTimerRef.current = window.setTimeout(() => {
+        clickCursorResetTimerRef.current = null;
+        resetCursor();
+      }, cursorConfig.clickFeedbackMs);
     };
 
     const issueMoveSequence = () => {
@@ -255,8 +286,6 @@ const InputController: React.FC = () => {
         },
       }));
     };
-
-    resetCursor();
 
     const handleMouseMove = (event: MouseEvent) => {
       pendingPointerSampleRef.current = {
@@ -429,12 +458,8 @@ const InputController: React.FC = () => {
       gl.domElement.removeEventListener('mousedown', handleMouseDown);
       gl.domElement.removeEventListener('contextmenu', handleContextMenu);
       window.removeEventListener('keydown', handleKeyDown);
-      gl.domElement.style.cursor = '';
-      if (cursorHost) {
-        cursorHost.style.cursor = '';
-      }
     };
-  }, [camera, cameraMode, cursorConfig.clickFeedbackMs, cursorConfig.clickPath, cursorConfig.defaultPath, cursorConfig.enabled, cursorConfig.fallback, cursorConfig.hotspotX, cursorConfig.hotspotY, cycleSpectatorTarget, debugConfig.toggleKey, debugFreeCamera, focusControlledChampion, gl.domElement, me, meId, multiplayerEnabled, scene.children, setChampionMoveTarget, showMoveIndicator, spectatorConfig.focusMeKey, spectatorConfig.nextTargetKey, spectatorConfig.previousTargetKey, spectatorConfig.toggleModeKey, stopChampion, toggleDebugFreeCamera, toggleDirectorMode, togglePlayerCameraLock, toggleWorldCoordinates]);
+  }, [camera, cameraMode, cursorConfig.clickFeedbackMs, cursorConfig.clickPath, cursorConfig.enabled, cycleSpectatorTarget, debugConfig.toggleKey, debugFreeCamera, focusControlledChampion, gl.domElement, meId, multiplayerEnabled, scene, setChampionMoveTarget, showMoveIndicator, spectatorConfig.focusMeKey, spectatorConfig.nextTargetKey, spectatorConfig.previousTargetKey, spectatorConfig.toggleModeKey, stopChampion, toggleDebugFreeCamera, toggleDirectorMode, togglePlayerCameraLock, toggleWorldCoordinates]);
 
   return null;
 };

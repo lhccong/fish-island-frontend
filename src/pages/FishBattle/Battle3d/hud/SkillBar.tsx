@@ -27,7 +27,7 @@ const DISPLAY_SLOTS: SpellSlot[] = ['summonerD', 'summonerF'];
 const CASTABLE_SLOTS = new Set<string>(['summonerD', 'summonerF']);
 
 const LOCAL_PREDICTION_BLOCK_TIMEOUT_MS = 5000;
-const SLOT_CAST_GUARD_TIMEOUT_MS = 1500;
+const SLOT_CAST_GUARD_TIMEOUT_MS = 300;
 
 /** 键盘按键 → 技能槽位反向映射 */
 const KEY_TO_SLOT: Record<string, SpellSlot> = {
@@ -285,11 +285,14 @@ const SkillBar: React.FC = () => {
         useGameStore.getState().setChampionMoveTarget(me.id, null);
       }
 
-      /* ===== 客户端预测：施法时英雄立即转向鼠标方向 ===== */
+      /* ===== 客户端预测：施法时英雄立即转向鼠标方向（self_cast 类技能无需转向） ===== */
       {
-        const aimTarget = activeAim?.targetPoint
-          ?? activeAim?.cursorWorldPosition
-          ?? useGameStore.getState().lastMouseWorldPosition;
+        const castDef = getSkillCastDefinition(me.heroId, slot, runtimeSkillId);
+        const aimTarget = castDef?.targetType !== 'self_cast'
+          ? (activeAim?.targetPoint
+            ?? activeAim?.cursorWorldPosition
+            ?? useGameStore.getState().lastMouseWorldPosition)
+          : null;
         if (aimTarget) {
           const dx = aimTarget.x - me.position.x;
           const dz = aimTarget.z - me.position.z;
@@ -351,7 +354,8 @@ const SkillBar: React.FC = () => {
 
       /* ===== 智能施法：跳过瞄准，直接以当前鼠标位置释放 ===== */
       /* basicAttack（A键）始终进入瞄准模式（与 LOL 攻击移动行为一致），不走智能施法快捷路径 */
-      if (smartCastEnabled && slot !== 'basicAttack') {
+      /* alwaysSmartCast 技能（如闪现）无论全局开关状态都强制走智能施法 */
+      if ((smartCastEnabled || castDef.alwaysSmartCast) && slot !== 'basicAttack') {
         if (castDef.targetType === 'target_point' || castDef.targetType === 'directional') {
           const mousePos = useGameStore.getState().lastMouseWorldPosition;
           const mePos = me.position;

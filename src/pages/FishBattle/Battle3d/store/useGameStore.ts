@@ -68,8 +68,8 @@ interface GameStore {
   heroSkillsMeta: Record<string, Record<string, { name: string; icon: string; description: string }>>;
   /** 后端下发的英雄技能施法参数定义，按 heroId → slot → SkillCastDefinition 存储。为前端指示器/范围判定的单一数据源。 */
   heroSkillCastDefs: Record<string, Record<string, SkillCastDefinition>>;
-  /** 召唤师技能元数据（图标、描述），按 spellId → {name, icon, description, cooldown} 存储。 */
-  summonerSpellsMeta: Record<string, { name: string; icon: string; description: string; cooldown: number }>;
+  /** 召唤师技能元数据（图标、描述、参数JSON），按 spellId → {name, icon, description, cooldown, assetConfig} 存储。 */
+  summonerSpellsMeta: Record<string, { name: string; icon: string; description: string; cooldown: number; assetConfig?: string }>;
   /** 各英雄选择的召唤师技能映射，按 championId → {spell1, spell2} 存储。 */
   championSummonerSpells: Record<string, { spell1: string; spell2: string }>;
   /** 英雄头像 URL，按 championId → avatarUrl 存储。 */
@@ -163,7 +163,7 @@ interface GameStore {
   /** 设置后端下发的英雄技能施法参数定义（heroId → slot → def）。 */
   setHeroSkillCastDefs: (defs: Record<string, Record<string, SkillCastDefinition>>) => void;
   /** 设置召唤师技能元数据。 */
-  setSummonerSpellsMeta: (spells: Record<string, { name: string; icon: string; description: string; cooldown: number }>) => void;
+  setSummonerSpellsMeta: (spells: Record<string, { name: string; icon: string; description: string; cooldown: number; assetConfig?: string }>) => void;
   /** 设置英雄选择的召唤师技能。 */
   setChampionSummonerSpells: (championId: string, spell1: string, spell2: string) => void;
   /** 设置英雄头像 URL。 */

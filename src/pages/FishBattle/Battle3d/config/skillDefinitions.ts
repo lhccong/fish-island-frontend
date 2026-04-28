@@ -33,6 +33,8 @@ export interface SkillCastDefinition {
   width?: number;
   /** 单体技能目标筛选规则。 */
   targetRules?: SpellTargetRules;
+  /** 智能施法 */
+  alwaysSmartCast?: boolean
 }
 
 /** 英雄 ID → 普攻施法参数定义 的映射表（仅 basicAttack）。 */
@@ -45,6 +47,51 @@ const SUMMONER_SPELL_DEFINITIONS: Record<string, SkillCastDefinition> = {
   ghost: { skillId: 'ghost', slot: 'summonerD', name: '疾跑', targetType: 'self_cast', range: 0 },
   heal: { skillId: 'heal', slot: 'summonerD', name: '治疗', targetType: 'self_cast', range: 0 },
 };
+
+/** 召唤师技能 assetConfig JSON 中 cast 字段的类型。 */
+type SummonerAssetCast = {
+  type?: SpellTargetType;
+  range?: number;
+  radius?: number;
+  width?: number;
+  alwaysSmartCast?: boolean;
+  targetRules?: SpellTargetRules;
+};
+
+/**
+ * 从后端下发的 assetConfig JSON 动态解析召唤师技能施法参数。
+ * 这是召唤师技能施法定义的主要数据源，新增召唤师技能只需在后端数据库配置即可。
+ */
+function parseSummonerAssetConfig(
+  runtimeSkillId: string,
+  slot: SpellSlot,
+): SkillCastDefinition | null {
+  const meta = useGameStore.getState().summonerSpellsMeta[runtimeSkillId];
+  if (!meta?.assetConfig) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(meta.assetConfig) as { cast?: SummonerAssetCast };
+    const cast = parsed?.cast;
+    if (!cast?.type) {
+      return null;
+    }
+    return {
+      skillId: runtimeSkillId,
+      slot,
+      name: meta.name ?? runtimeSkillId,
+      targetType: cast.type,
+      range: Number.isFinite(cast.range) ? Number(cast.range) : 0,
+      radius: Number.isFinite(cast.radius) ? Number(cast.radius) : undefined,
+      width: Number.isFinite(cast.width) ? Number(cast.width) : undefined,
+      targetRules: cast.targetRules,
+      alwaysSmartCast: cast.alwaysSmartCast ?? false,
+    };
+  } catch (error) {
+    console.warn('[skillDefinitions] failed to parse summoner assetConfig', runtimeSkillId, error);
+    return null;
+  }
+}
 
 /** 通用后备普攻定义。 */
 const FALLBACK_BASIC_ATTACK: SkillCastDefinition = {
@@ -66,6 +113,12 @@ export function getSkillCastDefinition(
   runtimeSkillId?: string | null,
 ): SkillCastDefinition | null {
   if ((slot === 'summonerD' || slot === 'summonerF') && runtimeSkillId) {
+    /* 优先从后端 assetConfig 动态解析（权威数据源） */
+    const parsedDefinition = parseSummonerAssetConfig(runtimeSkillId, slot);
+    if (parsedDefinition) {
+      return parsedDefinition;
+    }
+    /* 后端 assetConfig 缺失时回退到前端硬编码定义 */
     const summonerDefinition = SUMMONER_SPELL_DEFINITIONS[runtimeSkillId];
     if (summonerDefinition) {
       return { ...summonerDefinition, slot };

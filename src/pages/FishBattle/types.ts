@@ -192,6 +192,7 @@ export interface SummonerSpell {
   icon: string;
   description: string;
   cooldown: number;
+  assetConfig?: string;
 }
 
 /** 英雄皮肤 */
