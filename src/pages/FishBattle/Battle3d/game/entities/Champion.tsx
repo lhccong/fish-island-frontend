@@ -13,7 +13,7 @@ import { threejsHelper } from '../../utils/ThreejsHelper';
 import { audioPreloader } from '../../utils/AudioPreloader';
 import { getHeroModelPath } from '../../utils/heroModel';
 import { AnimationController } from './AnimationController';
-import { createChampionHudTexture, createEmoteTexture } from './championOverheadTexture';
+import { createChampionHudTexture, createEmoteTexture, createVoiceIndicatorTexture } from './championOverheadTexture';
 import { getListenerPosition, isListenerReady } from '../scene/AudioListenerManager';
 
 interface ChampionProps {
@@ -28,10 +28,9 @@ function createHealthBarTexture(
   maxMp: number,
   team: 'blue' | 'red',
   name: string,
-  level: number,
   isMe: boolean,
 ): THREE.CanvasTexture {
-  return createChampionHudTexture(hp, maxHp, mp, maxMp, team, name, level, isMe);
+  return createChampionHudTexture(hp, maxHp, mp, maxMp, team, name, isMe);
 }
 
 function pickRandomItem<T>(items?: T[]): T | undefined {
@@ -118,6 +117,7 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
   const rootMotionNodesRef = useRef<Array<{ node: THREE.Object3D; x: number; z: number }>>([]);
   const hpBarRef = useRef<THREE.Sprite>(null);
   const emoteSpriteRef = useRef<THREE.Sprite>(null);
+  const voiceIndicatorRef = useRef<THREE.Sprite>(null);
   const lastClipRequestKeyRef = useRef<string | null>(null);
   const lastAnimationVoiceNonceRef = useRef<number | null>(state.animationClipRequest?.nonce ?? null);
   const lastVoiceCommandNonceRef = useRef<number | null>(state.lastVoiceRequest?.nonce ?? null);
@@ -147,7 +147,8 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
   const modelPath = useMemo(
     () => getHeroModelPath(state.heroId, {
       skin: state.skin,
-      overridePath: state.skin ? undefined : (heroConfig?.modelPath || state.modelUrl),
+      // state.modelUrl 来自后端 battle:state，已包含皮肤模型 URL，应优先于静态 heroConfig.modelPath
+      overridePath: state.modelUrl || heroConfig?.modelPath,
     }),
     [heroConfig?.modelPath, state.heroId, state.modelUrl, state.skin],
   );
@@ -178,9 +179,11 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
   const hpTexture = useMemo(() => {
     return createHealthBarTexture(
       hpCeil, maxHpCeil, mpCeil, maxMpCeil,
-      state.team, state.playerName, state.level, state.isMe,
+      state.team, state.playerName, state.isMe,
     );
-  }, [hpCeil, maxHpCeil, mpCeil, maxMpCeil, state.team, state.playerName, state.level, state.isMe]);
+  }, [hpCeil, maxHpCeil, mpCeil, maxMpCeil, state.team, state.playerName, state.isMe]);
+
+  const voiceIndicatorTexture = useMemo(() => createVoiceIndicatorTexture(), []);
 
   const emoteTexture = useMemo(() => {
     if (!activeEmote) {
@@ -798,8 +801,43 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
       }
     }
 
+    /* ── 语音播放头顶标识 ── */
+    if (voiceIndicatorRef.current) {
+      const isVoicePlaying = activeVoiceRef.current !== null;
+      voiceIndicatorRef.current.visible = isVoicePlaying;
+      if (isVoicePlaying) {
+        voiceIndicatorRef.current.position.y = overheadConfig.emoteSpritePositionY + 0.3;
+        /* 呼吸脉冲动画 */
+        const pulse = 1.0 + Math.sin(Date.now() * 0.006) * 0.08;
+        const emoteScale = overheadConfig.emoteSpriteScale;
+        voiceIndicatorRef.current.scale.set(emoteScale[0] * pulse, emoteScale[1] * pulse, emoteScale[2]);
+      }
+    }
+
+    /* ── 简易视野系统：敌方英雄超出视距时隐藏 ── */
     if (groupRef.current) {
-      groupRef.current.visible = true;
+      if (!state.isMe && GAME_CONFIG.vision.enabled) {
+        const myChampion = useGameStore.getState().champions.find((c) => c.isMe);
+        if (myChampion) {
+          const dx = renderPositionRef.current.x - myChampion.position.x;
+          const dz = renderPositionRef.current.z - myChampion.position.z;
+          const distSq = dx * dx + dz * dz;
+          const isAlly = state.team === myChampion.team;
+          if (isAlly) {
+            groupRef.current.visible = true;
+          } else {
+            const wasVisible = groupRef.current.visible;
+            const sightR = GAME_CONFIG.vision.sightRadius;
+            const hyst = GAME_CONFIG.vision.hysteresis;
+            const threshold = wasVisible ? (sightR + hyst) : sightR;
+            groupRef.current.visible = distSq <= threshold * threshold;
+          }
+        } else {
+          groupRef.current.visible = true;
+        }
+      } else {
+        groupRef.current.visible = true;
+      }
     }
   });
 
@@ -835,6 +873,11 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
           <spriteMaterial map={emoteTexture} transparent depthTest depthWrite={false} />
         </sprite>
       )}
+
+      {/* 语音播放头顶标识 */}
+      <sprite ref={voiceIndicatorRef} visible={false} position={[0, overheadConfig.emoteSpritePositionY + 0.3, 0]} scale={overheadConfig.emoteSpriteScale}>
+        <spriteMaterial map={voiceIndicatorTexture} transparent depthTest depthWrite={false} />
+      </sprite>
     </group>
   );
 };

@@ -92,7 +92,25 @@ const CameraController: React.FC = () => {
 
   useEffect(() => {
     activeFocusTargetRef.current = activeFocusTarget;
-  }, [activeFocusTarget]);
+    /* 英雄首次出现时，无论 isPlayerCameraLocked 状态如何都硬 snap 相机到英雄位置，
+     * 避免开局相机停留在地图中心 (0,0,0) 再缓慢 lerp 过去。 */
+    if (activeFocusTarget && !hasSnappedToMeRef.current) {
+      const focusPosition = getFocusPosition(activeFocusTarget);
+      if (focusPosition && focusPosition.lengthSq() > 0.01) {
+        targetRef.current.set(focusPosition.x, focusPosition.y, focusPosition.z);
+        lookAtRef.current.copy(targetRef.current);
+        const snapZoomScale = zoomRef.current / CAMERA_CONFIG.baseOffset[1];
+        positionRef.current.set(
+          targetRef.current.x + CAMERA_CONFIG.baseOffset[0] * snapZoomScale,
+          targetRef.current.y + zoomRef.current,
+          targetRef.current.z + CAMERA_CONFIG.baseOffset[2] * snapZoomScale,
+        );
+        camera.position.copy(positionRef.current);
+        camera.lookAt(lookAtRef.current);
+        hasSnappedToMeRef.current = true;
+      }
+    }
+  }, [activeFocusTarget, camera]);
 
   useEffect(() => {
     const updatePointerState = (event: MouseEvent) => {
@@ -171,6 +189,7 @@ const CameraController: React.FC = () => {
         focusPosition.y,
         focusPosition.z,
       );
+      setPlayerCameraLocked(true);
     };
 
     gl.domElement.addEventListener('mousedown', handleMouseDown);

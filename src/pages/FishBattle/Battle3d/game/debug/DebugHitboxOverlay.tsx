@@ -25,7 +25,6 @@ const DEFAULT_CHAMPION_HEIGHT = 2.0;
 const COLOR_PROJECTILE = 0xff4444;
 const COLOR_AREA_CIRCLE = 0x44ff44;
 const COLOR_AREA_RECT = 0x44aaff;
-const COLOR_AREA_WINDWALL = 0x44ffff;
 const COLOR_CHAMPION = 0xffaa00;
 
 /* ============================================================
@@ -97,40 +96,12 @@ const AreaHitboxes: React.FC = () => {
       }),
     [],
   );
-  const matWindwall = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        color: COLOR_AREA_WINDWALL,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.6,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-      }),
-    [],
-  );
-
   if (areas.length === 0) return null;
 
   return (
     <group name="debug-area-hitboxes">
       {areas.map((area) => {
         const pos: [number, number, number] = [area.position.x, 0.05, area.position.z];
-
-        if (area.areaType === 'windwall') {
-          const w = area.width ?? 4;
-          const h = area.height ?? 2.5;
-          return (
-            <mesh
-              key={area.areaId}
-              geometry={rectGeo}
-              material={matWindwall}
-              position={[area.position.x, h / 2, area.position.z]}
-              rotation={[0, area.rotationY ?? 0, 0]}
-              scale={[w, h, 1]}
-            />
-          );
-        }
 
         if (area.areaType === 'rectangle') {
           const l = area.length ?? 2;

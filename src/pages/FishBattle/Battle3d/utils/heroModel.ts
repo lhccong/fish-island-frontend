@@ -1,5 +1,5 @@
 import { getHeroAssetConfig } from '../config/heroConfig';
-import { getAssetDirectory, resolveAssetUrl } from './assetUrl';
+import { getAssetDirectory, isHttpUrl } from './assetUrl';
 
 export function getHeroModelPath(
   heroId: string,
@@ -12,16 +12,13 @@ export function getHeroModelPath(
     return options.overridePath;
   }
 
-  if (options?.skin) {
-    if (options.skin.startsWith('http://') || options.skin.startsWith('https://')) {
-      return options.skin;
-    }
-    const skinModelPath = `/models/heroes/${heroId}/${options.skin}.glb`;
-    return resolveAssetUrl(skinModelPath) ?? skinModelPath;
+  // skin 为在线 URL 时直接使用
+  if (options?.skin && isHttpUrl(options.skin)) {
+    return options.skin;
   }
 
+  // 非 URL skin（显示名称）或无 skin → 走 assetConfig（CDN URL）
   const assetConfig = getHeroAssetConfig(heroId);
-  // 没有 asset 配置（后端未下发）或 modelPath 为空 → 返回空字符串，走程序化降级渲染
   if (!assetConfig || !assetConfig.modelPath) {
     return '';
   }
@@ -29,9 +26,10 @@ export function getHeroModelPath(
 }
 
 export function getHeroTextureBasePath(heroId: string, skin?: string): string {
+  const assetConfig = getHeroAssetConfig(heroId);
+  if (assetConfig?.textureBasePath) {
+    return assetConfig.textureBasePath;
+  }
   const modelPath = getHeroModelPath(heroId, { skin });
-  return getHeroAssetConfig(heroId)?.textureBasePath
-    || getAssetDirectory(modelPath)
-    || resolveAssetUrl(`/models/heroes/${heroId}/`)
-    || `/models/heroes/${heroId}/`;
+  return getAssetDirectory(modelPath) || '';
 }

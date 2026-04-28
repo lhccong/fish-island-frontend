@@ -77,7 +77,7 @@ interface GameStore {
 
   /** 智能施法模式开关（开启后按键直接释放技能，无需瞄准确认）。 */
   smartCastEnabled: boolean;
-  /** 全局鼠标地面世界坐标（由 SpellAimIndicator / InputController 持续更新）。 */
+  /** 全局鼠标地面世界坐标（由 InputController 持续更新）。 */
   lastMouseWorldPosition: SerializedVector3 | null;
 
   // 加载状态

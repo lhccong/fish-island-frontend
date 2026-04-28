@@ -8,9 +8,10 @@ import { useGameStore } from './store/useGameStore';
 
 interface AppProps {
   playerName?: string;
+  currentUserId?: number;
 }
 
-const App: React.FC<AppProps> = ({ playerName = 'Player' }) => {
+const App: React.FC<AppProps> = ({ playerName = 'Player', currentUserId }) => {
   const battleRootRef = useRef<HTMLDivElement>(null);
   const multiplayerEnabled = GAME_CONFIG.multiplayer.enabled;
 
@@ -21,6 +22,7 @@ const App: React.FC<AppProps> = ({ playerName = 'Player' }) => {
   useBattleWsSync(
     multiplayerEnabled,
     playerName,
+    currentUserId,
   );
 
   /* 单机模式下，资产加载完毕后自动标记场景就绪。

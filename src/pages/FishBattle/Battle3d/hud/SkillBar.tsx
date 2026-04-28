@@ -6,52 +6,33 @@ import { getLocalPredictor } from '../network/NetworkSyncRegistry';
 import { getSkillCastDefinition, requiresAiming, isTargetAllowedByRules, type TargetableEntity } from '../config/skillDefinitions';
 import type { HeroActionSlot, SkillRuntimeState, SpellAimState, SpellSlot } from '../types/game';
 
-/** 技能槽位 → 快捷键映射 */
+/** 技能槽位 → 快捷键映射（仅普攻 + 召唤师技能） */
 const SLOT_KEY_MAP: Record<string, string> = {
-  passive: 'P',
   basicAttack: 'A',
-  q: 'Q',
-  w: 'W',
-  e: 'E',
-  r: 'R',
   summonerD: 'D',
   summonerF: 'F',
-  recall: 'B',
 };
 
 /** 技能槽位 → 显示颜色 */
 const SLOT_COLOR_MAP: Record<string, string> = {
-  passive: '#8888aa',
   basicAttack: '#aaaacc',
-  q: '#64b5f6',
-  w: '#81c784',
-  e: '#ce93d8',
-  r: '#ef5350',
   summonerD: '#ffd54f',
   summonerF: '#4dd0e1',
-  recall: '#90a4ae',
 };
 
-/** 显示在技能栏中的槽位顺序 */
-const DISPLAY_SLOTS: SpellSlot[] = ['passive', 'q', 'w', 'e', 'r', 'summonerD', 'summonerF'];
+/** 显示在底部栏中的槽位顺序（仅召唤师技能） */
+const DISPLAY_SLOTS: SpellSlot[] = ['summonerD', 'summonerF'];
 
 /** 可由键盘触发施法的槽位集合 */
-const CASTABLE_SLOTS = new Set<string>(['q', 'w', 'e', 'r', 'summonerD', 'summonerF', 'basicAttack']);
+const CASTABLE_SLOTS = new Set<string>(['summonerD', 'summonerF']);
 
 const LOCAL_PREDICTION_BLOCK_TIMEOUT_MS = 5000;
-/** 独立 slot 施法时间戳安全阀超时（覆盖 cast→finished→next_snapshot 的往返延迟）。 */
 const SLOT_CAST_GUARD_TIMEOUT_MS = 1500;
 
 /** 键盘按键 → 技能槽位反向映射 */
 const KEY_TO_SLOT: Record<string, SpellSlot> = {
-  q: 'q',
-  w: 'w',
-  e: 'e',
-  r: 'r',
   d: 'summonerD',
   f: 'summonerF',
-  a: 'basicAttack',
-  b: 'recall',
 };
 
 /**
@@ -63,17 +44,8 @@ function nextRequestId(): string {
 }
 
 function mapSpellSlotToActionSlot(slot: SpellSlot): HeroActionSlot | null {
-  switch (slot) {
-    case 'basicAttack':
-    case 'q':
-    case 'w':
-    case 'e':
-    case 'r':
-    case 'recall':
-      return slot;
-    default:
-      return null;
-  }
+  if (slot === 'basicAttack') return 'basicAttack';
+  return null;
 }
 
 function formatCooldownLabel(cooldown: number): string {
@@ -154,17 +126,20 @@ const SkillBar: React.FC = () => {
     return false;
   }, [me]);
 
+  /** 英雄头像 URL */
+  const heroAvatarUrl = useMemo(() => {
+    if (!me?.id) return '';
+    return championAvatarUrls[me.id] ?? '';
+  }, [me, championAvatarUrls]);
+
   /** 当前受控英雄的技能状态列表（按显示顺序），合并后端元数据 */
   const displaySkills = useMemo(() => {
     if (!me?.skillStates) return [];
     const mySkillsMeta = me.id ? heroSkillsMeta[me.id] : undefined;
     const mySummonerSpells = me.id ? championSummonerSpells[me.id] : undefined;
-    const myAvatarUrl = me.id ? championAvatarUrls[me.id] : undefined;
     return DISPLAY_SLOTS.map((slot) => {
       const state: SkillRuntimeState | undefined = me.skillStates[slot];
-      /* 技能元数据来源：后端 heroSkills JSON */
       const meta = mySkillsMeta?.[slot];
-      /* 召唤师技能特殊处理：从 summonerSpellsMeta 查找 */
       let summonerMeta: { name: string; icon: string; description: string } | undefined;
       if (slot === 'summonerD' && mySummonerSpells?.spell1) {
         const sp = summonerSpellsMeta[mySummonerSpells.spell1];
@@ -175,13 +150,11 @@ const SkillBar: React.FC = () => {
         if (sp) summonerMeta = sp;
       }
       const effectiveMeta = summonerMeta ?? meta;
-      /* 被动栏特殊处理：显示英雄头像 */
-      const passiveIcon = slot === 'passive' && myAvatarUrl ? myAvatarUrl : '';
       return {
         slot,
         key: SLOT_KEY_MAP[slot] ?? slot.toUpperCase(),
         label: effectiveMeta?.name ?? state?.name ?? (SLOT_KEY_MAP[slot] ?? slot),
-        icon: passiveIcon || effectiveMeta?.icon || '',
+        icon: effectiveMeta?.icon || '',
         description: effectiveMeta?.description ?? '',
         cooldown: state ? state.remainingCooldownMs / 1000 : 0,
         maxCooldown: state ? state.maxCooldownMs / 1000 : 0,
@@ -189,7 +162,7 @@ const SkillBar: React.FC = () => {
         color: SLOT_COLOR_MAP[slot] ?? '#888',
       };
     });
-  }, [me, heroSkillsMeta, summonerSpellsMeta, championSummonerSpells, championAvatarUrls]);
+  }, [me, heroSkillsMeta, summonerSpellsMeta, championSummonerSpells]);
 
   /**
    * 执行施法请求（发送到服务端 + 记录最小化本地预测信息）。
@@ -210,7 +183,7 @@ const SkillBar: React.FC = () => {
       const activeAim = aimState ?? useGameStore.getState().spellAimState;
       const actionSlot = mapSpellSlotToActionSlot(slot);
       const actionConfig = actionSlot ? getHeroActionConfig(me.heroId, actionSlot) : null;
-      const shouldLockMovement = actionConfig?.lockMovement ?? slot !== 'e';
+      const shouldLockMovement = actionConfig?.lockMovement ?? slot === 'basicAttack';
       let castStopSeq: number | undefined;
       const payload: LocalCastPayload = {
         roomId: multiplayerSession.roomId,
@@ -581,22 +554,15 @@ const SkillBar: React.FC = () => {
   /** 当前正在瞄准的技能槽位（用于高亮显示） */
   const aimingSlot = spellAimState?.slot ?? null;
   const aimHintText = useMemo(() => {
-    if (spellAimState?.targetType !== 'target_unit') {
-      return '左键确认 · 右键/ESC取消';
-    }
-    if (spellAimState.targetRules?.allyOnly) {
-      return spellAimState.targetRules.allowSelf
-        ? '左键点己方/自己确认 · 右键/ESC取消'
-        : '左键点己方单位确认 · 右键/ESC取消';
-    }
-    if (spellAimState.targetRules?.enemyOnly) {
+    if (spellAimState?.targetType === 'target_unit') {
       return '左键点敌方单位确认 · 右键/ESC取消';
     }
-    return '左键点目标单位确认 · 右键/ESC取消';
+    return '左键确认 · 右键/ESC取消';
   }, [spellAimState]);
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[100] flex items-end gap-1.5">
+    <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 100, display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+      {/* 技能槽位：召唤师D + 召唤师F */}
       {displaySkills.map((skill) => {
         const isOnCooldown = skill.cooldown > 0;
         const cooldownLabel = isOnCooldown ? formatCooldownLabel(skill.cooldown) : '';
@@ -609,44 +575,9 @@ const SkillBar: React.FC = () => {
             key={skill.slot}
             className="relative flex flex-col items-center gap-1"
             onClick={() => handleSkillInput(skill.slot)}
-            onMouseEnter={() => {
-              setHoveredSlot(skill.slot);
-              /* 悬浮预览：仅在没有正式瞄准时进入预览模式，显示范围圆 */
-              if (!me || !CASTABLE_SLOTS.has(skill.slot)) return;
-              const currentAim = useGameStore.getState().spellAimState;
-              if (currentAim && !currentAim.previewOnly) return;
-              const runtimeSkillId = resolveRuntimeSkillId(skill.slot);
-              const castDef = getSkillCastDefinition(me.heroId, skill.slot, runtimeSkillId);
-              if (castDef && castDef.targetType !== 'self_cast') {
-                useGameStore.getState().enterSpellAim({
-                  slot: skill.slot,
-                  casterId: me.id,
-                  skillId: castDef.skillId,
-                  targetType: castDef.targetType,
-                  range: castDef.range,
-                  radius: castDef.radius,
-                  width: castDef.width,
-                  targetRules: castDef.targetRules ?? null,
-                  cursorWorldPosition: null,
-                  targetPoint: null,
-                  targetDirection: null,
-                  hoveredTargetEntityId: null,
-                  hoveredTargetAllowed: null,
-                  targetEntityId: null,
-                  previewOnly: true,
-                });
-              }
-            }}
-            onMouseLeave={() => {
-              setHoveredSlot(null);
-              /* 离开时仅清除预览模式的瞄准，不影响正式瞄准 */
-              const currentAim = useGameStore.getState().spellAimState;
-              if (currentAim?.previewOnly) {
-                useGameStore.getState().exitSpellAim();
-              }
-            }}
+            onMouseEnter={() => setHoveredSlot(skill.slot)}
+            onMouseLeave={() => setHoveredSlot(null)}
           >
-            {/* 技能图标 */}
             <div
               className="relative w-12 h-12 rounded-lg flex items-center justify-center transition-all hover:scale-105 select-none cursor-pointer overflow-hidden"
               style={{
@@ -654,9 +585,7 @@ const SkillBar: React.FC = () => {
                   ? `linear-gradient(135deg, ${skill.color}66, ${skill.color}33)`
                   : !(skill.isReady && !isOnCooldown)
                     ? 'rgba(0,0,0,0.6)'
-                    : skill.isReady
-                    ? hasIcon ? 'rgba(0,0,0,0.3)' : `linear-gradient(135deg, ${skill.color}33, ${skill.color}11)`
-                    : 'rgba(0,0,0,0.6)',
+                    : hasIcon ? 'rgba(0,0,0,0.3)' : `linear-gradient(135deg, ${skill.color}33, ${skill.color}11)`,
                 border: `2px solid ${isAiming ? skill.color : skill.isReady && !isOnCooldown ? skill.color + '88' : '#333'}`,
                 boxShadow: isAiming
                   ? `0 0 14px ${skill.color}88, inset 0 0 8px ${skill.color}44`
@@ -665,19 +594,17 @@ const SkillBar: React.FC = () => {
                     : 'none',
               }}
             >
-              {/* 技能图标图片（被动栏为英雄头像，圆形裁剪） */}
               {hasIcon && (
                 <img
                   src={skill.icon}
                   alt={skill.label}
-                  className={`absolute inset-0 w-full h-full object-cover ${skill.slot === 'passive' ? 'rounded-full' : 'rounded-md'}`}
+                  className="absolute inset-0 w-full h-full object-cover rounded-md"
                   style={{ opacity: skill.isReady && !isOnCooldown ? 1 : 0.35 }}
                   draggable={false}
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
               )}
 
-              {/* CD 扇形遮罩：conic-gradient 从12点方向顺时针覆盖剩余冷却比例 */}
               {isOnCooldown && cdPercent > 0 && (
                 <div
                   className="absolute inset-0 rounded-md z-[1]"
@@ -687,7 +614,6 @@ const SkillBar: React.FC = () => {
                 />
               )}
 
-              {/* 无图标时显示技能名首字 */}
               {!hasIcon && (
                 <span
                   className="text-sm font-bold z-10"
@@ -697,7 +623,6 @@ const SkillBar: React.FC = () => {
                 </span>
               )}
 
-              {/* CD 文字 */}
               {isOnCooldown && (
                 <span
                   className={`absolute z-10 font-extrabold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] bg-black/55 rounded px-1.5 py-[2px] leading-none ${cooldownLabel.length >= 3 ? 'text-[10px]' : 'text-[13px]'}`}
@@ -706,7 +631,6 @@ const SkillBar: React.FC = () => {
                 </span>
               )}
 
-              {/* 瞄准态标识 */}
               {isAiming && (
                 <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full animate-pulse z-20"
                   style={{ background: skill.color, boxShadow: `0 0 6px ${skill.color}` }}
@@ -714,28 +638,44 @@ const SkillBar: React.FC = () => {
               )}
             </div>
 
-            {/* 快捷键 */}
             <span className="text-[9px] text-white/30 font-mono">{skill.key}</span>
 
-            {/* Tooltip：技能名称和描述（显示在图标上方） */}
             {isHovered && (skill.description || skill.maxCooldown > 0 || skill.label) && (
               <div
-                className="absolute left-1/2 -translate-x-1/2 z-[200] pointer-events-none"
-                style={{ minWidth: 180, maxWidth: 260, bottom: '100%', marginBottom: 8 }}
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 200,
+                  pointerEvents: 'none',
+                  minWidth: 200,
+                  maxWidth: 280,
+                  bottom: '100%',
+                  marginBottom: 10,
+                }}
               >
-                <div className="bg-gray-900/95 border border-gray-600/50 rounded-lg px-3 py-2 shadow-xl backdrop-blur-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    {hasIcon && skill.slot !== 'passive' && (
-                      <img src={skill.icon} alt="" className="w-6 h-6 rounded" draggable={false} />
+                <div
+                  style={{
+                    background: 'rgba(10, 12, 20, 0.96)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: 10,
+                    padding: '10px 14px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)',
+                    backdropFilter: 'blur(12px)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    {hasIcon && (
+                      <img src={skill.icon} alt="" style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)' }} draggable={false} />
                     )}
-                    <span className="text-sm font-bold" style={{ color: skill.color }}>{skill.label}</span>
-                    <span className="text-[10px] text-white/40 ml-auto">[{skill.key}]</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: skill.color }}>{skill.label}</span>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginLeft: 'auto' }}>[{skill.key}]</span>
                   </div>
                   {skill.description && (
-                    <p className="text-[11px] text-white/70 leading-relaxed m-0">{skill.description}</p>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5, margin: 0 }}>{skill.description}</p>
                   )}
                   {skill.maxCooldown > 0 && (
-                    <p className="text-[10px] text-white/40 mt-1 m-0">基础冷却: {skill.maxCooldown.toFixed(1)}s</p>
+                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 6, margin: 0, marginBlockStart: 6 }}>基础冷却: {skill.maxCooldown.toFixed(1)}s</p>
                   )}
                 </div>
               </div>
@@ -744,28 +684,11 @@ const SkillBar: React.FC = () => {
         );
       })}
 
-      {/* 瞄准模式提示文字 */}
       {aimingSlot && (
         <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] text-white/60 bg-black/40 px-2 py-0.5 rounded-md">
           {aimHintText}
         </div>
       )}
-
-      {/* 智能施法开关 */}
-      <div
-        className="absolute -top-9 right-0 flex items-center gap-1 cursor-pointer select-none"
-        onClick={() => useGameStore.getState().toggleSmartCast()}
-        title="智能施法 (Shift+K)"
-      >
-        <div
-          className="w-3 h-3 rounded-sm border transition-colors"
-          style={{
-            borderColor: smartCastEnabled ? '#ffd54f' : '#555',
-            background: smartCastEnabled ? '#ffd54f' : 'transparent',
-          }}
-        />
-        <span className="text-[9px] text-white/50">智能施法</span>
-      </div>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { type RefObject } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import TopBar from './TopBar';
+import SkillBar from './SkillBar';
 import EmoteWheel from './EmoteWheel';
 import SpectatorPanel from './SpectatorPanel';
 import DisconnectOverlay from './DisconnectOverlay';
@@ -22,6 +23,7 @@ const HUD: React.FC<HUDProps> = ({ viewportRef }) => {
         <SpectatorPanel />
         <EmoteWheel viewportRef={viewportRef} />
         <Minimap position="top-left" />
+        <SkillBar />
       </div>
       {/* 断线遮罩（最高层级，阻断所有交互） */}
       <DisconnectOverlay />

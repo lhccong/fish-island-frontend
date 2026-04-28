@@ -93,13 +93,10 @@ export interface SerializedAnimationClipRequest {
 export interface HeroVoiceConfig {
   /** 基础普攻语音列表。 */
   basicAttack?: string[];
-  /** Q 技能语音列表。 */
+  /** 动作槽位语音（后端兼容字段）。 */
   q?: string[];
-  /** W 技能语音列表。 */
   w?: string[];
-  /** E 技能语音列表。 */
   e?: string[];
-  /** R 技能语音列表。 */
   r?: string[];
   /** 回城语音列表。 */
   recall?: string[];
@@ -212,7 +209,7 @@ export interface HeroConfig {
   /** 英雄英文名称。 */
   nameEn: string;
   /** 用于 UI 展示的 emoji 图标。 */
-  emoji: string;
+  // emoji: string;
   /** 英雄职业类型。 */
   role: HeroRole;
   /** 基础生命值。 */
@@ -222,11 +219,11 @@ export interface HeroConfig {
   /** 基础物理攻击力。 */
   baseAd: number;
   /** 基础法术强度。 */
-  baseAp: number;
+  // baseAp: number;
   /** 基础护甲。 */
-  baseArmor: number;
+  // baseArmor: number;
   /** 基础魔法抗性。 */
-  baseMr: number;
+  // baseMr: number;
   /** 基础移动速度。 */
   moveSpeed: number;
   /** 基础攻击距离。 */
@@ -1255,21 +1252,8 @@ export interface CombatImpactVfxState {
   kind:
     | 'hit_flash'
     | 'slash_arc'
-    | 'wind_wall_spawn'
     | 'dash_burst'
-    | 'ultimate_burst'
-    | 'tornado_cast'
-    | 'wind_wall_expand'
-    | 'dash_trail'
-    | 'ult_impact'
-    | 'lux_snare'
-    | 'lux_barrier'
-    | 'lux_zone'
-    | 'lux_beam'
-    | 'annie_cone'
-    | 'annie_burst'
-    | 'ashe_volley'
-    | 'jhin_line';
+    | string;
   /** 当前世界坐标。 */
   position: SerializedVector3;
   /** 关联施法者实体 ID。 */

@@ -37,7 +37,6 @@ export function createChampionHudTexture(
   maxMp: number,
   team: Team,
   name: string,
-  level: number,
   isMe: boolean,
 ) {
   const canvas = document.createElement('canvas');
@@ -71,7 +70,7 @@ export function createChampionHudTexture(
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  const hpGradient = ctx.createLinearGradient(18, 0, 400, 0);
+  const hpGradient = ctx.createLinearGradient(18, 0, 402, 0);
   if (team === 'red') {
     hpGradient.addColorStop(0, '#8f161a');
     hpGradient.addColorStop(1, '#ff5c57');
@@ -86,17 +85,18 @@ export function createChampionHudTexture(
     hpGradient.addColorStop(1, '#ff5c57');
   }
   ctx.fillStyle = hpGradient;
-  roundRect(ctx, 18, 68, Math.max(8, 326 * hpPercent), 26, 9);
+  const hpBarWidth = 384;
+  roundRect(ctx, 18, 68, Math.max(8, hpBarWidth * hpPercent), 26, 9);
   ctx.fill();
 
   ctx.fillStyle = 'rgba(255,255,255,0.18)';
-  roundRect(ctx, 18, 68, Math.max(8, 326 * hpPercent), 8, 6);
+  roundRect(ctx, 18, 68, Math.max(8, hpBarWidth * hpPercent), 8, 6);
   ctx.fill();
 
   ctx.strokeStyle = 'rgba(0,0,0,0.34)';
   ctx.lineWidth = 1;
   for (let i = 1; i < overhead.hpSegments; i += 1) {
-    const x = 18 + (326 / overhead.hpSegments) * i;
+    const x = 18 + (hpBarWidth / overhead.hpSegments) * i;
     ctx.beginPath();
     ctx.moveTo(x, 68);
     ctx.lineTo(x, 94);
@@ -121,11 +121,7 @@ export function createChampionHudTexture(
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.font = `700 ${overhead.hpValueFontSize}px Arial`;
-  ctx.fillText(`${Math.round(hp)} / ${Math.round(maxHp)}`, 180, 82);
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `600 ${overhead.levelFontSize}px Arial`;
-  ctx.fillText(`Lv.${level}`, 396, 82);
+  ctx.fillText(`${Math.round(hp)} / ${Math.round(maxHp)}`, 210, 82);
   if (maxMp > 0) {
     ctx.fillStyle = '#d8ebff';
     ctx.font = `600 ${overhead.mpValueFontSize}px Arial`;
@@ -187,4 +183,67 @@ export function createEmoteTexture(emote: EmoteDefinition) {
   ctx.fillText(emote.label, 80, 132);
 
   return createCanvasTexture(canvas);
+}
+
+/** 语音播放头顶标识纹理（🔊 喇叭 + "Speaking" 标签）。 */
+let cachedVoiceIndicatorTexture: THREE.CanvasTexture | null = null;
+
+export function createVoiceIndicatorTexture(): THREE.CanvasTexture {
+  if (cachedVoiceIndicatorTexture) {
+    return cachedVoiceIndicatorTexture;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 120;
+  canvas.height = 120;
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) {
+    return createCanvasTexture(canvas);
+  }
+
+  ctx.clearRect(0, 0, 120, 120);
+
+  /* 外圈发光 */
+  const gradient = ctx.createRadialGradient(60, 54, 14, 60, 60, 52);
+  gradient.addColorStop(0, 'rgba(100, 220, 255, 0.85)');
+  gradient.addColorStop(1, 'rgba(40, 140, 255, 0.22)');
+
+  ctx.beginPath();
+  ctx.arc(60, 58, 42, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(7, 12, 24, 0.72)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(100, 200, 255, 0.7)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(60, 58, 36, 0, Math.PI * 2);
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  /* 喇叭 emoji */
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = 8;
+  ctx.font = '40px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('🔊', 60, 58);
+  ctx.shadowBlur = 0;
+
+  /* 底部标签 */
+  roundRect(ctx, 22, 94, 76, 20, 10);
+  ctx.fillStyle = 'rgba(8, 14, 28, 0.88)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(100, 200, 255, 0.65)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.font = '700 12px Arial';
+  ctx.fillStyle = '#a0dcff';
+  ctx.fillText('Speaking', 60, 104);
+
+  cachedVoiceIndicatorTexture = createCanvasTexture(canvas);
+  return cachedVoiceIndicatorTexture;
 }

@@ -175,8 +175,37 @@ const InputController: React.FC = () => {
       && point.z <= MAP_CONFIG.playableBounds.maxZ
     );
 
-    const buildCursorValue = (path: string) => `url(${path}) ${cursorConfig.hotspotX} ${cursorConfig.hotspotY}, ${cursorConfig.fallback}`;
     const cursorHost = gl.domElement.parentElement;
+
+    /* 预加载 cursor 图片并缓存为 data-URL，避免每次赋值 CSS cursor 时浏览器重复发起网络请求 */
+    const cursorDataUrls: Record<string, string> = {};
+    const preloadCursor = (path: string) => {
+      if (!path) return;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            cursorDataUrls[path] = canvas.toDataURL('image/png');
+          }
+        } catch { /* 跨域或安全限制，退回原路径 */ }
+      };
+      img.src = path;
+    };
+    if (cursorConfig.enabled) {
+      preloadCursor(cursorConfig.defaultPath);
+      preloadCursor(cursorConfig.clickPath);
+    }
+
+    const buildCursorValue = (path: string) => {
+      const src = cursorDataUrls[path] || path;
+      return `url(${src}) ${cursorConfig.hotspotX} ${cursorConfig.hotspotY}, ${cursorConfig.fallback}`;
+    };
 
     const resetCursor = () => {
       const value = cursorConfig.enabled ? buildCursorValue(cursorConfig.defaultPath) : cursorConfig.fallback;

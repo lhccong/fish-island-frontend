@@ -23,6 +23,7 @@ import { RENDER_CONFIG } from '../../config/renderConfig';
 const BattleRuntimeController: React.FC = () => {
   const tickMovement = useGameStore((s) => s.tickMovement);
   const cleanupExpiredEmotes = useGameStore((s) => s.cleanupExpiredEmotes);
+  const setMultiplayerDiagnosticsFps = useGameStore((s) => s.setMultiplayerDiagnosticsFps);
   const fpsAccumulatorRef = useRef({ elapsed: 0, frames: 0 });
   const emoteCleanupAccumulatorRef = useRef(0);
 
@@ -41,6 +42,7 @@ const BattleRuntimeController: React.FC = () => {
     bucket.elapsed += delta;
     bucket.frames += 1;
     if (bucket.elapsed >= 0.35) {
+      setMultiplayerDiagnosticsFps(Math.round(bucket.frames / bucket.elapsed));
       bucket.elapsed = 0;
       bucket.frames = 0;
     }
