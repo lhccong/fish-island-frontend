@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GAME_CONFIG } from '../config/gameConfig';
 
 /**
  * 本地玩家客户端预测 + 服务端 reconciliation。
@@ -46,20 +47,6 @@ const MAP_Z_MAX = 19.6;
 /** 到达目标的停止阈值，与后端保持一致 */
 const STOP_THRESHOLD = 0.08;
 
-const STRUCTURE_COLLIDERS: Array<[number, number, number]> = [
-  [-25, 0, 2.5],
-  [-55, 0, 2.5],
-  [-100, -5.4, 2.5],
-  [-100, 5.4, 2.5],
-  [25, 0, 2.5],
-  [55, 0, 2.5],
-  [100, -5.4, 2.5],
-  [100, 5.4, 2.5],
-  [-80, 0, 5.5],
-  [80, 0, 5.5],
-  [-110, 0, 6.5],
-  [115, 0, 6.5],
-];
 const CHAMPION_COLLISION_RADIUS = 0.5;
 
 export class LocalPlayerPredictor {
@@ -423,7 +410,8 @@ export class LocalPlayerPredictor {
 }
 
 function resolveStructureCollision(position: THREE.Vector3): void {
-  for (const [cx, cz, structureRadius] of STRUCTURE_COLLIDERS) {
+  const colliders = GAME_CONFIG.map.structureColliders;
+  for (const [cx, cz, structureRadius] of colliders) {
     const minDist = structureRadius + CHAMPION_COLLISION_RADIUS;
     const dx = position.x - cx;
     const dz = position.z - cz;

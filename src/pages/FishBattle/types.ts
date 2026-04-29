@@ -122,6 +122,9 @@ export interface FishBattlePlayerStats {
   isWin: number;
   likes: number;
   pointsEarned: number;
+  heroName?: string;
+  playerName?: string;
+  userAvatar?: string;
 }
 
 /** 玩家总体统计 */
@@ -140,6 +143,8 @@ export interface FishBattleUserStats {
   todayGames: number;
   todayDate?: string;
   dailyLimit: number;
+  userName?: string;
+  userAvatar?: string;
 }
 
 /** 房间详情（含玩家列表） */

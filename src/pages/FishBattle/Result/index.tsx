@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Spin, message } from 'antd';
 import { history, useParams, useModel } from '@umijs/max';
 import { fishBattleGameDetail, fishBattleGameLike } from '@/services/backend/fishBattleController';
-import type { FishBattleGameDetail, FishBattlePlayerStats } from '../types';
+import type { FishBattleGameDetail } from '../types';
 import {
   Trophy, Target, Star, ThumbsUp, RefreshCw, BarChart3, Home,
 } from 'lucide-react';
@@ -41,10 +41,24 @@ const FishBattleResult: React.FC = () => {
 
   const handleLike = async (targetUserId: number) => {
     try {
-      await fishBattleGameLike({ gameId: Number(gameId), targetUserId });
-      message.success('点赞成功！');
+      const res = await fishBattleGameLike({ gameId: Number(gameId), targetUserId });
+      if (res?.data) {
+        message.success('点赞成功！');
+        // 刷新本地 likes 计数
+        setDetail((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            playerStats: prev.playerStats.map((p) =>
+              p.userId === targetUserId ? { ...p, likes: (p.likes || 0) + 1 } : p
+            ),
+          };
+        });
+      } else {
+        message.warning('你已经点赞过该玩家了');
+      }
     } catch (e) {
-      message.error('点赞失败');
+      message.warning('你已经点赞过该玩家了');
     }
   };
 
@@ -57,6 +71,7 @@ const FishBattleResult: React.FC = () => {
   const game = detail?.game;
   const isBlueWin = game?.winningTeam === 'blue';
   const mvpPlayer = detail?.playerStats?.find((p) => p.isMvp);
+  const myStats = detail?.playerStats?.find((p) => p.userId === currentUser?.id);
   const blueStats = detail?.playerStats?.filter((p) => p.team === 'blue') || [];
   const redStats = detail?.playerStats?.filter((p) => p.team === 'red') || [];
   const allStats = [...blueStats, ...redStats];
@@ -99,11 +114,12 @@ const FishBattleResult: React.FC = () => {
             <div className="points-icon"><Target size={28} /></div>
             <div className="points-info">
               <span className="points-label">获得积分</span>
-              <span className="points-value">+{mvpPlayer?.pointsEarned || detail?.playerStats?.[0]?.pointsEarned || 0}</span>
+              <span className="points-value">+{myStats?.pointsEarned || 0}</span>
             </div>
             <div className="points-breakdown">
-              <span className="points-item">基础积分 +10</span>
-              <span className="points-item win-bonus">胜利加成 +5</span>
+              <span className="points-item">基础积分 +20</span>
+              {myStats?.isWin === 1 && <span className="points-item win-bonus">胜利加成 +5</span>}
+              {myStats?.isMvp === 1 && <span className="points-item mvp-bonus">MVP加成 +5</span>}
             </div>
           </div>
 
@@ -111,16 +127,16 @@ const FishBattleResult: React.FC = () => {
           {mvpPlayer && (
             <div className="mvp-card">
               <div className="mvp-badge"><Star size={16} /> MVP</div>
-              <div className="mvp-avatar">{mvpPlayer.heroId}</div>
+              <div className="mvp-avatar">{mvpPlayer.heroName || mvpPlayer.heroId}</div>
               <div className="mvp-info">
-                <span className="mvp-name">玩家{mvpPlayer.userId}</span>
+                <span className="mvp-name">{mvpPlayer.playerName || ('玩家' + mvpPlayer.userId)}</span>
                 <span className="mvp-kda">{mvpPlayer.kills}/{mvpPlayer.deaths}/{mvpPlayer.assists}</span>
               </div>
               <div className="mvp-stats">
                 <span className="mvp-stat">伤害 {mvpPlayer.damageDealt.toLocaleString()}</span>
                 <span className="mvp-stat">承伤 {mvpPlayer.damageTaken.toLocaleString()}</span>
               </div>
-              <button className="btn-like-mvp" onClick={() => handleLike(mvpPlayer.userId)}>
+              <button type="button" className="btn-like-mvp" onClick={() => handleLike(mvpPlayer.userId)}>
                 <ThumbsUp size={14} /> 点赞 {mvpPlayer.likes}
               </button>
             </div>
@@ -129,9 +145,9 @@ const FishBattleResult: React.FC = () => {
           {/* Stats Table */}
           <div className="stats-section">
             <div className="stats-tabs">
-              <button className={`stats-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>总览</button>
-              <button className={`stats-tab ${activeTab === 'damage' ? 'active' : ''}`} onClick={() => setActiveTab('damage')}>伤害统计</button>
-              <button className={`stats-tab ${activeTab === 'taken' ? 'active' : ''}`} onClick={() => setActiveTab('taken')}>承伤统计</button>
+              <button type="button" className={`stats-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>总览</button>
+              <button type="button" className={`stats-tab ${activeTab === 'damage' ? 'active' : ''}`} onClick={() => setActiveTab('damage')}>伤害统计</button>
+              <button type="button" className={`stats-tab ${activeTab === 'taken' ? 'active' : ''}`} onClick={() => setActiveTab('taken')}>承伤统计</button>
             </div>
 
             <div className="stats-table">
@@ -151,7 +167,8 @@ const FishBattleResult: React.FC = () => {
               {allStats.map((player) => (
                 <div key={player.id} className={`stats-table-row ${player.team} ${player.isMvp ? 'mvp-row' : ''}`}>
                   <span className="col-hero">
-                    <span className="row-emoji">{player.heroId}</span>
+                    <span className="row-emoji">{player.heroName || player.heroId}</span>
+                    <span className="row-player-name">{player.playerName || ('玩家' + player.userId)}</span>
                     <span className={`row-team-dot ${player.team}`} />
                     {player.isMvp && <span className="row-mvp">MVP</span>}
                   </span>
@@ -178,7 +195,7 @@ const FishBattleResult: React.FC = () => {
                     </span>
                   )}
                   <span className="col-like">
-                    <button className="btn-like" onClick={() => handleLike(player.userId)}><ThumbsUp size={12} /> {player.likes}</button>
+                    <button type="button" className="btn-like" onClick={() => handleLike(player.userId)}><ThumbsUp size={12} /> {player.likes}</button>
                   </span>
                 </div>
               ))}
@@ -187,9 +204,9 @@ const FishBattleResult: React.FC = () => {
 
           {/* Actions */}
           <div className="result-actions">
-            <button className="btn-play-again" onClick={() => history.push('/fishBattle/lobby')}><RefreshCw size={16} /> 再来一局</button>
-            <button className="btn-view-data" onClick={() => history.push('/fishBattle/profile')}><BarChart3 size={16} /> 查看数据</button>
-            <button className="btn-go-home" onClick={() => history.push('/fishBattle/home')}><Home size={16} /> 返回首页</button>
+            <button type="button" className="btn-play-again" onClick={() => history.push('/fishBattle/lobby')}><RefreshCw size={16} /> 再来一局</button>
+            <button type="button" className="btn-view-data" onClick={() => history.push('/fishBattle/profile')}><BarChart3 size={16} /> 查看数据</button>
+            <button type="button" className="btn-go-home" onClick={() => history.push('/fishBattle/home')}><Home size={16} /> 返回首页</button>
           </div>
         </div>
       </div>

@@ -91,12 +91,29 @@ const ScoreboardPanel: React.FC = () => {
     return null;
   }
 
+  const rowGridClassName = 'grid grid-cols-[minmax(0,2.2fr)_1fr_1fr] items-center';
+  const totalVisiblePlayers = blueTeam.length + redTeam.length;
+  const compactLayout = totalVisiblePlayers <= 4;
+  const panelMaxWidth = compactLayout ? 620 : 780;
+  const teamSectionClassName = compactLayout ? 'py-1' : 'py-1.5';
+  const teamHeaderClassName = compactLayout
+    ? 'px-4 pb-1 text-[9px] font-bold uppercase tracking-[0.16em]'
+    : 'px-4 pb-1.5 text-[10px] font-bold uppercase tracking-[0.18em]';
+  const rowClassName = compactLayout
+    ? `${rowGridClassName} px-4 py-1 text-[12px]`
+    : `${rowGridClassName} px-4 py-1.5 text-[13px]`;
+  const rowGapClassName = compactLayout ? 'gap-2' : 'gap-2.5';
+  const avatarClassName = compactLayout
+    ? 'flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-[4px] border border-[#5a8ab5] bg-[#2a4a6a]'
+    : 'flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-[4px] border border-[#5a8ab5] bg-[#2a4a6a]';
+  const secondaryTextClassName = compactLayout ? 'text-[9px] text-[#7f97b7]' : 'text-[10px] text-[#7f97b7]';
+
   const renderTeam = (team: 'blue' | 'red') => {
     const teamChampions = team === 'blue' ? blueTeam : redTeam;
     const teamStats = team === 'blue' ? blueStats : redStats;
     return (
-      <div className={`py-2 ${team === 'blue' ? 'border-b border-[#2a4a6a]' : ''}`}>
-        <div className={`px-5 pb-2 text-[11px] font-bold uppercase tracking-[0.22em] ${team === 'blue' ? 'text-sky-200' : 'text-rose-200'}`}>
+      <div className={`${teamSectionClassName} ${team === 'blue' ? 'border-b border-[#2a4a6a]' : ''}`}>
+        <div className={`${teamHeaderClassName} ${team === 'blue' ? 'text-sky-200' : 'text-rose-200'}`}>
           {team === 'blue'
             ? `蓝方队伍 · ${teamStats.count}人 · ${teamStats.kills}/${teamStats.deaths}/${teamStats.assists}`
             : `红方队伍 · ${teamStats.count}人 · ${teamStats.kills}/${teamStats.deaths}/${teamStats.assists}`}
@@ -107,10 +124,10 @@ const ScoreboardPanel: React.FC = () => {
             return (
               <div
                 key={champion.id}
-                className={`grid grid-cols-[minmax(0,2.2fr)_1fr_1fr] items-center px-5 py-2 text-sm ${champion.isMe ? 'bg-[rgba(74,122,181,0.24)]' : 'bg-[rgba(7,16,30,0.92)]'}`}
+                className={`${rowClassName} ${champion.isMe ? 'bg-[rgba(74,122,181,0.24)]' : 'bg-[rgba(7,16,30,0.92)]'}`}
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[4px] border border-[#5a8ab5] bg-[#2a4a6a]">
+                <div className={`flex min-w-0 items-center ${rowGapClassName}`}>
+                  <div className={avatarClassName}>
                     {avatarUrl ? (
                       <img src={avatarUrl} alt={champion.playerName} className="h-full w-full object-cover" />
                     ) : (
@@ -119,7 +136,7 @@ const ScoreboardPanel: React.FC = () => {
                   </div>
                   <div className="min-w-0">
                     <div className="truncate font-medium text-[#dde7f5]">{champion.playerName}</div>
-                    <div className="mt-0.5 text-[11px] text-[#7f97b7]">
+                    <div className={secondaryTextClassName}>
                       {champion.isDead ? `复活 ${Math.ceil(champion.respawnTimer)}s` : `Lv.${champion.level}`}
                     </div>
                   </div>
@@ -139,19 +156,22 @@ const ScoreboardPanel: React.FC = () => {
   };
 
   return (
-    <div className="absolute inset-0 z-[140] flex items-center justify-center px-6 pointer-events-none">
-      <div className="w-full max-w-[880px] overflow-hidden rounded-[12px] border-2 border-[#3a6a9a] bg-[rgba(5,15,30,0.95)] shadow-[0_0_50px_rgba(0,0,0,0.9)] backdrop-blur-[8px]">
-        <div className="grid grid-cols-[minmax(0,2.2fr)_1fr_1fr] items-center border-b-2 border-[#5a8ab5] bg-[linear-gradient(180deg,#1a3a5a,#0a1a2a)] px-5 py-3 text-[12px] font-bold uppercase tracking-[0.16em] text-[#c9d5e7]">
+    <div className="absolute inset-0 z-[140] flex items-center justify-center px-4 py-6 pointer-events-none">
+      <div
+        className="flex w-full max-h-[min(82vh,760px)] flex-col overflow-hidden rounded-[12px] border-2 border-[#3a6a9a] bg-[rgba(5,15,30,0.95)] shadow-[0_0_50px_rgba(0,0,0,0.9)] backdrop-blur-[8px]"
+        style={{ maxWidth: `${panelMaxWidth}px` }}
+      >
+        <div className={`${rowGridClassName} border-b-2 border-[#5a8ab5] bg-[linear-gradient(180deg,#1a3a5a,#0a1a2a)] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-[#c9d5e7]`}>
           <span>英雄</span>
           <span className="text-center">击杀/死亡/助攻</span>
           <span className="text-right">伤害</span>
         </div>
-        <div className="flex items-center justify-between border-b border-[#1a2a4a] bg-[rgba(8,16,28,0.94)] px-5 py-2 text-[12px] text-[#8ea5c5]">
+        <div className="flex items-center justify-between border-b border-[#1a2a4a] bg-[rgba(8,16,28,0.94)] px-4 py-2 text-[12px] text-[#8ea5c5]">
           <span className="font-semibold text-sky-100">蓝方 {blueKills}</span>
           <span className="font-mono tracking-[0.2em] text-[#ffd700]">{formatGameTimer(gameTimer)}</span>
           <span className="font-semibold text-rose-100">红方 {redKills}</span>
         </div>
-        <div>
+        <div className="min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
           {renderTeam('blue')}
           {renderTeam('red')}
         </div>

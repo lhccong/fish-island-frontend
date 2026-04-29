@@ -46,6 +46,8 @@ const MAP_CONFIG_VALUE: MapConfig = {
     { position: [0, 0, 0], team: 'blue' },
     { position: [0, 0, 0], team: 'red' },
   ],
+  /** 建筑碰撞体列表 [x, z, radius]，运行时由 useSharedMapConfig 从后端覆盖。 */
+  structureColliders: [] as Array<[number, number, number]>,
   /** 双方初始编队落点。 */
   spawnLayouts: {
     /** 蓝队初始编队。 */

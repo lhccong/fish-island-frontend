@@ -9,6 +9,7 @@ import Minimap from './Minimap';
 import ScoreboardPanel from './ScoreboardPanel';
 import KillFeed from './KillFeed';
 import RespawnOverlay from './RespawnOverlay';
+import GameEndOverlay from './GameEndOverlay';
 
 interface HUDProps {
   viewportRef: RefObject<HTMLDivElement>;
@@ -33,6 +34,8 @@ const HUD: React.FC<HUDProps> = ({ viewportRef }) => {
       </div>
       {/* 断线遮罩（最高层级，阻断所有交互） */}
       <DisconnectOverlay />
+      {/* 游戏结束胜负弹窗 */}
+      <GameEndOverlay />
     </div>
   );
 };

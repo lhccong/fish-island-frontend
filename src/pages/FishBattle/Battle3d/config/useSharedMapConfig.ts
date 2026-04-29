@@ -122,6 +122,21 @@ function applySharedConfig(cfg: any) {
     env.inhibitor.maxHp = s(inhibitors[0]?.maxHp, env.inhibitor.maxHp);
   }
 
+  /* ── 建筑碰撞体列表（供 LocalPlayerPredictor 等使用）── */
+  const colliders: Array<[number, number, number]> = [];
+  for (const structType of [towers, nexuses, inhibitors] as any[][]) {
+    for (const st of structType) {
+      const pos = st.position;
+      const cr = st.collisionRadius;
+      if (pos && cr) {
+        colliders.push([pos[0], pos[2], cr]);
+      }
+    }
+  }
+  if (colliders.length > 0) {
+    map.structureColliders = colliders;
+  }
+
   /* ── 补血道具 ── */
   const relicItems: any[] = cfg.healthRelics?.items ?? [];
   relicItems.forEach((r: any, i: number) => {

@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Spin, message } from 'antd';
 import { history, useModel, useParams } from '@umijs/max';
-import type { FishBattlePhase } from '@/models/fishBattleWindow';
 import { useFishBattleSocket } from '@/hooks/useFishBattleSocket';
 import { useFishBattleGuard } from '@/hooks/useFishBattleGuard';
 import type { FishBattleRoomDetail as RoomDetailType, FishBattleRoomPlayer, Team } from '../types';
@@ -143,6 +142,7 @@ const FishBattleRoom: React.FC = () => {
 
     const handleError = (data: { error: string }) => {
       message.error(data.error);
+      history.push('/fishBattle/lobby');
     };
 
     const handleOwnerChanged = (data: { newOwnerId: number; newOwnerName: string; serverTime: number }) => {

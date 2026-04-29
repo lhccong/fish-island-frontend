@@ -1692,6 +1692,19 @@ export function useBattleWsSync(
       });
     };
 
+    const handleGameEnd = (payload: any) => {
+      console.log('[useBattleWsSync] battle:gameEnd', payload);
+      useGameStore.getState().setGameEnd({
+        winnerTeam: payload.winnerTeam,
+        reason: payload.reason ?? 'nexus_destroyed',
+        gameTimer: payload.gameTimer ?? 0,
+        blueKills: payload.blueKills ?? 0,
+        redKills: payload.redKills ?? 0,
+        serverTime: payload.serverTime ?? Date.now(),
+        gameId: payload.gameId ?? null,
+      });
+    };
+
     /* ========== 注册事件 ========== */
 
     client.on('disconnect', handleDisconnect);
@@ -1724,6 +1737,7 @@ export function useBattleWsSync(
     client.on('HealApplied', handleHealApplied);
     client.on('ShieldChanged', handleShieldChanged);
     client.on('DeathOccurred', handleDeathOccurred);
+    client.on('battle:gameEnd', handleGameEnd);
 
     /* 监听本地加载完成：当 isLoading 变为 false 时发送 battle:sceneReady */
     const checkAndEmitSceneReady = () => {
@@ -1785,6 +1799,7 @@ export function useBattleWsSync(
       client.off('HealApplied', handleHealApplied);
       client.off('ShieldChanged', handleShieldChanged);
       client.off('DeathOccurred', handleDeathOccurred);
+      client.off('battle:gameEnd', handleGameEnd);
       flushDiagnostics();
       clockSync.stop();
       unregisterSyncInstances();

@@ -209,7 +209,7 @@ export interface HeroConfig {
   /** 英雄英文名称。 */
   nameEn: string;
   /** 用于 UI 展示的 emoji 图标。 */
-  // emoji: string;
+  emoji: string;
   /** 英雄职业类型。 */
   role: HeroRole;
   /** 基础生命值。 */
@@ -219,11 +219,11 @@ export interface HeroConfig {
   /** 基础物理攻击力。 */
   baseAd: number;
   /** 基础法术强度。 */
-  // baseAp: number;
+  baseAp: number;
   /** 基础护甲。 */
-  // baseArmor: number;
+  baseArmor: number;
   /** 基础魔法抗性。 */
-  // baseMr: number;
+  baseMr: number;
   /** 基础移动速度。 */
   moveSpeed: number;
   /** 基础攻击距离。 */
@@ -779,8 +779,28 @@ export interface ServerToClientEvents {
   'DeathOccurred': DeathOccurredEvent;
   /** 服务端广播房间玩家列表变更。 */
   'room:players': PlayerSessionAssignment[];
+  /** 服务端广播游戏结束。 */
+  'battle:gameEnd': GameEndPayload;
   /** 服务端错误。 */
   'server:error': { message: string };
+}
+
+/** 游戏结束事件负载。 */
+export interface GameEndPayload {
+  /** 获胜队伍。 */
+  winnerTeam: 'blue' | 'red';
+  /** 结束原因。 */
+  reason: string;
+  /** 对局时长（秒）。 */
+  gameTimer: number;
+  /** 蓝队击杀数。 */
+  blueKills: number;
+  /** 红队击杀数。 */
+  redKills: number;
+  /** 服务端时间戳。 */
+  serverTime: number;
+  /** 对局记录 ID，用于跳转结算页。 */
+  gameId: number | null;
 }
 
 /** 施法开始事件。 */

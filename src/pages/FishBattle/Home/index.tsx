@@ -86,12 +86,12 @@ const FishBattleHome: React.FC = () => {
             >
               <Zap size={18} /> 开始战斗
             </button>
-            <button
+            {/*<button
               className="btn-spectate"
               onClick={() => requireLogin(() => history.push('/fishBattle/lobby'))}
             >
               <Eye size={18} /> 观看对局
-            </button>
+            </button>*/}
           </div>
 
           <div className="stats-bar">
@@ -111,7 +111,7 @@ const FishBattleHome: React.FC = () => {
         <section className="hero-preview-section">
           <h2 className="section-title"><Drama size={22} className="section-title-icon" /> 英雄阵容</h2>
           <p className="section-subtitle">
-            {heroes.length}位个性鲜明的英雄等你来战！每局随机分配，局局新体验
+            {heroes.length}位个性鲜明的英雄等你来战！
           </p>
           <div className={`hero-carousel-wrapper ${heroes.length <= 5 ? 'no-mask' : ''}`}>
             <div className={`hero-carousel-track ${heroes.length <= 5 ? 'no-scroll' : ''}`}>

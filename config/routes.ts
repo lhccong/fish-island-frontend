@@ -33,11 +33,12 @@ export default [
     routes: [
       {path: '/fishBattle', redirect: '/fishBattle/home', requireAuth: true},
       {path: '/fishBattle/home', component: './FishBattle/Home', name: '游戏首页', requireAuth: false},
-      {path: '/fishBattle/lobby', component: './FishBattle/Lobby', name: '游戏大厅', requireAuth: true},
+      {path: '/fishBattle/lobby', component: './FishBattle/Lobby', name: '摸鱼大厅', requireAuth: true},
       {path: '/fishBattle/room/:roomCode', component: './FishBattle/Room', requireAuth: true},
       {path: '/fishBattle/heroSelect/:roomCode', component: './FishBattle/HeroSelect', layout: false, requireAuth: true},
       {path: '/fishBattle/loading/:roomCode', component: './FishBattle/Loading', layout: false, requireAuth: true},
       {path: '/fishBattle/result/:gameId', component: './FishBattle/Result', layout: false, requireAuth: true},
+      {path: '/fishBattle/leaderboard', component: './FishBattle/Leaderboard', name: '排行榜', requireAuth: true},
       {path: '/fishBattle/profile', component: './FishBattle/Profile', name: '个人数据', requireAuth: true},
       {path: '/fishBattle/battle3d/:roomCode', component: './FishBattle/Battle3d', layout: false, requireAuth: true},
     ]

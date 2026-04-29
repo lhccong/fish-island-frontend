@@ -51,6 +51,7 @@ const FishBattleLobby: React.FC = () => {
   const [myActiveRooms, setMyActiveRooms] = useState<Record<string, { status: number; isLoadingPhase?: boolean }>>({});
   const loadingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [matching, setMatching] = useState(false);
   const autoRefreshRef = useRef<NodeJS.Timeout | null>(null);
   const AUTO_REFRESH_INTERVAL = 30_000;
 
@@ -144,7 +145,7 @@ const FishBattleLobby: React.FC = () => {
   // 路由变化时连接Socket
   useEffect(() => {
     if (!currentUser) {
-      message.warning('请先登录后再进入游戏大厅');
+      message.warning('请先登录后再进入摸鱼大厅');
       history.push('/fishBattle/home');
       return;
     }
@@ -192,7 +193,7 @@ const FishBattleLobby: React.FC = () => {
       if (loadingTimerRef.current) { clearTimeout(loadingTimerRef.current); loadingTimerRef.current = null; }
     };
 
-    const handleOverview = (data: { onlineCount: number; roomCount: number; fightingCount: number; fightingPlayers: { userId: number; userName: string }[] }) => {
+    const handleOverview = (data: { onlineCount: number; roomCount: number; fightingCount: number; fightingPlayers: { userId: number; userName: string; userAvatar?: string }[] }) => {
       setOverview({
         onlineCount: data.onlineCount || 0,
         totalGames: data.roomCount || 0,
@@ -259,8 +260,17 @@ const FishBattleLobby: React.FC = () => {
       }
     };
 
+    const handleRoomMatched = (data: { roomCode: string; matched?: boolean }) => {
+      setMatching(false);
+      if (data.roomCode) {
+        message.success(data.matched ? '匹配成功，已加入房间！' : '未找到可用房间，已创建新房间！');
+        history.push(`/fishBattle/room/${data.roomCode}`);
+      }
+    };
+
     const handleError = (data: { error: string; existingRoomCode?: string; existingRoomStatus?: number; existingRoomName?: string }) => {
       setCreating(false);
+      setMatching(false);
       if (data.existingRoomCode) {
         const roomCode = data.existingRoomCode;
         const status = data.existingRoomStatus ?? 0;
@@ -285,10 +295,12 @@ const FishBattleLobby: React.FC = () => {
     };
 
     on('room:created', handleRoomCreatedForMe);
+    on('room:matched', handleRoomMatched);
     on('room:error', handleError);
 
     return () => {
       off('room:created', handleRoomCreatedForMe);
+      off('room:matched', handleRoomMatched);
       off('room:error', handleError);
     };
   }, [isConnected]);
@@ -306,6 +318,15 @@ const FishBattleLobby: React.FC = () => {
       userId: currentUser?.id,
       userName: currentUser?.userName || '未知玩家',
     });
+  };
+
+  const handleQuickMatch = () => {
+    if (!isConnected) {
+      message.warning('正在连接服务器，请稍后再试');
+      return;
+    }
+    setMatching(true);
+    emit('room:quickMatch', {});
   };
 
   // 前端分页 + 搜索 + 过滤（数据全在内存）
@@ -343,7 +364,7 @@ const FishBattleLobby: React.FC = () => {
           {/* Header */}
           <div className="lobby-header">
             <div className="lobby-header-left">
-              <h2 className="lobby-title"><Gamepad2 size={22} className="title-icon" /> 游戏大厅</h2>
+              <h2 className="lobby-title"><Gamepad2 size={22} className="title-icon" /> 摸鱼大厅</h2>
               <div className="lobby-stats">
                 <span className="lobby-stat-badge rooms">
                   <Home size={14} /> {rooms.length} 个房间
@@ -536,7 +557,9 @@ const FishBattleLobby: React.FC = () => {
               <div className="sidebar-card">
                 <h3 className="sidebar-card-title"><Zap size={16} /> 快速匹配</h3>
                 <p className="sidebar-card-desc">自动加入可用房间或创建新房间</p>
-                <button className="btn-quick-match">开始匹配</button>
+                <button type="button" className="btn-quick-match" onClick={handleQuickMatch} disabled={matching}>
+                  {matching ? '匹配中...' : '开始匹配'}
+                </button>
               </div>
 
               {/* My Stats Mini */}
@@ -568,7 +591,13 @@ const FishBattleLobby: React.FC = () => {
                   {overview.fightingPlayers.length > 0 ? (
                     overview.fightingPlayers.map((p) => (
                       <div key={p.userId} className="online-player">
-                        <div className="online-player-avatar"><Swords size={14} /></div>
+                        <div className="online-player-avatar">
+                          {p.userAvatar ? (
+                            <img src={p.userAvatar} alt={p.userName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                          ) : (
+                            <Swords size={14} />
+                          )}
+                        </div>
                         <span className="online-player-name">{p.userName}</span>
                         <span className="online-player-status fighting">战斗中</span>
                       </div>

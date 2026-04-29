@@ -162,6 +162,13 @@ export async function fishBattleStatsLeaderboard(params?: { limit?: number }) {
   });
 }
 
+/** 获取指定玩家统计数据 GET /fishBattle/stats/user/{userId} */
+export async function fishBattleStatsUserById(userId: number) {
+  return request<FishBattleObjectResponse>(`/api/fishBattle/stats/user/${userId}`, {
+    method: 'GET',
+  });
+}
+
 /** 获取概览数据 GET /fishBattle/stats/overview */
 export async function fishBattleStatsOverview() {
   return request<FishBattleObjectResponse>('/api/fishBattle/stats/overview', {

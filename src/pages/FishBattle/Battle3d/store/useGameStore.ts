@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
-import type { ActiveEmoteState, AnimationClipRequest, AnimationState, AreaPresentationState, CameraMode, ChampionState, CombatImpactVfxState, EmoteId, FloatingCombatTextState, HealthRelicState, InhibitorState, InputMode, KillFeedEntry, MinionState, MoveIndicatorState, MultiplayerDiagnosticsState, MultiplayerSessionState, MultiplayerSnapshot, NexusState, PlayerSessionAssignment, ProjectilePresentationState, SerializedVector3, SkillRuntimeState, SpellAimState, SpellCastPhase, SpellSlot, StatusEffectViewState, TowerState, VoicePlaybackRequest } from '../types/game';
+import type { ActiveEmoteState, AnimationClipRequest, AnimationState, AreaPresentationState, CameraMode, ChampionState, CombatImpactVfxState, EmoteId, FloatingCombatTextState, GameEndPayload, HealthRelicState, InhibitorState, InputMode, KillFeedEntry, MinionState, MoveIndicatorState, MultiplayerDiagnosticsState, MultiplayerSessionState, MultiplayerSnapshot, NexusState, PlayerSessionAssignment, ProjectilePresentationState, SerializedVector3, SkillRuntimeState, SpellAimState, SpellCastPhase, SpellSlot, StatusEffectViewState, TowerState, VoicePlaybackRequest } from '../types/game';
 import { GAME_CONFIG } from '../config/gameConfig';
 import type { SkillCastDefinition } from '../config/skillDefinitions';
 import { getHeroConfig } from '../config/heroConfig';
@@ -88,6 +88,9 @@ interface GameStore {
   loadingError: string | null;
   /** 全员 3D 场景加载就绪标志（CyclicBarrier：所有人都加载完成后才为 true） */
   allScenesReady: boolean;
+
+  /** 游戏结束负载，null 表示游戏仍在进行中。 */
+  gameEnd: GameEndPayload | null;
 
   // Actions
   setLoadingProgress: (progress: number) => void;
@@ -179,6 +182,8 @@ interface GameStore {
   setSmartCastEnabled: (enabled: boolean) => void;
   /** 更新全局鼠标地面世界坐标。 */
   setLastMouseWorldPosition: (position: SerializedVector3) => void;
+  /** 设置游戏结束状态。 */
+  setGameEnd: (payload: GameEndPayload | null) => void;
 }
 
 const INITIAL_MULTIPLAYER_DIAGNOSTICS: MultiplayerDiagnosticsState = {
@@ -838,6 +843,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   loadingProgress: 0,
   loadingError: null,
   allScenesReady: false,
+  gameEnd: null,
 
   setLoadingProgress: (progress) => set({ loadingProgress: progress }),
   setLoading: (loading) => set({ isLoading: loading }),
@@ -1572,6 +1578,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameTimer: 0,
       blueKills: 0,
       redKills: 0,
+      gameEnd: null,
       champions: createInitialChampions(),
       minions: createInitialMinions(),
       towers: createInitialTowers(),
@@ -1628,4 +1635,5 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
       return { lastMouseWorldPosition: position };
     }),
+  setGameEnd: (payload) => set({ gameEnd: payload }),
 }));
