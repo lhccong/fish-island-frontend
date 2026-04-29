@@ -181,6 +181,11 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
         if (!item.isRead && item.id) {
           await markSingleAsRead(item.id);
         }
+
+        // sourceType === 4 (MOMENTS) 只标已读，不跳转
+        if (item.sourceType === 4) {
+          return;
+        }
         
         // 如果有自定义URL，则根据URL跳转
         if (item.url) {

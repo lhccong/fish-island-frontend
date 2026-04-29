@@ -17,7 +17,7 @@ const Settings: ProLayoutProps & {
   layout: 'side',
   // splitMenus: true, // 将一级菜单拆分到顶部
   contentWidth: 'Fluid',
-  fixedHeader: false,
+  fixedHeader: true,
   fixSiderbar: true,
   colorWeak: false,
   title: userSiteName || '摸鱼岛',

@@ -384,6 +384,18 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageMomentsCommentVO_ = {
+    code?: number;
+    data?: PageMomentsCommentVO_;
+    message?: string;
+  };
+
+  type BaseResponsePageMomentsVO_ = {
+    code?: number;
+    data?: PageMomentsVO_;
+    message?: string;
+  };
+
   type BaseResponsePagePetSkinVO_ = {
     code?: number;
     data?: PagePetSkinVO_;
@@ -1857,6 +1869,15 @@ declare namespace API {
     indexName?: string;
   };
 
+  type MediaItem = {
+    /** 视频封面，仅 video 类型有效 */
+    cover?: string;
+    /** 类型：image / video */
+    type?: string;
+    /** 资源 URL */
+    url?: string;
+  };
+
   type Message = {
     content?: string;
     id?: string;
@@ -1993,6 +2014,107 @@ declare namespace API {
       | 'NETWORK_AUTHENTICATION_REQUIRED';
     view?: View;
     viewName?: string;
+  };
+
+  type MomentsAddRequest = {
+    /** 部分可见的用户ID列表（visibility=2时有效） */
+    allowList?: number[];
+    /** 不给谁看的用户ID列表（visibility=3时有效） */
+    blockList?: number[];
+    /** 文字内容 */
+    content?: string;
+    /** 位置信息 */
+    location?: string;
+    /** 媒体资源列表（图片/视频） */
+    mediaJson?: MediaItem[];
+    /** 可见范围：0-所有朋友，1-仅自己，2-部分可见，3-不给谁看 */
+    visibility?: number;
+  };
+
+  type MomentsCommentAddRequest = {
+    /** 评论内容 */
+    content: string;
+    /** 动态ID */
+    momentId: number;
+    /** 父评论ID，为空表示顶级评论 */
+    parentId?: number;
+    /** 被回复的用户ID，为空表示直接评论动态 */
+    replyUserId?: number;
+  };
+
+  type MomentsCommentQueryRequest = {
+    current?: number;
+    /** 动态ID */
+    momentId: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+  };
+
+  type MomentsCommentVO = {
+    /** 子评论列表（仅顶级评论携带） */
+    children?: MomentsCommentVO[];
+    /** 评论内容 */
+    content?: string;
+    /** 评论时间 */
+    createTime?: string;
+    /** 评论ID */
+    id?: number;
+    /** 动态ID */
+    momentId?: number;
+    /** 父评论ID，为空表示顶级评论 */
+    parentId?: number;
+    /** 被回复的用户ID */
+    replyUserId?: number;
+    /** 被回复的用户昵称 */
+    replyUserName?: string;
+    /** 评论者头像 */
+    userAvatar?: string;
+    /** 评论者用户ID */
+    userId?: number;
+    /** 评论者昵称 */
+    userName?: string;
+  };
+
+  type MomentsLikeRequest = {
+    /** 动态ID */
+    momentId: number;
+  };
+
+  type MomentsQueryRequest = {
+    current?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    /** 指定查看某个用户的动态，为空则查看好友动态 */
+    userId?: number;
+  };
+
+  type MomentsVO = {
+    /** 评论数 */
+    commentNum?: number;
+    /** 文字内容 */
+    content?: string;
+    /** 发布时间 */
+    createTime?: string;
+    /** 动态ID */
+    id?: number;
+    /** 点赞数 */
+    likeNum?: number;
+    /** 当前登录用户是否已点赞 */
+    liked?: boolean;
+    /** 位置信息 */
+    location?: string;
+    /** 媒体资源列表（图片/视频） */
+    mediaJson?: MediaItem[];
+    /** 发布者头像 */
+    userAvatar?: string;
+    /** 发布者用户ID */
+    userId?: number;
+    /** 发布者昵称 */
+    userName?: string;
+    /** 可见范围：0-所有朋友，1-仅自己，2-部分可见，3-不给谁看 */
+    visibility?: number;
   };
 
   type NewUserDataWebRequest = {
@@ -2195,6 +2317,32 @@ declare namespace API {
     orders?: OrderItem[];
     pages?: number;
     records?: MockInterview[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
+  type PageMomentsCommentVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: MomentsCommentVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
+  type PageMomentsVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: MomentsVO[];
     searchCount?: boolean;
     size?: number;
     total?: number;
@@ -2536,6 +2684,7 @@ declare namespace API {
 
   type PetVO = {
     createTime?: string;
+    equipStats?: PetEquipStatsVO;
     equippedItems?: Record<string, any>;
     exp?: number;
     hunger?: number;
