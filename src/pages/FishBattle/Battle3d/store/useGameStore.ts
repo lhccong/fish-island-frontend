@@ -378,6 +378,8 @@ function skillRuntimeStateEquals(
     && current.isCasting === next.isCasting;
 }
 
+const ALL_SPELL_SLOTS: readonly SpellSlot[] = ['passive', 'basicAttack', 'q', 'w', 'e', 'r', 'summonerD', 'summonerF', 'recall'];
+
 function skillStatesEquals(
   current: ChampionState['skillStates'] | undefined,
   next: ChampionState['skillStates'] | undefined,
@@ -390,9 +392,8 @@ function skillStatesEquals(
     return false;
   }
 
-  const keys = new Set([...Object.keys(current), ...Object.keys(next)]);
-  for (const key of keys) {
-    if (!skillRuntimeStateEquals(current[key as SpellSlot], next[key as SpellSlot])) {
+  for (let i = 0; i < ALL_SPELL_SLOTS.length; i++) {
+    if (!skillRuntimeStateEquals(current[ALL_SPELL_SLOTS[i]], next[ALL_SPELL_SLOTS[i]])) {
       return false;
     }
   }

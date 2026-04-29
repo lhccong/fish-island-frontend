@@ -675,71 +675,177 @@ function mapServerChampionToLocal(
   };
 }
 
-function mapServerMinionsToLocal(serverMinions?: ServerMinionSnapshot[]): MinionState[] {
+function mapServerMinionsToLocal(serverMinions: ServerMinionSnapshot[] | undefined, previousMinions: MinionState[]): MinionState[] {
   if (!serverMinions || serverMinions.length === 0) {
-    return [];
+    return previousMinions.length === 0 ? previousMinions : [];
   }
-  return serverMinions.map((minion) => ({
-    id: minion.id,
-    team: minion.team as 'blue' | 'red',
-    lane: minion.lane,
-    minionType: minion.minionType,
-    position: new THREE.Vector3(minion.position.x, minion.position.y ?? 0, minion.position.z),
-    rotation: minion.rotation ?? 0,
-    hp: minion.hp,
-    maxHp: minion.maxHp,
-    moveSpeed: minion.moveSpeed ?? 0,
-    isDead: minion.isDead ?? false,
-    animationState: (minion.animationState ?? 'idle') as MinionState['animationState'],
-    targetEntityId: minion.targetEntityId ?? null,
-    targetType: minion.targetType ?? null,
-    modelUrl: minion.modelUrl ?? null,
-  }));
+  const prevMap = previousMinions.length > 0
+    ? new Map<string, MinionState>(previousMinions.map((m) => [m.id, m]))
+    : null;
+  let changed = false;
+  const result = serverMinions.map((minion) => {
+    const prev = prevMap?.get(minion.id);
+    const nextRotation = minion.rotation ?? 0;
+    const nextHp = minion.hp;
+    const nextMaxHp = minion.maxHp;
+    const nextMoveSpeed = minion.moveSpeed ?? 0;
+    const nextIsDead = minion.isDead ?? false;
+    const nextAnimState = (minion.animationState ?? 'idle') as MinionState['animationState'];
+    const nextTargetEntityId = minion.targetEntityId ?? null;
+    const nextTargetType = minion.targetType ?? null;
+    const nextModelUrl = minion.modelUrl ?? null;
+    if (prev) {
+      const pp = prev.position;
+      const samePos = Math.abs(pp.x - minion.position.x) < 1e-4
+        && Math.abs(pp.y - (minion.position.y ?? 0)) < 1e-4
+        && Math.abs(pp.z - minion.position.z) < 1e-4;
+      if (
+        samePos
+        && prev.rotation === nextRotation
+        && prev.hp === nextHp
+        && prev.maxHp === nextMaxHp
+        && prev.moveSpeed === nextMoveSpeed
+        && prev.isDead === nextIsDead
+        && prev.animationState === nextAnimState
+        && prev.targetEntityId === nextTargetEntityId
+        && prev.targetType === nextTargetType
+        && prev.modelUrl === nextModelUrl
+        && prev.team === minion.team
+      ) {
+        return prev;
+      }
+    }
+    changed = true;
+    return {
+      id: minion.id,
+      team: minion.team as 'blue' | 'red',
+      lane: minion.lane,
+      minionType: minion.minionType,
+      position: (prev && Math.abs(prev.position.x - minion.position.x) < 1e-4
+        && Math.abs(prev.position.y - (minion.position.y ?? 0)) < 1e-4
+        && Math.abs(prev.position.z - minion.position.z) < 1e-4)
+        ? prev.position
+        : new THREE.Vector3(minion.position.x, minion.position.y ?? 0, minion.position.z),
+      rotation: nextRotation,
+      hp: nextHp,
+      maxHp: nextMaxHp,
+      moveSpeed: nextMoveSpeed,
+      isDead: nextIsDead,
+      animationState: nextAnimState,
+      targetEntityId: nextTargetEntityId,
+      targetType: nextTargetType,
+      modelUrl: nextModelUrl,
+    };
+  });
+  if (!changed && serverMinions.length === previousMinions.length) {
+    return previousMinions;
+  }
+  return result;
 }
 
-function mapServerTowersToLocal(serverTowers?: ServerTowerSnapshot[]): TowerState[] {
+function mapServerTowersToLocal(serverTowers: ServerTowerSnapshot[] | undefined, previousTowers: TowerState[]): TowerState[] {
   if (!serverTowers || serverTowers.length === 0) {
-    return [];
+    return previousTowers.length === 0 ? previousTowers : [];
   }
-  return serverTowers.map((tower) => ({
-    id: tower.id,
-    team: tower.team as 'blue' | 'red',
-    position: new THREE.Vector3(tower.position.x, tower.position.y ?? 0, tower.position.z),
-    hp: tower.hp,
-    maxHp: tower.maxHp,
-    isDestroyed: tower.isDestroyed,
-    type: tower.type ?? 'outer',
-    attackRange: tower.attackRange,
-    targetEntityId: tower.targetEntityId ?? null,
-  }));
+  const prevMap = previousTowers.length > 0
+    ? new Map<string, TowerState>(previousTowers.map((t) => [t.id, t]))
+    : null;
+  let changed = false;
+  const result = serverTowers.map((tower) => {
+    const prev = prevMap?.get(tower.id);
+    const nextTargetEntityId = tower.targetEntityId ?? null;
+    if (prev
+      && prev.hp === tower.hp
+      && prev.maxHp === tower.maxHp
+      && prev.isDestroyed === tower.isDestroyed
+      && prev.targetEntityId === nextTargetEntityId
+      && prev.team === tower.team
+    ) {
+      return prev;
+    }
+    changed = true;
+    return {
+      id: tower.id,
+      team: tower.team as 'blue' | 'red',
+      position: prev?.position ?? new THREE.Vector3(tower.position.x, tower.position.y ?? 0, tower.position.z),
+      hp: tower.hp,
+      maxHp: tower.maxHp,
+      isDestroyed: tower.isDestroyed,
+      type: tower.type ?? 'outer',
+      attackRange: tower.attackRange,
+      targetEntityId: nextTargetEntityId,
+    };
+  });
+  if (!changed && serverTowers.length === previousTowers.length) {
+    return previousTowers;
+  }
+  return result;
 }
 
-function mapServerNexusesToLocal(serverNexuses?: ServerNexusSnapshot[]): NexusState[] {
+function mapServerNexusesToLocal(serverNexuses: ServerNexusSnapshot[] | undefined, previousNexuses: NexusState[]): NexusState[] {
   if (!serverNexuses || serverNexuses.length === 0) {
-    return [];
+    return previousNexuses.length === 0 ? previousNexuses : [];
   }
-  return serverNexuses.map((nexus) => ({
-    id: nexus.id,
-    team: nexus.team as 'blue' | 'red',
-    position: new THREE.Vector3(nexus.position.x, nexus.position.y ?? 0, nexus.position.z),
-    hp: nexus.hp,
-    maxHp: nexus.maxHp,
-    isDestroyed: nexus.isDestroyed,
-  }));
+  const prevMap = previousNexuses.length > 0
+    ? new Map<string, NexusState>(previousNexuses.map((n) => [n.id, n]))
+    : null;
+  let changed = false;
+  const result = serverNexuses.map((nexus) => {
+    const prev = prevMap?.get(nexus.id);
+    if (prev
+      && prev.hp === nexus.hp
+      && prev.maxHp === nexus.maxHp
+      && prev.isDestroyed === nexus.isDestroyed
+    ) {
+      return prev;
+    }
+    changed = true;
+    return {
+      id: nexus.id,
+      team: nexus.team as 'blue' | 'red',
+      position: prev?.position ?? new THREE.Vector3(nexus.position.x, nexus.position.y ?? 0, nexus.position.z),
+      hp: nexus.hp,
+      maxHp: nexus.maxHp,
+      isDestroyed: nexus.isDestroyed,
+    };
+  });
+  if (!changed && serverNexuses.length === previousNexuses.length) {
+    return previousNexuses;
+  }
+  return result;
 }
 
-function mapServerInhibitorsToLocal(serverInhibitors?: ServerInhibitorSnapshot[]): InhibitorState[] {
+function mapServerInhibitorsToLocal(serverInhibitors: ServerInhibitorSnapshot[] | undefined, previousInhibitors: InhibitorState[]): InhibitorState[] {
   if (!serverInhibitors || serverInhibitors.length === 0) {
-    return [];
+    return previousInhibitors.length === 0 ? previousInhibitors : [];
   }
-  return serverInhibitors.map((inhibitor) => ({
-    id: inhibitor.id,
-    team: inhibitor.team as 'blue' | 'red',
-    position: new THREE.Vector3(inhibitor.position.x, inhibitor.position.y ?? 0, inhibitor.position.z),
-    hp: inhibitor.hp,
-    maxHp: inhibitor.maxHp,
-    isDestroyed: inhibitor.isDestroyed,
-  }));
+  const prevMap = previousInhibitors.length > 0
+    ? new Map<string, InhibitorState>(previousInhibitors.map((i) => [i.id, i]))
+    : null;
+  let changed = false;
+  const result = serverInhibitors.map((inhibitor) => {
+    const prev = prevMap?.get(inhibitor.id);
+    if (prev
+      && prev.hp === inhibitor.hp
+      && prev.maxHp === inhibitor.maxHp
+      && prev.isDestroyed === inhibitor.isDestroyed
+    ) {
+      return prev;
+    }
+    changed = true;
+    return {
+      id: inhibitor.id,
+      team: inhibitor.team as 'blue' | 'red',
+      position: prev?.position ?? new THREE.Vector3(inhibitor.position.x, inhibitor.position.y ?? 0, inhibitor.position.z),
+      hp: inhibitor.hp,
+      maxHp: inhibitor.maxHp,
+      isDestroyed: inhibitor.isDestroyed,
+    };
+  });
+  if (!changed && serverInhibitors.length === previousInhibitors.length) {
+    return previousInhibitors;
+  }
+  return result;
 }
 
 /**
@@ -833,7 +939,36 @@ export function useBattleWsSync(
     const clockSync = new ClockSync({ pingIntervalMs: 5000, pingTimeoutMs: 4000 });
     registerSyncInstances(clockSync, snapshotBufferRef.current as any, localPredictorRef.current);
 
-    /* 暂存 room:info 中的玩家技能/头像数据，防止 room:info 到达时 champions 尚未填充导致映射丢失 */
+    /** 诊断统计暂存区：在闭包内累积，定时批量刷写到 store，减少 multiplayerSession re-render 频率。 */
+    let pendingDiagnostics: Partial<ReturnType<typeof useGameStore.getState>['multiplayerSession']['diagnostics']> | null = null;
+    let lastDiagnosticsFlushAt = 0;
+    const DIAGNOSTICS_FLUSH_INTERVAL_MS = 250;
+
+    const stageDiagnostics = (patch: Partial<ReturnType<typeof useGameStore.getState>['multiplayerSession']['diagnostics']>) => {
+      pendingDiagnostics = pendingDiagnostics ? { ...pendingDiagnostics, ...patch } : { ...patch };
+      const now = Date.now();
+      if (now - lastDiagnosticsFlushAt >= DIAGNOSTICS_FLUSH_INTERVAL_MS) {
+        flushDiagnostics();
+      }
+    };
+
+    const flushDiagnostics = () => {
+      if (!pendingDiagnostics) return;
+      const store = useGameStore.getState();
+      useGameStore.setState({
+        multiplayerSession: {
+          ...store.multiplayerSession,
+          diagnostics: {
+            ...store.multiplayerSession.diagnostics,
+            ...pendingDiagnostics,
+          },
+        },
+      });
+      pendingDiagnostics = null;
+      lastDiagnosticsFlushAt = Date.now();
+    };
+
+    /** 暂存 room:info 中的玩家技能/头像数据，防止 room:info 到达时 champions 尚未填充导致映射丢失 */
     let pendingRoomInfoPlayers: RoomInfoPlayer[] | null = null;
     let spellMappingApplied = false;
 
@@ -1053,16 +1188,9 @@ export function useBattleWsSync(
       if (!isNaN(serverTime) && serverTime > 0 && !isNaN(clientSendTime) && clientSendTime > 0) {
         clockSync.onPong(serverTime, clientSendTime);
         const syncState = clockSync.getState();
-        const store = useGameStore.getState();
-        useGameStore.setState({
-          multiplayerSession: {
-            ...store.multiplayerSession,
-            diagnostics: {
-              ...store.multiplayerSession.diagnostics,
-              rttMs: syncState.rtt,
-              pingSampleCount: syncState.sampleCount,
-            },
-          },
+        stageDiagnostics({
+          rttMs: syncState.rtt,
+          pingSampleCount: syncState.sampleCount,
         });
       }
     };
@@ -1085,23 +1213,17 @@ export function useBattleWsSync(
       if (sequence > 0 && sequence <= lastReceivedSnapshotSequenceRef.current) {
         const nextDroppedSnapshotCount = diagnostics.droppedSnapshotCount + 1;
         const nextSnapshotDiscardRatePercent = toRatePercent(nextDroppedSnapshotCount, nextSnapshotArrivalCount);
-        useGameStore.setState({
-          multiplayerSession: {
-            ...store.multiplayerSession,
-            diagnostics: {
-              ...diagnostics,
-              lastSnapshotReceivedAt: now,
-              lastSnapshotServerTime: serverTime,
-              snapshotLatencyMs: nextLatencyMs,
-              droppedSnapshotCount: nextDroppedSnapshotCount,
-              snapshotArrivalCount: nextSnapshotArrivalCount,
-              snapshotDiscardRatePercent: nextSnapshotDiscardRatePercent,
-              networkAnomalyPercent: getNetworkAnomalyPercent(
-                nextSnapshotDiscardRatePercent,
-                diagnostics.pingTimeoutRatePercent,
-              ),
-            },
-          },
+        stageDiagnostics({
+          lastSnapshotReceivedAt: now,
+          lastSnapshotServerTime: serverTime,
+          snapshotLatencyMs: nextLatencyMs,
+          droppedSnapshotCount: nextDroppedSnapshotCount,
+          snapshotArrivalCount: nextSnapshotArrivalCount,
+          snapshotDiscardRatePercent: nextSnapshotDiscardRatePercent,
+          networkAnomalyPercent: getNetworkAnomalyPercent(
+            nextSnapshotDiscardRatePercent,
+            diagnostics.pingTimeoutRatePercent,
+          ),
         });
         return;
       }
@@ -1171,32 +1293,31 @@ export function useBattleWsSync(
             };
           })
         : store.healthRelics;
+      /* ── 游戏实体状态（每帧必须更新） ── */
       useGameStore.setState({
         gameTimer: payload.gameTimer ?? store.gameTimer,
         blueKills: typeof payload.blueKills === 'number' ? payload.blueKills : store.blueKills,
         redKills: typeof payload.redKills === 'number' ? payload.redKills : store.redKills,
         champions: newChampions,
-        minions: mapServerMinionsToLocal(payload.minions),
-        towers: mapServerTowersToLocal(payload.towers),
-        nexuses: mapServerNexusesToLocal(payload.nexuses),
-        inhibitors: mapServerInhibitorsToLocal(payload.inhibitors),
+        minions: mapServerMinionsToLocal(payload.minions, store.minions),
+        towers: mapServerTowersToLocal(payload.towers, store.towers),
+        nexuses: mapServerNexusesToLocal(payload.nexuses, store.nexuses),
+        inhibitors: mapServerInhibitorsToLocal(payload.inhibitors, store.inhibitors),
         healthRelics: nextHealthRelics,
-        multiplayerSession: {
-          ...store.multiplayerSession,
-          diagnostics: {
-            ...diagnostics,
-            lastReceivedSequence: Math.max(sequence, diagnostics.lastReceivedSequence),
-            lastSnapshotReceivedAt: now,
-            lastSnapshotServerTime: serverTime,
-            snapshotLatencyMs: nextLatencyMs,
-            snapshotArrivalCount: nextSnapshotArrivalCount,
-            snapshotDiscardRatePercent: nextSnapshotDiscardRatePercent,
-            networkAnomalyPercent: getNetworkAnomalyPercent(
-              nextSnapshotDiscardRatePercent,
-              diagnostics.pingTimeoutRatePercent,
-            ),
-          },
-        },
+      });
+
+      /* ── 诊断统计（节流批量刷写，减少 multiplayerSession re-render） ── */
+      stageDiagnostics({
+        lastReceivedSequence: Math.max(sequence, diagnostics.lastReceivedSequence),
+        lastSnapshotReceivedAt: now,
+        lastSnapshotServerTime: serverTime,
+        snapshotLatencyMs: nextLatencyMs,
+        snapshotArrivalCount: nextSnapshotArrivalCount,
+        snapshotDiscardRatePercent: nextSnapshotDiscardRatePercent,
+        networkAnomalyPercent: getNetworkAnomalyPercent(
+          nextSnapshotDiscardRatePercent,
+          diagnostics.pingTimeoutRatePercent,
+        ),
       });
 
       // 重连防御：如果有暂存的 room:info 玩家数据且尚未应用，趁 champions 已存在时应用
@@ -1664,6 +1785,7 @@ export function useBattleWsSync(
       client.off('HealApplied', handleHealApplied);
       client.off('ShieldChanged', handleShieldChanged);
       client.off('DeathOccurred', handleDeathOccurred);
+      flushDiagnostics();
       clockSync.stop();
       unregisterSyncInstances();
       snapshotBufferRef.current.clear();

@@ -24,18 +24,17 @@ function getTypeCfg(minionType?: string) {
 const BAR_TEX_W = 128;
 const BAR_TEX_H = 32;
 
-/** 创建小兵血条 Canvas 纹理（与英雄/建筑一致的 sprite 方案）。 */
-function createMinionHpTexture(hp: number, maxHp: number, team: 'blue' | 'red'): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = BAR_TEX_W;
-  canvas.height = BAR_TEX_H;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return new THREE.CanvasTexture(canvas);
-
+/** 在已有 Canvas 上就地重绘小兵血条，并标记纹理需要更新。返回 true 如果实际执行了重绘。 */
+function updateMinionHpCanvas(
+  ctx: CanvasRenderingContext2D,
+  texture: THREE.CanvasTexture,
+  hp: number,
+  maxHp: number,
+  team: 'blue' | 'red',
+): void {
   const pct = maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0;
   ctx.clearRect(0, 0, BAR_TEX_W, BAR_TEX_H);
 
-  /* 血条背景圆角矩形 */
   const barX = 2;
   const barY = 4;
   const barH = BAR_TEX_H - 8;
@@ -48,7 +47,6 @@ function createMinionHpTexture(hp: number, maxHp: number, team: 'blue' | 'red'):
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  /* 血条前景渐变 */
   if (pct > 0) {
     const fgW = Math.max(4, fullW * pct);
     const grad = ctx.createLinearGradient(barX, 0, barX + fgW, 0);
@@ -64,19 +62,26 @@ function createMinionHpTexture(hp: number, maxHp: number, team: 'blue' | 'red'):
     ctx.fillStyle = grad;
     ctx.fill();
 
-    /* 高光 */
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
     ctx.beginPath();
     ctx.roundRect(barX + 2, barY + 2, fgW - 4, (barH - 4) * 0.35, 2);
     ctx.fill();
   }
 
+  texture.needsUpdate = true;
+}
+
+/** 创建可复用的血条 Canvas + Texture 对（仅在组件挂载时调用一次）。 */
+function createMinionHpTextureResources(): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; texture: THREE.CanvasTexture } {
+  const canvas = document.createElement('canvas');
+  canvas.width = BAR_TEX_W;
+  canvas.height = BAR_TEX_H;
+  const ctx = canvas.getContext('2d')!;
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
+  return { canvas, ctx, texture };
 }
 
 /** 根据动画状态和小兵类型解析当前应播放的动画片段名。 */
@@ -139,8 +144,19 @@ function lerpAngle(current: number, target: number, factor: number): number {
   return current + delta * factor;
 }
 
+/** 模块级小兵索引缓存：minions 引用不变时复用已构建的 Map，避免每个 Minion 选择器 O(N) find。 */
+let _cachedMinions: MinionState[] | null = null;
+let _cachedMinionMap: Map<string, MinionState> | null = null;
+function getMinionMap(minions: MinionState[]): Map<string, MinionState> {
+  if (minions !== _cachedMinions || !_cachedMinionMap) {
+    _cachedMinionMap = new Map(minions.map((m) => [m.id, m]));
+    _cachedMinions = minions;
+  }
+  return _cachedMinionMap;
+}
+
 const Minion: React.FC<MinionProps> = ({ minionId }) => {
-  const state = useGameStore((s) => s.minions.find((item) => item.id === minionId) as MinionState);
+  const state = useGameStore((s) => getMinionMap(s.minions).get(minionId) as MinionState);
   const groupRef = useRef<THREE.Group>(null);
 
   /* ── GLTF 模型 ── */
@@ -166,21 +182,28 @@ const Minion: React.FC<MinionProps> = ({ minionId }) => {
     return state.team === 'blue' ? typeCfg.blue : typeCfg.red;
   }, [state.team, state.minionType]);
 
-  /* ── 血条 sprite 纹理（Canvas 绘制，与英雄/建筑一致） ── */
+  /* ── 血条 sprite 纹理（复用 Canvas，就地重绘） ── */
+  const hpResRef = useRef<{ ctx: CanvasRenderingContext2D; texture: THREE.CanvasTexture; material: THREE.SpriteMaterial } | null>(null);
+  if (!hpResRef.current) {
+    const { ctx, texture } = createMinionHpTextureResources();
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, sizeAttenuation: true });
+    hpResRef.current = { ctx, texture, material };
+  }
+  const hpLastRef = useRef({ hp: -1, maxHp: -1, team: '' });
   const hpCeil = Math.ceil(state.hp);
   const maxHpCeil = Math.ceil(state.maxHp);
-  const hpTexture = useMemo(
-    () => createMinionHpTexture(hpCeil, maxHpCeil, state.team),
-    [hpCeil, maxHpCeil, state.team],
-  );
-  const hpMaterial = useMemo(
-    () => new THREE.SpriteMaterial({ map: hpTexture, transparent: true, depthTest: false, sizeAttenuation: true }),
-    [hpTexture],
-  );
+  if (hpLastRef.current.hp !== hpCeil || hpLastRef.current.maxHp !== maxHpCeil || hpLastRef.current.team !== state.team) {
+    updateMinionHpCanvas(hpResRef.current.ctx, hpResRef.current.texture, hpCeil, maxHpCeil, state.team);
+    hpLastRef.current = { hp: hpCeil, maxHp: maxHpCeil, team: state.team };
+  }
+  const hpMaterial = hpResRef.current.material;
 
   useEffect(() => {
-    return () => { hpTexture.dispose(); };
-  }, [hpTexture]);
+    return () => {
+      hpResRef.current?.texture.dispose();
+      hpResRef.current?.material.dispose();
+    };
+  }, []);
 
   /* ── 加载模型 ── */
   useEffect(() => {
