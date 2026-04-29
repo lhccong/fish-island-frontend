@@ -297,8 +297,6 @@ export interface VoicePlaybackRequest {
   customVoiceId?: string;
   /** 若已选定具体资源，则直接携带 URL，方便所有客户端播放同一条。 */
   voiceUrl?: string;
-  /** 播放音量，范围 0-1。 */
-  volume?: number;
 }
 
 /** 运行时英雄状态 */
@@ -335,6 +333,8 @@ export interface ChampionState {
   deaths: number;
   /** 助攻数。 */
   assists: number;
+  damageDealt: number;
+  damageTaken: number;
   /** 是否处于死亡状态。 */
   isDead: boolean;
   /** 复活剩余计时，单位秒。 */
@@ -381,28 +381,14 @@ export interface ChampionState {
   attackRange?: number;
   /** 基础攻击速度。 */
   attackSpeed?: number;
-}
-
-/** 联机快照 */
-export interface MultiplayerSnapshot {
-  /** 快照序号。 */
-  sequence: number;
-  /** 快照时间戳，毫秒。 */
-  timestamp: number;
-  /** 当前对局已进行时间，单位秒。 */
-  gameTimer: number;
-  /** 蓝队总击杀数。 */
-  blueKills: number;
-  /** 红队总击杀数。 */
-  redKills: number;
-  /** 全部英雄实例状态。 */
-  champions: ChampionState[];
-  minions: MinionState[];
-  /** 当前仍在展示中的表情状态。 */
-  activeEmotes: ActiveEmoteState[];
-  createdAt: number;
-  /** 指示器过期时间戳。 */
-  expiresAt: number;
+  /** 当前攻击移动目标点。 */
+  attackMoveTarget?: THREE.Vector3 | null;
+  /** 当前自动攻击锁定目标实体 ID。 */
+  currentAttackTargetId?: string | null;
+  /** 当前自动攻击锁定目标实体类型。 */
+  currentAttackTargetType?: 'champion' | 'minion' | 'structure' | null;
+  /** 是否在最新服务端快照中可见（用于视野系统：不可见的保留英雄应隐藏）。 */
+  visibleInSnapshot: boolean;
 }
 
 /** 正式战斗快照中的英雄实体状态。 */
@@ -429,6 +415,13 @@ export interface CombatSnapshotChampion {
   mp: number;
   /** 最大法力值。 */
   maxMp: number;
+  level?: number;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  damageDealt?: number;
+  damageTaken?: number;
+  respawnTimer?: number;
   /** 当前移动目标点。 */
   moveTarget: SerializedVector3 | null;
   /** 当前标准动画状态。 */
@@ -449,659 +442,12 @@ export interface CombatSnapshotChampion {
   movementLockedUntil?: number;
   /** 最近一次进入静止状态的时间戳。 */
   idleStartedAt?: number;
-}
-
-/** 正式战斗快照。 */
-export interface CombatSnapshot {
-  /** 事件唯一 ID。 */
-  eventId: string;
-  /** 服务端序号。 */
-  sequence: number;
-  /** 房间 ID。 */
-  roomId: string;
-  /** 服务端时间戳。 */
-  serverTime: number;
-  /** 逻辑帧号。 */
-  frame: number;
-  /** 当前对局总时长。 */
-  gameTimer: number;
-  /** 英雄实体状态列表。 */
-  entities: CombatSnapshotChampion[];
-  /** 玩家会话列表。 */
-  players?: Array<{
-    sessionId: string;
-    playerName: string;
-    championId: string | null;
-    spectator: boolean;
-  }>;
-  minions?: MinionState[];
-  /** 投射物列表。 */
-  projectiles: ProjectilePresentationState[];
-  /** 区域体列表。 */
-  areas: AreaPresentationState[];
-  /** 状态列表。 */
-  statuses: StatusEffectViewState[];
-}
-
-/** 小兵状态 */
-export interface MinionState {
-  id: string;
-  team: Team;
-  lane: string;
-  minionType: string;
-  position: THREE.Vector3;
-  rotation: number;
-  hp: number;
-  maxHp: number;
-  moveSpeed: number;
-  isDead: boolean;
-  animationState: AnimationState;
-  targetEntityId?: string | null;
-  targetType?: 'minion' | 'champion' | 'structure' | null;
-  /** 小兵 3D 模型 CDN 地址（后端下发）。 */
-  modelUrl?: string | null;
-}
-
-/** 防御塔状态 */
-export interface TowerState {
-  /** 防御塔实例 ID。 */
-  id: string;
-  /** 所属队伍。 */
-  team: Team;
-  /** 世界坐标。 */
-  position: THREE.Vector3;
-  /** 当前生命值。 */
-  hp: number;
-  /** 最大生命值。 */
-  maxHp: number;
-  /** 是否已被摧毁。 */
-  isDestroyed: boolean;
-  /** 防御塔类型。 */
-  type: TowerType;
-  /** 攻击范围（来自后端快照，用于攻击范围指示器渲染）。 */
-  attackRange?: number;
-  /** 当前攻击目标实体 ID（来自后端快照，用于弹道渲染）。 */
-  targetEntityId?: string | null;
-}
-
-/** 水晶枢纽状态 */
-export interface NexusState {
-  /** 水晶枢纽实例 ID。 */
-  id: string;
-  /** 所属队伍。 */
-  team: Team;
-  /** 世界坐标。 */
-  position: THREE.Vector3;
-  /** 当前生命值。 */
-  hp: number;
-  /** 最大生命值。 */
-  maxHp: number;
-  /** 是否已被摧毁。 */
-  isDestroyed: boolean;
-}
-
-/** 小水晶（兵营水晶 / Inhibitor）状态 */
-export interface InhibitorState {
-  /** 小水晶实例 ID。 */
-  id: string;
-  /** 所属队伍。 */
-  team: Team;
-  /** 世界坐标。 */
-  position: THREE.Vector3;
-  /** 当前生命值。 */
-  hp: number;
-  /** 最大生命值。 */
-  maxHp: number;
-  /** 是否已被摧毁。 */
-  isDestroyed: boolean;
-}
-
-/** 生命遗迹状态 */
-export interface HealthRelicState {
-  /** 遗迹实例 ID。 */
-  id: string;
-  /** 世界坐标。 */
-  position: THREE.Vector3;
-  /** 当前是否可拾取。 */
-  isAvailable: boolean;
-  /** 重新刷新剩余计时，单位秒。 */
-  respawnTimer: number;
-}
-
-/** 当前场景中激活的表情状态。 */
-export interface ActiveEmoteState {
-  /** 表情实例 ID。 */
-  id: string;
-  /** 触发表情的角色 ID。 */
-  championId: string;
-  /** 触发表情的玩家名称。 */
-  playerName: string;
-  /** 表情类型 ID。 */
-  emoteId: EmoteId;
-  /** 创建时间戳。 */
-  createdAt: number;
-  /** 过期时间戳。 */
-  expiresAt: number;
-  /** 是否来自本地玩家。 */
-  isMe: boolean;
-}
-
-/** 当前激活的移动指示器状态。 */
-export interface MoveIndicatorState {
-  /** 指示器世界坐标。 */
-  position: THREE.Vector3;
-  /** 指示器创建时间戳。 */
-  createdAt: number;
-  /** 指示器过期时间戳。 */
-  expiresAt: number;
-}
-
-/** 地图配置 */
-export interface MapConfig {
-  /** 地图整体宽度。 */
-  width: number;
-  /** 地图整体纵深。 */
-  depth: number;
-  /** 中央桥面的有效宽度（最窄处）。 */
-  bridgeWidth: number;
-  /** 中央桥面的有效长度。 */
-  bridgeLength: number;
-  /** 可行走区域边界。 */
-  playableBounds: { minX: number; maxX: number; minZ: number; maxZ: number };
-  /** 防御塔布局列表。 */
-  towers: { position: [number, number, number]; team: Team; type: TowerType }[];
-  /** 水晶枢纽布局列表。 */
-  nexuses: { position: [number, number, number]; team: Team }[];
-  /** 生命遗迹布局列表。 */
-  healthRelics: { position: [number, number, number] }[];
-  /** 小水晶（兵营水晶 / Inhibitor）布局列表。 */
-  inhibitors: { position: [number, number, number]; team: Team }[];
-  /** 双方初始编队坐标列表。 */
-  spawnLayouts: { blue: [number, number, number][]; red: [number, number, number][] };
-}
-
-/** 游戏全局状态 */
-export interface GameState {
-  /** 当前对局已进行时间，单位秒。 */
-  gameTimer: number;
-  /** 蓝队总击杀数。 */
-  blueKills: number;
-  /** 红队总击杀数。 */
-  redKills: number;
-  /** 全部英雄实例状态。 */
-  champions: ChampionState[];
-  minions: MinionState[];
-  /** 全部防御塔状态。 */
-  towers: TowerState[];
-  /** 全部水晶枢纽状态。 */
-  nexuses: NexusState[];
-  /** 全部小水晶（兵营水晶 / Inhibitor）状态。 */
-  inhibitors: InhibitorState[];
-  /** 全部生命遗迹状态。 */
-  healthRelics: HealthRelicState[];
-  /** 当前仍在展示中的表情状态。 */
-  activeEmotes: ActiveEmoteState[];
-  /** 当前右键移动指示器状态。 */
-  moveIndicator: MoveIndicatorState | null;
-  /** 当前镜头模式。 */
-  cameraMode: CameraMode;
-  /** 玩家模式下镜头是否锁定跟随本地玩家。 */
-  isPlayerCameraLocked: boolean;
-  /** 当前导播锁定的目标角色 ID。 */
-  spectatorTargetId: string | null;
-  /** 是否显示世界坐标调试标签。 */
-  showWorldCoordinates: boolean;
-}
-
-/** 玩家控制权分配信息。 */
-export interface PlayerSessionAssignment {
-  /** socket 会话 ID。 */
-  socketId: string;
-  /** 玩家显示名称。 */
-  playerName: string;
-  /** 当前分配到的英雄实例 ID。 */
-  championId: string | null;
-  /** 当前分配到的队伍。 */
-  team: Team | null;
-  /** 当前是否处于仅观战状态。 */
-  isSpectator: boolean;
-}
-
-/** 联机诊断状态。 */
-export interface MultiplayerDiagnosticsState {
-  /** 当前是否启用了联机模式。 */
-  enabled: boolean;
-  /** 当前渲染帧率。 */
-  fps: number;
-  /** 最近一次收到的快照序号。 */
-  lastReceivedSequence: number;
-  /** 最近一次真正应用到状态树的快照序号。 */
-  lastAppliedSequence: number;
-  /** 因乱序或重复被丢弃的旧快照数量。 */
-  droppedSnapshotCount: number;
-  snapshotArrivalCount: number;
-  /** 最近一次收到快照时的本地时间戳。 */
-  lastSnapshotReceivedAt: number | null;
-  /** 最近一次快照携带的服务端时间戳。 */
-  lastSnapshotServerTime: number | null;
-  /** 当前估算的快照到达延迟，单位毫秒。 */
-  snapshotLatencyMs: number | null;
-  rttMs: number | null;
-  /** 当前记录中的快照缓冲数量。 */
-  bufferedSnapshotCount: number;
-  /** 当前渲染平滑延迟配置，单位毫秒。 */
-  renderDelayMs: number;
-  lastSentMoveSequence: number;
-  lastAckedMoveSequence: number;
-  lastMoveCommandSentAt: number | null;
-  lastMoveCommandAckAt: number | null;
-  pingSampleCount: number;
-  timedOutPingCount: number;
-  pingTimeoutRatePercent: number;
-  snapshotDiscardRatePercent: number;
-  networkAnomalyPercent: number;
-}
-
-/** 客户端本地联机会话状态。 */
-export interface MultiplayerSessionState {
-  /** 当前是否启用联机模式。 */
-  enabled: boolean;
-  /** 连接状态。 */
-  status: MultiplayerConnectionStatus;
-  /** 当前 socket 会话 ID。 */
-  socketId: string | null;
-  /** 当前房间 ID。 */
-  roomId: string | null;
-  /** 当前受控英雄实例 ID。 */
-  controlledChampionId: string | null;
-  /** 当前分配到的队伍。 */
-  assignedTeam: Team | null;
-  /** 当前错误信息。 */
-  errorMessage: string | null;
-  /** 房间内所有在线玩家分配信息。 */
-  players: PlayerSessionAssignment[];
-  /** 当前是否已完成入房。 */
-  hasJoinedRoom: boolean;
-  /** 联机诊断状态。 */
-  diagnostics: MultiplayerDiagnosticsState;
-}
-
-/** 联机同步使用的右键移动输入。 */
-export interface MoveCommandPayload {
-  /** 当前受控英雄实例 ID。 */
-  championId: string;
-  /**
-   * 旧 Socket.IO 演示链路使用的目标点字段。
-   * 传 null 表示停止移动。
-   */
-  target?: SerializedVector3 | null;
-  /**
-   * 正式 Netty WebSocket 战斗链路使用的目标点字段。
-   * 传 null 表示停止移动。
-   */
-  targetPoint?: SerializedVector3 | null;
-  /** 当前输入来源。 */
-  inputMode?: InputMode;
-  clientMoveSequence?: number;
-  clientTimestamp?: number;
-}
-
-/** 正式技能施法输入。 */
-export interface CastSpellCommandPayload {
-  /** 请求唯一 ID。 */
-  requestId: string;
-  /** 当前房间 ID。 */
-  roomId: string | null;
-  /** 当前施法者英雄实例 ID。 */
-  casterId: string;
-  /** 当前技能槽位。 */
-  slot: SpellSlot;
-  /** 当前技能定义 ID。 */
-  skillId?: string;
-  /** 目标实体 ID。 */
-  targetEntityId?: string;
-  /** 目标点。 */
-  targetPoint?: SerializedVector3 | null;
-  /** 目标方向。 */
-  targetDirection?: SerializedVector3 | null;
-  /** 客户端移动序列号（锁移动施法时用于与停止语义对账）。 */
-  clientMoveSequence?: number;
-  /** 客户端时间戳。 */
-  clientTimestamp: number;
-  /** 额外上下文。 */
-  extraContext?: Record<string, unknown>;
-}
-
-/** 入房请求载荷。 */
-export interface RoomJoinPayload {
-  /** 玩家名称。 */
-  playerName?: string;
-}
-
-/** 入房成功载荷。 */
-export interface RoomJoinedPayload {
-  /** 当前房间 ID。 */
-  roomId: string;
-  /** 当前连接会话 ID。 */
-  sessionId: string;
-  /** 玩家显示名称。 */
-  playerName: string;
-  /** 当前分配到的英雄实例 ID。 */
-  championId: string | null;
-  /** 当前是否为观战者。 */
-  spectator: boolean;
-}
-
-/** 施法被服务端接受事件。 */
-export interface SpellCastAcceptedEvent {
-  /** 事件唯一 ID。 */
-  eventId: string;
-  /** 服务端序号。 */
-  sequence: number;
-  /** 房间 ID。 */
-  roomId: string;
-  /** 服务端时间戳。 */
-  serverTime: number;
-  /** 请求 ID。 */
-  requestId?: string;
-  /** 技能实例 ID。 */
-  castInstanceId: string;
-  /** 施法者实体 ID。 */
-  casterId: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 技能槽位。 */
-  slot: SpellSlot | string;
-  /** 本次施法锁定的目标实体 ID。 */
-  targetEntityId?: string;
-  /** 本次施法锁定的目标点。 */
-  targetPoint?: SerializedVector3 | null;
-}
-
-/** 施法被服务端拒绝事件。 */
-export interface SpellCastRejectedEvent {
-  /** 事件唯一 ID。 */
-  eventId: string;
-  /** 服务端序号。 */
-  sequence: number;
-  /** 房间 ID。 */
-  roomId: string;
-  /** 服务端时间戳。 */
-  serverTime: number;
-  /** 请求 ID。 */
-  requestId?: string;
-  /** 施法者实体 ID。 */
-  casterId?: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 技能槽位。 */
-  slot?: SpellSlot | string;
-  /** 拒绝原因码。 */
-  reasonCode?: string;
-  /** 拒绝原因信息。 */
-  reasonMessage?: string;
-}
-
-/** 技能阶段变化事件。 */
-export interface SpellStageChangedEvent {
-  /** 事件唯一 ID。 */
-  eventId: string;
-  /** 服务端序号。 */
-  sequence: number;
-  /** 房间 ID。 */
-  roomId: string;
-  /** 服务端时间戳。 */
-  serverTime: number;
-  /** 技能实例 ID。 */
-  castInstanceId: string;
-  /** 施法者实体 ID。 */
-  casterId: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 技能槽位。 */
-  slot?: SpellSlot | string;
-  /** 本次施法锁定的目标实体 ID。 */
-  targetEntityId?: string;
-  /** 本次施法锁定的目标点。 */
-  targetPoint?: SerializedVector3 | null;
-  /** 原阶段。 */
-  previousStage: SpellCastPhase | string;
-  /** 新阶段。 */
-  nextStage: SpellCastPhase | string;
-}
-
-/** 正式战斗结果事件的公共字段。 */
-export interface CombatEventBase {
-  /** 事件唯一 ID。 */
-  eventId: string;
-  /** 服务端序号。 */
-  sequence: number;
-  /** 房间 ID。 */
-  roomId: string;
-  /** 服务端时间戳。 */
-  serverTime: number;
-}
-
-/** 权威伤害结算事件。 */
-export interface DamageAppliedEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 技能槽位。 */
-  slot?: SpellSlot | string;
-  /** 来源实体 ID。 */
-  sourceEntityId?: string;
-  /** 目标实体 ID。 */
-  targetEntityId: string;
-  /** 本次总伤害值。 */
-  amount: number;
-  /** 本次被护盾吸收的伤害值。 */
-  absorbedByShield?: number;
-  /** 结算后剩余护盾值。 */
-  remainingShield?: number;
-  /** 结算后当前生命值。 */
-  currentHp?: number;
-  /** 本次是否导致目标死亡。 */
-  targetDied?: boolean;
-  /** 用于表现挂点的世界坐标。 */
-  position?: SerializedVector3;
-}
-
-/** 权威治疗结算事件。 */
-export interface HealAppliedEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 技能槽位。 */
-  slot?: SpellSlot | string;
-  /** 来源实体 ID。 */
-  sourceEntityId?: string;
-  /** 目标实体 ID。 */
-  targetEntityId: string;
-  /** 本次治疗值。 */
-  amount: number;
-  /** 治疗后当前生命值。 */
-  currentHp?: number;
-  /** 用于表现挂点的世界坐标。 */
-  position?: SerializedVector3;
-}
-
-/** 权威护盾变化事件。 */
-export interface ShieldChangedEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 技能槽位。 */
-  slot?: SpellSlot | string;
-  /** 来源实体 ID。 */
-  sourceEntityId?: string;
-  /** 目标实体 ID。 */
-  targetEntityId: string;
-  /** 本次护盾变化量，负数表示护盾被消耗。 */
-  delta: number;
-  /** 结算后当前护盾值。 */
-  currentShield: number;
-  /** 用于表现挂点的世界坐标。 */
-  position?: SerializedVector3;
-}
-
-/** 权威状态施加事件。 */
-export interface StatusAppliedEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 技能槽位。 */
-  slot?: SpellSlot | string;
-  /** 状态实例 ID。 */
-  statusInstanceId: string;
-  /** 状态定义 ID。 */
-  statusId: string;
-  /** 来源实体 ID。 */
-  sourceEntityId: string;
-  /** 目标实体 ID。 */
-  targetEntityId: string;
-  /** 当前层数。 */
-  stacks: number;
-  /** 状态创建时间戳。 */
-  createdAt?: number;
-  /** 状态持续时长，单位毫秒。 */
-  durationMs?: number;
-  /** 状态过期时间戳，单位毫秒。 */
-  expiresAt?: number;
-}
-
-/** 权威状态移除事件。 */
-export interface StatusRemovedEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 技能槽位。 */
-  slot?: SpellSlot | string;
-  /** 状态实例 ID。 */
-  statusInstanceId: string;
-  /** 状态定义 ID。 */
-  statusId: string;
-  /** 来源实体 ID。 */
-  sourceEntityId?: string;
-  /** 目标实体 ID。 */
-  targetEntityId: string;
-  /** 被移除时的层数。 */
-  stacks?: number;
-  /** 移除原因。 */
-  reason?: string;
-}
-
-/** 权威投射物生成事件。 */
-export interface ProjectileSpawnedEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 所有者实体 ID。 */
-  ownerId: string;
-  /** 技能定义 ID。 */
-  skillId: string;
-  /** 投射物实例 ID。 */
-  projectileId: string;
-  /** 当前世界坐标。 */
-  position: SerializedVector3;
-  /** 当前飞行方向。 */
-  direction: SerializedVector3;
-  /** 当前飞行速度。 */
-  speed: number;
-  /** 当前碰撞半径。 */
-  radius?: number;
-  /** 当前是否可被风墙类效果拦截。 */
-  blockable?: boolean;
-}
-
-/** 权威投射物销毁事件。 */
-export interface ProjectileDestroyedEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 所有者实体 ID。 */
-  ownerId?: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 投射物实例 ID。 */
-  projectileId: string;
-  /** 销毁原因。 */
-  destroyReason?: string;
-  /** 命中的目标实体 ID 列表。 */
-  hitTargetIds?: string[];
-  /** 销毁位置。 */
-  position?: SerializedVector3;
-}
-
-/** 权威区域体创建事件。 */
-export interface AreaCreatedEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 所有者实体 ID。 */
-  ownerId: string;
-  /** 技能定义 ID。 */
-  skillId: string;
-  /** 区域体实例 ID。 */
-  areaId: string;
-  /** 区域体类型。 */
-  areaType?: string;
-  /** 当前中心点。 */
-  position: SerializedVector3;
-  /** 当前半径。 */
-  radius?: number;
-  /** 当前朝向角度，单位弧度。 */
-  rotationY?: number;
-  /** 区域体长度。 */
-  length?: number;
-  /** 区域体宽度或厚度。 */
-  width?: number;
-  /** 区域体高度。 */
-  height?: number;
-  /** 区域体过期时间戳。 */
-  expiresAt?: number;
-}
-
-/** 权威区域体过期事件。 */
-export interface AreaExpiredEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 所有者实体 ID。 */
-  ownerId?: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 区域体实例 ID。 */
-  areaId: string;
-  /** 区域体类型。 */
-  areaType?: string;
-  /** 位置。 */
-  position?: SerializedVector3;
-  /** 过期原因。 */
-  reason?: string;
-}
-
-/** 权威位移结算事件。 */
-export interface DisplacementResolvedEvent extends CombatEventBase {
-  /** 来源技能实例 ID。 */
-  castInstanceId?: string;
-  /** 来源实体 ID。 */
-  sourceEntityId?: string;
-  /** 技能定义 ID。 */
-  skillId?: string;
-  /** 目标实体 ID。 */
-  targetEntityId: string;
-  /** 位移类型。 */
-  displaceType?: string;
-  /** 位移距离。 */
-  distance?: number;
-  /** 位移持续时间。 */
-  durationMs?: number;
-  /** 位移结算后的权威位置。 */
-  position?: SerializedVector3;
-  /** 移动锁定结束时间戳。 */
-  movementLockedUntil?: number;
+  /** 当前攻击移动目标点。 */
+  attackMoveTarget?: SerializedVector3 | null;
+  /** 当前自动攻击锁定目标实体 ID。 */
+  currentAttackTargetId?: string | null;
+  /** 当前自动攻击锁定目标实体类型。 */
+  currentAttackTargetType?: 'champion' | 'minion' | 'structure' | null;
 }
 
 /** 权威死亡事件。 */
@@ -1118,11 +464,28 @@ export interface DeathOccurredEvent extends CombatEventBase {
   targetEntityId: string;
   /** 死亡位置。 */
   position?: SerializedVector3;
+  killerId?: string;
+  killerTeam?: Team;
+  victimTeam?: Team;
+  assistIds?: string[];
+  respawnAt?: number;
+}
+
+export interface KillFeedEntry {
+  id: string;
+  killerId?: string;
+  killerName?: string;
+  killerTeam?: Team;
+  victimId: string;
+  victimName?: string;
+  victimTeam?: Team;
+  assistIds?: string[];
+  createdAt: number;
+  expiresAt: number;
 }
 
 /** 正式技能施法阶段。 */
 export type SpellCastPhase = 'idle' | 'windup' | 'resolve' | 'finished' | 'interrupted';
-
 /** 技能施法目标类型。 */
 export type SpellTargetType = 'target_unit' | 'directional' | 'target_point' | 'self_cast';
 
@@ -1232,6 +595,7 @@ export interface FloatingCombatTextState {
   kind: 'damage' | 'heal' | 'shield';
   /** 关联目标实体 ID。 */
   targetEntityId?: string;
+  targetType?: 'champion' | 'minion' | 'structure' | string;
   /** 当前世界坐标。 */
   position: SerializedVector3;
   /** 展示数值。 */
@@ -1280,10 +644,15 @@ export interface ProjectilePresentationState {
   castInstanceId?: string;
   /** 所有者实体 ID。 */
   ownerId: string;
+  targetEntityId?: string;
+  targetType?: 'champion' | 'minion' | 'structure' | string;
+  visualType?: 'hero' | 'tower' | 'minion' | string;
+  tracking?: 'linear' | 'homing';
   /** 技能定义 ID。 */
   skillId: string;
   /** 当前世界坐标。 */
   position: SerializedVector3;
+  impactPosition?: SerializedVector3;
   /** 当前飞行方向。 */
   direction: SerializedVector3;
   /** 当前飞行速度。 */

@@ -34,6 +34,8 @@ const CameraController: React.FC = () => {
   const activeFocusTargetRef = useRef(activeFocusTarget);
   const pointerRef = useRef({ x: 0, y: 0, inside: false });
   const isDraggingRef = useRef(false);
+  const dragStartedAtRef = useRef(0);
+  const dragOriginRef = useRef<{ x: number; y: number } | null>(null);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const dragDeltaRef = useRef({ x: 0, y: 0 });
   const desiredPositionRef = useRef(new THREE.Vector3());
@@ -41,6 +43,8 @@ const CameraController: React.FC = () => {
   const orbitRef = useRef<any>(null);
   /** 联机模式下，第一次检测到 me 时硬 snap 相机，避免从地图中心 lerp 到英雄位置。 */
   const hasSnappedToMeRef = useRef(false);
+  /** 上一帧 me.isDead 状态，用于检测复活并自动回到玩家位置。 */
+  const wasDeadRef = useRef(false);
 
   const getFocusPosition = (focusTarget = activeFocusTargetRef.current) => {
     if (!focusTarget) {
@@ -134,12 +138,15 @@ const CameraController: React.FC = () => {
 
       updatePointerState(event);
       isDraggingRef.current = true;
+      dragStartedAtRef.current = performance.now();
+      dragOriginRef.current = { x: event.clientX, y: event.clientY };
       lastPointerRef.current = { x: event.clientX, y: event.clientY };
-
-      if (CAMERA_CONFIG.dragUnlocksCamera && cameraMode === 'playerLocked') {
-        setPlayerCameraLocked(false);
-      }
+      /* 不再在 mousedown 时解锁相机——改为在实际拖拽发生时解锁，
+       * 避免每次左键点击（移动/攻击）都把 Y 键锁定状态取消。 */
     };
+
+    const DRAG_UNLOCK_THRESHOLD = 4; // 像素阈值，超过才视为拖拽
+    const DRAG_UNLOCK_HOLD_MS = 120;
 
     const handleMouseMove = (event: MouseEvent) => {
       updatePointerState(event);
@@ -147,13 +154,35 @@ const CameraController: React.FC = () => {
         return;
       }
 
-      dragDeltaRef.current.x = event.clientX - lastPointerRef.current.x;
-      dragDeltaRef.current.y = event.clientY - lastPointerRef.current.y;
+      const dx = event.clientX - lastPointerRef.current.x;
+      const dy = event.clientY - lastPointerRef.current.y;
+      const origin = dragOriginRef.current;
+      const totalDx = origin ? event.clientX - origin.x : 0;
+      const totalDy = origin ? event.clientY - origin.y : 0;
+      const dragExceededThreshold = Math.abs(totalDx) > DRAG_UNLOCK_THRESHOLD
+        || Math.abs(totalDy) > DRAG_UNLOCK_THRESHOLD;
+      const dragHeldLongEnough = dragStartedAtRef.current > 0
+        && (performance.now() - dragStartedAtRef.current) >= DRAG_UNLOCK_HOLD_MS;
+      let canApplyDrag = cameraMode !== 'playerLocked' || !useGameStore.getState().isPlayerCameraLocked;
+
+      /* 拖拽解锁相机：仅当 isPlayerCameraLocked 为 false（即非 Y 键主动锁定）时，
+       * 拖拽才会切换到自由视角。Y 键锁定期间拖拽不解锁，与英雄联盟行为一致。 */
+      if (!canApplyDrag && CAMERA_CONFIG.dragUnlocksCamera && dragExceededThreshold && dragHeldLongEnough) {
+        setPlayerCameraLocked(false);
+        canApplyDrag = true;
+      }
+
+      if (canApplyDrag) {
+        dragDeltaRef.current.x = dx;
+        dragDeltaRef.current.y = dy;
+      }
       lastPointerRef.current = { x: event.clientX, y: event.clientY };
     };
 
     const stopDragging = () => {
       isDraggingRef.current = false;
+      dragStartedAtRef.current = 0;
+      dragOriginRef.current = null;
       lastPointerRef.current = null;
       dragDeltaRef.current.x = 0;
       dragDeltaRef.current.y = 0;
@@ -180,16 +209,22 @@ const CameraController: React.FC = () => {
       if (!pointerRef.current.inside) return;
       const focusTarget = activeFocusTargetRef.current;
       const focusPosition = getFocusPosition(focusTarget);
-      if (event.repeat || event.code !== 'Space' || !focusPosition) {
+
+      /* 空格键：一次性回到玩家位置（不锁定） */
+      if (!event.repeat && event.code === 'Space' && focusPosition) {
+        targetRef.current.set(focusPosition.x, focusPosition.y, focusPosition.z);
         return;
       }
 
-      targetRef.current.set(
-        focusPosition.x,
-        focusPosition.y,
-        focusPosition.z,
-      );
-      setPlayerCameraLocked(true);
+      /* Y 键：切换镜头锁定/解锁（使用 togglePlayerCameraLock 确保 cameraMode 也同步为 playerLocked） */
+      if (!event.repeat && event.code === 'KeyY') {
+        useGameStore.getState().togglePlayerCameraLock();
+        const newLocked = useGameStore.getState().isPlayerCameraLocked;
+        if (newLocked && focusPosition) {
+          targetRef.current.set(focusPosition.x, focusPosition.y, focusPosition.z);
+        }
+        return;
+      }
     };
 
     gl.domElement.addEventListener('mousedown', handleMouseDown);
@@ -216,6 +251,26 @@ const CameraController: React.FC = () => {
   useFrame((_, delta) => {
     const keys = keysRef.current;
     const wasdSpeed = CAMERA_CONFIG.edgePanSpeed * delta;
+
+    /* 检测英雄从死亡→复活，自动 snap 相机到复活位置 */
+    const meNow = activeFocusTargetRef.current;
+    const isDeadNow = meNow?.isDead ?? false;
+    if (wasDeadRef.current && !isDeadNow && meNow?.isMe) {
+      const respawnPos = getFocusPosition(meNow);
+      if (respawnPos) {
+        targetRef.current.set(respawnPos.x, respawnPos.y, respawnPos.z);
+        lookAtRef.current.copy(targetRef.current);
+        const snapZoomScale = zoomRef.current / CAMERA_CONFIG.baseOffset[1];
+        positionRef.current.set(
+          targetRef.current.x + CAMERA_CONFIG.baseOffset[0] * snapZoomScale,
+          targetRef.current.y + zoomRef.current,
+          targetRef.current.z + CAMERA_CONFIG.baseOffset[2] * snapZoomScale,
+        );
+        camera.position.copy(positionRef.current);
+        camera.lookAt(lookAtRef.current);
+      }
+    }
+    wasDeadRef.current = isDeadNow;
 
     if (!introFinishedRef.current) {
       zoomRef.current += (CAMERA_CONFIG.initialZoom - zoomRef.current) * (1 - Math.exp(-CAMERA_CONFIG.introSpeed * delta));

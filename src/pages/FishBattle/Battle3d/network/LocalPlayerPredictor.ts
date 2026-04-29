@@ -34,6 +34,8 @@ export interface PredictedState {
   moveTarget: THREE.Vector3 | null;
   /** 是否正在移动 */
   isMoving: boolean;
+  /** 是否处于移动锁定（攻击/施法期间） */
+  movementLocked: boolean;
 }
 
 /** 地图边界常量，与后端保持一致 */
@@ -95,11 +97,18 @@ export class LocalPlayerPredictor {
    */
   private static readonly DRIFT_CORRECTION_RATE = 2;
   /** 停止状态的视觉 lerp 速率（低于移动时的 35，确保 stop/cast 后位置过渡平滑不瞬移） */
-  private static readonly STOPPED_VISUAL_LERP_RATE = 8;
+  private static readonly STOPPED_VISUAL_LERP_RATE = 14;
+  private static readonly VISUAL_MOTION_EPSILON_SQ = 0.0025;
   private movementLockedUntil = 0;
   /** 施法朝向保护截止时间：在此之前 onServerSnapshot 不覆盖 predictedRotation */
   private castRotationProtectedUntil = 0;
   private static readonly CAST_ROTATION_PROTECT_MS = 300;
+
+  private hasVisualMotion(): boolean {
+    const dx = this.targetPosition.x - this.visualPosition.x;
+    const dz = this.targetPosition.z - this.visualPosition.z;
+    return (dx * dx + dz * dz) > LocalPlayerPredictor.VISUAL_MOTION_EPSILON_SQ;
+  }
 
   constructor(private tickDt = 0.05) {}
 
@@ -175,6 +184,9 @@ export class LocalPlayerPredictor {
   applyMovementLock(durationMs: number): void {
     const nextLockedUntil = Date.now() + Math.max(0, durationMs);
     this.movementLockedUntil = Math.max(this.movementLockedUntil, nextLockedUntil);
+    /* 清除 currentMoveTarget：攻击/施法时英雄停止移动，isMoving=false，
+     * 确保动画控制器不会在攻击期间播放跑步动画。
+     * 如果玩家在锁定期间发起新移动（issueMove），会重新设置此字段。 */
     this.currentMoveTarget = null;
     /* 保留 stop 类型输入以维持 seq 对账连续性，仅丢弃 move 类型外推目标。 */
     this.inputBuffer = this.inputBuffer.filter((input) => input.type !== 'move');
@@ -253,6 +265,11 @@ export class LocalPlayerPredictor {
       this.visualPosition.copy(this.targetPosition);
       this.visualRotation = this.predictedRotation;
       this.visualInitialized = true;
+    } else if (movementLocked) {
+      /* 锁定期间（攻击/施法）：硬 snap 视觉位置到 targetPosition。
+       * 消除 lerp 漂移导致的滑步——英雄在攻击时应完全静止。 */
+      this.visualPosition.copy(this.targetPosition);
+      this.visualRotation = this.predictedRotation;
     } else {
       const dx = this.targetPosition.x - this.visualPosition.x;
       const dz = this.targetPosition.z - this.visualPosition.z;
@@ -279,20 +296,25 @@ export class LocalPlayerPredictor {
       }
     }
 
+    const isMoving = !movementLocked && (this.currentMoveTarget !== null || this.hasVisualMotion());
+
     return {
       position: this.visualPosition,
       rotation: this.visualRotation,
       moveTarget: this.currentMoveTarget,
-      isMoving: this.currentMoveTarget !== null,
+      isMoving,
+      movementLocked,
     };
   }
 
   getCurrentState(): PredictedState {
+    const movementLocked = this.isMovementLocked();
     return {
       position: this.visualInitialized ? this.visualPosition : this.targetPosition,
       rotation: this.visualInitialized ? this.visualRotation : this.predictedRotation,
       moveTarget: this.currentMoveTarget,
-      isMoving: this.currentMoveTarget !== null,
+      isMoving: !movementLocked && (this.currentMoveTarget !== null || (this.visualInitialized && this.hasVisualMotion())),
+      movementLocked,
     };
   }
 
@@ -331,9 +353,8 @@ export class LocalPlayerPredictor {
 
     /* 通过重放未确认输入的类型确定正确的 moveTarget
      *（只重放指令类型，不做位置推进——位置由外推 + lerp 处理） */
-    let replayTarget: THREE.Vector3 | null = null;
     if (!movementLocked) {
-      replayTarget = serverMoveTarget
+      let replayTarget: THREE.Vector3 | null = serverMoveTarget
         ? new THREE.Vector3(serverMoveTarget.x, serverMoveTarget.y, serverMoveTarget.z)
         : null;
       for (const input of this.inputBuffer) {
@@ -347,8 +368,14 @@ export class LocalPlayerPredictor {
           replayTarget = null;
         }
       }
+      this.currentMoveTarget = replayTarget;
+    } else {
+      /* 锁定期间（攻击/施法）：强制 currentMoveTarget=null。
+       * 服务端在锁定期间也会清除 moveTarget，保持一致。
+       * 如果玩家在锁定期间调用 issueMove()，该调用会立即设置 currentMoveTarget，
+       * 但服务端会拒绝该移动（锁定中），下次快照会再次修正为 null。 */
+      this.currentMoveTarget = null;
     }
-    this.currentMoveTarget = replayTarget;
     /* 施法朝向保护期间不覆盖本地设置的朝向，避免旧快照把施法转向回退 */
     if (this.castRotationProtectedUntil <= Date.now()) {
       this.predictedRotation = serverRotation;

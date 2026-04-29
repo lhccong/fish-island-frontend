@@ -20,12 +20,13 @@ function getNexusHealthState(hp: number, maxHp: number, isDestroyed: boolean): '
 
 /** 单个水晶枢纽 */
 const Nexus: React.FC<{
+  id: string;
   position: [number, number, number];
   team: 'blue' | 'red';
   hp: number;
   maxHp: number;
   isDestroyed: boolean;
-}> = ({ position, team, hp, maxHp, isDestroyed }) => {
+}> = ({ id, position, team, hp, maxHp, isDestroyed }) => {
   const coreRef = useRef<THREE.Mesh>(null);
   const ring1Ref = useRef<THREE.Mesh>(null);
   const ring2Ref = useRef<THREE.Mesh>(null);
@@ -68,7 +69,7 @@ const Nexus: React.FC<{
   });
 
   return (
-    <group position={position}>
+    <group position={position} userData={{ entityType: 'structure', structureId: id, structureKind: 'nexus', team, isDead: isDestroyed }}>
       <FacilityAsset
         modelPath={activeAsset.modelPath}
         targetHeight={activeAsset.targetHeight}
@@ -143,6 +144,7 @@ const Nexuses: React.FC = () => {
       {nexuses.map((n) => (
         <Nexus
           key={n.id}
+          id={n.id}
           position={[n.position.x, n.position.y, n.position.z]}
           team={n.team}
           hp={n.hp}

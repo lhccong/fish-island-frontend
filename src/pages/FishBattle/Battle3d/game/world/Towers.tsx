@@ -9,6 +9,7 @@ import StructureHealthBar from './StructureHealthBar';
 
 /** 单个防御塔 */
 const Tower: React.FC<{
+  id: string;
   position: [number, number, number];
   team: 'blue' | 'red';
   type: 'outer' | 'inner' | 'nexusGuard';
@@ -18,7 +19,7 @@ const Tower: React.FC<{
   attackRange?: number;
   targetEntityId?: string | null;
   myChampionPosition?: THREE.Vector3 | null;
-}> = ({ position, team, type, hp, maxHp, isDestroyed, attackRange, targetEntityId, myChampionPosition }) => {
+}> = ({ id, position, team, type, hp, maxHp, isDestroyed, attackRange, targetEntityId, myChampionPosition }) => {
   const crystalRef = useRef<THREE.Mesh>(null);
 
   const colors = TEAM_COLORS[team];
@@ -47,7 +48,7 @@ const Tower: React.FC<{
   });
 
   return (
-    <group position={position}>
+    <group position={position} userData={{ entityType: 'structure', structureId: id, structureKind: 'tower', team, isDead: isDestroyed }}>
       <FacilityAsset
         modelPath={activeAsset.modelPath}
         targetHeight={activeAsset.targetHeight}
@@ -125,6 +126,7 @@ const Towers: React.FC = () => {
       {towers.map((t) => (
         <Tower
           key={t.id}
+          id={t.id}
           position={[t.position.x, t.position.y, t.position.z]}
           team={t.team}
           type={t.type}

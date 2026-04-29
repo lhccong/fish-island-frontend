@@ -5,7 +5,7 @@ import { GAME_CONFIG } from '../../config/gameConfig';
 import { CAMERA_CONFIG } from '../../config/cameraConfig';
 import { isTargetAllowedByRules, type TargetableEntity } from '../../config/skillDefinitions';
 import { MAP_CONFIG } from '../../config/mapConfig';
-import { emitMoveCommand, emitStopCommand } from '../../network/socketClient';
+import { emitBasicAttack, emitMoveCommand, emitStopCommand } from '../../network/socketClient';
 import { getLocalPredictor } from '../../network/NetworkSyncRegistry';
 import { useGameStore } from '../../store/useGameStore';
 
@@ -18,6 +18,8 @@ const InputController: React.FC = () => {
   const { camera, gl, scene } = useThree();
   const pointerInsideRef = useRef(false);
   const moveSequenceRef = useRef(0);
+  const queuedMovePointRef = useRef<THREE.Vector3 | null>(null);
+  const queuedMoveFrameRef = useRef<number | null>(null);
   const pendingPointerSampleRef = useRef<{ clientX: number; clientY: number } | null>(null);
   const pointerFrameRequestRef = useRef<number | null>(null);
   const clickCursorResetTimerRef = useRef<number | null>(null);
@@ -136,25 +138,26 @@ const InputController: React.FC = () => {
       RAYCASTER.setFromCamera(POINTER, camera);
     };
 
-    const setPointerFromEvent = (event: MouseEvent) => {
-      setPointerFromClient(event.clientX, event.clientY);
-    };
-
-    const getGroundIntersection = (event: MouseEvent): THREE.Vector3 | null => {
-      setPointerFromEvent(event);
+    const getGroundIntersectionAtClient = (clientX: number, clientY: number): THREE.Vector3 | null => {
+      setPointerFromClient(clientX, clientY);
       const hit = RAYCASTER.ray.intersectPlane(MOVE_PLANE, INTERSECTION);
       if (!hit) return null;
       return new THREE.Vector3(hit.x, 0, hit.z);
     };
 
-    /**
-     * 通用目标选取：射线检测 champion 和 minion，返回 TargetableEntity。
-     * 优先返回 champion（英雄优先级高于小兵）。
-     */
+    const getGroundIntersection = (event: MouseEvent): THREE.Vector3 | null => {
+      return getGroundIntersectionAtClient(event.clientX, event.clientY);
+    };
+
     const getTargetEntityAtClient = (clientX: number, clientY: number): TargetableEntity | null => {
       setPointerFromClient(clientX, clientY);
       const intersections = RAYCASTER.intersectObjects(scene.children, true);
-      let bestMinion: TargetableEntity | null = null;
+      const groundPoint = getGroundIntersectionAtClient(clientX, clientY);
+      const candidates = new Map<string, {
+        entity: TargetableEntity;
+        rayDistance: number;
+        groundDistanceSq: number;
+      }>();
       for (const intersection of intersections) {
         let current: THREE.Object3D | null = intersection.object;
         while (current) {
@@ -162,6 +165,7 @@ const InputController: React.FC = () => {
             entityType?: string;
             championId?: string;
             minionId?: string;
+            structureId?: string;
           };
           if (userData?.entityType === 'champion' && typeof userData.championId === 'string') {
             const liveChampions = useGameStore.getState().champions;
@@ -170,19 +174,82 @@ const InputController: React.FC = () => {
               current = current.parent;
               continue;
             }
-            return targetChampion;
+            const groundDistanceSq = groundPoint
+              ? ((targetChampion.position.x - groundPoint.x) ** 2 + (targetChampion.position.z - groundPoint.z) ** 2)
+              : Number.POSITIVE_INFINITY;
+            const key = `champion:${targetChampion.id}`;
+            const previous = candidates.get(key);
+            if (!previous || groundDistanceSq < previous.groundDistanceSq || (groundDistanceSq === previous.groundDistanceSq && intersection.distance < previous.rayDistance)) {
+              candidates.set(key, {
+                entity: targetChampion,
+                rayDistance: intersection.distance,
+                groundDistanceSq,
+              });
+            }
+            break;
           }
-          if (userData?.entityType === 'minion' && typeof userData.minionId === 'string' && !bestMinion) {
+          if (userData?.entityType === 'minion' && typeof userData.minionId === 'string') {
             const liveMinions = useGameStore.getState().minions;
             const targetMinion = liveMinions.find((m) => m.id === userData.minionId) ?? null;
             if (targetMinion && !targetMinion.isDead) {
-              bestMinion = targetMinion;
+              const groundDistanceSq = groundPoint
+                ? ((targetMinion.position.x - groundPoint.x) ** 2 + (targetMinion.position.z - groundPoint.z) ** 2)
+                : Number.POSITIVE_INFINITY;
+              const key = `minion:${targetMinion.id}`;
+              const previous = candidates.get(key);
+              if (!previous || groundDistanceSq < previous.groundDistanceSq || (groundDistanceSq === previous.groundDistanceSq && intersection.distance < previous.rayDistance)) {
+                candidates.set(key, {
+                  entity: targetMinion,
+                  rayDistance: intersection.distance,
+                  groundDistanceSq,
+                });
+              }
+              break;
+            }
+          }
+          if (userData?.entityType === 'structure' && typeof userData.structureId === 'string') {
+            const store = useGameStore.getState();
+            const tower = store.towers.find((item) => item.id === userData.structureId) ?? null;
+            const nexus = store.nexuses.find((item) => item.id === userData.structureId) ?? null;
+            const inhibitor = store.inhibitors.find((item) => item.id === userData.structureId) ?? null;
+            const structure = tower ?? nexus ?? inhibitor;
+            const isDead = tower ? tower.isDestroyed : nexus ? nexus.isDestroyed : inhibitor ? inhibitor.isDestroyed : true;
+            if (structure && !isDead) {
+              const entity = {
+                id: structure.id,
+                team: structure.team,
+                isDead,
+                position: structure.position,
+                statusEffects: [],
+              };
+              const groundDistanceSq = groundPoint
+                ? ((entity.position.x - groundPoint.x) ** 2 + (entity.position.z - groundPoint.z) ** 2)
+                : Number.POSITIVE_INFINITY;
+              const key = `structure:${entity.id}`;
+              const previous = candidates.get(key);
+              if (!previous || groundDistanceSq < previous.groundDistanceSq || (groundDistanceSq === previous.groundDistanceSq && intersection.distance < previous.rayDistance)) {
+                candidates.set(key, {
+                  entity,
+                  rayDistance: intersection.distance,
+                  groundDistanceSq,
+                });
+              }
+              break;
             }
           }
           current = current.parent;
         }
       }
-      return bestMinion;
+      const ranked = Array.from(candidates.values()).sort((a, b) => {
+        if (a.groundDistanceSq !== b.groundDistanceSq) {
+          return a.groundDistanceSq - b.groundDistanceSq;
+        }
+        if (a.rayDistance !== b.rayDistance) {
+          return a.rayDistance - b.rayDistance;
+        }
+        return a.entity.id.localeCompare(b.entity.id);
+      });
+      return ranked[0]?.entity ?? null;
     };
 
     const getTargetEntityFromEvent = (event: MouseEvent): TargetableEntity | null => {
@@ -221,7 +288,9 @@ const InputController: React.FC = () => {
       const isAllowedByRules = !!targetEntity && isTargetAllowedByRules(liveControlledChampion, targetEntity, aim.targetRules);
       const isInRange = !!targetEntity && liveControlledChampion.position.distanceTo(targetEntity.position) <= aim.range + 0.001;
       const hoveredTargetEntityId = targetEntity?.id ?? null;
-      const hoveredTargetAllowed = !!targetEntity && isAllowedByRules && isInRange;
+      const hoveredTargetAllowed = aim.slot === 'basicAttack'
+        ? !!targetEntity && isAllowedByRules
+        : !!targetEntity && isAllowedByRules && isInRange;
       if (aim.hoveredTargetEntityId === hoveredTargetEntityId && aim.hoveredTargetAllowed === hoveredTargetAllowed) {
         return;
       }
@@ -287,6 +356,59 @@ const InputController: React.FC = () => {
       }));
     };
 
+    const dispatchMove = (point: THREE.Vector3) => {
+      if (multiplayerEnabled) {
+        const predictor = getLocalPredictor();
+        const moveMeta = issueMoveSequence();
+        const sentMoveSequence = predictor ? predictor.seq + 1 : moveMeta.clientMoveSequence;
+        const didSend = emitMoveCommand({
+          championId: meId,
+          target: { x: point.x, y: point.y, z: point.z },
+          targetPoint: { x: point.x, y: point.y, z: point.z },
+          inputMode: 'mouse' as const,
+          clientMoveSequence: sentMoveSequence,
+          clientTimestamp: moveMeta.clientTimestamp,
+        });
+        if (!didSend) {
+          return false;
+        }
+        commitMoveSequence(sentMoveSequence, moveMeta.clientTimestamp);
+        predictor?.issueMove(point.x, point.z);
+      }
+      setChampionMoveTarget(meId, point, 'mouse');
+      showMoveIndicator(point);
+      return true;
+    };
+
+    const scheduleQueuedMoveReplay = () => {
+      if (queuedMoveFrameRef.current !== null) {
+        return;
+      }
+      const flushQueuedMove = () => {
+        queuedMoveFrameRef.current = null;
+        const queuedPoint = queuedMovePointRef.current;
+        if (!queuedPoint) {
+          return;
+        }
+        if (multiplayerEnabled && useGameStore.getState().multiplayerSession.status !== 'connected') {
+          queuedMovePointRef.current = null;
+          return;
+        }
+        const liveChampion = getLiveControlledChampion();
+        if (!liveChampion || liveChampion.isDead) {
+          queuedMovePointRef.current = null;
+          return;
+        }
+        if (liveChampion.movementLockedUntil > Date.now()) {
+          queuedMoveFrameRef.current = window.requestAnimationFrame(flushQueuedMove);
+          return;
+        }
+        queuedMovePointRef.current = null;
+        dispatchMove(queuedPoint.clone());
+      };
+      queuedMoveFrameRef.current = window.requestAnimationFrame(flushQueuedMove);
+    };
+
     const handleMouseMove = (event: MouseEvent) => {
       pendingPointerSampleRef.current = {
         clientX: event.clientX,
@@ -308,8 +430,36 @@ const InputController: React.FC = () => {
         const targetEntity = getTargetEntityFromEvent(event);
         const isAllowedByRules = !!targetEntity && isTargetAllowedByRules(liveControlledChampion, targetEntity, aim.targetRules);
         const isInRange = !!targetEntity && liveControlledChampion.position.distanceTo(targetEntity.position) <= aim.range + 0.001;
-        const isAllowed = !!targetEntity && isAllowedByRules && isInRange;
+        const isAllowed = !!targetEntity && (aim.slot === 'basicAttack'
+          ? isAllowedByRules
+          : isAllowedByRules && isInRange);
         if (!targetEntity || !isAllowed) {
+          if (aim.slot === 'basicAttack') {
+            const point = getGroundIntersection(event);
+            if (!point || !isPlayablePoint(point) || !meId) {
+              useGameStore.getState().updateSpellAim({
+                hoveredTargetEntityId: targetEntity?.id ?? null,
+                hoveredTargetAllowed: false,
+                targetEntityId: null,
+              });
+              return;
+            }
+            const didSend = emitBasicAttack({
+              requestId: `attack_move_${Date.now()}`,
+              casterId: meId,
+              slot: 'basicAttack',
+              skillId: aim.skillId,
+              targetPoint: { x: point.x, y: point.y, z: point.z },
+              clientTimestamp: Date.now(),
+            });
+            if (!didSend) {
+              return;
+            }
+            useGameStore.getState().exitSpellAim();
+            setChampionMoveTarget(meId, point, 'mouse');
+            showMoveIndicator(point);
+            return;
+          }
           useGameStore.getState().updateSpellAim({
             hoveredTargetEntityId: targetEntity?.id ?? null,
             hoveredTargetAllowed: false,
@@ -322,6 +472,21 @@ const InputController: React.FC = () => {
           hoveredTargetAllowed: true,
           targetEntityId: targetEntity.id,
         });
+        if (aim.slot === 'basicAttack' && meId) {
+          const didSend = emitBasicAttack({
+            requestId: `basic_attack_${Date.now()}`,
+            casterId: meId,
+            slot: 'basicAttack',
+            skillId: aim.skillId,
+            targetEntityId: targetEntity.id,
+            clientTimestamp: Date.now(),
+          });
+          if (!didSend) {
+            return;
+          }
+          useGameStore.getState().exitSpellAim();
+          return;
+        }
         return;
       }
 
@@ -336,35 +501,20 @@ const InputController: React.FC = () => {
       }
       /* 死亡状态禁止移动 */
       if (liveControlledChampion?.isDead) return;
-      /* 施法动画锁定期间禁止移动 */
-      if (liveControlledChampion && liveControlledChampion.movementLockedUntil > Date.now()) return;
       if ((cameraMode !== 'playerLocked' && cameraMode !== 'spectatorFollow') || debugFreeCamera) return;
       if (!meId || cameraMode !== 'playerLocked') return;
       const point = getGroundIntersection(event);
       if (!point) return;
       if (!isPlayablePoint(point)) return;
       flashClickCursor();
-      if (multiplayerEnabled) {
-        /* 立即驱动本地预测器，角色无需等待服务端回传即可开始移动 */
-        const predictor = getLocalPredictor();
-        const moveMeta = issueMoveSequence();
-        const sentMoveSequence = predictor ? predictor.seq + 1 : moveMeta.clientMoveSequence;
-        const didSend = emitMoveCommand({
-          championId: meId,
-          target: { x: point.x, y: point.y, z: point.z },
-          targetPoint: { x: point.x, y: point.y, z: point.z },
-          inputMode: 'mouse' as const,
-          clientMoveSequence: sentMoveSequence,
-          clientTimestamp: moveMeta.clientTimestamp,
-        });
-        if (!didSend) {
-          return;
-        }
-        commitMoveSequence(sentMoveSequence, moveMeta.clientTimestamp);
-        predictor?.issueMove(point.x, point.z);
+      /* 施法动画锁定期间缓存最后一次右键移动，解锁后立即重放。 */
+      if (liveControlledChampion && liveControlledChampion.movementLockedUntil > Date.now()) {
+        queuedMovePointRef.current = point.clone();
+        showMoveIndicator(point);
+        scheduleQueuedMoveReplay();
+        return;
       }
-      setChampionMoveTarget(meId, point, 'mouse');
-      showMoveIndicator(point);
+      dispatchMove(point);
     };
 
     const handleContextMenu = (event: MouseEvent) => {
@@ -449,6 +599,11 @@ const InputController: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
+      if (queuedMoveFrameRef.current !== null) {
+        window.cancelAnimationFrame(queuedMoveFrameRef.current);
+        queuedMoveFrameRef.current = null;
+      }
+      queuedMovePointRef.current = null;
       if (pointerFrameRequestRef.current !== null) {
         window.cancelAnimationFrame(pointerFrameRequestRef.current);
         pointerFrameRequestRef.current = null;

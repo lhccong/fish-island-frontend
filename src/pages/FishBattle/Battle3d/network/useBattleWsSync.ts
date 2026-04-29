@@ -28,6 +28,7 @@ import type {
   AnimationClipRequest,
   ChampionState,
   DamageAppliedEvent,
+  DeathOccurredEvent,
   FloatingCombatTextState,
   HealAppliedEvent,
   HealthRelicState,
@@ -85,8 +86,8 @@ interface ServerChampionSnapshot {
   modelUrl?: string;
   playerName: string;
   team: string;
-  position: { x: number; y: number; z: number };
-  rotation: number;
+  position?: { x: number; y: number; z: number } | null;
+  rotation?: number | null;
   moveTarget?: { x: number; y: number; z: number } | null;
   moveSpeed?: number;
   hp: number;
@@ -94,6 +95,12 @@ interface ServerChampionSnapshot {
   mp: number;
   maxMp: number;
   level?: number;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  damageDealt?: number;
+  damageTaken?: number;
+  respawnTimer?: number;
   isDead?: boolean;
   animationState?: string;
   shield?: number;
@@ -114,6 +121,10 @@ interface ServerChampionSnapshot {
   baseMr?: number;
   attackRange?: number;
   attackSpeed?: number;
+  attackMoveTarget?: { x: number; y: number; z: number } | null;
+  currentAttackTargetId?: string | null;
+  currentAttackTargetType?: 'champion' | 'minion' | 'structure' | null;
+  visibleInSnapshot?: boolean;
 }
 
 /** 服务端 combatSnapshot 载荷 */
@@ -124,6 +135,8 @@ interface CombatSnapshotPayload {
   serverTime: number;
   serverTick: number;
   gameTimer: number;
+  blueKills?: number;
+  redKills?: number;
   champions: ServerChampionSnapshot[];
   minions?: ServerMinionSnapshot[];
   towers?: ServerTowerSnapshot[];
@@ -167,8 +180,10 @@ interface SpellCastStartedPayload {
 /** 防御塔攻击事件 */
 interface TowerAttackEvent {
   targetId?: string;
+  targetType?: string;
   towerId?: string;
   towerPosition?: { x: number; y: number; z: number };
+  skillId?: string;
   impactDelayMs?: number;
 }
 
@@ -178,6 +193,19 @@ interface MinionAttackEvent {
   targetType?: string;
   minionId?: string;
   minionType?: string;
+  attackerPosition?: { x: number; y: number; z: number };
+  skillId?: string;
+  castInstanceId?: string;
+  impactDelayMs?: number;
+}
+
+interface HeroAttackEvent {
+  casterId?: string;
+  castInstanceId?: string;
+  skillId?: string;
+  slot?: string;
+  targetId?: string;
+  targetType?: string;
   attackerPosition?: { x: number; y: number; z: number };
   impactDelayMs?: number;
 }
@@ -324,12 +352,15 @@ function toAnimationClipRequest(raw: unknown): AnimationClipRequest | null {
   }
 
   const value = raw as Record<string, unknown>;
-  if (typeof value.clipName !== 'string') {
+  const clipName = typeof value.clipName === 'string'
+    ? value.clipName
+    : (typeof value.actionSlot === 'string' ? value.actionSlot : null);
+  if (!clipName) {
     return null;
   }
 
   return {
-    clipName: value.clipName,
+    clipName,
     loop: typeof value.loop === 'boolean' ? value.loop : undefined,
     playbackRate: typeof value.playbackRate === 'number' ? value.playbackRate : undefined,
     reset: typeof value.reset === 'boolean' ? value.reset : undefined,
@@ -432,7 +463,7 @@ function mapBattleStateToChampions(
     // 支持新格式（myChampionId）和旧格式（odm/userId 匹配）
     const isMe = myChampionId
       ? champId === myChampionId
-      : (currentUserId != null && sc.odm === currentUserId);
+      : (currentUserId !== null && currentUserId !== undefined && sc.odm === currentUserId);
     const baseHp = sc.hp ?? hero?.baseHp ?? 1000;
     const baseMp = sc.mp ?? hero?.baseMp ?? 500;
 
@@ -458,6 +489,8 @@ function mapBattleStateToChampions(
       kills: 0,
       deaths: 0,
       assists: 0,
+      damageDealt: 0,
+      damageTaken: 0,
       isDead: false,
       respawnTimer: 0,
       animationState: (sc.animationState ?? 'idle') as ChampionState['animationState'],
@@ -475,6 +508,7 @@ function mapBattleStateToChampions(
       statusEffects: [],
       activeCastInstanceId: null,
       activeCastPhase: 'idle' as const,
+      visibleInSnapshot: true,
     } as ChampionState;
   });
 }
@@ -490,6 +524,7 @@ function mapServerChampionToLocal(
 ): ChampionState {
   const now = Date.now();
   const isMe = serverChampion.id === controlledChampionId;
+  const isVisibleInSnapshot = serverChampion.visibleInSnapshot !== false;
   const isDead = serverChampion.isDead ?? (serverChampion as unknown as Record<string, unknown>).dead as boolean ?? false;
   const serverMovementLockedUntil = ((serverChampion as unknown as Record<string, unknown>).movementLockedUntil as number | undefined) ?? 0;
   const shouldPreserveActiveLock = !!previousChampion
@@ -502,23 +537,27 @@ function mapServerChampionToLocal(
     : serverMovementLockedUntil;
 
   /* ── 位置：直接使用服务端权威位置 ── */
-  const sx = serverChampion.position.x;
-  const sy = serverChampion.position.y;
-  const sz = serverChampion.position.z;
   let position: THREE.Vector3;
-  if (previousChampion) {
-    const pp = previousChampion.position;
-    const dx = pp.x - sx, dy = pp.y - sy, dz = pp.z - sz;
-    position = (dx * dx + dy * dy + dz * dz) <= 1e-6
-      ? pp
-      : new THREE.Vector3(sx, sy, sz);
+  if (!isVisibleInSnapshot || !serverChampion.position) {
+    position = previousChampion?.position ?? new THREE.Vector3();
   } else {
-    position = new THREE.Vector3(sx, sy, sz);
+    const sx = serverChampion.position.x;
+    const sy = serverChampion.position.y;
+    const sz = serverChampion.position.z;
+    if (previousChampion) {
+      const pp = previousChampion.position;
+      const dx = pp.x - sx, dy = pp.y - sy, dz = pp.z - sz;
+      position = (dx * dx + dy * dy + dz * dz) <= 1e-6
+        ? pp
+        : new THREE.Vector3(sx, sy, sz);
+    } else {
+      position = new THREE.Vector3(sx, sy, sz);
+    }
   }
 
   /* ── moveTarget ── */
   let moveTarget: THREE.Vector3 | null = null;
-  if (serverChampion.moveTarget) {
+  if (isVisibleInSnapshot && serverChampion.moveTarget) {
     const mx = serverChampion.moveTarget.x;
     const my = serverChampion.moveTarget.y ?? 0;
     const mz = serverChampion.moveTarget.z;
@@ -534,17 +573,34 @@ function mapServerChampionToLocal(
     moveTarget = null;
   }
 
+  /* ── attackMoveTarget ── */
+  let attackMoveTarget: THREE.Vector3 | null = null;
+  if (isVisibleInSnapshot && serverChampion.attackMoveTarget) {
+    const mx = serverChampion.attackMoveTarget.x;
+    const my = serverChampion.attackMoveTarget.y ?? 0;
+    const mz = serverChampion.attackMoveTarget.z;
+    const prevAmt = previousChampion?.attackMoveTarget;
+    if (prevAmt) {
+      const dmx = prevAmt.x - mx, dmy = prevAmt.y - my, dmz = prevAmt.z - mz;
+      attackMoveTarget = (dmx * dmx + dmy * dmy + dmz * dmz) <= 1e-6 ? prevAmt : new THREE.Vector3(mx, my, mz);
+    } else {
+      attackMoveTarget = new THREE.Vector3(mx, my, mz);
+    }
+  }
+
   /* ── 朝向 ── */
-  const rotation = serverChampion.rotation ?? previousChampion?.rotation ?? 0;
+  const rotation = isVisibleInSnapshot && typeof serverChampion.rotation === 'number'
+    ? serverChampion.rotation
+    : previousChampion?.rotation ?? 0;
 
   /* ── animationState ── */
-  const serverHasMoveTarget = !!serverChampion.moveTarget;
   const resolvedAnimationState: ChampionState['animationState'] = (() => {
     if (isDead) return 'death' as const;
+    if (!isVisibleInSnapshot) {
+      return previousChampion?.animationState ?? 'idle';
+    }
     const serverAnimState = (serverChampion.animationState ?? 'idle') as ChampionState['animationState'];
-    if (!serverHasMoveTarget && serverAnimState === 'run') {
-      // fall through to idle
-    } else if (serverAnimState !== 'idle') {
+    if (serverAnimState !== 'idle') {
       return serverAnimState;
     }
     const prevIdleStartedAt = previousChampion?.idleStartedAt ?? now;
@@ -582,11 +638,13 @@ function mapServerChampionToLocal(
     mp: serverChampion.mp,
     maxMp: serverChampion.maxMp,
     level: serverChampion.level ?? 1,
-    kills: 0,
-    deaths: 0,
-    assists: 0,
+    kills: serverChampion.kills ?? 0,
+    deaths: serverChampion.deaths ?? 0,
+    assists: serverChampion.assists ?? 0,
+    damageDealt: serverChampion.damageDealt ?? previousChampion?.damageDealt ?? 0,
+    damageTaken: serverChampion.damageTaken ?? previousChampion?.damageTaken ?? 0,
     isDead,
-    respawnTimer: 0,
+    respawnTimer: serverChampion.respawnTimer ?? 0,
     animationState: resolvedAnimationState,
     animationClipRequest: previousChampion?.animationClipRequest ?? null,
     isMe,
@@ -594,7 +652,7 @@ function mapServerChampionToLocal(
     moveTarget,
     inputMode: ((isMe && nextMovementLockedUntil > now)
       ? 'idle'
-      : (serverChampion.inputMode ?? (moveTarget ? 'mouse' : 'idle'))) as ChampionState['inputMode'],
+      : ((isVisibleInSnapshot ? serverChampion.inputMode : previousChampion?.inputMode) ?? (moveTarget ? 'mouse' : 'idle'))) as ChampionState['inputMode'],
     movementLockedUntil: nextMovementLockedUntil,
     idleStartedAt,
     lastVoiceRequest: previousChampion?.lastVoiceRequest ?? null,
@@ -610,6 +668,10 @@ function mapServerChampionToLocal(
     baseMr: serverChampion.baseMr ?? previousChampion?.baseMr,
     attackRange: serverChampion.attackRange ?? previousChampion?.attackRange,
     attackSpeed: serverChampion.attackSpeed ?? previousChampion?.attackSpeed,
+    attackMoveTarget,
+    currentAttackTargetId: serverChampion.currentAttackTargetId ?? null,
+    currentAttackTargetType: serverChampion.currentAttackTargetType ?? null,
+    visibleInSnapshot: isVisibleInSnapshot,
   };
 }
 
@@ -696,6 +758,10 @@ function resolveEventPosition(
   if (minion) return { x: minion.position.x, y: minion.position.y, z: minion.position.z };
   const tower = store.towers.find((t) => t.id === targetEntityId);
   if (tower) return { x: tower.position.x, y: tower.position.y ?? 0, z: tower.position.z };
+  const nexus = store.nexuses.find((n) => n.id === targetEntityId);
+  if (nexus) return { x: nexus.position.x, y: nexus.position.y ?? 0, z: nexus.position.z };
+  const inhibitor = store.inhibitors.find((i) => i.id === targetEntityId);
+  if (inhibitor) return { x: inhibitor.position.x, y: inhibitor.position.y ?? 0, z: inhibitor.position.z };
   return { x: 0, y: 0, z: 0 };
 }
 
@@ -1063,7 +1129,7 @@ export function useBattleWsSync(
       /* ── LocalPlayerPredictor 对账（reconciliation）── */
       if (controlledChampionId) {
         const controlledSnapshot = payload.champions.find((c) => c.id === controlledChampionId);
-        if (controlledSnapshot) {
+        if (controlledSnapshot && controlledSnapshot.position) {
           const predictor = localPredictorRef.current;
           const serverMoveSpeed = controlledSnapshot.moveSpeed ?? 3;
           if (!predictor.initialized) {
@@ -1106,6 +1172,9 @@ export function useBattleWsSync(
           })
         : store.healthRelics;
       useGameStore.setState({
+        gameTimer: payload.gameTimer ?? store.gameTimer,
+        blueKills: typeof payload.blueKills === 'number' ? payload.blueKills : store.blueKills,
+        redKills: typeof payload.redKills === 'number' ? payload.redKills : store.redKills,
         champions: newChampions,
         minions: mapServerMinionsToLocal(payload.minions),
         towers: mapServerTowersToLocal(payload.towers),
@@ -1287,9 +1356,14 @@ export function useBattleWsSync(
         const flightTimeMs = impactDelayMs ?? Math.max(100, (dist / flightSpeed) * 1000);
         useGameStore.getState().upsertProjectile({
           projectileId,
-          skillId: 'tower_attack',
+          skillId: event.skillId ?? 'tower_attack',
           ownerId: towerId,
+          targetEntityId: targetId,
+          targetType: event.targetType,
+          visualType: 'tower',
+          tracking: 'homing',
           position: startPos,
+          impactPosition: targetPosition,
           direction: { x: dirX, y: 0, z: dirZ },
           speed: flightSpeed,
           radius: 0.25,
@@ -1328,9 +1402,15 @@ export function useBattleWsSync(
         const speed = impactDelayMs > 0 ? dist / (impactDelayMs / 1000) : 12;
         useGameStore.getState().upsertProjectile({
           projectileId,
-          skillId: 'minion_basic',
+          skillId: event.skillId ?? 'minion_basic',
           ownerId: minionId,
+          castInstanceId: event.castInstanceId,
+          targetEntityId: targetId,
+          targetType: event.targetType,
+          visualType: 'minion',
+          tracking: 'linear',
           position: { x: attackerPosition.x, y: attackerPosition.y + 1.1, z: attackerPosition.z },
+          impactPosition: targetPosition,
           direction: { x: dirX, y: dirY, z: dirZ },
           speed,
           radius: 0.16,
@@ -1343,6 +1423,54 @@ export function useBattleWsSync(
       }
     };
 
+    const handleHeroAttack = (payload: Record<string, unknown>) => {
+      if (!shouldConsumeOrderedEvent(payload, lastProcessedEventSequenceRef)) {
+        return;
+      }
+      const event = payload as HeroAttackEvent;
+      const targetId = event.targetId;
+      const attackerPosition = event.attackerPosition;
+      const casterId = event.casterId;
+      if (!targetId || !attackerPosition || !casterId) {
+        return;
+      }
+      const targetPosition = resolveEventPosition(undefined, targetId);
+      const now = Date.now();
+      const impactDelayMs = typeof event.impactDelayMs === 'number' && event.impactDelayMs > 0
+        ? event.impactDelayMs
+        : 120;
+      const projectileId = `hero_proj_${casterId}_${now}`;
+      const startPos = { x: attackerPosition.x, y: attackerPosition.y + 1.45, z: attackerPosition.z };
+      const dx = targetPosition.x - startPos.x;
+      const dy = (targetPosition.y + 0.95) - startPos.y;
+      const dz = targetPosition.z - startPos.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      const speed = impactDelayMs > 0 ? Math.max(8, dist / (impactDelayMs / 1000)) : 8;
+      const dirX = dist > 0.01 ? dx / dist : 0;
+      const dirY = dist > 0.01 ? dy / dist : 0;
+      const dirZ = dist > 0.01 ? dz / dist : 1;
+      useGameStore.getState().upsertProjectile({
+        projectileId,
+        castInstanceId: event.castInstanceId,
+        skillId: event.skillId ?? 'template_basic_attack',
+        ownerId: casterId,
+        targetEntityId: targetId,
+        targetType: event.targetType,
+        visualType: 'hero',
+        tracking: 'homing',
+        position: startPos,
+        impactPosition: targetPosition,
+        direction: { x: dirX, y: dirY, z: dirZ },
+        speed,
+        radius: 0.22,
+        createdAt: now,
+        expiresAt: now + impactDelayMs + 50,
+      });
+      setTimeout(() => {
+        useGameStore.getState().removeProjectile(projectileId);
+      }, impactDelayMs + 60);
+    };
+
     const handleDamageApplied = (payload: Record<string, unknown>) => {
       if (!shouldConsumeOrderedEvent(payload, lastProcessedEventSequenceRef)) {
         return;
@@ -1351,16 +1479,24 @@ export function useBattleWsSync(
       const amount = typeof event.amount === 'number' ? event.amount : 0;
       const targetEntityId = event.targetEntityId;
       const position = resolveEventPosition(event.position, targetEntityId);
+      const store = useGameStore.getState();
+      const sourceIsChampion = !!event.sourceEntityId
+        && store.champions.some((champion) => champion.id === event.sourceEntityId);
+      const shouldShowFloatingDamage = event.targetType === 'champion'
+        || ((event.targetType === 'minion' || event.targetType === 'structure') && sourceIsChampion);
       const now = Date.now();
-      pushFloatingCombatText({
-        kind: 'damage',
-        targetEntityId,
-        position,
-        amount,
-        skillId: event.skillId,
-        createdAt: now,
-        expiresAt: now + 900,
-      });
+      if (shouldShowFloatingDamage) {
+        pushFloatingCombatText({
+          kind: 'damage',
+          targetEntityId,
+          targetType: event.targetType,
+          position,
+          amount,
+          skillId: event.skillId,
+          createdAt: now,
+          expiresAt: now + 900,
+        });
+      }
     };
 
     const handleHealApplied = (payload: Record<string, unknown>) => {
@@ -1375,6 +1511,7 @@ export function useBattleWsSync(
       pushFloatingCombatText({
         kind: 'heal',
         targetEntityId,
+        targetType: 'champion',
         position,
         amount,
         skillId: event.skillId,
@@ -1398,11 +1535,39 @@ export function useBattleWsSync(
       pushFloatingCombatText({
         kind: 'shield',
         targetEntityId,
+        targetType: 'champion',
         position,
         amount: delta,
         skillId: event.skillId,
         createdAt: now,
         expiresAt: now + 900,
+      });
+    };
+
+    const handleDeathOccurred = (payload: Record<string, unknown>) => {
+      if (!shouldConsumeOrderedEvent(payload, lastProcessedEventSequenceRef)) {
+        return;
+      }
+      const event = payload as unknown as DeathOccurredEvent;
+      const store = useGameStore.getState();
+      const victim = store.champions.find((champion) => champion.id === event.targetEntityId);
+      if (!victim) {
+        return;
+      }
+      const killer = event.killerId
+        ? store.champions.find((champion) => champion.id === event.killerId)
+        : undefined;
+      store.pushKillFeedEntry({
+        id: event.eventId,
+        killerId: event.killerId,
+        killerName: killer?.playerName,
+        killerTeam: event.killerTeam,
+        victimId: victim.id,
+        victimName: victim.playerName,
+        victimTeam: event.victimTeam ?? victim.team,
+        assistIds: event.assistIds ?? [],
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 5000,
       });
     };
 
@@ -1431,11 +1596,13 @@ export function useBattleWsSync(
     client.on('champion:voice', handleChampionVoice);
     client.on('spellStageTransition', handleSpellStageTransition);
     client.on('spellStageChanged', handleSpellStageTransition);
+    client.on('heroAttack', handleHeroAttack);
     client.on('towerAttack', handleTowerAttack);
     client.on('minionAttack', handleMinionAttack);
     client.on('DamageApplied', handleDamageApplied);
     client.on('HealApplied', handleHealApplied);
     client.on('ShieldChanged', handleShieldChanged);
+    client.on('DeathOccurred', handleDeathOccurred);
 
     /* 监听本地加载完成：当 isLoading 变为 false 时发送 battle:sceneReady */
     const checkAndEmitSceneReady = () => {
@@ -1490,11 +1657,13 @@ export function useBattleWsSync(
       client.off('champion:voice', handleChampionVoice);
       client.off('spellStageTransition', handleSpellStageTransition);
       client.off('spellStageChanged', handleSpellStageTransition);
+      client.off('heroAttack', handleHeroAttack);
       client.off('towerAttack', handleTowerAttack);
       client.off('minionAttack', handleMinionAttack);
       client.off('DamageApplied', handleDamageApplied);
       client.off('HealApplied', handleHealApplied);
       client.off('ShieldChanged', handleShieldChanged);
+      client.off('DeathOccurred', handleDeathOccurred);
       clockSync.stop();
       unregisterSyncInstances();
       snapshotBufferRef.current.clear();

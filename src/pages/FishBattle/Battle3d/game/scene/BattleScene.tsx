@@ -19,6 +19,7 @@ import Minions from '../entities/Minions';
 import InputController from '../systems/InputController';
 import ProjectileRenderer from '../effects/ProjectileRenderer';
 import FloatingCombatTextSystem from '../effects/FloatingCombatTextSystem';
+import SpellAimIndicator from '../effects/SpellAimIndicator';
 import WorldDebugLabels from '../debug/WorldDebugLabels';
 import { Perf } from 'r3f-perf';
 import { RENDER_CONFIG } from '../../config/renderConfig';
@@ -100,6 +101,8 @@ const BattleScene: React.FC = () => {
 
       {/* 投射物弹道 */}
       <ProjectileRenderer />
+
+      <SpellAimIndicator />
 
       <Suspense fallback={null}>
         <FloatingCombatTextSystem />

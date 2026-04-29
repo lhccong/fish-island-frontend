@@ -54,6 +54,9 @@ function resolveActionSlotFromRequest(
   }
 
   const clipName = request.clipName.toLowerCase();
+  if (clipName === 'basicattack' || clipName === 'basic_attack' || clipName === 'basicattack01' || clipName === 'basicattack1') {
+    return 'basicAttack';
+  }
   return (Object.entries(actionClips ?? {}) as Array<[HeroActionSlot, string | undefined]>).find(([, configuredClip]) => {
     if (!configuredClip) {
       return false;
@@ -139,6 +142,10 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
   const multiplayerInitializedRef = useRef(false);
   /** 追踪上一帧 moveTarget 引用，用于远端英雄停止吸附。 */
   const lastMoveTargetRef = useRef<THREE.Vector3 | null>(null);
+  /** 上一帧 isDead 状态，用于检测复活并强制 snap 位置/动画。 */
+  const wasDeadRef = useRef(state.isDead);
+  /** 死亡开始时间戳，用于在死亡超过一定时间后隐藏尸体（防止保留的不可见英雄残留）。 */
+  const deathStartTimeRef = useRef<number>(state.isDead ? Date.now() : 0);
 
   const heroConfig = useMemo(() => getHeroConfig(state.heroId), [state.heroId]);
   const heroAnimationConfig = useMemo(() => getHeroAnimationConfig(state.heroId), [state.heroId]);
@@ -529,6 +536,7 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
       rotation: number;
       moveTarget: THREE.Vector3 | null;
       isMoving: boolean;
+      movementLocked: boolean;
     } | null = null;
     const getLocalPredictedState = () => {
       if (localPredictedState) {
@@ -666,6 +674,20 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
           renderPositionRef.current.lerp(targetPositionRef.current, 1 - Math.exp(-remoteSmoothingFactor * delta));
         }
 
+        /* 复活检测：isDead 从 true→false 时强制 snap 位置到服务端位置，
+         * 避免尸体残留在原地。同时重置动画剪辑请求防止死亡动画残留。 */
+        const justRespawned = wasDeadRef.current && !state.isDead;
+        wasDeadRef.current = state.isDead;
+        if (justRespawned) {
+          renderPositionRef.current.copy(state.position);
+          targetPositionRef.current.copy(state.position);
+          renderRotationRef.current = state.rotation;
+          lastClipRequestKeyRef.current = null;
+          if (animControllerRef.current) {
+            animControllerRef.current.cancelClip?.();
+          }
+        }
+
         groupRef.current.position.copy(renderPositionRef.current);
 
         /* ── 旋转平滑：向 moveTarget 或施法方向旋转 ── */
@@ -725,20 +747,28 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
 
     if (animControllerRef.current) {
       const clipRequest = state.animationClipRequest;
+      const resolvedActionSlot = resolveActionSlotFromRequest(clipRequest, heroAnimationConfig?.actionClips);
+      const resolvedClipRequest = clipRequest
+        ? {
+          ...clipRequest,
+          clipName: resolvedActionSlot && heroAnimationConfig?.actionClips?.[resolvedActionSlot]
+            ? heroAnimationConfig.actionClips[resolvedActionSlot] as string
+            : clipRequest.clipName,
+        }
+        : null;
       const clipRequestKey = clipRequest
         ? `${clipRequest.clipName}|${clipRequest.loop ? 'loop' : 'once'}|${clipRequest.reset === false ? 'keep' : 'reset'}|${clipRequest.nonce ?? 'stable'}`
         : null;
 
       if (clipRequest && clipRequestKey !== lastClipRequestKeyRef.current) {
-        const played = animControllerRef.current.playClip(clipRequest as AnimationClipRequest);
+        const played = animControllerRef.current.playClip(resolvedClipRequest as AnimationClipRequest);
         if (played) {
           lastClipRequestKeyRef.current = clipRequestKey;
         }
       }
 
       if (!clipRequest) {
-        // animControllerRef.current.cancelClip();
-        // lastClipRequestKeyRef.current = null;
+        lastClipRequestKeyRef.current = null;
       }
 
       /* 本地玩家：用 predictor 移动状态覆盖服务端动画，消除快照延迟导致的滑步 */
@@ -746,22 +776,31 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
       if (GAME_CONFIG.multiplayer.enabled && state.isMe && !state.isDead) {
         const predicted = localPredictedState ?? getLocalPredictedState();
         if (predicted) {
-          if (predicted.isMoving && (effectiveAnimState === 'idle' || effectiveAnimState === 'standby')) {
+          const hasActiveMoveIntent = predicted.moveTarget !== null
+            || !!state.moveTarget
+            || !!state.attackMoveTarget
+            || !!state.currentAttackTargetId;
+          const shouldForceRunAfterLockClip = hasActiveMoveIntent
+            && predicted.isMoving
+            && !predicted.movementLocked
+            && !!clipRequest?.lockMovement
+            && state.movementLockedUntil <= Date.now();
+          if (shouldForceRunAfterLockClip) {
             effectiveAnimState = 'run';
-          } else if (!predicted.isMoving && effectiveAnimState === 'run') {
-            effectiveAnimState = 'idle';
+          } else if (hasActiveMoveIntent && predicted.isMoving && (effectiveAnimState === 'idle' || effectiveAnimState === 'standby')) {
+            effectiveAnimState = 'run';
           }
         }
       }
 
-      // if (
-      //   clipRequest
-      //   && clipRequest.lockMovement
-      //   && effectiveAnimState === 'run'
-      //   && state.movementLockedUntil <= Date.now()
-      // ) {
-      //   animControllerRef.current.cancelClip();
-      // }
+      if (
+        clipRequest
+        && clipRequest.lockMovement
+        && effectiveAnimState === 'run'
+        && state.movementLockedUntil <= Date.now()
+      ) {
+        animControllerRef.current.cancelClip();
+      }
 
       animControllerRef.current.setState(effectiveAnimState);
       animControllerRef.current.update(delta);
@@ -814,18 +853,31 @@ const Champion: React.FC<ChampionProps> = ({ championId }) => {
       }
     }
 
+    /* ── 死亡计时：跟踪死亡开始时间，用于尸体自动消失 ── */
+    if (state.isDead && deathStartTimeRef.current === 0) {
+      deathStartTimeRef.current = Date.now();
+    } else if (!state.isDead) {
+      deathStartTimeRef.current = 0;
+    }
+
     /* ── 简易视野系统：敌方英雄超出视距时隐藏 ── */
     if (groupRef.current) {
       if (!state.isMe && GAME_CONFIG.vision.enabled) {
         const myChampion = useGameStore.getState().champions.find((c) => c.isMe);
         if (myChampion) {
-          const dx = renderPositionRef.current.x - myChampion.position.x;
-          const dz = renderPositionRef.current.z - myChampion.position.z;
-          const distSq = dx * dx + dz * dz;
           const isAlly = state.team === myChampion.team;
+
           if (isAlly) {
             groupRef.current.visible = true;
+          } else if (!state.visibleInSnapshot) {
+            /* 服务端视野过滤后不在快照中的敌方英雄：直接隐藏。
+             * 这些英雄仅为计分板保留数据，不应在 3D 场景中渲染。 */
+            groupRef.current.visible = false;
           } else {
+            /* 快照中可见的敌方英雄：辅以客户端距离检查（迟滞避免边缘闪烁） */
+            const dx = renderPositionRef.current.x - myChampion.position.x;
+            const dz = renderPositionRef.current.z - myChampion.position.z;
+            const distSq = dx * dx + dz * dz;
             const wasVisible = groupRef.current.visible;
             const sightR = GAME_CONFIG.vision.sightRadius;
             const hyst = GAME_CONFIG.vision.hysteresis;

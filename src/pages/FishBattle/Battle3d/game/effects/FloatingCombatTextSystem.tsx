@@ -5,20 +5,73 @@ import * as THREE from 'three';
 import type { FloatingCombatTextState } from '../../types/game';
 import { useGameStore } from '../../store/useGameStore';
 
-function getTextColor(kind: FloatingCombatTextState['kind']): string {
-  switch (kind) {
-    case 'heal':
-      return '#4ade80';
-    case 'shield':
-      return '#7dd3fc';
+function getTextColor(text: FloatingCombatTextState): string {
+  if (text.kind === 'heal') return '#22ff77';
+  if (text.kind === 'shield') return '#60d5ff';
+  switch (text.targetType) {
+    case 'structure':
+      return '#ffcc44';
+    case 'minion':
+      return '#ffffff';
     default:
-      return '#ef4444';
+      return '#ff4444';
   }
 }
 
 function formatCombatText(text: FloatingCombatTextState): string {
-  const prefix = text.kind === 'heal' ? '+' : text.kind === 'shield' ? '盾+' : '-';
+  const prefix = text.kind === 'heal' ? '+' : text.kind === 'shield' ? '+' : '-';
   return `${prefix}${Math.round(text.amount)}`;
+}
+
+function getBaseYOffset(targetType?: FloatingCombatTextState['targetType']): number {
+  switch (targetType) {
+    case 'minion':
+      return 2.0;
+    case 'structure':
+      return 5.2;
+    default:
+      return 3.0;
+  }
+}
+
+function getFloatDistance(targetType?: FloatingCombatTextState['targetType']): number {
+  switch (targetType) {
+    case 'minion':
+      return 0.7;
+    case 'structure':
+      return 1.0;
+    default:
+      return 1.0;
+  }
+}
+
+function getFontSize(text: FloatingCombatTextState): number {
+  switch (text.targetType) {
+    case 'minion':
+      return text.kind === 'damage' ? 0.5 : 0.48;
+    case 'structure':
+      return text.kind === 'damage' ? 0.9 : 0.85;
+    default:
+      return text.kind === 'damage' ? 0.72 : 0.68;
+  }
+}
+
+function getOutlineColor(text: FloatingCombatTextState): string {
+  if (text.kind === 'heal') return '#0a3320';
+  if (text.kind === 'shield') return '#0a2a3a';
+  if (text.targetType === 'structure') return '#3a2800';
+  return '#1a0000';
+}
+
+function getOutlineWidth(text: FloatingCombatTextState): number {
+  switch (text.targetType) {
+    case 'minion':
+      return 0.06;
+    case 'structure':
+      return 0.04;
+    default:
+      return 0.055;
+  }
 }
 
 const FloatingCombatTextItem: React.FC<{ text: FloatingCombatTextState }> = ({ text }) => {
@@ -44,12 +97,18 @@ const FloatingCombatTextItem: React.FC<{ text: FloatingCombatTextState }> = ({ t
     const totalLifetime = Math.max(1, text.expiresAt - text.createdAt);
     const progress = THREE.MathUtils.clamp((Date.now() - text.createdAt) / totalLifetime, 0, 1);
     group.position.copy(basePosition);
-    /* 头顶偏移：基础 2.2（约英雄模型头顶），向上飘动 1.2 */
-    group.position.y += 2.2 + progress * 1.2;
+    group.position.y += getBaseYOffset(text.targetType) + progress * getFloatDistance(text.targetType);
 
     const material = Array.isArray(label.material) ? label.material[0] : label.material;
     if (material) {
       material.transparent = true;
+      material.alphaTest = 0.01;
+      material.depthTest = false;
+      material.depthWrite = false;
+      material.polygonOffset = true;
+      material.polygonOffsetFactor = -8;
+      material.polygonOffsetUnits = -8;
+      material.toneMapped = false;
       /* 非线性透明度：前 60% 几乎不透明，后 40% 快速消散 */
       const fadeStart = 0.6;
       material.opacity = progress < fadeStart ? 1 : 1 - ((progress - fadeStart) / (1 - fadeStart));
@@ -66,13 +125,13 @@ const FloatingCombatTextItem: React.FC<{ text: FloatingCombatTextState }> = ({ t
       <Billboard follow lockX={false} lockY={false} lockZ={false}>
         <Text
           ref={textRef}
-          fontSize={text.kind === 'damage' ? 0.88 : 0.85}
-          color={getTextColor(text.kind)}
+          fontSize={getFontSize(text)}
+          color={getTextColor(text)}
           anchorX="center"
           anchorY="middle"
-          outlineWidth={0.05}
-          outlineColor="#0f172a"
-          renderOrder={20}
+          outlineWidth={getOutlineWidth(text)}
+          outlineColor={getOutlineColor(text)}
+          renderOrder={999}
           fontWeight="bold"
         >
           {formatCombatText(text)}

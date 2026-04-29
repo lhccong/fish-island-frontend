@@ -6,6 +6,9 @@ import EmoteWheel from './EmoteWheel';
 import SpectatorPanel from './SpectatorPanel';
 import DisconnectOverlay from './DisconnectOverlay';
 import Minimap from './Minimap';
+import ScoreboardPanel from './ScoreboardPanel';
+import KillFeed from './KillFeed';
+import RespawnOverlay from './RespawnOverlay';
 
 interface HUDProps {
   viewportRef: RefObject<HTMLDivElement>;
@@ -20,10 +23,13 @@ const HUD: React.FC<HUDProps> = ({ viewportRef }) => {
     <div className="absolute inset-0 z-[50] pointer-events-none" style={{ pointerEvents: 'none' }}>
       <div style={{ pointerEvents: 'auto' }}>
         <TopBar />
+        <ScoreboardPanel />
+        <KillFeed />
         <SpectatorPanel />
         <EmoteWheel viewportRef={viewportRef} />
         <Minimap position="top-left" />
         <SkillBar />
+        <RespawnOverlay />
       </div>
       {/* 断线遮罩（最高层级，阻断所有交互） */}
       <DisconnectOverlay />

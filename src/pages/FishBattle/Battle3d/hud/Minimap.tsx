@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { MAP_CONFIG, TEAM_COLORS } from '../config/mapConfig';
 
@@ -11,8 +11,8 @@ interface MinimapProps {
 }
 
 /** 小地图像素尺寸 */
-const MINIMAP_WIDTH = 236;
-const MINIMAP_HEIGHT = 92;
+const MINIMAP_WIDTH = 280;
+const MINIMAP_HEIGHT = 130;
 /** 内边距 */
 const PADDING = 8;
 
@@ -22,7 +22,7 @@ function worldToMinimap(worldX: number, worldZ: number): { x: number; y: number 
   const rangeX = bounds.maxX - bounds.minX;
   const rangeZ = bounds.maxZ - bounds.minZ;
   if (rangeX <= 0 || rangeZ <= 0) return { x: MINIMAP_WIDTH / 2, y: MINIMAP_HEIGHT / 2 };
-  const margin = 4;
+  const margin = 6;
   const x = Math.max(margin, Math.min(MINIMAP_WIDTH - margin, ((worldX - bounds.minX) / rangeX) * MINIMAP_WIDTH));
   const y = Math.max(margin, Math.min(MINIMAP_HEIGHT - margin, ((worldZ - bounds.minZ) / rangeZ) * MINIMAP_HEIGHT));
   return { x, y };
@@ -30,15 +30,62 @@ function worldToMinimap(worldX: number, worldZ: number): { x: number; y: number 
 
 const Minimap: React.FC<MinimapProps> = ({ position = 'top-left' }) => {
   const champions = useGameStore((s) => s.champions);
+  const championAvatarUrls = useGameStore((s) => s.championAvatarUrls);
   const towers = useGameStore((s) => s.towers);
   const nexuses = useGameStore((s) => s.nexuses);
+  const inhibitors = useGameStore((s) => s.inhibitors);
+  const healthRelics = useGameStore((s) => s.healthRelics);
+  const [isAllyPanelCollapsed, setIsAllyPanelCollapsed] = useState(false);
   const me = useMemo(() => champions.find((c) => c.isMe) ?? null, [champions]);
   const myTeam = me?.team ?? null;
+
+  const allyRoster = useMemo(() => {
+    const allies = champions
+      .filter((champion) => !myTeam || champion.team === myTeam)
+      .sort((a, b) => {
+        if (a.isMe !== b.isMe) {
+          return a.isMe ? -1 : 1;
+        }
+        return a.playerName.localeCompare(b.playerName, 'zh-CN');
+      })
+      .slice(0, 5)
+      .map((champion) => ({
+        ...champion,
+        avatarUrl: championAvatarUrls[champion.id] ?? null,
+        hpRatio: champion.maxHp > 0 ? Math.max(0, Math.min(1, champion.hp / champion.maxHp)) : 0,
+        mpRatio: champion.maxMp > 0 ? Math.max(0, Math.min(1, champion.mp / champion.maxMp)) : 0,
+      }));
+
+    while (allies.length < 5) {
+      allies.push({
+        id: `empty-${allies.length}`,
+        playerName: '等待加入',
+        avatarUrl: null,
+        hpRatio: 0,
+        mpRatio: 0,
+        level: 0,
+        isDead: false,
+        respawnTimer: 0,
+        isMe: false,
+        hp: 0,
+        maxHp: 0,
+        mp: 0,
+        maxMp: 0,
+      } as typeof allies[number]);
+    }
+
+    return allies;
+  }, [champions, championAvatarUrls, myTeam]);
 
   /** 英雄标记点 */
   const heroMarkers = useMemo(() => {
     return champions
-      .filter((c) => !c.isDead)
+      .filter((c) => {
+        if (c.isDead) return false;
+        /* 敌方英雄不在服务端快照视野中时，小地图也不显示 */
+        if (!c.isMe && !!myTeam && c.team !== myTeam && !c.visibleInSnapshot) return false;
+        return true;
+      })
       .map((c) => {
         const pos = worldToMinimap(c.position.x, c.position.z);
         const isMe = c.isMe;
@@ -87,13 +134,38 @@ const Minimap: React.FC<MinimapProps> = ({ position = 'top-left' }) => {
     });
   }, [nexuses]);
 
+  const inhibitorMarkers = useMemo(() => {
+    return inhibitors
+      .filter((inhibitor) => !inhibitor.isDestroyed && inhibitor.hp > 0)
+      .map((inhibitor) => {
+        const pos = worldToMinimap(inhibitor.position.x, inhibitor.position.z);
+        const teamColor = inhibitor.team === 'blue' ? TEAM_COLORS.blue.css : TEAM_COLORS.red.css;
+        return {
+          id: inhibitor.id,
+          x: pos.x,
+          y: pos.y,
+          color: teamColor,
+        };
+      });
+  }, [inhibitors]);
+
+  const relicMarkers = useMemo(() => {
+    return healthRelics
+      .filter((relic) => relic.isAvailable)
+      .map((relic) => {
+        const pos = worldToMinimap(relic.position.x, relic.position.z);
+        return {
+          id: relic.id,
+          x: pos.x,
+          y: pos.y,
+        };
+      });
+  }, [healthRelics]);
+
   /** 位置样式 */
   const positionStyle: React.CSSProperties = position === 'top-left'
     ? { top: PADDING, left: PADDING }
     : { bottom: 60, right: PADDING };
-
-  const myTeamLabel = myTeam === 'blue' ? '蓝色方' : myTeam === 'red' ? '红色方' : '未分配';
-  const sideChipColor = myTeam === 'blue' ? TEAM_COLORS.blue.css : myTeam === 'red' ? TEAM_COLORS.red.css : '#cbd5e1';
 
   return (
     <div
@@ -101,39 +173,29 @@ const Minimap: React.FC<MinimapProps> = ({ position = 'top-left' }) => {
       style={positionStyle}
     >
       <div
-        className="relative overflow-hidden backdrop-blur-sm"
+        className="relative flex flex-col gap-2 backdrop-blur-sm"
         style={{
           width: MINIMAP_WIDTH,
-          borderRadius: 14,
-          background: 'linear-gradient(180deg, rgba(10,12,16,0.96) 0%, rgba(16,20,26,0.94) 100%)',
-          border: '1px solid rgba(202,138,4,0.22)',
-          boxShadow: '0 12px 34px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 20px rgba(202,138,4,0.04)',
         }}
       >
         <div
           className="relative"
           style={{
-            width: MINIMAP_WIDTH,
-            height: MINIMAP_HEIGHT,
-            background: 'radial-gradient(circle at 50% 50%, rgba(40,48,58,0.34) 0%, rgba(8,10,14,0.96) 100%)',
+            borderRadius: 14,
+            background: 'linear-gradient(180deg, rgba(10,12,16,0.96) 0%, rgba(16,20,26,0.94) 100%)',
+            border: '1px solid rgba(202,138,4,0.22)',
+            boxShadow: '0 12px 34px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 20px rgba(202,138,4,0.04)',
           }}
         >
-          <div
-            className="absolute left-3 top-3 rounded-full px-3 py-1 text-[10px]"
-            style={{
-              color: sideChipColor,
-              background: 'rgba(8,10,14,0.72)',
-              border: `1px solid ${sideChipColor}44`,
-              boxShadow: `0 0 16px ${sideChipColor}22`,
-              fontWeight: 700,
-              letterSpacing: '0.14em',
-              fontFamily: '"Share Tech Mono", "Fira Code", Consolas, monospace',
-              zIndex: 5,
-            }}
-          >
-            我方 // {myTeamLabel}
-          </div>
-
+        <div
+          className="relative"
+          style={{
+            width: MINIMAP_WIDTH,
+            height: MINIMAP_HEIGHT,
+            background: 'linear-gradient(135deg, rgba(20,28,38,0.96) 0%, rgba(14,18,26,0.98) 50%, rgba(20,28,38,0.96) 100%)',
+            overflow: 'hidden',
+          }}
+        >
           <svg
             width={MINIMAP_WIDTH}
             height={MINIMAP_HEIGHT}
@@ -170,15 +232,20 @@ const Minimap: React.FC<MinimapProps> = ({ position = 'top-left' }) => {
               fill="url(#scanLines)"
             />
             <rect
-              x={10}
-              y={MINIMAP_HEIGHT * 0.2}
-              width={MINIMAP_WIDTH - 20}
-              height={MINIMAP_HEIGHT * 0.6}
-              rx={MINIMAP_HEIGHT * 0.16}
+              x={4}
+              y={4}
+              width={MINIMAP_WIDTH - 8}
+              height={MINIMAP_HEIGHT - 8}
+              rx={10}
               fill="url(#laneGlow)"
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth={1}
+              stroke="rgba(255,255,255,0.04)"
+              strokeWidth={0.5}
             />
+            {/* 草丛区域提示 */}
+            <rect x={MINIMAP_WIDTH * 0.30} y={4} width={MINIMAP_WIDTH * 0.10} height={MINIMAP_HEIGHT * 0.22} rx={4} fill="rgba(74,222,128,0.06)" />
+            <rect x={MINIMAP_WIDTH * 0.60} y={MINIMAP_HEIGHT * 0.78} width={MINIMAP_WIDTH * 0.10} height={MINIMAP_HEIGHT * 0.22} rx={4} fill="rgba(74,222,128,0.06)" />
+            <rect x={MINIMAP_WIDTH * 0.42} y={MINIMAP_HEIGHT * 0.20} width={MINIMAP_WIDTH * 0.16} height={MINIMAP_HEIGHT * 0.14} rx={4} fill="rgba(74,222,128,0.05)" />
+            <rect x={MINIMAP_WIDTH * 0.42} y={MINIMAP_HEIGHT * 0.66} width={MINIMAP_WIDTH * 0.16} height={MINIMAP_HEIGHT * 0.14} rx={4} fill="rgba(74,222,128,0.05)" />
             <line
               x1={MINIMAP_WIDTH / 2}
               y1={10}
@@ -244,6 +311,42 @@ const Minimap: React.FC<MinimapProps> = ({ position = 'top-left' }) => {
             />
           ))}
 
+          {inhibitorMarkers.map((inhibitor) => (
+            <div
+              key={inhibitor.id}
+              className="absolute"
+              style={{
+                left: inhibitor.x - 4,
+                top: inhibitor.y - 4,
+                width: 8,
+                height: 8,
+                background: inhibitor.color,
+                borderRadius: 2,
+                border: '1px solid rgba(255,255,255,0.3)',
+                boxShadow: `0 0 6px ${inhibitor.color}`,
+                zIndex: 3,
+              }}
+            />
+          ))}
+
+          {relicMarkers.map((relic) => (
+            <div
+              key={relic.id}
+              className="absolute"
+              style={{
+                left: relic.x - 3,
+                top: relic.y - 3,
+                width: 6,
+                height: 6,
+                background: '#7cf0c8',
+                borderRadius: '50%',
+                border: '1px solid rgba(230,255,247,0.9)',
+                boxShadow: '0 0 8px rgba(124,240,200,0.85)',
+                zIndex: 3,
+              }}
+            />
+          ))}
+
           {heroMarkers.map((h) => (
             <div
               key={h.id}
@@ -286,6 +389,221 @@ const Minimap: React.FC<MinimapProps> = ({ position = 'top-left' }) => {
             className="pointer-events-none absolute bottom-2 right-2 h-3 w-3 border-b border-r"
             style={{ borderColor: 'rgba(202,138,4,0.45)' }}
           />
+        </div>
+        </div>
+
+        <div
+          className="pointer-events-auto overflow-hidden"
+          style={{
+            borderRadius: 12,
+            background: 'linear-gradient(180deg, rgba(7,10,16,0.96) 0%, rgba(13,18,28,0.94) 100%)',
+            border: '1px solid rgba(212,175,55,0.24)',
+            boxShadow: '0 10px 28px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setIsAllyPanelCollapsed((prev) => !prev)}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px 12px',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.24em',
+              color: 'rgba(229, 214, 163, 0.9)',
+              background: 'linear-gradient(180deg, rgba(37,45,64,0.78) 0%, rgba(15,20,30,0.82) 100%)',
+              borderBottom: isAllyPanelCollapsed ? 'none' : '1px solid rgba(212,175,55,0.14)',
+              cursor: 'pointer',
+            }}
+          >
+            <span>队友状态</span>
+            <span style={{ fontSize: 12, letterSpacing: 'normal' }}>{isAllyPanelCollapsed ? '▸' : '▾'}</span>
+          </button>
+          {!isAllyPanelCollapsed && (
+          <div style={{ padding: '8px' }}>
+            {allyRoster.map((ally, index) => {
+              const isPlaceholder = ally.level === 0 && ally.maxHp === 0 && ally.maxMp === 0 && ally.playerName === '等待加入';
+              return (
+                <div
+                  key={ally.id}
+                  style={{
+                    display: 'grid',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '6px 8px',
+                    gridTemplateColumns: '20px minmax(0, 1fr) auto',
+                    borderRadius: 8,
+                    background: ally.isMe
+                      ? 'linear-gradient(90deg, rgba(68,95,148,0.36) 0%, rgba(16,23,36,0.9) 100%)'
+                      : index % 2 === 0
+                        ? 'rgba(255,255,255,0.028)'
+                        : 'rgba(255,255,255,0.014)',
+                    border: ally.isMe ? '1px solid rgba(130,180,255,0.28)' : '1px solid transparent',
+                    opacity: isPlaceholder ? 0.42 : 1,
+                  }}
+                >
+                  <div
+                    className="relative"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      width: 20,
+                      height: 20,
+                      padding: 1,
+                      borderRadius: 4,
+                      background: 'linear-gradient(180deg, rgba(43,53,70,0.95) 0%, rgba(20,24,34,0.98) 100%)',
+                      border: `1px solid ${ally.isMe ? 'rgba(250,220,110,0.7)' : 'rgba(118,146,192,0.32)'}`,
+                      boxShadow: ally.isMe ? '0 0 12px rgba(250,220,110,0.18)' : 'none',
+                      filter: ally.isDead ? 'grayscale(1) brightness(0.72)' : 'none',
+                    }}
+                  >
+                    {ally.avatarUrl ? (
+                      <img
+                        src={ally.avatarUrl}
+                        alt={ally.playerName}
+                        className="object-cover"
+                        style={{ width: '100%', height: '100%', borderRadius: 3 }}
+                      />
+                    ) : (
+                      <span className="text-[10px] text-[#d7e2f1]">🐟</span>
+                    )}
+                  </div>
+
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        lineHeight: 1,
+                        color: ally.isMe ? '#fff2be' : '#dbe6f6',
+                      }}
+                    >
+                      {ally.isMe ? `${ally.playerName}` : ally.playerName}
+                    </div>
+                    <div style={{ marginTop: 6, display: 'grid', rowGap: 3 }}>
+                      <div
+                        className="relative"
+                        style={{
+                          position: 'relative',
+                          height: 12,
+                          overflow: 'hidden',
+                          borderRadius: 999,
+                          background: ally.isDead
+                            ? 'linear-gradient(180deg, rgba(72,28,28,0.96) 0%, rgba(41,16,16,0.98) 100%)'
+                            : 'linear-gradient(180deg, rgba(88,20,20,0.96) 0%, rgba(56,14,14,0.98) 100%)',
+                          border: '1px solid rgba(255,255,255,0.14)',
+                          boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.14), inset 0 -1px 2px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.18)',
+                        }}
+                      >
+                        <div
+                          className="absolute"
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            bottom: 0,
+                            left: 0,
+                            width: ally.hpRatio > 0 ? `max(12%, ${ally.hpRatio * 100}%)` : '0%',
+                            borderRadius: 999,
+                            background: ally.isDead
+                              ? 'linear-gradient(90deg, #7a2d2d 0%, #4b1717 100%)'
+                              : 'linear-gradient(90deg, #15803d 0%, #22c55e 45%, #4ade80 75%, #bbf7d0 100%)',
+                            boxShadow: ally.isDead ? 'none' : '0 0 12px rgba(61, 231, 107, 0.55)',
+                          }}
+                        />
+                        <div
+                          className="absolute"
+                          style={{
+                            position: 'absolute',
+                            left: 1,
+                            right: 1,
+                            top: 1,
+                            height: 2,
+                            borderRadius: 999,
+                            background: 'rgba(255,255,255,0.3)',
+                            opacity: ally.isDead ? 0.08 : 0.55,
+                          }}
+                        />
+                        {!isPlaceholder && !ally.isDead && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 9,
+                              fontWeight: 700,
+                              lineHeight: 1,
+                              color: '#f7fff9',
+                              textShadow: '0 1px 2px rgba(0,0,0,0.95)',
+                              pointerEvents: 'none',
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {Math.round(ally.hp)}/{Math.round(ally.maxHp)}
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        className="relative"
+                        style={{
+                          position: 'relative',
+                          height: 4,
+                          overflow: 'hidden',
+                          borderRadius: 999,
+                          background: 'linear-gradient(180deg, rgba(13,19,36,0.96) 0%, rgba(7,10,20,0.98) 100%)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                        }}
+                      >
+                        <div
+                          className="absolute"
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            bottom: 0,
+                            left: 0,
+                            width: ally.mpRatio > 0 ? `max(10%, ${ally.mpRatio * 100}%)` : '0%',
+                            borderRadius: 999,
+                            background: 'linear-gradient(90deg, #2f67d8 0%, #4f9cff 60%, #85c4ff 100%)',
+                            boxShadow: '0 0 8px rgba(92, 165, 255, 0.35)',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      minWidth: 26,
+                      textAlign: 'right',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {isPlaceholder ? (
+                      <span style={{ color: 'rgba(184,196,214,0.55)' }}>--</span>
+                    ) : ally.isDead ? (
+                      <span style={{ color: '#ff8d8d' }}>{Math.ceil(ally.respawnTimer)}s</span>
+                    ) : (
+                      <span style={{ color: 'transparent' }}>.</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          )}
         </div>
       </div>
     </div>

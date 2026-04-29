@@ -4,11 +4,15 @@ import { request } from '@umijs/max';
  * 摸鱼大乱斗 REST API 服务
  */
 
+type FishBattleObjectResponse<T = Record<string, unknown>> = BaseResponse<T>;
+type FishBattleListResponse<T = Record<string, unknown>> = BaseResponse<T[]>;
+type FishBattleBooleanResponse = BaseResponse<boolean>;
+
 /* ==================== 英雄 ==================== */
 
 /** 获取英雄列表 GET /fishBattle/hero/list */
 export async function fishBattleHeroList() {
-  return request<API.BaseResponseListObject>('/api/fishBattle/hero/list', {
+  return request<FishBattleListResponse>('/api/fishBattle/hero/list', {
     method: 'GET',
   });
 }
@@ -21,7 +25,7 @@ export async function fishBattleRoomCreate(body: {
   gameMode?: string;
   aiFillEnabled?: boolean;
 }) {
-  return request<API.BaseResponseObject>('/api/fishBattle/room/create', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/room/create', {
     method: 'POST',
     data: body,
   });
@@ -29,14 +33,14 @@ export async function fishBattleRoomCreate(body: {
 
 /** 获取等待中的房间列表 GET /fishBattle/room/list */
 export async function fishBattleRoomList() {
-  return request<API.BaseResponseListObject>('/api/fishBattle/room/list', {
+  return request<FishBattleListResponse>('/api/fishBattle/room/list', {
     method: 'GET',
   });
 }
 
 /** 分页查询活跃房间（等待中+对局中） GET /fishBattle/room/page */
 export async function fishBattleRoomPage(params: { current?: number; pageSize?: number }) {
-  return request<API.BaseResponseObject>('/api/fishBattle/room/page', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/room/page', {
     method: 'GET',
     params,
   });
@@ -44,7 +48,7 @@ export async function fishBattleRoomPage(params: { current?: number; pageSize?: 
 
 /** 获取房间详情 GET /fishBattle/room/:roomCode */
 export async function fishBattleRoomDetail(roomCode: string) {
-  return request<API.BaseResponseObject>(`/api/fishBattle/room/${roomCode}`, {
+  return request<FishBattleObjectResponse>(`/api/fishBattle/room/${roomCode}`, {
     method: 'GET',
   });
 }
@@ -55,7 +59,7 @@ export async function fishBattleRoomJoin(body: {
   team: string;
   slotIndex: number;
 }) {
-  return request<API.BaseResponseObject>('/api/fishBattle/room/join', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/room/join', {
     method: 'POST',
     data: body,
   });
@@ -67,7 +71,7 @@ export async function fishBattleRoomSwitchTeam(body: {
   team: string;
   slotIndex: number;
 }) {
-  return request<API.BaseResponseObject>('/api/fishBattle/room/switchTeam', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/room/switchTeam', {
     method: 'POST',
     data: body,
   });
@@ -75,14 +79,14 @@ export async function fishBattleRoomSwitchTeam(body: {
 
 /** 查询当前用户是否有进行中的对局（断线重连用） GET /fishBattle/room/myActiveRoom */
 export async function fishBattleRoomMyActiveRoom() {
-  return request<API.BaseResponseObject>('/api/fishBattle/room/myActiveRoom', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/room/myActiveRoom', {
     method: 'GET',
   });
 }
 
 /** 查询进行中的房间列表 GET /fishBattle/room/inProgress */
 export async function fishBattleRoomInProgress() {
-  return request<API.BaseResponseListObject>('/api/fishBattle/room/inProgress', {
+  return request<FishBattleListResponse>('/api/fishBattle/room/inProgress', {
     method: 'GET',
   });
 }
@@ -91,7 +95,7 @@ export async function fishBattleRoomInProgress() {
 
 /** 获取对局详情 GET /fishBattle/game/:gameId */
 export async function fishBattleGameDetail(gameId: number) {
-  return request<API.BaseResponseObject>(`/api/fishBattle/game/${gameId}`, {
+  return request<FishBattleObjectResponse>(`/api/fishBattle/game/${gameId}`, {
     method: 'GET',
   });
 }
@@ -101,7 +105,7 @@ export async function fishBattleGameLike(body: {
   gameId: number;
   targetUserId: number;
 }) {
-  return request<API.BaseResponseBoolean>('/api/fishBattle/game/like', {
+  return request<FishBattleBooleanResponse>('/api/fishBattle/game/like', {
     method: 'POST',
     data: body,
   });
@@ -111,21 +115,21 @@ export async function fishBattleGameLike(body: {
 
 /** 获取地图场景配置 GET /fishBattle/config/map */
 export async function fishBattleMapConfig() {
-  return request<API.BaseResponseObject>('/api/fishBattle/config/map', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/config/map', {
     method: 'GET',
   });
 }
 
 /** 获取游戏主配置 GET /fishBattle/config/game */
 export async function fishBattleGameConfig() {
-  return request<API.BaseResponseObject>('/api/fishBattle/config/game', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/config/game', {
     method: 'GET',
   });
 }
 
 /** 根据configKey获取配置 GET /fishBattle/config/:configKey */
 export async function fishBattleConfig(configKey: string) {
-  return request<API.BaseResponseObject>(`/api/fishBattle/config/${configKey}`, {
+  return request<FishBattleObjectResponse>(`/api/fishBattle/config/${configKey}`, {
     method: 'GET',
   });
 }
@@ -134,7 +138,7 @@ export async function fishBattleConfig(configKey: string) {
 
 /** 获取个人总体统计 GET /fishBattle/stats/user */
 export async function fishBattleStatsUser() {
-  return request<API.BaseResponseObject>('/api/fishBattle/stats/user', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/stats/user', {
     method: 'GET',
   });
 }
@@ -144,7 +148,7 @@ export async function fishBattleStatsHistory(params: {
   current?: number;
   pageSize?: number;
 }) {
-  return request<API.BaseResponseObject>('/api/fishBattle/stats/history', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/stats/history', {
     method: 'GET',
     params,
   });
@@ -152,7 +156,7 @@ export async function fishBattleStatsHistory(params: {
 
 /** 获取排行榜 GET /fishBattle/stats/leaderboard */
 export async function fishBattleStatsLeaderboard(params?: { limit?: number }) {
-  return request<API.BaseResponseListObject>('/api/fishBattle/stats/leaderboard', {
+  return request<FishBattleListResponse>('/api/fishBattle/stats/leaderboard', {
     method: 'GET',
     params,
   });
@@ -160,7 +164,7 @@ export async function fishBattleStatsLeaderboard(params?: { limit?: number }) {
 
 /** 获取概览数据 GET /fishBattle/stats/overview */
 export async function fishBattleStatsOverview() {
-  return request<API.BaseResponseObject>('/api/fishBattle/stats/overview', {
+  return request<FishBattleObjectResponse>('/api/fishBattle/stats/overview', {
     method: 'GET',
   });
 }

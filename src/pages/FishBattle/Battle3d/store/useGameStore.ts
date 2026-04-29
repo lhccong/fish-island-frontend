@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
-import type { ActiveEmoteState, AnimationClipRequest, AnimationState, AreaPresentationState, CameraMode, ChampionState, CombatImpactVfxState, EmoteId, FloatingCombatTextState, HealthRelicState, InhibitorState, InputMode, MinionState, MoveIndicatorState, MultiplayerDiagnosticsState, MultiplayerSessionState, MultiplayerSnapshot, NexusState, PlayerSessionAssignment, ProjectilePresentationState, SerializedVector3, SkillRuntimeState, SpellAimState, SpellCastPhase, SpellSlot, StatusEffectViewState, TowerState, VoicePlaybackRequest } from '../types/game';
+import type { ActiveEmoteState, AnimationClipRequest, AnimationState, AreaPresentationState, CameraMode, ChampionState, CombatImpactVfxState, EmoteId, FloatingCombatTextState, HealthRelicState, InhibitorState, InputMode, KillFeedEntry, MinionState, MoveIndicatorState, MultiplayerDiagnosticsState, MultiplayerSessionState, MultiplayerSnapshot, NexusState, PlayerSessionAssignment, ProjectilePresentationState, SerializedVector3, SkillRuntimeState, SpellAimState, SpellCastPhase, SpellSlot, StatusEffectViewState, TowerState, VoicePlaybackRequest } from '../types/game';
 import { GAME_CONFIG } from '../config/gameConfig';
 import type { SkillCastDefinition } from '../config/skillDefinitions';
 import { getHeroConfig } from '../config/heroConfig';
@@ -58,6 +58,8 @@ interface GameStore {
   floatingCombatTexts: FloatingCombatTextState[];
   /** 当前场景中的战斗命中特效列表。 */
   combatImpactVfxes: CombatImpactVfxState[];
+  killFeed: KillFeedEntry[];
+  scoreboardVisible: boolean;
 
   /** 当前技能瞄准状态（null 表示未在瞄准模式）。 */
   spellAimState: SpellAimState | null;
@@ -105,6 +107,9 @@ interface GameStore {
   pushFloatingCombatText: (text: FloatingCombatTextState) => void;
   pushCombatImpactVfx: (vfx: CombatImpactVfxState) => void;
   cleanupExpiredCombatFeedback: () => void;
+  pushKillFeedEntry: (entry: KillFeedEntry) => void;
+  cleanupExpiredKillFeed: () => void;
+  setScoreboardVisible: (visible: boolean) => void;
   upsertCombatStatus: (status: StatusEffectViewState) => void;
   removeCombatStatus: (statusInstanceId?: string, statusId?: string, targetEntityId?: string) => void;
   upsertProjectile: (projectile: ProjectilePresentationState) => void;
@@ -400,8 +405,10 @@ function mergeSnapshotChampions(
   controlledChampionId: string | null,
 ): ChampionState[] {
   const previousChampionMap = new Map(previousChampions.map((champion) => [champion.id, champion]));
+  const snapshotChampionMap = new Map(snapshotChampions.map((c) => [c.id, c]));
 
-  return snapshotChampions.map((snapshotChampion) => {
+  /* 合并快照中存在的英雄 */
+  const merged: ChampionState[] = snapshotChampions.map((snapshotChampion) => {
     const previousChampion = previousChampionMap.get(snapshotChampion.id);
     const nextPosition = toVector3(snapshotChampion.position) ?? new THREE.Vector3();
     const nextMoveTarget = toVector3(snapshotChampion.moveTarget);
@@ -438,6 +445,8 @@ function mergeSnapshotChampions(
       && previousChampion.kills === snapshotChampion.kills
       && previousChampion.deaths === snapshotChampion.deaths
       && previousChampion.assists === snapshotChampion.assists
+      && previousChampion.damageDealt === snapshotChampion.damageDealt
+      && previousChampion.damageTaken === snapshotChampion.damageTaken
       && previousChampion.isDead === snapshotChampion.isDead
       && previousChampion.respawnTimer === snapshotChampion.respawnTimer
       && previousChampion.animationState === snapshotChampion.animationState
@@ -462,6 +471,16 @@ function mergeSnapshotChampions(
       isMe: nextIsMe,
     };
   });
+
+  /* 保留之前存在但当前快照中不可见的英雄（视野过滤导致缺失），
+   * 这样计分板（TAB）始终能展示所有英雄的 KDA 等统计数据。 */
+  for (const prev of previousChampions) {
+    if (!snapshotChampionMap.has(prev.id)) {
+      merged.push(prev);
+    }
+  }
+
+  return merged;
 }
 
 function mergeSnapshotEmotes(
@@ -662,10 +681,12 @@ function createInitialChampions(): ChampionState[] {
       maxHp: hero.baseHp,
       mp: hero.baseMp * (0.4 + Math.random() * 0.6),
       maxMp: hero.baseMp,
-      level: Math.floor(Math.random() * 5) + 5,
-      kills: Math.floor(Math.random() * 6),
-      deaths: Math.floor(Math.random() * 4),
-      assists: Math.floor(Math.random() * 12),
+      level: 1,
+      kills: 0,
+      deaths: 0,
+      assists: 0,
+      damageDealt: 0,
+      damageTaken: 0,
       isDead: false,
       respawnTimer: 0,
       animationState: 'idle',
@@ -778,9 +799,9 @@ function createInitialMinions(): MinionState[] {
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
-  gameTimer: 7 * 60 + 23,
-  blueKills: 12,
-  redKills: 9,
+  gameTimer: 0,
+  blueKills: 0,
+  redKills: 0,
   champions: createInitialChampions(),
   minions: createInitialMinions(),
   towers: createInitialTowers(),
@@ -801,6 +822,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   combatStatuses: [],
   floatingCombatTexts: [],
   combatImpactVfxes: [],
+  killFeed: [],
+  scoreboardVisible: false,
   spellAimState: null,
   localSpellPredictions: {},
   heroSkillsMeta: {},
@@ -973,6 +996,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((state) => ({
       combatImpactVfxes: [...state.combatImpactVfxes, vfx].slice(-48),
     })),
+  pushKillFeedEntry: (entry) =>
+    set((state) => ({
+      killFeed: [...state.killFeed, entry].slice(-8),
+    })),
   cleanupExpiredCombatFeedback: () =>
     set((state) => {
       const now = Date.now();
@@ -986,6 +1013,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
         combatImpactVfxes: nextVfxes,
       };
     }),
+  cleanupExpiredKillFeed: () =>
+    set((state) => {
+      const now = Date.now();
+      const nextKillFeed = state.killFeed.filter((item) => item.expiresAt > now);
+      if (nextKillFeed.length === state.killFeed.length) {
+        return state;
+      }
+      return {
+        killFeed: nextKillFeed,
+      };
+    }),
+  setScoreboardVisible: (visible) => set({ scoreboardVisible: visible }),
   upsertCombatStatus: (status) =>
     set((state) => {
       const nextStatuses = upsertCombatStatusItem(state.combatStatuses, status);
@@ -1102,7 +1141,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
               }
               return {
                 ...champion,
-                animationState: request.fallbackState ?? champion.animationState,
                 animationClipRequest: nextRequest,
                 moveTarget: request.lockMovement ? null : champion.moveTarget,
                 inputMode: request.lockMovement ? 'idle' : champion.inputMode,
@@ -1243,6 +1281,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
               return {
                 ...champion,
                 moveTarget: isLocked ? null : nextTarget,
+                attackMoveTarget: null,
+                currentAttackTargetId: null,
+                currentAttackTargetType: null,
                 inputMode: isLocked ? 'idle' : nextTarget ? inputMode : 'idle',
                 animationState: isLocked
                   ? champion.animationState
@@ -1271,6 +1312,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
           ? {
               ...champion,
               moveTarget: null,
+              attackMoveTarget: null,
+              currentAttackTargetId: null,
+              currentAttackTargetType: null,
               inputMode: 'idle',
               animationState: champion.isDead ? 'death' : 'idle',
               idleStartedAt: Date.now(),
@@ -1547,6 +1591,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       combatStatuses: [],
       floatingCombatTexts: [],
       combatImpactVfxes: [],
+      killFeed: [],
+      scoreboardVisible: false,
       spellAimState: null,
       localSpellPredictions: {},
     })),

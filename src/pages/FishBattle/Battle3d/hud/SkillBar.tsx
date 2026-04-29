@@ -24,13 +24,14 @@ const SLOT_COLOR_MAP: Record<string, string> = {
 const DISPLAY_SLOTS: SpellSlot[] = ['summonerD', 'summonerF'];
 
 /** 可由键盘触发施法的槽位集合 */
-const CASTABLE_SLOTS = new Set<string>(['summonerD', 'summonerF']);
+const CASTABLE_SLOTS = new Set<string>(['summonerD', 'summonerF', 'basicAttack']);
 
 const LOCAL_PREDICTION_BLOCK_TIMEOUT_MS = 5000;
 const SLOT_CAST_GUARD_TIMEOUT_MS = 300;
 
 /** 键盘按键 → 技能槽位反向映射 */
 const KEY_TO_SLOT: Record<string, SpellSlot> = {
+  a: 'basicAttack',
   d: 'summonerD',
   f: 'summonerF',
 };
@@ -72,6 +73,7 @@ interface LocalCastPayload {
   targetPoint?: { x: number; y: number; z: number };
   targetDirection?: { x: number; y: number; z: number };
   clientMoveSequence?: number;
+  clientPosition?: { x: number; z: number };
   clientTimestamp: number;
 }
 
@@ -82,7 +84,6 @@ const SkillBar: React.FC = () => {
   const heroSkillsMeta = useGameStore((s) => s.heroSkillsMeta);
   const summonerSpellsMeta = useGameStore((s) => s.summonerSpellsMeta);
   const championSummonerSpells = useGameStore((s) => s.championSummonerSpells);
-  const championAvatarUrls = useGameStore((s) => s.championAvatarUrls);
   const smartCastEnabled = useGameStore((s) => s.smartCastEnabled);
   const me = useMemo(() => champions.find((c) => c.isMe) ?? null, [champions]);
   const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
@@ -109,9 +110,7 @@ const SkillBar: React.FC = () => {
   }, [championSummonerSpells, me]);
 
   const hasBlockingLocalPrediction = useCallback((slot: SpellSlot) => {
-    if (!me) {
-      return false;
-    }
+    if (!me) return false;
     const now = Date.now();
     /* 安全阀1：localSpellPredictions 尚存未清理的记录 */
     const hasPendingPrediction = Object.values(useGameStore.getState().localSpellPredictions)
@@ -125,12 +124,6 @@ const SkillBar: React.FC = () => {
     if (lastCastTs && now - lastCastTs <= SLOT_CAST_GUARD_TIMEOUT_MS) return true;
     return false;
   }, [me]);
-
-  /** 英雄头像 URL */
-  const heroAvatarUrl = useMemo(() => {
-    if (!me?.id) return '';
-    return championAvatarUrls[me.id] ?? '';
-  }, [me, championAvatarUrls]);
 
   /** 当前受控英雄的技能状态列表（按显示顺序），合并后端元数据 */
   const displaySkills = useMemo(() => {
@@ -278,7 +271,7 @@ const SkillBar: React.FC = () => {
           predictor.issueStop();
           /* 使用 heroConfig 中的 durationMs 作为临时锁定时长，
            * 后端 spellCastStarted 回来后 applyLocalMovementLock 会用精确值覆盖。 */
-          const estimatedLockMs = actionConfig?.durationMs ?? 500;
+          const estimatedLockMs = actionConfig?.durationMs ?? 300;
           predictor.applyMovementLock(estimatedLockMs);
         }
         /* 同步清除 store 中的移动目标，使英雄视觉上立即停止 */
@@ -402,16 +395,15 @@ const SkillBar: React.FC = () => {
         if (castDef.targetType === 'target_unit') {
           const mousePos = useGameStore.getState().lastMouseWorldPosition;
           if (mousePos) {
-            /* 搜索范围：英雄 + 小兵，英雄优先 */
+            /* 搜索范围：英雄 + 小兵，按鼠标接近程度稳定选取，不做英雄硬优先 */
             const allChampions = useGameStore.getState().champions;
             const allMinions = useGameStore.getState().minions;
             const TARGET_PICK_RADIUS = 2.5;
             let bestTarget: TargetableEntity | null = null;
             let bestDistSq = TARGET_PICK_RADIUS * TARGET_PICK_RADIUS;
-            let bestIsChampion = false;
-            const candidates: (TargetableEntity & { _isChampion: boolean })[] = [
-              ...allChampions.map((c) => ({ ...c, _isChampion: true })),
-              ...allMinions.map((m) => ({ ...m, statusEffects: [] as { statusId: string }[], _isChampion: false })),
+            const candidates: TargetableEntity[] = [
+              ...allChampions,
+              ...allMinions.map((m) => ({ ...m, statusEffects: [] as { statusId: string }[] })),
             ];
             for (const candidate of candidates) {
               if (!isTargetAllowedByRules(me, candidate, castDef.targetRules)) continue;
@@ -421,11 +413,17 @@ const SkillBar: React.FC = () => {
               if (distSq < bestDistSq) {
                 const castDistSq = (candidate.position.x - me.position.x) ** 2 + (candidate.position.z - me.position.z) ** 2;
                 if (castDistSq <= (castDef.range + 0.5) ** 2) {
-                  /* 同距离内英雄优先 */
-                  if (bestTarget && bestIsChampion && !candidate._isChampion && bestDistSq - distSq < 1) continue;
                   bestDistSq = distSq;
                   bestTarget = candidate;
-                  bestIsChampion = candidate._isChampion;
+                  continue;
+                }
+              }
+              if (bestTarget && Math.abs(distSq - bestDistSq) < 0.16) {
+                const candidateCastDistSq = (candidate.position.x - me.position.x) ** 2 + (candidate.position.z - me.position.z) ** 2;
+                const bestCastDistSq = (bestTarget.position.x - me.position.x) ** 2 + (bestTarget.position.z - me.position.z) ** 2;
+                if (candidateCastDistSq < bestCastDistSq && candidateCastDistSq <= (castDef.range + 0.5) ** 2) {
+                  bestDistSq = distSq;
+                  bestTarget = candidate;
                 }
               }
             }
@@ -515,7 +513,7 @@ const SkillBar: React.FC = () => {
    * 这样可以避免 HUD 与场景层同时各自发请求，保证单体技能确认路径唯一。
    */
   useEffect(() => {
-    if (!spellAimState || spellAimState.targetType !== 'target_unit' || !spellAimState.targetEntityId) {
+    if (!spellAimState || spellAimState.slot === 'basicAttack' || spellAimState.targetType !== 'target_unit' || !spellAimState.targetEntityId) {
       return;
     }
     if (executeCast(spellAimState.slot, spellAimState)) {
@@ -559,6 +557,9 @@ const SkillBar: React.FC = () => {
   const aimingSlot = spellAimState?.slot ?? null;
   const aimHintText = useMemo(() => {
     if (spellAimState?.targetType === 'target_unit') {
+      if (spellAimState.slot === 'basicAttack') {
+        return '左键点敌方单位攻击 · 点地面攻击移动 · 右键/ESC取消';
+      }
       return '左键点敌方单位确认 · 右键/ESC取消';
     }
     return '左键确认 · 右键/ESC取消';

@@ -9,12 +9,13 @@ import StructureHealthBar from './StructureHealthBar';
 
 /** 单个小水晶（兵营水晶 / Inhibitor） */
 const Inhibitor: React.FC<{
+  id: string;
   position: [number, number, number];
   team: 'blue' | 'red';
   hp: number;
   maxHp: number;
   isDestroyed: boolean;
-}> = ({ position, team, hp, maxHp, isDestroyed }) => {
+}> = ({ id, position, team, hp, maxHp, isDestroyed }) => {
   /** 小水晶内核 mesh 引用，用于旋转动画。 */
   const coreRef = useRef<THREE.Mesh>(null);
   /** 小水晶光环 mesh 引用，用于旋转动画。 */
@@ -46,7 +47,7 @@ const Inhibitor: React.FC<{
   });
 
   return (
-    <group position={position}>
+    <group position={position} userData={{ entityType: 'structure', structureId: id, structureKind: 'inhibitor', team, isDead: isDestroyed }}>
       <FacilityAsset
         modelPath={activeAsset.modelPath}
         targetHeight={activeAsset.targetHeight}
@@ -116,6 +117,7 @@ const Inhibitors: React.FC = () => {
       {inhibitors.map((inh) => (
         <Inhibitor
           key={inh.id}
+          id={inh.id}
           position={[inh.position.x, inh.position.y, inh.position.z]}
           team={inh.team}
           hp={inh.hp}

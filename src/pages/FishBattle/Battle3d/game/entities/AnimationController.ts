@@ -30,6 +30,11 @@ export class AnimationController {
     }
 
     this.currentMode = 'state';
+    /* 重置去抖状态：clip 结束后首次状态切换不应被陈旧的 debounce 数据误拦。
+     * 否则 clip 期间存储的 currentState 与 clip 前的 previousState 可能形成
+     * 伪乒乓模式，导致 handleFinished 之后的第一次 setState 被错误跳过。 */
+    this.lastStateChangeTime = 0;
+
     const fallbackAction = this.resolveStateAction(this.currentState);
     if (!fallbackAction) {
       return;

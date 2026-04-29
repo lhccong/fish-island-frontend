@@ -39,7 +39,7 @@ export interface SkillCastDefinition {
 
 /** 英雄 ID → 普攻施法参数定义 的映射表（仅 basicAttack）。 */
 const HERO_BASIC_ATTACK_DEFINITIONS: Record<string, SkillCastDefinition> = {
-  annie: { skillId: 'annie_basic_attack', slot: 'basicAttack', name: '普攻', targetType: 'target_unit', range: 7, targetRules: { enemyOnly: true, allowSelf: false } },
+  annie: { skillId: 'annie_basic_attack', slot: 'basicAttack', name: '普攻', targetType: 'target_unit', range: 0, targetRules: { enemyOnly: true, allowSelf: false } },
 };
 
 const SUMMONER_SPELL_DEFINITIONS: Record<string, SkillCastDefinition> = {
@@ -99,9 +99,19 @@ const FALLBACK_BASIC_ATTACK: SkillCastDefinition = {
   slot: 'basicAttack',
   name: '普攻',
   targetType: 'target_unit',
-  range: 3.5,
+  range: 0,
   targetRules: { enemyOnly: true, allowSelf: false },
 };
+
+function resolveLiveBasicAttackRange(heroId: string, fallbackRange: number): number {
+  const state = useGameStore.getState();
+  const controlledChampionId = state.multiplayerSession.controlledChampionId;
+  const liveChampion = controlledChampionId
+    ? state.champions.find((champion) => champion.id === controlledChampionId && champion.heroId === heroId)
+    : state.champions.find((champion) => champion.isMe && champion.heroId === heroId);
+  const liveRange = liveChampion?.attackRange;
+  return typeof liveRange === 'number' && Number.isFinite(liveRange) && liveRange > 0 ? liveRange : fallbackRange;
+}
 
 /**
  * 获取指定英雄指定技能槽位的施法参数定义。
@@ -127,10 +137,15 @@ export function getSkillCastDefinition(
   /* 优先从 store 读取后端下发的技能施法参数（单一数据源） */
   const serverDefs = useGameStore.getState().heroSkillCastDefs[heroId];
   if (serverDefs?.[slot]) {
-    return serverDefs[slot];
+    const def = serverDefs[slot];
+    if (slot === 'basicAttack') {
+      return { ...def, range: resolveLiveBasicAttackRange(heroId, def.range) };
+    }
+    return def;
   }
   if (slot === 'basicAttack') {
-    return HERO_BASIC_ATTACK_DEFINITIONS[heroId] ?? FALLBACK_BASIC_ATTACK;
+    const fallback = HERO_BASIC_ATTACK_DEFINITIONS[heroId] ?? FALLBACK_BASIC_ATTACK;
+    return { ...fallback, range: resolveLiveBasicAttackRange(heroId, fallback.range) };
   }
   return null;
 }
