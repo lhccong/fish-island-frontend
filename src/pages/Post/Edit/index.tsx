@@ -116,7 +116,7 @@ const PostEdit: React.FC = () => {
         }
       } catch (error) {
         message.error('获取帖子详情失败');
-        history.push('/post');
+        history.push('/moments/post');
       }
     };
 

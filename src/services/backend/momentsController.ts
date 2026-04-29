@@ -47,7 +47,7 @@ export async function listCommentsUsingPost(
   });
 }
 
-/** 删除朋友圈动态 POST /api/moments/delete */
+/** 删除朋友圈动态（本人或管理员） POST /api/moments/delete */
 export async function deleteMomentUsingPost(
   body: API.DeleteRequest,
   options?: { [key: string]: any },
@@ -58,6 +58,21 @@ export async function deleteMomentUsingPost(
       'Content-Type': 'application/json',
     },
     data: body,
+    ...(options || {}),
+  });
+}
+
+/** 查询朋友圈动态详情 GET /api/moments/detail */
+export async function getMomentDetailUsingGet(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.getMomentDetailUsingGETParams,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseMomentsVO_>('/api/moments/detail', {
+    method: 'GET',
+    params: {
+      ...params,
+    },
     ...(options || {}),
   });
 }
@@ -98,6 +113,36 @@ export async function publishMomentUsingPost(
   options?: { [key: string]: any },
 ) {
   return request<API.BaseResponseLong_>('/api/moments/publish', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 打赏朋友圈动态（消耗 usedPoints） POST /api/moments/reward */
+export async function rewardMomentUsingPost(
+  body: API.MomentsRewardRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/moments/reward', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 修改朋友圈动态（本人或管理员） POST /api/moments/update */
+export async function updateMomentUsingPost(
+  body: API.MomentsUpdateRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/moments/update', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

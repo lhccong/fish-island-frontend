@@ -202,7 +202,7 @@ const PostCreate: React.FC = () => {
       if (result.code === 0) {
         message.success('帖子发布成功');
         setShowDetailsModal(false);
-        history.push('/post');
+        history.push('/moments/post');
       } else {
         message.error(result.message || '发布失败，请重试');
       }
@@ -221,7 +221,7 @@ const PostCreate: React.FC = () => {
           <Button
             type="link"
             icon={<ArrowLeftOutlined />}
-            onClick={() => history.push('/post')}
+            onClick={() => history.push('/moments/post')}
             className="back-button"
           >
             返回帖子列表
@@ -235,7 +235,7 @@ const PostCreate: React.FC = () => {
             
             <div className="editor-actions">
               <Space>
-                <Button onClick={() => history.push('/post')}>取消</Button>
+                <Button onClick={() => history.push('/moments/post')}>取消</Button>
                 <Button type="primary" onClick={handlePrepareSubmit}>
                   准备发布
                 </Button>

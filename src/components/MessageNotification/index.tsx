@@ -1,7 +1,8 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Avatar, Badge, Button, Card, Drawer, Empty, List, Space, Spin, Tag, Tooltip, message, Checkbox, Popconfirm } from 'antd';
-import { BellOutlined, CheckCircleOutlined, CheckOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Avatar, Badge, Button, Card, Drawer, Empty, Input, List, Modal, Space, Spin, Tag, Tooltip, message, Checkbox, Popconfirm } from 'antd';
+import { BellOutlined, CheckCircleOutlined, CheckOutlined, CloseOutlined, DeleteOutlined, EnvironmentOutlined, LoadingOutlined } from '@ant-design/icons';
 import { batchDeleteUsingPost, batchSetReadUsingPost, listMyEventRemindByPageUsingPost } from '@/services/backend/eventRemindController';
+import { getMomentDetailUsingGet, listCommentsUsingPost, addCommentUsingPost1 } from '@/services/backend/momentsController';
 import { history } from '@umijs/max';
 import moment from 'moment';
 import './index.less';
@@ -54,6 +55,17 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [deleting, setDeleting] = useState<boolean>(false);
     const [isDeleteMode, setIsDeleteMode] = useState<boolean>(false);
+
+    // 动态详情弹窗
+    const [detailVisible, setDetailVisible] = useState<boolean>(false);
+    const [detailMoment, setDetailMoment] = useState<API.MomentsVO | null>(null);
+    const [detailLoading, setDetailLoading] = useState<boolean>(false);
+    const [detailComments, setDetailComments] = useState<API.MomentsCommentVO[]>([]);
+
+    // 详情弹窗评论输入
+    const [detailCommentInput, setDetailCommentInput] = useState<string>('');
+    const [detailReplyTarget, setDetailReplyTarget] = useState<{ commentId: number; userName: string } | null>(null);
+    const [detailSubmitting, setDetailSubmitting] = useState<boolean>(false);
 
     // 暴露给父组件的方法
     useImperativeHandle(ref, () => ({
@@ -182,8 +194,27 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
           await markSingleAsRead(item.id);
         }
 
-        // sourceType === 4 (MOMENTS) 只标已读，不跳转
+        // sourceType === 4 (MOMENTS) → 直接弹出动态详情
         if (item.sourceType === 4) {
+          if (item.sourceId) {
+            setDetailLoading(true);
+            setDetailMoment(null);
+            setDetailComments([]);
+            setDetailVisible(true);
+            try {
+              const [detailRes, commentRes] = await Promise.all([
+                getMomentDetailUsingGet({ id: item.sourceId }),
+                listCommentsUsingPost({ momentId: item.sourceId, current: 1, pageSize: 50 }),
+              ]);
+              if (detailRes.data) setDetailMoment(detailRes.data);
+              setDetailComments(commentRes.data?.records || []);
+            } catch {
+              message.error('加载动态详情失败');
+              setDetailVisible(false);
+            } finally {
+              setDetailLoading(false);
+            }
+          }
           return;
         }
         
@@ -326,6 +357,32 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
       return <div className="message-content-text">{text}</div>;
     };
 
+    // 详情弹窗提交评论
+    const handleDetailSubmitComment = async () => {
+      const content = detailCommentInput.trim();
+      if (!content || !detailMoment?.id) return;
+      setDetailSubmitting(true);
+      try {
+        const res = await addCommentUsingPost1({
+          momentId: detailMoment.id,
+          content,
+          parentId: detailReplyTarget?.commentId,
+        });
+        if (res.data) {
+          message.success('评论成功');
+          setDetailCommentInput('');
+          setDetailReplyTarget(null);
+          // 刷新评论
+          const updated = await listCommentsUsingPost({ momentId: detailMoment.id, current: 1, pageSize: 50 });
+          setDetailComments(updated.data?.records || []);
+        }
+      } catch {
+        message.error('评论失败');
+      } finally {
+        setDetailSubmitting(false);
+      }
+    };
+
     // 渲染消息项
     const renderItem = (item: ExtendedEventRemindVO) => {
       const isUnread = !item.isRead;
@@ -402,6 +459,7 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
     };
 
     return (
+      <>
       <Drawer
         title={
           <div className="drawer-header">
@@ -496,8 +554,133 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
           )}
         </div>
       </Drawer>
+
+      {/* 动态详情弹窗 */}
+      <Modal
+        open={detailVisible}
+        onCancel={() => { setDetailVisible(false); setDetailMoment(null); setDetailCommentInput(''); setDetailReplyTarget(null); }}
+        footer={null}
+        width={600}
+        centered
+        destroyOnClose
+        title={detailMoment ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Avatar size={32} src={detailMoment.userAvatar}>{detailMoment.userName?.charAt(0)}</Avatar>
+            <span style={{ fontWeight: 600 }}>{detailMoment.userName}</span>
+            <span style={{ fontSize: 12, color: '#999', fontWeight: 400 }}>
+              {moment(detailMoment.createTime).fromNow()}
+            </span>
+          </div>
+        ) : '动态详情'}
+      >
+        {detailLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin indicator={<LoadingOutlined style={{ fontSize: 32 }} spin />} />
+          </div>
+        ) : detailMoment ? (
+          <div style={{ padding: '4px 0' }}>
+            {/* 内容 */}
+            {detailMoment.content && (
+              <div style={{ fontSize: 15, lineHeight: 1.7, color: '#262626', marginBottom: 14, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                {detailMoment.content}
+              </div>
+            )}
+            {/* 图片九宫格 */}
+            {(() => {
+              const images = (detailMoment.mediaJson || []).filter(i => i.type === 'image').map(i => i.url!);
+              if (!images.length) return null;
+              const cols = images.length === 1 ? 1 : images.length === 2 || images.length === 4 ? 2 : 3;
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 6, maxWidth: cols === 1 ? 300 : 360, marginBottom: 14 }}>
+                  {images.slice(0, 9).map((url, i) => (
+                    <img key={i} src={url} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }}
+                      onClick={() => window.open(url, '_blank')} />
+                  ))}
+                </div>
+              );
+            })()}
+            {/* 位置 */}
+            {detailMoment.location && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#1890ff', marginBottom: 12, padding: '4px 10px', background: 'rgba(24,144,255,0.08)', borderRadius: 20 }}>
+                <EnvironmentOutlined /><span>{detailMoment.location}</span>
+              </div>
+            )}
+            {/* 评论列表 */}
+            {detailComments.length > 0 && (
+              <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12, marginTop: 4, marginBottom: 12 }}>
+                {detailComments.map((comment) => (
+                  <div key={comment.id} style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                    <Avatar size={28} src={comment.userAvatar}>{comment.userName?.charAt(0)}</Avatar>
+                    <div style={{ flex: 1, fontSize: 14, lineHeight: 1.6 }}>
+                      <span style={{ color: '#576b95', fontWeight: 500, marginRight: 6 }}>{comment.userName}</span>
+                      <span style={{ color: '#333', wordBreak: 'break-word' }}>{comment.content}</span>
+                      <div style={{ fontSize: 12, color: '#bbb', marginTop: 2, display: 'flex', gap: 12 }}>
+                        <span>{moment(comment.createTime).fromNow()}</span>
+                        <span
+                          style={{ color: '#576b95', cursor: 'pointer' }}
+                          onClick={() => setDetailReplyTarget({ commentId: comment.id!, userName: comment.userName! })}
+                        >回复</span>
+                      </div>
+                      {/* 子评论 */}
+                      {(comment.children || []).map((child) => (
+                        <div key={child.id} style={{ display: 'flex', gap: 6, marginTop: 8, marginLeft: 8 }}>
+                          <Avatar size={22} src={child.userAvatar}>{child.userName?.charAt(0)}</Avatar>
+                          <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+                            <span style={{ color: '#576b95', fontWeight: 500, marginRight: 4 }}>{child.userName}</span>
+                            {child.replyUserName && (
+                              <span style={{ color: '#999', marginRight: 4 }}>回复 <span style={{ color: '#576b95' }}>{child.replyUserName}</span></span>
+                            )}
+                            <span style={{ color: '#333' }}>{child.content}</span>
+                            <div style={{ fontSize: 12, color: '#bbb', marginTop: 2, display: 'flex', gap: 12 }}>
+                              <span>{moment(child.createTime).fromNow()}</span>
+                              <span
+                                style={{ color: '#576b95', cursor: 'pointer' }}
+                                onClick={() => setDetailReplyTarget({ commentId: comment.id!, userName: child.userName! })}
+                              >回复</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* 评论输入区 */}
+            <div style={{ borderTop: detailComments.length === 0 ? '1px solid #f0f0f0' : 'none', paddingTop: detailComments.length === 0 ? 12 : 0 }}>
+              {detailReplyTarget && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#999', background: '#f5f5f5', padding: '3px 10px', borderRadius: 12, marginBottom: 8 }}>
+                  回复 <span style={{ color: '#576b95' }}>{detailReplyTarget.userName}</span>
+                  <CloseOutlined style={{ fontSize: 11, cursor: 'pointer' }} onClick={() => setDetailReplyTarget(null)} />
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <Input
+                  placeholder={detailReplyTarget ? `回复 ${detailReplyTarget.userName}...` : '写评论...'}
+                  value={detailCommentInput}
+                  onChange={(e) => setDetailCommentInput(e.target.value)}
+                  onPressEnter={handleDetailSubmitComment}
+                  maxLength={200}
+                  style={{ borderRadius: 20, background: '#f7f7f7', borderColor: 'transparent', flex: 1 }}
+                />
+                <Button
+                  type="primary"
+                  size="small"
+                  loading={detailSubmitting}
+                  disabled={!detailCommentInput.trim()}
+                  onClick={handleDetailSubmitComment}
+                  style={{ borderRadius: 16, background: '#f4ac70', borderColor: '#f4ac70', padding: '0 14px' }}
+                >
+                  发送
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+    </>
     );
   }
 );
 
-export default MessageNotification; 
+export default MessageNotification;

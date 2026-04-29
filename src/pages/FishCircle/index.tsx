@@ -1,25 +1,31 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Avatar, Image, message, Spin, Empty, Divider, Tooltip, Modal, Input, Upload, Button, Space } from 'antd';
+import { Avatar, Image, message, Spin, Empty, Divider, Tooltip, Modal, Input, InputNumber, Upload, Button, Space, Dropdown } from 'antd';
 import {
   HeartOutlined,
   HeartFilled,
   MessageOutlined,
   DeleteOutlined,
+  EditOutlined,
+  MoreOutlined,
+  GiftOutlined,
   EnvironmentOutlined,
   LoadingOutlined,
   PlusOutlined,
   CloseOutlined,
+  ArrowLeftOutlined,
 } from '@ant-design/icons';
 import {
   listMomentsUsingPost,
   toggleLikeUsingPost,
   deleteMomentUsingPost,
+  updateMomentUsingPost,
+  rewardMomentUsingPost,
   publishMomentUsingPost,
   listCommentsUsingPost,
   addCommentUsingPost1,
   deleteCommentUsingPost,
 } from '@/services/backend/momentsController';
-import { getLoginUserUsingGet } from '@/services/backend/userController';
+import { getLoginUserUsingGet, getUserVoByIdUsingGet } from '@/services/backend/userController';
 import { uploadFileByMinioUsingPost } from '@/services/backend/fileController';
 import moment from 'moment';
 import './index.less';
@@ -43,6 +49,20 @@ const FishCirclePage: React.FC = () => {
   const [publishLocation, setPublishLocation] = useState<string>('');
   const [publishing, setPublishing] = useState<boolean>(false);
 
+  // 编辑弹窗状态
+  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+  const [editingMoment, setEditingMoment] = useState<API.MomentsVO | null>(null);
+  const [editContent, setEditContent] = useState<string>('');
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [editLocation, setEditLocation] = useState<string>('');
+  const [editSubmitting, setEditSubmitting] = useState<boolean>(false);
+
+  // 打赏弹窗状态
+  const [rewardModalVisible, setRewardModalVisible] = useState<boolean>(false);
+  const [rewardMomentId, setRewardMomentId] = useState<number | null>(null);
+  const [rewardPoints, setRewardPoints] = useState<number>(10);
+  const [rewarding, setRewarding] = useState<boolean>(false);
+
   // 评论状态
   const [commentsMap, setCommentsMap] = useState<Record<number, API.MomentsCommentVO[]>>({});
   const [commentInputMap, setCommentInputMap] = useState<Record<number, string>>({});
@@ -54,6 +74,16 @@ const FishCirclePage: React.FC = () => {
   
   const scrollRef = useRef<HTMLDivElement>(null); // kept for potential future use
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 用 ref 追踪分页和 loading，避免 useCallback 闭包捕获旧值
+  const currentPageRef = useRef(1);
+  const loadingRef = useRef(false);
+  const loadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const viewingUserIdRef = useRef<number | undefined>(undefined);
+
+  // 查看他人鱼小圈
+  const [viewingUser, setViewingUser] = useState<API.UserVO | null>(null);
 
   // 获取当前用户信息
   const fetchCurrentUser = async () => {
@@ -67,38 +97,82 @@ const FishCirclePage: React.FC = () => {
     }
   };
 
+  // 查看他人鱼小圈
+  const handleViewUserCircle = async (userId: number, userAvatar?: string, userName?: string) => {
+    if (userId === currentUser?.id) return; // 自己的不跳转
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      const res = await getUserVoByIdUsingGet({ id: userId });
+      const userVO = res.data || { id: userId, userAvatar, userName };
+      setViewingUser(userVO);
+      setMoments([]);
+      setCommentsMap({});
+      currentPageRef.current = 1;
+      hasMoreRef.current = true;
+      viewingUserIdRef.current = userId;
+      setPagination({ current: 1, pageSize: 10, total: 0 });
+      setHasMore(true);
+      await fetchMoments(false, userId);
+    } catch (error) {
+      console.error('获取用户信息失败', error);
+      message.error('获取用户信息失败');
+    }
+  };
+
+  // 返回主列表
+  const handleBackToMain = async () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setViewingUser(null);
+    setMoments([]);
+    setCommentsMap({});
+    currentPageRef.current = 1;
+    hasMoreRef.current = true;
+    viewingUserIdRef.current = undefined;
+    setPagination({ current: 1, pageSize: 10, total: 0 });
+    setHasMore(true);
+    await fetchMoments(false, undefined);
+  };
+
   // 获取朋友圈列表
-  const fetchMoments = useCallback(async (isLoadMore = false) => {
-    if (loading || loadingMore) return;
-    
+  const fetchMoments = useCallback(async (isLoadMore = false, overrideUserId?: number) => {
+    if (loadingRef.current || loadingMoreRef.current) return;
+    if (isLoadMore && !hasMoreRef.current) return;
+
+    const userId = overrideUserId !== undefined ? overrideUserId : viewingUserIdRef.current;
+    const nextPage = isLoadMore ? currentPageRef.current + 1 : 1;
+    const pageSize = 10;
+
     if (isLoadMore) {
+      loadingMoreRef.current = true;
       setLoadingMore(true);
     } else {
+      loadingRef.current = true;
       setLoading(true);
     }
 
     try {
-      const params: API.MomentsQueryRequest = {
-        current: isLoadMore ? pagination.current + 1 : 1,
-        pageSize: pagination.pageSize,
+      const result = await listMomentsUsingPost({
+        current: nextPage,
+        pageSize,
         sortField: 'createTime',
         sortOrder: 'descend',
-      };
-
-      const result = await listMomentsUsingPost(params);
+        userId,
+      });
       if (result.data) {
         const newRecords = result.data.records || [];
+        const total = result.data.total || 0;
+
         if (isLoadMore) {
           setMoments((prev) => [...prev, ...newRecords]);
-          setPagination((prev) => ({ ...prev, current: prev.current + 1 }));
         } else {
           setMoments(newRecords);
-          setPagination({
-            current: 1,
-            pageSize: pagination.pageSize,
-            total: result.data.total || 0,
-          });
         }
+
+        currentPageRef.current = nextPage;
+        const totalLoaded = nextPage * pageSize;
+        hasMoreRef.current = totalLoaded < total;
+        setHasMore(hasMoreRef.current);
+        setPagination({ current: nextPage, pageSize, total });
 
         // 批量加载评论
         newRecords.forEach(async (m) => {
@@ -109,21 +183,17 @@ const FishCirclePage: React.FC = () => {
             } catch {}
           }
         });
-
-        // 判断是否还有更多数据
-        const totalLoaded = isLoadMore 
-          ? (pagination.current + 1) * pagination.pageSize 
-          : pagination.pageSize;
-        setHasMore(totalLoaded < (result.data.total || 0));
       }
     } catch (error) {
       console.error('获取朋友圈列表失败:', error);
       message.error('获取朋友圈列表失败');
     } finally {
+      loadingRef.current = false;
+      loadingMoreRef.current = false;
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [pagination.current, pagination.pageSize]);
+  }, []);
 
   // 处理点赞
   const handleLike = async (momentId: number, currentLiked: boolean) => {
@@ -134,14 +204,22 @@ const FishCirclePage: React.FC = () => {
 
     try {
       const res = await toggleLikeUsingPost({ momentId });
-      if (res.data) {
+      if (res.code === 0) {
         setMoments((prev) =>
           prev.map((item) => {
             if (item.id === momentId) {
+              const userName = currentUser.userName || '';
+              let names = (item.likeUserNames || '').split(',').filter(Boolean);
+              if (currentLiked) {
+                names = names.filter((n) => n !== userName);
+              } else {
+                if (!names.includes(userName)) names.push(userName);
+              }
               return {
                 ...item,
                 liked: !currentLiked,
                 likeNum: (item.likeNum || 0) + (currentLiked ? -1 : 1),
+                likeUserNames: names.join(','),
               };
             }
             return item;
@@ -154,6 +232,9 @@ const FishCirclePage: React.FC = () => {
     }
   };
 
+  // 是否是管理员
+  const isAdmin = currentUser?.userRole === 'admin';
+
   // 删除动态
   const handleDelete = async (momentId: number) => {
     try {
@@ -165,6 +246,66 @@ const FishCirclePage: React.FC = () => {
     } catch (error) {
       console.error('删除失败:', error);
       message.error('删除失败');
+    }
+  };
+
+  // 打开编辑弹窗
+  const handleOpenEdit = (m: API.MomentsVO) => {
+    setEditingMoment(m);
+    setEditContent(m.content || '');
+    setEditImages((m.mediaJson || []).filter((i) => i.type === 'image').map((i) => i.url!));
+    setEditLocation(m.location || '');
+    setEditModalVisible(true);
+  };
+
+  // 提交编辑
+  const handleSubmitEdit = async () => {
+    if (!editingMoment?.id) return;
+    setEditSubmitting(true);
+    try {
+      const mediaJson: API.MediaItem[] = editImages.map((url) => ({ type: 'image', url }));
+      const res = await updateMomentUsingPost({
+        id: editingMoment.id,
+        content: editContent.trim(),
+        mediaJson,
+        location: editLocation.trim() || undefined,
+      });
+      if (res.data) {
+        message.success('修改成功');
+        setMoments((prev) =>
+          prev.map((item) =>
+            item.id === editingMoment.id
+              ? { ...item, content: editContent.trim(), mediaJson, location: editLocation.trim() || undefined }
+              : item,
+          ),
+        );
+        setEditModalVisible(false);
+        setEditingMoment(null);
+      }
+    } catch {
+      message.error('修改失败');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  // 打赏动态
+  const handleReward = async () => {
+    if (!rewardMomentId) return;
+    if (!currentUser) { message.warning('请先登录'); return; }
+    setRewarding(true);
+    try {
+      const res = await rewardMomentUsingPost({ momentId: rewardMomentId, points: rewardPoints });
+      if (res.data) {
+        message.success(`打赏 ${rewardPoints} 积分成功！`);
+        setRewardModalVisible(false);
+        setRewardMomentId(null);
+        setRewardPoints(10);
+      }
+    } catch {
+      message.error('打赏失败');
+    } finally {
+      setRewarding(false);
     }
   };
 
@@ -237,10 +378,10 @@ const FishCirclePage: React.FC = () => {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const scrollHeight = document.documentElement.scrollHeight;
     const clientHeight = window.innerHeight;
-    if (scrollHeight - scrollTop - clientHeight < 100 && hasMore && !loadingMore && !loading) {
+    if (scrollHeight - scrollTop - clientHeight < 100 && hasMoreRef.current && !loadingMoreRef.current && !loadingRef.current) {
       fetchMoments(true);
     }
-  }, [hasMore, loadingMore, loading, fetchMoments]);
+  }, [fetchMoments]);
 
   // 格式化时间（类似微信：几分钟前、几小时前、昨天、日期）
   const formatTime = (timeString?: string) => {
@@ -454,15 +595,27 @@ const FishCirclePage: React.FC = () => {
     <div className="fish-circle-page">
       {/* 头部封面 */}
       <div className="cover-header">
-        <div className="cover-bg" />
+        <div
+          className="cover-bg"
+          style={
+            (viewingUser?.momentsBgUrl || currentUser?.momentsBgUrl)
+              ? { backgroundImage: `url(${viewingUser ? viewingUser.momentsBgUrl : currentUser?.momentsBgUrl})` }
+              : undefined
+          }
+        />
+        {viewingUser && (
+          <div className="cover-back-btn" onClick={handleBackToMain}>
+            <ArrowLeftOutlined /> 返回
+          </div>
+        )}
         <div className="user-info">
-          <span className="user-name">{currentUser?.userName || '摸鱼用户'}</span>
+          <span className="user-name">{viewingUser ? viewingUser.userName : (currentUser?.userName || '摸鱼用户')}</span>
           <Avatar 
             size={80} 
-            src={currentUser?.userAvatar} 
+            src={viewingUser ? viewingUser.userAvatar : currentUser?.userAvatar} 
             className="user-avatar"
           >
-            {currentUser?.userName?.charAt(0) || '摸'}
+            {(viewingUser ? viewingUser.userName : currentUser?.userName)?.charAt(0) || '摸'}
           </Avatar>
         </div>
       </div>
@@ -488,13 +641,18 @@ const FishCirclePage: React.FC = () => {
                     size={44} 
                     src={moment.userAvatar} 
                     className="moment-avatar"
+                    style={moment.userId !== currentUser?.id ? { cursor: 'pointer' } : undefined}
+                    onClick={() => moment.userId && moment.userId !== currentUser?.id && handleViewUserCircle(moment.userId, moment.userAvatar, moment.userName)}
                   >
                     {moment.userName?.charAt(0) || '摸'}
                   </Avatar>
                   
                   <div className="moment-body">
                     {/* 用户名 */}
-                    <div className="moment-user">{moment.userName}</div>
+                    <div
+                      className="moment-user"
+                      onClick={() => moment.userId && moment.userId !== currentUser?.id && handleViewUserCircle(moment.userId, moment.userAvatar, moment.userName)}
+                    >{moment.userName}</div>
                     
                     {/* 文字内容 */}
                     {moment.content && (
@@ -512,6 +670,16 @@ const FishCirclePage: React.FC = () => {
                       </div>
                     )}
                     
+                    {/* 点赞用户名列表（微信风格） */}
+                    {moment.likeUserNames && moment.likeUserNames.trim() && (
+                      <div className="like-users-bar">
+                        <HeartFilled className="like-users-icon" />
+                        <span className="like-users-names">
+                          {moment.likeUserNames.split(',').filter(Boolean).join('，')}
+                        </span>
+                      </div>
+                    )}
+
                     {/* 时间和操作 */}
                     <div className="moment-footer">
                       <span className="moment-time">{formatTime(moment.createTime)}</span>
@@ -536,24 +704,53 @@ const FishCirclePage: React.FC = () => {
                             {(moment.commentNum || 0) > 0 && <span className="count">{moment.commentNum}</span>}
                           </span>
                         </Tooltip>
-                        {currentUser?.id === moment.userId && (
-                          <Tooltip title="删除">
-                            <span 
-                              className="action-btn delete-btn"
+                        {currentUser && currentUser.id !== moment.userId && (
+                          <Tooltip title="打赏">
+                            <span
+                              className="action-btn reward-btn"
                               onClick={() => {
-                                Modal.confirm({
-                                  title: '确认删除',
-                                  content: '删除后无法恢复，确定要删除这条动态吗？',
-                                  okText: '删除',
-                                  okType: 'danger',
-                                  cancelText: '取消',
-                                  onOk: () => handleDelete(moment.id!),
-                                });
+                                setRewardMomentId(moment.id!);
+                                setRewardPoints(10);
+                                setRewardModalVisible(true);
                               }}
                             >
-                              <DeleteOutlined />
+                              <GiftOutlined />
                             </span>
                           </Tooltip>
+                        )}
+                        {(currentUser?.id === moment.userId || isAdmin) && (
+                          <Dropdown
+                            trigger={['click']}
+                            menu={{
+                              items: [
+                                {
+                                  key: 'edit',
+                                  icon: <EditOutlined />,
+                                  label: '修改',
+                                  onClick: () => handleOpenEdit(moment),
+                                },
+                                {
+                                  key: 'delete',
+                                  icon: <DeleteOutlined />,
+                                  label: '删除',
+                                  danger: true,
+                                  onClick: () =>
+                                    Modal.confirm({
+                                      title: '确认删除',
+                                      content: '删除后无法恢复，确定要删除这条动态吗？',
+                                      okText: '删除',
+                                      okType: 'danger',
+                                      cancelText: '取消',
+                                      onOk: () => handleDelete(moment.id!),
+                                    }),
+                                },
+                              ],
+                            }}
+                          >
+                            <span className="action-btn more-btn">
+                              <MoreOutlined />
+                            </span>
+                          </Dropdown>
                         )}
                       </div>
                     </div>
@@ -581,7 +778,7 @@ const FishCirclePage: React.FC = () => {
                                 <div className="comment-meta">
                                   <span className="comment-time">{formatTime(comment.createTime)}</span>
                                   <span className="comment-reply-btn" onClick={() => { setReplyTarget({ commentId: comment.id!, userName: comment.userName!, momentId: moment.id! }); setShowInputId(moment.id!); }}>回复</span>
-                                  {currentUser?.id === comment.userId && (
+                                  {(currentUser?.id === comment.userId || isAdmin) && (
                                     <span className="comment-delete-btn" onClick={() => handleDeleteComment(comment.id!, moment.id!)}>删除</span>
                                   )}
                                 </div>
@@ -609,7 +806,7 @@ const FishCirclePage: React.FC = () => {
                                               <div className="comment-meta">
                                                 <span className="comment-time">{formatTime(child.createTime)}</span>
                                                 <span className="comment-reply-btn" onClick={() => { setReplyTarget({ commentId: comment.id!, userName: child.userName!, momentId: moment.id! }); setShowInputId(moment.id!); }}>回复</span>
-                                                {currentUser?.id === child.userId && (
+                                                {(currentUser?.id === child.userId || isAdmin) && (
                                                   <span className="comment-delete-btn" onClick={() => handleDeleteComment(child.id!, moment.id!)}>删除</span>
                                                 )}
                                               </div>
@@ -824,6 +1021,132 @@ const FishCirclePage: React.FC = () => {
               disabled={!publishContent.trim() && publishImages.length === 0}
             >
               发布
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 编辑弹窗 */}
+      <Modal
+        title="修改动态"
+        open={editModalVisible}
+        onCancel={() => { setEditModalVisible(false); setEditingMoment(null); }}
+        footer={null}
+        width={520}
+        centered
+        destroyOnClose
+      >
+        <div className="publish-modal-content">
+          <Input.TextArea
+            placeholder="修改内容..."
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            autoSize={{ minRows: 4, maxRows: 8 }}
+            className="publish-textarea"
+            maxLength={500}
+            showCount
+          />
+
+          {editImages.length > 0 && (
+            <div className="publish-images-preview">
+              {editImages.map((url, index) => (
+                <div key={index} className="preview-item">
+                  <img src={url} alt={`预览${index + 1}`} />
+                  <span
+                    className="remove-btn"
+                    onClick={() => setEditImages((prev) => prev.filter((_, i) => i !== index))}
+                  >
+                    <CloseOutlined />
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="publish-actions">
+            <Space>
+              <Upload
+                accept="image/*"
+                beforeUpload={async (file) => {
+                  const { uploadFileByMinioUsingPost: upload } = await import('@/services/backend/fileController');
+                  try {
+                    const res = await upload({ biz: 'user_post' }, {}, file, {
+                      headers: { 'Content-Type': 'multipart/form-data' },
+                    });
+                    if (res.data) setEditImages((prev) => [...prev, res.data!]);
+                  } catch { message.error('图片上传失败'); }
+                  return false;
+                }}
+                showUploadList={false}
+                disabled={editImages.length >= 9}
+              >
+                <Button icon={<PlusOutlined />} disabled={editImages.length >= 9}>
+                  添加图片
+                </Button>
+              </Upload>
+            </Space>
+          </div>
+
+          <div className="publish-location">
+            <Input
+              prefix={<EnvironmentOutlined style={{ color: '#aaa' }} />}
+              placeholder="添加位置（选填）"
+              value={editLocation}
+              onChange={(e) => setEditLocation(e.target.value)}
+              maxLength={50}
+              allowClear
+            />
+          </div>
+
+          <div className="publish-footer">
+            <Button onClick={() => { setEditModalVisible(false); setEditingMoment(null); }}>取消</Button>
+            <Button
+              type="primary"
+              onClick={handleSubmitEdit}
+              loading={editSubmitting}
+              disabled={!editContent.trim() && editImages.length === 0}
+            >
+              保存
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 打赏弹窗 */}
+      <Modal
+        title={<span><GiftOutlined style={{ color: '#f4ac70', marginRight: 8 }} />打赏积分</span>}
+        open={rewardModalVisible}
+        onCancel={() => { setRewardModalVisible(false); setRewardMomentId(null); setRewardPoints(10); }}
+        footer={null}
+        width={360}
+        centered
+        destroyOnClose
+      >
+        <div className="reward-modal-content">
+          <p className="reward-desc">选择打赏积分数量，积分将从你的账户中扣除</p>
+          <div className="reward-presets">
+            {[1, 5, 10, 20].map((v) => (
+              <span
+                key={v}
+                className={`reward-preset-item ${rewardPoints === v ? 'active' : ''}`}
+                onClick={() => setRewardPoints(v)}
+              >
+                {v} 积分
+              </span>
+            ))}
+          </div>
+          <InputNumber
+            min={1}
+            max={20}
+            value={rewardPoints}
+            onChange={(v) => setRewardPoints(v || 1)}
+            addonAfter="积分"
+            style={{ width: '100%', marginTop: 12 }}
+          />
+          <div className="reward-footer">
+            <Button onClick={() => { setRewardModalVisible(false); setRewardMomentId(null); setRewardPoints(10); }}>取消</Button>
+            <Button type="primary" loading={rewarding} onClick={handleReward}>
+              确认打赏
             </Button>
           </div>
         </div>

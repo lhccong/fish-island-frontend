@@ -1594,7 +1594,7 @@ const PostDetail: React.FC = () => {
       if (res.data) {
         message.success('帖子删除成功');
         // 删除成功后返回帖子列表页
-        history.push('/post');
+        history.push('/moments/post');
       } else {
         message.error('帖子删除失败');
       }
@@ -1970,7 +1970,7 @@ const PostDetail: React.FC = () => {
   return (
     <div className="post-detail-container">
       <div className="post-detail-header">
-        <Link to="/post">
+        <Link to="/moments/post">
           <div className="back-button">
             <ArrowLeftOutlined/>
             <span>返回帖子列表</span>

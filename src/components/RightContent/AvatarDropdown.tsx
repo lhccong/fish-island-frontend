@@ -239,6 +239,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const [siteConfigForm] = Form.useForm();
   const [selectedAvatar, setSelectedAvatar] = useState<string>('');
   const [previewAvatar, setPreviewAvatar] = useState<string>('');
+  const [previewBgUrl, setPreviewBgUrl] = useState<string>('');
   const [emailCountdown, setEmailCountdown] = useState(0);
   const [emailCode, setEmailCode] = useState('');
   const [availableTitles, setAvailableTitles] = useState<API.UserTitle[]>([]);
@@ -356,6 +357,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       const res = await updateMyUserUsingPost({
         ...values,
         userAvatar,
+        momentsBgUrl: values.momentsBgUrl || undefined,
       });
       if (res.code === 0) {
         message.success('修改信息成功！');
@@ -911,6 +913,10 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         // 设置初始头像预览
         if (currentUser?.userAvatar && !defaultAvatars.includes(currentUser.userAvatar)) {
           setPreviewAvatar(currentUser.userAvatar);
+        }
+        // 设置初始背景图预览
+        if (currentUser?.momentsBgUrl) {
+          setPreviewBgUrl(currentUser.momentsBgUrl);
         }
         return;
       }
@@ -1502,6 +1508,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
           setIsEditProfileOpen(false);
           setPreviewAvatar('');
           setSelectedAvatar('');
+          setPreviewBgUrl('');
           editProfileForm.resetFields();
         }}
         footer={null}
@@ -1515,6 +1522,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
             userProfile: currentUser?.userProfile,
             userAvatar: !defaultAvatars.includes(currentUser?.userAvatar || '') ? currentUser?.userAvatar : '',
             titleId: currentUser?.titleId,
+            momentsBgUrl: currentUser?.momentsBgUrl || '',
           }}
         >
           <Form.Item
@@ -1606,6 +1614,55 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
                   <Avatar src={avatar} size={64}/>
                 </div>
               ))}
+            </div>
+          </Form.Item>
+
+          <Form.Item
+            label="朋友圈背景"
+            name="momentsBgUrl"
+            help="可以上传图片或输入在线图片地址"
+          >
+            <div style={{display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap'}}>
+              <Upload
+                accept="image/*"
+                showUploadList={false}
+                beforeUpload={async (file) => {
+                  const url = await handleUpload(file);
+                  if (url) {
+                    setPreviewBgUrl(url as any);
+                    editProfileForm.setFieldValue('momentsBgUrl', url);
+                  }
+                  return false;
+                }}
+              >
+                <Button icon={<UploadOutlined/>} loading={uploading}>
+                  上传背景图
+                </Button>
+              </Upload>
+              <Input
+                placeholder="请输入背景图地址（选填）"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setPreviewBgUrl(value);
+                  editProfileForm.setFieldValue('momentsBgUrl', value);
+                }}
+                value={previewBgUrl}
+                style={{flex: 1}}
+              />
+              {previewBgUrl && (
+                <div style={{
+                  marginLeft: '8px',
+                  padding: '4px',
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '4px',
+                }}>
+                  <img
+                    src={previewBgUrl}
+                    alt="背景预览"
+                    style={{width: 96, height: 64, objectFit: 'cover', borderRadius: '2px'}}
+                  />
+                </div>
+              )}
             </div>
           </Form.Item>
 

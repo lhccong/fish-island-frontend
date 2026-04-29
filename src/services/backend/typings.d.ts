@@ -300,6 +300,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseMomentsVO_ = {
+    code?: number;
+    data?: MomentsVO;
+    message?: string;
+  };
+
   type BaseResponseOtherUserPetVO_ = {
     code?: number;
     data?: OtherUserPetVO;
@@ -1261,6 +1267,11 @@ declare namespace API {
     id?: number;
   };
 
+  type getMomentDetailUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
   type getOtherUserPetUsingGETParams = {
     /** otherUserId */
     otherUserId: number;
@@ -1849,6 +1860,7 @@ declare namespace API {
     id?: number;
     lastSignInDate?: string;
     level?: number;
+    momentsBgUrl?: string;
     points?: number;
     titleId?: number;
     titleIdList?: string;
@@ -2090,6 +2102,30 @@ declare namespace API {
     userId?: number;
   };
 
+  type MomentsRewardRequest = {
+    /** 动态ID */
+    momentId: number;
+    /** 打赏积分数量（消耗 usedPoints） */
+    points: number;
+  };
+
+  type MomentsUpdateRequest = {
+    /** 部分可见的用户ID列表（visibility=2时有效） */
+    allowList?: number[];
+    /** 不给谁看的用户ID列表（visibility=3时有效） */
+    blockList?: number[];
+    /** 文字内容 */
+    content?: string;
+    /** 动态ID */
+    id: number;
+    /** 位置信息 */
+    location?: string;
+    /** 媒体资源列表（图片/视频） */
+    mediaJson?: MediaItem[];
+    /** 可见范围：0-所有朋友，1-仅自己，2-部分可见，3-不给谁看 */
+    visibility?: number;
+  };
+
   type MomentsVO = {
     /** 评论数 */
     commentNum?: number;
@@ -2101,6 +2137,8 @@ declare namespace API {
     id?: number;
     /** 点赞数 */
     likeNum?: number;
+    /** 点赞用户名称，逗号拼接 */
+    likeUserNames?: string;
     /** 当前登录用户是否已点赞 */
     liked?: boolean;
     /** 位置信息 */
@@ -3028,6 +3066,7 @@ declare namespace API {
     id?: number;
     lastSignInDate?: string;
     level?: number;
+    momentsBgUrl?: string;
     points?: number;
     saTokenInfo?: SaTokenInfo;
     titleId?: number;
@@ -3279,6 +3318,7 @@ declare namespace API {
     email?: string;
     id?: number;
     isDelete?: number;
+    momentsBgUrl?: string;
     mpOpenId?: string;
     titleId?: number;
     titleIdList?: string;
@@ -3460,6 +3500,7 @@ declare namespace API {
   };
 
   type UserUpdateMyRequest = {
+    momentsBgUrl?: string;
     userAvatar?: string;
     userName?: string;
     userProfile?: string;
@@ -3528,6 +3569,7 @@ declare namespace API {
   type UserVO = {
     createTime?: string;
     id?: number;
+    momentsBgUrl?: string;
     userAvatar?: string;
     userName?: string;
     userProfile?: string;

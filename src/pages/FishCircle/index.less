@@ -6,7 +6,7 @@
   // 封面头部
   .cover-header {
     height: 220px;
-    max-width: 760px;
+    max-width: 1060px;
     margin: 16px auto 0;
     position: relative;
     background: #f5f5f5;
@@ -18,7 +18,7 @@
       height: 100%;
       border-radius: 16px;
       background-image:
-        url('https://s1.aigei.com/src/img/gif/14/14cc7d6c441749bfa1f0984523a73185.gif?imageMogr2/auto-orient/thumbnail/!282x282r/gravity/Center/crop/282x282/quality/85/%7CimageView2/2/w/282&e=2051020800&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:VmjXIkoQ854fTzqR-W7G8xETJcc=');
+        url('https://s1.aigei.com/src/img/gif/46/4676cf9e173149e6a6575580c4c676ee.gif?e=2051020800&token=P7S2Xpzfz11vAkASLTkfHN7Fw-oOZBecqeJaxypL:9VINAi-bNb65LMO8g6VFNSKyWGw=');
       background-size: 100% 100%;
       background-position: center;
       position: relative;
@@ -33,6 +33,29 @@
         height: 60%;
         background: linear-gradiet(to bottom, transparent 0%, rgba(0, 0, 0, 0.35) 100%);
         pointer-events: none;
+      }
+    }
+
+    .cover-back-btn {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(4px);
+      padding: 6px 14px;
+      border-radius: 20px;
+      z-index: 10;
+      transition: background 0.2s;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.5);
       }
     }
 
@@ -285,6 +308,31 @@
             }
           }
 
+          // 点赞用户名列表（微信风格）
+          .like-users-bar {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            background: #f7f7f7;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            line-height: 1.6;
+
+            .like-users-icon {
+              color: #ff4d4f;
+              font-size: 13px;
+              flex-shrink: 0;
+              margin-top: 3px;
+            }
+
+            .like-users-names {
+              font-size: 13px;
+              color: #576b95;
+              word-break: break-word;
+            }
+          }
+
           // 底部时间和操作
           .moment-footer {
             display: flex;
@@ -358,6 +406,16 @@
                 &.delete-btn:hover {
                   color: #ff4d4f;
                   background: rgba(255, 77, 79, 0.12);
+                }
+
+                &.more-btn:hover {
+                  color: #1890ff;
+                  background: rgba(24, 144, 255, 0.12);
+                }
+
+                &.reward-btn:hover {
+                  color: #f4ac70;
+                  background: rgba(244, 172, 112, 0.12);
                 }
               }
             }
@@ -817,6 +875,7 @@
   .fish-circle-page {
     .main-layout {
       flex-direction: column;
+      padding: 0 12px;
     }
 
     .sidebar {
@@ -825,6 +884,7 @@
 
     .cover-header {
       height: 160px;
+      margin: 16px 12px 0;
 
       .user-info {
         right: 16px;
@@ -842,8 +902,8 @@
     }
 
     .moments-container {
-      margin-top: 40px;
-      padding: 0 12px;
+      margin-top: 16px;
+      padding: 0;
 
       .moment-item {
         .moment-content {
@@ -870,6 +930,74 @@
       .plus-icon {
         font-size: 24px;
       }
+    }
+  }
+}
+
+// 打赏弹窗
+.reward-modal-content {
+  padding: 8px 4px;
+
+  .reward-desc {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 16px;
+  }
+
+  .reward-presets {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+
+    .reward-preset-item {
+      flex: 1;
+      min-width: 60px;
+      text-align: center;
+      padding: 8px 0;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #595959;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: #f4ac70;
+        color: #f4ac70;
+      }
+
+      &.active {
+        border-color: #f4ac70;
+        background: rgba(244, 172, 112, 0.1);
+        color: #f4ac70;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .reward-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+
+    .ant-btn-primary {
+      background: linear-gradient(135deg, #f4ac70 0%, #f07c3a 100%);
+      border: none;
+      border-radius: 20px;
+      padding: 0 24px;
+
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+
+    .ant-btn:first-child {
+      border-radius: 20px;
+      padding: 0 24px;
     }
   }
 }
