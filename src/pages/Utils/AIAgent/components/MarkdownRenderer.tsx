@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { lazy, Suspense, useState } from 'react';
+const ReactMarkdown = lazy(() => import('react-markdown'));
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -59,7 +59,8 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
 
   return (
     <div className="markdown-content">
-      <ReactMarkdown
+      <Suspense fallback={null}>
+        <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
@@ -108,6 +109,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
       >
         {content}
       </ReactMarkdown>
+      </Suspense>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Avatar, Image, message, Spin, Empty, Divider, Tooltip, Modal, Input, InputNumber, Upload, Button, Space, Dropdown } from 'antd';
+import { Avatar, Image, message, Spin, Empty, Divider, Tooltip, Modal, Input, InputNumber, Upload, Button, Space, Dropdown, Popover } from 'antd';
 import {
   HeartOutlined,
   HeartFilled,
@@ -13,6 +13,7 @@ import {
   PlusOutlined,
   CloseOutlined,
   ArrowLeftOutlined,
+  SmileOutlined,
 } from '@ant-design/icons';
 import {
   listMomentsUsingPost,
@@ -27,6 +28,7 @@ import {
 } from '@/services/backend/momentsController';
 import { getLoginUserUsingGet, getUserVoByIdUsingGet } from '@/services/backend/userController';
 import { uploadFileByMinioUsingPost } from '@/services/backend/fileController';
+import EmoticonPicker from '@/components/EmoticonPicker';
 import moment from 'moment';
 import './index.less';
 
@@ -66,6 +68,9 @@ const FishCirclePage: React.FC = () => {
   // 评论状态
   const [commentsMap, setCommentsMap] = useState<Record<number, API.MomentsCommentVO[]>>({});
   const [commentInputMap, setCommentInputMap] = useState<Record<number, string>>({});
+  const [commentImagesMap, setCommentImagesMap] = useState<Record<number, string[]>>({});
+  const [commentImageUploadingMap, setCommentImageUploadingMap] = useState<Record<number, boolean>>({});
+  const [commentEmoticonVisibleMap, setCommentEmoticonVisibleMap] = useState<Record<number, boolean>>({});
   const [showInputId, setShowInputId] = useState<number | null>(null);
   const [replyTarget, setReplyTarget] = useState<{ commentId: number; userName: string; momentId: number } | null>(null);
   const [commentSubmitting, setCommentSubmitting] = useState<boolean>(false);
@@ -325,11 +330,15 @@ const FishCirclePage: React.FC = () => {
 
   // 提交评论
   const handleSubmitComment = async (momentId: number) => {
-    const content = commentInputMap[momentId]?.trim();
-    if (!content) return;
+    const text = commentInputMap[momentId]?.trim() || '';
+    const images = commentImagesMap[momentId] || [];
+    if (!text && images.length === 0) return;
     if (!currentUser) { message.warning('请先登录'); return; }
     setCommentSubmitting(true);
     try {
+      // 将图片 URL 以 [img:url] 格式附加到内容末尾
+      const imgPart = images.map((url) => `[img:${url}]`).join('');
+      const content = text + imgPart;
       const res = await addCommentUsingPost1({
         momentId,
         content,
@@ -339,6 +348,7 @@ const FishCirclePage: React.FC = () => {
       if (res.data) {
         message.success('评论成功');
         setCommentInputMap((prev) => ({ ...prev, [momentId]: '' }));
+        setCommentImagesMap((prev) => ({ ...prev, [momentId]: [] }));
         setReplyTarget(null);
         // 刷新评论列表
         const updated = await listCommentsUsingPost({ momentId, current: 1, pageSize: 50 });
@@ -517,6 +527,45 @@ const FishCirclePage: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
+
+  // 渲染评论内容（支持图片）
+  const renderCommentContent = (content?: string) => {
+    if (!content) return null;
+    const imgRegex = /\[img:(https?:\/\/[^\]]+)\]/g;
+    const textParts: React.ReactNode[] = [];
+    const imgUrls: string[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    let key = 0;
+    while ((match = imgRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        textParts.push(<span key={key++}>{content.slice(lastIndex, match.index)}</span>);
+      }
+      imgUrls.push(match[1]);
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < content.length) {
+      textParts.push(<span key={key++}>{content.slice(lastIndex)}</span>);
+    }
+    return (
+      <>
+        {textParts.length > 0 && <span className="comment-text-part">{textParts}</span>}
+        {imgUrls.length > 0 && (
+          <div className="comment-img-grid">
+            {imgUrls.map((url, i) => (
+              <Image
+                key={i}
+                src={url}
+                alt="评论图片"
+                className="comment-img-item"
+                preview={{ src: url }}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    );
+  };
 
   // 渲染九宫格图片
   const renderMediaGrid = (mediaJson?: API.MediaItem[]) => {
@@ -774,7 +823,7 @@ const FishCirclePage: React.FC = () => {
                               </Avatar>
                               <div className="comment-body">
                                 <span className="comment-username">{comment.userName}</span>
-                                <span className="comment-content">{comment.content}</span>
+                                <div className="comment-content">{renderCommentContent(comment.content)}</div>
                                 <div className="comment-meta">
                                   <span className="comment-time">{formatTime(comment.createTime)}</span>
                                   <span className="comment-reply-btn" onClick={() => { setReplyTarget({ commentId: comment.id!, userName: comment.userName!, momentId: moment.id! }); setShowInputId(moment.id!); }}>回复</span>
@@ -802,7 +851,7 @@ const FishCirclePage: React.FC = () => {
                                             <div className="comment-body">
                                               <span className="comment-username">{child.userName}</span>
                                               {child.replyUserName && <span className="comment-reply-to">回复 <span>{child.replyUserName}</span></span>}
-                                              <span className="comment-content">{child.content}</span>
+                                              <div className="comment-content">{renderCommentContent(child.content)}</div>
                                               <div className="comment-meta">
                                                 <span className="comment-time">{formatTime(child.createTime)}</span>
                                                 <span className="comment-reply-btn" onClick={() => { setReplyTarget({ commentId: comment.id!, userName: child.userName!, momentId: moment.id! }); setShowInputId(moment.id!); }}>回复</span>
@@ -855,6 +904,27 @@ const FishCirclePage: React.FC = () => {
                             <CloseOutlined onClick={() => setReplyTarget(null)} />
                           </div>
                         )}
+                        {/* 评论图片预览 */}
+                        {(commentImagesMap[moment.id!] || []).length > 0 && (
+                          <div className="comment-images-preview">
+                            {(commentImagesMap[moment.id!] || []).map((url, idx) => (
+                              <div key={idx} className="comment-preview-item">
+                                <img src={url} alt={`评论图片${idx + 1}`} />
+                                <span
+                                  className="comment-preview-remove"
+                                  onClick={() =>
+                                    setCommentImagesMap((prev) => ({
+                                      ...prev,
+                                      [moment.id!]: (prev[moment.id!] || []).filter((_, i) => i !== idx),
+                                    }))
+                                  }
+                                >
+                                  <CloseOutlined />
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         <div className="comment-input-row">
                           <Input
                             autoFocus
@@ -864,12 +934,99 @@ const FishCirclePage: React.FC = () => {
                             onPressEnter={() => handleSubmitComment(moment.id!)}
                             maxLength={200}
                             className="comment-input"
+                            onPaste={async (e) => {
+                              const items = Array.from(e.clipboardData?.items || []).filter(
+                                (item) => item.type.startsWith('image/'),
+                              );
+                              if (items.length === 0) return;
+                              e.preventDefault();
+                              const momentId = moment.id!;
+                              if ((commentImagesMap[momentId] || []).length >= 3) {
+                                message.warning('最多上传3张图片');
+                                return;
+                              }
+                              setCommentImageUploadingMap((prev) => ({ ...prev, [momentId]: true }));
+                              try {
+                                for (const item of items) {
+                                  const file = item.getAsFile();
+                                  if (!file) continue;
+                                  const res = await uploadFileByMinioUsingPost({ biz: 'user_file' }, {}, file, {
+                                    headers: { 'Content-Type': 'multipart/form-data' },
+                                  });
+                                  if (res.data) {
+                                    setCommentImagesMap((prev) => ({
+                                      ...prev,
+                                      [momentId]: [...(prev[momentId] || []).slice(0, 2), res.data!],
+                                    }));
+                                  }
+                                }
+                              } catch {
+                                message.error('图片上传失败');
+                              } finally {
+                                setCommentImageUploadingMap((prev) => ({ ...prev, [momentId]: false }));
+                              }
+                            }}
                           />
+                          <Upload
+                            accept="image/*"
+                            showUploadList={false}
+                            disabled={(commentImagesMap[moment.id!] || []).length >= 3 || commentImageUploadingMap[moment.id!]}
+                            beforeUpload={async (file) => {                              setCommentImageUploadingMap((prev) => ({ ...prev, [moment.id!]: true }));
+                              try {
+                                const res = await uploadFileByMinioUsingPost({ biz: 'user_file' }, {}, file, {
+                                  headers: { 'Content-Type': 'multipart/form-data' },
+                                });
+                                if (res.data) {
+                                  setCommentImagesMap((prev) => ({
+                                    ...prev,
+                                    [moment.id!]: [...(prev[moment.id!] || []), res.data!],
+                                  }));
+                                }
+                              } catch {
+                                message.error('图片上传失败');
+                              } finally {
+                                setCommentImageUploadingMap((prev) => ({ ...prev, [moment.id!]: false }));
+                              }
+                              return false;
+                            }}
+                          >
+                            <Button
+                              size="small"
+                              icon={commentImageUploadingMap[moment.id!] ? <LoadingOutlined /> : <PlusOutlined />}
+                              disabled={(commentImagesMap[moment.id!] || []).length >= 3 || commentImageUploadingMap[moment.id!]}
+                              className="comment-img-btn"
+                            />
+                          </Upload>
+                          <Popover
+                            content={
+                              <EmoticonPicker
+                                onSelect={(url) => {
+                                  setCommentImagesMap((prev) => ({
+                                    ...prev,
+                                    [moment.id!]: [...(prev[moment.id!] || []).slice(0, 2), url],
+                                  }));
+                                  setCommentEmoticonVisibleMap((prev) => ({ ...prev, [moment.id!]: false }));
+                                }}
+                              />
+                            }
+                            trigger="click"
+                            open={commentEmoticonVisibleMap[moment.id!] || false}
+                            onOpenChange={(v) =>
+                              setCommentEmoticonVisibleMap((prev) => ({ ...prev, [moment.id!]: v }))
+                            }
+                            placement="topLeft"
+                          >
+                            <Button
+                              size="small"
+                              icon={<SmileOutlined />}
+                              className="comment-img-btn"
+                            />
+                          </Popover>
                           <Button
                             type="primary"
                             size="small"
                             loading={commentSubmitting}
-                            disabled={!(commentInputMap[moment.id!]?.trim())}
+                            disabled={!(commentInputMap[moment.id!]?.trim()) && (commentImagesMap[moment.id!] || []).length === 0}
                             onClick={() => handleSubmitComment(moment.id!)}
                             className="comment-send-btn"
                           >

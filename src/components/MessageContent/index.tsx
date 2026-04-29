@@ -22,11 +22,20 @@ import { useModel } from '@umijs/max';
 import { Button, Card, Image, message } from 'antd';
 import DOMPurify from 'dompurify';
 import 'prismjs/themes/prism-tomorrow.css';
-import React, { useEffect, useRef, useState } from 'react';
-import ReactMarkdown, { Components } from 'react-markdown';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import type { Components } from 'react-markdown';
 import rehypePrism from 'rehype-prism-plus';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
+
+const ReactMarkdown = lazy(() => import('react-markdown'));
+
+// 懒加载包装，避免每处都写 Suspense
+const LazyMarkdown: React.FC<React.ComponentProps<typeof ReactMarkdown>> = (props) => (
+  <Suspense fallback={null}>
+    <ReactMarkdown {...props} />
+  </Suspense>
+);
 import styles from './index.less';
 
 // 定义事件名称常量
@@ -850,14 +859,14 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, onImageLoad })
       if (match.index > lastIndex) {
         const textBeforeInvite = content.slice(lastIndex, match.index);
         parts.push(
-          <ReactMarkdown
+          <LazyMarkdown
             key={`markdown-before-invite-${match.index}`}
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw, rehypePrism]}
             components={markdownComponents}
           >
             {sanitizeHtml(textBeforeInvite)}
-          </ReactMarkdown>
+          </LazyMarkdown>
         );
       }
       // 添加谁是卧底邀请组件
@@ -884,14 +893,14 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, onImageLoad })
               parts.push(renderUrl(urlPart, `url-${match!.index}-${urlIndex}`));
             } else if (urlPart) {
               parts.push(
-                <ReactMarkdown
+                <LazyMarkdown
                   key={`markdown-${match!.index}-${urlIndex}`}
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeRaw, rehypePrism]}
                   components={markdownComponents}
                 >
                   {sanitizeHtml(urlPart)}
-                </ReactMarkdown>,
+                </LazyMarkdown>,
               );
             }
           });
@@ -917,14 +926,14 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, onImageLoad })
               parts.push(renderUrl(urlPart, `url-file-${fileMatch!.index}-${urlIndex}`));
             } else if (urlPart) {
               parts.push(
-                <ReactMarkdown
+                <LazyMarkdown
                   key={`markdown-file-${fileMatch!.index}-${urlIndex}`}
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeRaw, rehypePrism]}
                   components={markdownComponents}
                 >
                   {sanitizeHtml(urlPart)}
-                </ReactMarkdown>,
+                </LazyMarkdown>,
               );
             }
           });
@@ -943,14 +952,14 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, onImageLoad })
             parts.push(renderUrl(urlPart, `url-final-${urlIndex}`));
           } else if (urlPart) {
             parts.push(
-              <ReactMarkdown
+              <LazyMarkdown
                 key={`markdown-final-${urlIndex}`}
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, rehypePrism]}
                 components={markdownComponents}
               >
                 {sanitizeHtml(urlPart)}
-              </ReactMarkdown>,
+              </LazyMarkdown>,
             );
           }
         });

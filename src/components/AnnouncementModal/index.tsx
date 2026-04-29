@@ -1,8 +1,8 @@
 import { getFileContent } from '@/services/file';
 import { NotificationOutlined } from '@ant-design/icons';
 import { Modal } from 'antd';
-import React, { useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
+const ReactMarkdown = lazy(() => import('react-markdown'));
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import './index.less';
@@ -39,9 +39,11 @@ const AnnouncementModal: React.FC<Props> = ({ open, onCancel }) => {
       footer={null}
       width={600}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-        {content}
-      </ReactMarkdown>
+      <Suspense fallback={null}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+          {content}
+        </ReactMarkdown>
+      </Suspense>
     </Modal>
   );
 };

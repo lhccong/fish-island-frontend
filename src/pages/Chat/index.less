@@ -50,121 +50,6 @@
     }
   }
 
-  // 添加漂浮的摸鱼元素
-  .floating-fish {
-    position: absolute;
-    font-size: 24px;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.8;
-    animation: float 8s ease-in-out infinite;
-
-    &.fish1 {
-      top: 10%;
-      left: -40px;
-      animation: swimLeft 15s ease-in-out infinite;
-      animation-delay: 0s;
-    }
-
-    &.fish2 {
-      top: 30%;
-      right: -40px;
-      animation: swimRight 18s ease-in-out infinite;
-      animation-delay: 3s;
-    }
-
-    &.fish3 {
-      bottom: 20%;
-      left: -40px;
-      animation: swimLeft 20s ease-in-out infinite;
-      animation-delay: 6s;
-    }
-
-    &.bubble1 {
-      top: 15%;
-      right: -30px;
-      font-size: 16px;
-      animation: floatUp 6s ease-in-out infinite;
-      animation-delay: 1s;
-    }
-
-    &.bubble2 {
-      bottom: 25%;
-      right: -30px;
-      font-size: 20px;
-      animation: floatUp 7s ease-in-out infinite;
-      animation-delay: 3s;
-    }
-  }
-
-  @keyframes swimLeft {
-    0% {
-      transform: translate(0, 0) rotate(0deg);
-      opacity: 0.8;
-    }
-    25% {
-      transform: translate(50px, -20px) rotate(10deg);
-      opacity: 0.9;
-    }
-    50% {
-      transform: translate(100px, 0) rotate(0deg);
-      opacity: 0.8;
-    }
-    75% {
-      transform: translate(50px, 20px) rotate(-10deg);
-      opacity: 0.9;
-    }
-    100% {
-      transform: translate(0, 0) rotate(0deg);
-      opacity: 0.8;
-    }
-  }
-
-  @keyframes swimRight {
-    0% {
-      transform: translate(0, 0) rotate(0deg);
-      opacity: 0.8;
-    }
-    25% {
-      transform: translate(-50px, -20px) rotate(-10deg);
-      opacity: 0.9;
-    }
-    50% {
-      transform: translate(-100px, 0) rotate(0deg);
-      opacity: 0.8;
-    }
-    75% {
-      transform: translate(-50px, 20px) rotate(10deg);
-      opacity: 0.9;
-    }
-    100% {
-      transform: translate(0, 0) rotate(0deg);
-      opacity: 0.8;
-    }
-  }
-
-  @keyframes floatUp {
-    0% {
-      transform: translate(0, 0) scale(1);
-      opacity: 0.8;
-    }
-    25% {
-      transform: translate(-20px, -20px) scale(1.1);
-      opacity: 0.9;
-    }
-    50% {
-      transform: translate(-40px, -40px) scale(1);
-      opacity: 0.8;
-    }
-    75% {
-      transform: translate(-20px, -60px) scale(0.9);
-      opacity: 0.9;
-    }
-    100% {
-      transform: translate(0, 0) scale(1);
-      opacity: 0.8;
-    }
-  }
 
   &::before {
     content: '';
@@ -219,10 +104,7 @@
       display: none !important;
     }
 
-    // 在移动端隐藏漂浮元素
-    .floating-fish {
-      display: none;
-    }
+
   }
 
   .messageContainer {

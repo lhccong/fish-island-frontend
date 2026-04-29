@@ -466,7 +466,39 @@
               span { color: #576b95; }
             }
 
-            .comment-content { color: #333; word-break: break-word; }
+            .comment-content {
+              color: #333;
+              word-break: break-word;
+              display: block;
+
+              .comment-text-part { color: #333; }
+
+              .comment-img-grid {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-top: 6px;
+
+                .comment-img-item {
+                  width: 80px;
+                  height: 80px;
+                  border-radius: 6px;
+                  object-fit: cover;
+                  cursor: pointer;
+                  border: 1px solid #f0f0f0;
+                  transition: transform 0.2s;
+
+                  &:hover { transform: scale(1.04); }
+
+                  img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 6px;
+                  }
+                }
+              }
+            }
 
             .comment-meta {
               display: flex;
@@ -523,6 +555,45 @@
           .anticon { cursor: pointer; font-size: 11px; &:hover { color: #ff4d4f; } }
         }
 
+        .comment-images-preview {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-bottom: 8px;
+
+          .comment-preview-item {
+            position: relative;
+            width: 64px;
+            height: 64px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #e8e8e8;
+
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+
+            .comment-preview-remove {
+              position: absolute;
+              top: 2px;
+              right: 2px;
+              width: 18px;
+              height: 18px;
+              background: rgba(0, 0, 0, 0.5);
+              color: #fff;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              font-size: 10px;
+              &:hover { background: rgba(255, 77, 79, 0.9); }
+            }
+          }
+        }
+
         .comment-input-row {
           display: flex;
           gap: 8px;
@@ -539,6 +610,17 @@
               background: #fff;
               box-shadow: 0 0 0 2px rgba(7, 193, 96, 0.1);
             }
+          }
+
+          .comment-img-btn {
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
           }
 
           .comment-send-btn {

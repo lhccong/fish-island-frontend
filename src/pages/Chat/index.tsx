@@ -45,7 +45,6 @@ import {
   SendOutlined,
   SmileOutlined,
   SoundOutlined,
-  CalendarOutlined,
   TeamOutlined,
   EllipsisOutlined,
   FileImageOutlined,
@@ -73,7 +72,7 @@ import {
   Badge,
   Switch,
 } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import styles from './index.less';
 import { UNDERCOVER_NOTIFICATION } from '@/constants';
@@ -145,6 +144,128 @@ interface UserRemark {
   userId: string;
   remark: string;
 }
+
+// MessageItem props 类型
+interface MessageItemProps {
+  msg: Message;
+  currentUser: any;
+  notifications: Message[];
+  styles: Record<string, string>;
+  UserInfoCard: React.FC<{ user: User }>;
+  handleSelectMention: (user: User) => void;
+  handleViewUserDetail: (user: User) => void;
+  getUserDisplayName: (user: User) => string;
+  getAdminTag: (isAdmin: boolean, level: number, titleId?: number) => React.ReactNode;
+  renderMessageContent: (content: string) => React.ReactNode;
+  handleRevokeMessage: (messageId: string) => void;
+  handleQuoteMessage: (message: Message) => void;
+}
+
+const MessageItem = React.memo<MessageItemProps>(({
+  msg,
+  currentUser,
+  notifications,
+  styles,
+  UserInfoCard,
+  handleSelectMention,
+  handleViewUserDetail,
+  getUserDisplayName,
+  getAdminTag,
+  renderMessageContent,
+  handleRevokeMessage,
+  handleQuoteMessage,
+}) => {
+  const isSelf = currentUser?.id && String(msg.sender.id) === String(currentUser.id);
+  const isMentioned = notifications.some((n) => n.id === msg.id);
+  const canRevoke = isSelf || currentUser?.userRole === 'admin';
+
+  return (
+    <div
+      id={`message-${msg.id}`}
+      className={`${styles.messageItem} ${isSelf ? styles.self : ''} ${isMentioned ? styles.mentioned : ''}`}
+    >
+      <div className={styles.messageHeader}>
+        <div
+          className={styles.avatar}
+          onClick={() => handleSelectMention(msg.sender)}
+          style={{ cursor: 'pointer' }}
+        >
+          <Popover
+            content={<UserInfoCard user={msg.sender} />}
+            trigger="hover"
+            placement="top"
+          >
+            <div className={styles.avatarWithFrame}>
+              <Avatar src={msg.sender.avatar} size={32} />
+              {msg.sender.avatarFramerUrl && (
+                <img
+                  src={msg.sender.avatarFramerUrl}
+                  className={styles.avatarFrame}
+                  alt="avatar-frame"
+                />
+              )}
+            </div>
+          </Popover>
+        </div>
+        <div className={styles.senderInfo}>
+          <span
+            className={styles.senderName}
+            onClick={() => handleViewUserDetail(msg.sender)}
+            style={{ cursor: 'pointer' }}
+          >
+            {getUserDisplayName(msg.sender)}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0px' }}>
+              {getAdminTag(msg.sender.isAdmin, msg.sender.level, msg.sender.titleId)}
+            </span>
+            <span className={styles.levelBadge}>
+              {getLevelEmoji(msg.sender.level)} {msg.sender.level}
+            </span>
+          </span>
+        </div>
+      </div>
+      <div className={styles.messageContent}>
+        {msg.quotedMessage && (
+          <div className={styles.quotedMessage}>
+            <div className={styles.quotedMessageHeader}>
+              <span
+                className={styles.quotedMessageSender}
+                onClick={() => msg.quotedMessage && handleViewUserDetail(msg.quotedMessage.sender)}
+                style={{ cursor: 'pointer' }}
+              >
+                {getUserDisplayName(msg.quotedMessage.sender)}
+              </span>
+              <span className={styles.quotedMessageTime}>
+                {new Date(msg.quotedMessage.timestamp).toLocaleTimeString()}
+              </span>
+            </div>
+            <div className={styles.quotedMessageContent}>
+              {renderMessageContent(msg.quotedMessage.content)}
+            </div>
+          </div>
+        )}
+        {renderMessageContent(msg.content)}
+      </div>
+      <div className={styles.messageFooter}>
+        <span className={styles.timestamp}>
+          {new Date(msg.timestamp).toLocaleTimeString()}
+        </span>
+        {canRevoke ? (
+          <Popconfirm
+            title="确定要撤回这条消息吗？"
+            onConfirm={() => handleRevokeMessage(msg.id)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <span className={styles.revokeText}>撤回</span>
+          </Popconfirm>
+        ) : null}
+        <span className={styles.quoteText} onClick={() => handleQuoteMessage(msg)}>
+          引用
+        </span>
+      </div>
+    </div>
+  );
+});
 
 const ChatRoom: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -439,7 +560,7 @@ const ChatRoom: React.FC = () => {
   const [newMessageCount, setNewMessageCount] = useState<number>(0);
   const newMessageTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [isLoadingMoyu, setIsLoadingMoyu] = useState(false);
+
   const [isExportingAnnualReportImage, setIsExportingAnnualReportImage] = useState(false);
 
   // 添加用户备注相关状态
@@ -999,8 +1120,6 @@ const ChatRoom: React.FC = () => {
 
       // 设置预览图片
       setPendingImageUrl(fallbackRes.data);
-      // 上传图片后更新发送按钮状态
-      setShouldShowSendButton(true);
       // } else {
       //   // 设置预览图片
       //   setPendingImageUrl(res.data);
@@ -1101,8 +1220,6 @@ const ChatRoom: React.FC = () => {
 // 移除待发送的文件
   const handleRemoveFile = () => {
     setPendingFileUrl(null);
-    // 更新发送按钮状态
-    setShouldShowSendButton(shouldShowSendButtonCheck());
   };
 
   // 添加滚动到指定消息的函数
@@ -1408,9 +1525,6 @@ const ChatRoom: React.FC = () => {
     setPendingFileUrl(null);
     setQuotedMessage(null);
 
-    // 重置发送按钮状态为加号按钮
-    setShouldShowSendButton(false);
-
     // 更新最后发送时间和内容
     setLastSendTime(now);
     setLastSendContent(content);
@@ -1428,12 +1542,10 @@ const ChatRoom: React.FC = () => {
   // 移除待发送的图片
   const handleRemoveImage = () => {
     setPendingImageUrl(null);
-    // 更新发送按钮状态
-    setShouldShowSendButton(shouldShowSendButtonCheck());
   };
 
   // 添加撤回消息的处理函数
-  const handleRevokeMessage = (messageId: string) => {
+  const handleRevokeMessage = useCallback((messageId: string) => {
     wsService.send({
       type: 2,
       userId: -1,
@@ -1444,7 +1556,7 @@ const ChatRoom: React.FC = () => {
     });
 
     messageApi.info('消息已撤回');
-  };
+  }, [messageApi]);
 
   // 处理@输入
   const handleMentionInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -1461,13 +1573,6 @@ const ChatRoom: React.FC = () => {
       closeMobileToolbar();
     }
 
-    // 检查是否输入了#摸鱼日历 - 这个功能必须立即响应
-    if (value === '#摸鱼日历') {
-      fetchMoyuCalendar();
-      setInputValue(''); // 清空输入框，因为这是触发词
-      setShouldShowSendButton(false); // 重置发送按钮状态
-      return;
-    }
 
     // 使用防抖处理@功能，减少频繁计算
     if (mentionDebounceRef.current) {
@@ -1536,7 +1641,7 @@ const ChatRoom: React.FC = () => {
   }, []);
 
   // 选择@成员
-  const handleSelectMention = (user: User) => {
+  const handleSelectMention = useCallback((user: User) => {
     // 清理防抖计时器
     if (mentionDebounceRef.current) {
       clearTimeout(mentionDebounceRef.current);
@@ -1547,26 +1652,22 @@ const ChatRoom: React.FC = () => {
     setInputValue(currentValue => {
       const lastAtPos = currentValue.lastIndexOf('@');
       if (lastAtPos !== -1) {
-        // 如果已经输入了@，则替换当前@后面的内容
         return currentValue.slice(0, lastAtPos) +
           `@${user.name} ` +
           currentValue.slice(lastAtPos + mentionSearchText.length + 1);
       } else {
-        // 如果没有输入@，则在当前光标位置插入@用户名
         const cursorPos = inputRef.current?.selectionStart || 0;
         return currentValue.slice(0, cursorPos) + `@${user.name} ` + currentValue.slice(cursorPos);
       }
     });
 
-    // 立即隐藏列表，提高响应速度
     setIsMentionListVisible(false);
     setMentionSearchText('');
 
-    // 使用 requestAnimationFrame 延迟聚焦，提高渲染性能
     requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
-  };
+  }, [mentionSearchText]);
 
   // Using utility function from titleUtils
 
@@ -1707,13 +1808,12 @@ const ChatRoom: React.FC = () => {
   };
 
   // 在 return 语句之前添加引用消息的处理函数
-  const handleQuoteMessage = (message: Message) => {
+  const handleQuoteMessage = useCallback((message: Message) => {
     setQuotedMessage(message);
-    // 让输入框获得焦点
     setTimeout(() => {
       inputRef.current?.focus();
     }, 0);
-  };
+  }, []);
 
   // Using utility function from titleUtils
 
@@ -2219,25 +2319,6 @@ const ChatRoom: React.FC = () => {
     };
   }, []);
 
-  // 修改获取摸鱼日历的函数
-  const fetchMoyuCalendar = async () => {
-    try {
-      setIsLoadingMoyu(true);
-      const response = await fetch('https://api.vvhan.com/api/moyu?type=json');
-      const data = await response.json();
-      if (data.success) {
-        setPendingImageUrl(data.url);
-        // 更新发送按钮状态
-        setShouldShowSendButton(true);
-      } else {
-        messageApi.error('获取摸鱼日历失败');
-      }
-    } catch (error) {
-      messageApi.error('获取摸鱼日历失败');
-    } finally {
-      setIsLoadingMoyu(false);
-    }
-  };
 
   // 添加歌单相关状态
   const [activeTab, setActiveTab] = useState('search');
@@ -2602,22 +2683,18 @@ const ChatRoom: React.FC = () => {
 
   // 添加移动端功能面板状态
   const [isMobileToolbarVisible, setIsMobileToolbarVisible] = useState<boolean>(false);
-  const [shouldShowSendButton, setShouldShowSendButton] = useState<boolean>(false);
 
   // 添加切换移动端功能面板的函数
   const toggleMobileToolbar = () => {
     setIsMobileToolbarVisible(!isMobileToolbarVisible);
   };
 
-  // 检查是否应该显示发送按钮
-  const shouldShowSendButtonCheck = () => {
-    return inputValue.trim().length > 0 || pendingImageUrl !== null || pendingFileUrl !== null;
-  };
+  // 直接派生发送按钮状态，不需要额外的 state 和 useEffect
+  const shouldShowSendButton = useMemo(
+    () => inputValue.trim().length > 0 || pendingImageUrl !== null || pendingFileUrl !== null,
+    [inputValue, pendingImageUrl, pendingFileUrl],
+  );
 
-  // 确保在组件状态更新时检查发送按钮状态
-  useEffect(() => {
-    setShouldShowSendButton(shouldShowSendButtonCheck());
-  }, [inputValue, pendingImageUrl, pendingFileUrl]);
 
   // 处理移动端功能按钮点击
   const handleMobileToolClick = (action: string) => {
@@ -2636,9 +2713,6 @@ const ChatRoom: React.FC = () => {
         break;
       case 'image':
         fileInputRef.current?.click();
-        break;
-      case 'calendar':
-        fetchMoyuCalendar();
         break;
       case 'pet':
         setIsPetModalVisible(true);
@@ -2877,9 +2951,9 @@ const ChatRoom: React.FC = () => {
   };
 
   // 获取用户显示名称
-  const getUserDisplayName = (user: User) => {
+  const getUserDisplayName = useCallback((user: User) => {
     return userRemarks[user.id] || user.name;
-  };
+  }, [userRemarks]);
 
   // 打开设置备注弹窗
   const openRemarkModal = (user: User) => {
@@ -3217,11 +3291,7 @@ const ChatRoom: React.FC = () => {
           dangerouslySetInnerHTML={{ __html: annualReportHtml }}
         />
       </Modal>
-      <div className={styles['floating-fish'] + ' ' + styles.fish1}>🐟</div>
-      <div className={styles['floating-fish'] + ' ' + styles.fish2}>🐠</div>
-      <div className={styles['floating-fish'] + ' ' + styles.fish3}>🐡</div>
-      <div className={styles['floating-fish'] + ' ' + styles.bubble1}>💭</div>
-      <div className={styles['floating-fish'] + ' ' + styles.bubble2}>💭</div>
+
       <div
         className={styles.messageContainer}
         ref={messageContainerRef}
@@ -3239,94 +3309,21 @@ const ChatRoom: React.FC = () => {
           </div>
         )}
         {messages.map((msg) => (
-          <div
+          <MessageItem
             key={msg.id}
-            id={`message-${msg.id}`}
-            className={`${styles.messageItem} ${
-              currentUser?.id && String(msg.sender.id) === String(currentUser.id) ? styles.self : ''
-            } ${notifications.some((n) => n.id === msg.id) ? styles.mentioned : ''}`}
-          >
-            <div className={styles.messageHeader}>
-              <div
-                className={styles.avatar}
-                onClick={() => handleSelectMention(msg.sender)}
-                style={{ cursor: 'pointer' }}
-              >
-                <Popover
-                  content={<UserInfoCard user={msg.sender} />}
-                  trigger="hover"
-                  placement="top"
-                >
-                  <div className={styles.avatarWithFrame}>
-                    <Avatar src={msg.sender.avatar} size={32} />
-                    {msg.sender.avatarFramerUrl && (
-                      <img
-                        src={msg.sender.avatarFramerUrl}
-                        className={styles.avatarFrame}
-                        alt="avatar-frame"
-                      />
-                    )}
-                  </div>
-                </Popover>
-              </div>
-              <div className={styles.senderInfo}>
-                <span
-                  className={styles.senderName}
-                  onClick={() => handleViewUserDetail(msg.sender)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {getUserDisplayName(msg.sender)}
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0px' }}>
-                    {getAdminTag(msg.sender.isAdmin, msg.sender.level, msg.sender.titleId)}
-                  </span>
-                  <span className={styles.levelBadge}>
-                    {getLevelEmoji(msg.sender.level)} {msg.sender.level}
-                  </span>
-                </span>
-              </div>
-            </div>
-            <div className={styles.messageContent}>
-              {msg.quotedMessage && (
-                <div className={styles.quotedMessage}>
-                  <div className={styles.quotedMessageHeader}>
-                    <span
-                      className={styles.quotedMessageSender}
-                      onClick={() => msg.quotedMessage && handleViewUserDetail(msg.quotedMessage.sender)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {getUserDisplayName(msg.quotedMessage.sender)}
-                    </span>
-                    <span className={styles.quotedMessageTime}>
-                      {new Date(msg.quotedMessage.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <div className={styles.quotedMessageContent}>
-                    {renderMessageContent(msg.quotedMessage.content)}
-                  </div>
-                </div>
-              )}
-              {renderMessageContent(msg.content)}
-            </div>
-            <div className={styles.messageFooter}>
-              <span className={styles.timestamp}>
-                {new Date(msg.timestamp).toLocaleTimeString()}
-              </span>
-              {(currentUser?.id && String(msg.sender.id) === String(currentUser.id)) ||
-              currentUser?.userRole === 'admin' ? (
-                <Popconfirm
-                  title="确定要撤回这条消息吗？"
-                  onConfirm={() => handleRevokeMessage(msg.id)}
-                  okText="确定"
-                  cancelText="取消"
-                >
-                  <span className={styles.revokeText}>撤回</span>
-                </Popconfirm>
-              ) : null}
-              <span className={styles.quoteText} onClick={() => handleQuoteMessage(msg)}>
-                引用
-              </span>
-            </div>
-          </div>
+            msg={msg}
+            currentUser={currentUser}
+            notifications={notifications}
+            styles={styles}
+            UserInfoCard={UserInfoCard}
+            handleSelectMention={handleSelectMention}
+            handleViewUserDetail={handleViewUserDetail}
+            getUserDisplayName={getUserDisplayName}
+            getAdminTag={getAdminTag}
+            renderMessageContent={renderMessageContent}
+            handleRevokeMessage={handleRevokeMessage}
+            handleQuoteMessage={handleQuoteMessage}
+          />
         ))}
         <div ref={messagesEndRef} />
       </div>
@@ -3527,10 +3524,6 @@ const ChatRoom: React.FC = () => {
                     <span>发红包</span>
                   </div>
                 )}
-                <div className={styles.moreOptionsItem} onClick={fetchMoyuCalendar}>
-                  <CalendarOutlined className={styles.moreOptionsIcon} />
-                  <span>摸鱼日历</span>
-                </div>
                 <div className={styles.moreOptionsItem} onClick={() => fileInputRef.current?.click()}>
                   <PaperClipOutlined className={styles.moreOptionsIcon} />
                   <span>上传图片</span>
@@ -3652,12 +3645,6 @@ const ChatRoom: React.FC = () => {
                   <CustomerServiceOutlined />
                 </div>
                 <div className={styles.mobileToolText}>音乐</div>
-              </div>
-              <div className={styles.mobileTool} onClick={() => handleMobileToolClick('calendar')}>
-                <div className={styles.mobileToolIcon}>
-                  <CalendarOutlined />
-                </div>
-                <div className={styles.mobileToolText}>摸鱼日历</div>
               </div>
             </div>
             <div className={styles.mobileToolRow}>
