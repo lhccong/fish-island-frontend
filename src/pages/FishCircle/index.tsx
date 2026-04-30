@@ -43,7 +43,7 @@ const FishCirclePage: React.FC = () => {
     pageSize: 10,
     total: 0,
   });
-  
+
   // 发布弹窗状态
   const [publishModalVisible, setPublishModalVisible] = useState<boolean>(false);
   const [publishContent, setPublishContent] = useState<string>('');
@@ -76,7 +76,7 @@ const FishCirclePage: React.FC = () => {
   const [commentSubmitting, setCommentSubmitting] = useState<boolean>(false);
   const [expandedRepliesMap, setExpandedRepliesMap] = useState<Record<number, boolean>>({}); // 子评论展开状态
   const [expandedCommentsMap, setExpandedCommentsMap] = useState<Record<number, boolean>>({}); // 评论列表展开状态
-  
+
   const scrollRef = useRef<HTMLDivElement>(null); // kept for potential future use
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -428,7 +428,7 @@ const FishCirclePage: React.FC = () => {
       if (!file) continue;
 
       try {
-        const res = await uploadFileByMinioUsingPost({ biz: 'user_file' }, {}, file, {
+        const res = await uploadFileByMinioUsingPost({ biz: 'user_post ' }, {}, file, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         if (res.data) {
@@ -573,7 +573,7 @@ const FishCirclePage: React.FC = () => {
 
     const images = mediaJson.filter(item => item.type === 'image').map(item => item.url);
     const count = images.length;
-    
+
     if (count === 0) return null;
 
     // 单张大图
@@ -659,9 +659,9 @@ const FishCirclePage: React.FC = () => {
         )}
         <div className="user-info">
           <span className="user-name">{viewingUser ? viewingUser.userName : (currentUser?.userName || '摸鱼用户')}</span>
-          <Avatar 
-            size={80} 
-            src={viewingUser ? viewingUser.userAvatar : currentUser?.userAvatar} 
+          <Avatar
+            size={80}
+            src={viewingUser ? viewingUser.userAvatar : currentUser?.userAvatar}
             className="user-avatar"
           >
             {(viewingUser ? viewingUser.userName : currentUser?.userName)?.charAt(0) || '摸'}
@@ -686,31 +686,31 @@ const FishCirclePage: React.FC = () => {
               <div key={moment.id} className="moment-item">
                 <div className="moment-content">
                   {/* 用户头像 */}
-                  <Avatar 
-                    size={44} 
-                    src={moment.userAvatar} 
+                  <Avatar
+                    size={44}
+                    src={moment.userAvatar}
                     className="moment-avatar"
                     style={moment.userId !== currentUser?.id ? { cursor: 'pointer' } : undefined}
                     onClick={() => moment.userId && moment.userId !== currentUser?.id && handleViewUserCircle(moment.userId, moment.userAvatar, moment.userName)}
                   >
                     {moment.userName?.charAt(0) || '摸'}
                   </Avatar>
-                  
+
                   <div className="moment-body">
                     {/* 用户名 */}
                     <div
                       className="moment-user"
                       onClick={() => moment.userId && moment.userId !== currentUser?.id && handleViewUserCircle(moment.userId, moment.userAvatar, moment.userName)}
                     >{moment.userName}</div>
-                    
+
                     {/* 文字内容 */}
                     {moment.content && (
                       <div className="moment-text">{moment.content}</div>
                     )}
-                    
+
                     {/* 九宫格图片 */}
                     {renderMediaGrid(moment.mediaJson)}
-                    
+
                     {/* 位置信息 */}
                     {moment.location && (
                       <div className="moment-location">
@@ -718,7 +718,7 @@ const FishCirclePage: React.FC = () => {
                         <span>{moment.location}</span>
                       </div>
                     )}
-                    
+
                     {/* 点赞用户名列表（微信风格） */}
                     {moment.likeUserNames && moment.likeUserNames.trim() && (
                       <div className="like-users-bar">
@@ -732,10 +732,10 @@ const FishCirclePage: React.FC = () => {
                     {/* 时间和操作 */}
                     <div className="moment-footer">
                       <span className="moment-time">{formatTime(moment.createTime)}</span>
-                      
+
                       <div className="moment-actions">
                         <Tooltip title={moment.liked ? '取消点赞' : '点赞'}>
-                          <span 
+                          <span
                             className={`action-btn like-btn ${moment.liked ? 'liked' : ''}`}
                             onClick={() => handleLike(moment.id!, moment.liked || false)}
                           >
@@ -743,7 +743,7 @@ const FishCirclePage: React.FC = () => {
                             {(moment.likeNum || 0) > 0 && <span className="count">{moment.likeNum}</span>}
                           </span>
                         </Tooltip>
-                        
+
                         <Tooltip title="评论">
                           <span
                             className="action-btn comment-btn"
@@ -805,7 +805,7 @@ const FishCirclePage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* 评论区 */}
                 {((commentsMap[moment.id!] || []).length > 0 || showInputId === moment.id) && (
                   <div className="comment-section">
@@ -950,7 +950,7 @@ const FishCirclePage: React.FC = () => {
                                 for (const item of items) {
                                   const file = item.getAsFile();
                                   if (!file) continue;
-                                  const res = await uploadFileByMinioUsingPost({ biz: 'user_file' }, {}, file, {
+                                  const res = await uploadFileByMinioUsingPost({ biz: 'user_post' }, {}, file, {
                                     headers: { 'Content-Type': 'multipart/form-data' },
                                   });
                                   if (res.data) {
@@ -973,7 +973,7 @@ const FishCirclePage: React.FC = () => {
                             disabled={(commentImagesMap[moment.id!] || []).length >= 3 || commentImageUploadingMap[moment.id!]}
                             beforeUpload={async (file) => {                              setCommentImageUploadingMap((prev) => ({ ...prev, [moment.id!]: true }));
                               try {
-                                const res = await uploadFileByMinioUsingPost({ biz: 'user_file' }, {}, file, {
+                                const res = await uploadFileByMinioUsingPost({ biz: 'user_post' }, {}, file, {
                                   headers: { 'Content-Type': 'multipart/form-data' },
                                 });
                                 if (res.data) {
@@ -1041,7 +1041,7 @@ const FishCirclePage: React.FC = () => {
 
               </div>
             ))}
-            
+
             {/* 加载更多 */}
             {loadingMore && (
               <div className="loading-more">
@@ -1049,7 +1049,7 @@ const FishCirclePage: React.FC = () => {
                 <span>加载更多...</span>
               </div>
             )}
-            
+
             {/* 没有更多数据 */}
             {!hasMore && moments.length > 0 && (
               <div className="no-more">
@@ -1085,7 +1085,7 @@ const FishCirclePage: React.FC = () => {
       </div>
 
       {/* 发布按钮 */}
-      <div 
+      <div
         className="publish-btn"
         onClick={() => setPublishModalVisible(true)}
       >
@@ -1114,14 +1114,14 @@ const FishCirclePage: React.FC = () => {
             maxLength={500}
             showCount
           />
-          
+
           {/* 图片预览区域 */}
           {publishImages.length > 0 && (
             <div className="publish-images-preview">
               {publishImages.map((url, index) => (
                 <div key={index} className="preview-item">
                   <img src={url} alt={`预览${index + 1}`} />
-                  <span 
+                  <span
                     className="remove-btn"
                     onClick={() => handleRemoveImage(index)}
                   >
@@ -1131,7 +1131,7 @@ const FishCirclePage: React.FC = () => {
               ))}
             </div>
           )}
-          
+
           {/* 上传区域 */}
           <div className="publish-actions">
             <Space>
@@ -1141,7 +1141,7 @@ const FishCirclePage: React.FC = () => {
                 showUploadList={false}
                 disabled={publishImages.length >= 9}
               >
-                <Button 
+                <Button
                   icon={<PlusOutlined />}
                   disabled={publishImages.length >= 9}
                 >
@@ -1149,13 +1149,13 @@ const FishCirclePage: React.FC = () => {
                 </Button>
               </Upload>
               <span className="upload-hint">
-                {publishImages.length > 0 
-                  ? `已选择 ${publishImages.length}/9 张图片，可直接粘贴图片` 
+                {publishImages.length > 0
+                  ? `已选择 ${publishImages.length}/9 张图片，可直接粘贴图片`
                   : '可直接粘贴图片上传'}
               </span>
             </Space>
           </div>
-          
+
           {/* 位置输入 */}
           <div className="publish-location">
             <Input
