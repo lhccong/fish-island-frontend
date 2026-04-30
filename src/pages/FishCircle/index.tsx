@@ -89,6 +89,8 @@ const FishCirclePage: React.FC = () => {
 
   // 查看他人鱼小圈
   const [viewingUser, setViewingUser] = useState<API.UserVO | null>(null);
+  // 查看自己的鱼小圈
+  const [viewingSelf, setViewingSelf] = useState<boolean>(false);
 
   // 获取当前用户信息
   const fetchCurrentUser = async () => {
@@ -100,6 +102,22 @@ const FishCirclePage: React.FC = () => {
     } catch (error) {
       console.error('获取用户信息失败', error);
     }
+  };
+
+  // 查看自己的鱼小圈
+  const handleViewSelfCircle = async () => {
+    if (!currentUser?.id) return;
+    if (viewingSelf) return; // 已经在看自己的了
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setViewingSelf(true);
+    setMoments([]);
+    setCommentsMap({});
+    currentPageRef.current = 1;
+    hasMoreRef.current = true;
+    viewingUserIdRef.current = currentUser.id;
+    setPagination({ current: 1, pageSize: 10, total: 0 });
+    setHasMore(true);
+    await fetchMoments(false, currentUser.id);
   };
 
   // 查看他人鱼小圈
@@ -128,6 +146,7 @@ const FishCirclePage: React.FC = () => {
   const handleBackToMain = async () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setViewingUser(null);
+    setViewingSelf(false);
     setMoments([]);
     setCommentsMap({});
     currentPageRef.current = 1;
@@ -652,7 +671,7 @@ const FishCirclePage: React.FC = () => {
               : undefined
           }
         />
-        {viewingUser && (
+        {(viewingUser || viewingSelf) && (
           <div className="cover-back-btn" onClick={handleBackToMain}>
             <ArrowLeftOutlined /> 返回
           </div>
@@ -663,6 +682,8 @@ const FishCirclePage: React.FC = () => {
             size={80}
             src={viewingUser ? viewingUser.userAvatar : currentUser?.userAvatar}
             className="user-avatar"
+            style={!viewingUser ? { cursor: 'pointer' } : undefined}
+            onClick={!viewingUser ? handleViewSelfCircle : undefined}
           >
             {(viewingUser ? viewingUser.userName : currentUser?.userName)?.charAt(0) || '摸'}
           </Avatar>

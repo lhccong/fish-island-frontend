@@ -12,6 +12,7 @@ import * as drawGameController from './drawGameController';
 import * as emoticonFavourController from './emoticonFavourController';
 import * as eventRemindController from './eventRemindController';
 import * as fileController from './fileController';
+import * as fishAuthController from './fishAuthController';
 import * as fishPetController from './fishPetController';
 import * as fundController from './fundController';
 import * as heroController from './heroController';
@@ -21,6 +22,7 @@ import * as itemInstancesController from './itemInstancesController';
 import * as itemTemplatesController from './itemTemplatesController';
 import * as mockInterviewController from './mockInterviewController';
 import * as momentsController from './momentsController';
+import * as oAuth2Controller from './oAuth2Controller';
 import * as petBattleController from './petBattleController';
 import * as petEquipForgeController from './petEquipForgeController';
 import * as petRankController from './petRankController';
@@ -51,6 +53,7 @@ export default {
   petRankController,
   petSkinController,
   webParserController,
+  fishAuthController,
   bossController,
   chatController,
   commentController,
@@ -69,6 +72,7 @@ export default {
   mockInterviewController,
   momentsController,
   restAuthController,
+  oAuth2Controller,
   petBattleController,
   fishPetController,
   petEquipForgeController,

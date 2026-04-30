@@ -193,6 +193,7 @@ export default [
       {icon: 'ToolOutlined', path: '/admin/game/itemTemplates', component: './Admin/ItemTemplates', name: '装备管理', requireAuth: true},
     ],
   },
+  {path: '/oauth2/authorize', layout: false, component: './OAuth2/Authorize', requireAuth: false},
   {path: '/', redirect: '/index', requireAuth: true},
   {path: '*', layout: false, component: './404', requireAuth: false},
 ];

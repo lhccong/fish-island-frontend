@@ -15,6 +15,19 @@ declare namespace API {
     userId: number;
   };
 
+  type authorizeUsingGETParams = {
+    /** client_id */
+    client_id: string;
+    /** redirect_uri */
+    redirect_uri: string;
+    /** response_type */
+    response_type?: string;
+    /** scope */
+    scope?: string;
+    /** state */
+    state?: string;
+  };
+
   type AvatarFrame = {
     createTime?: string;
     frameId?: number;
@@ -81,6 +94,18 @@ declare namespace API {
   type BaseResponseDrawRoomVO_ = {
     code?: number;
     data?: DrawRoomVO;
+    message?: string;
+  };
+
+  type BaseResponseFishAuthDetailVO_ = {
+    code?: number;
+    data?: FishAuthDetailVO;
+    message?: string;
+  };
+
+  type BaseResponseFishAuthVO_ = {
+    code?: number;
+    data?: FishAuthVO;
     message?: string;
   };
 
@@ -171,6 +196,12 @@ declare namespace API {
   type BaseResponseListDrawRoomVO_ = {
     code?: number;
     data?: DrawRoomVO[];
+    message?: string;
+  };
+
+  type BaseResponseListFishAuthVO_ = {
+    code?: number;
+    data?: FishAuthVO[];
     message?: string;
   };
 
@@ -303,6 +334,18 @@ declare namespace API {
   type BaseResponseMomentsVO_ = {
     code?: number;
     data?: MomentsVO;
+    message?: string;
+  };
+
+  type BaseResponseOAuth2TokenVO_ = {
+    code?: number;
+    data?: OAuth2TokenVO;
+    message?: string;
+  };
+
+  type BaseResponseOAuth2UserInfoVO_ = {
+    code?: number;
+    data?: OAuth2UserInfoVO;
     message?: string;
   };
 
@@ -1120,6 +1163,72 @@ declare namespace API {
     petId: number;
   };
 
+  type FishAuthAddRequest = {
+    /** 应用描述 */
+    appDesc?: string;
+    /** 应用名称 */
+    appName: string;
+    /** 应用网站地址 */
+    appWebsite?: string;
+    /** 回调地址（多个用逗号分隔） */
+    redirectUri: string;
+  };
+
+  type FishAuthDetailVO = {
+    /** 应用描述 */
+    appDesc?: string;
+    /** 应用名称 */
+    appName?: string;
+    /** 应用网站地址 */
+    appWebsite?: string;
+    /** Client ID */
+    clientId?: string;
+    /** Client Secret */
+    clientSecret?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 应用 ID */
+    id?: number;
+    /** 回调地址 */
+    redirectUri?: string;
+    /** 状态：0-禁用，1-启用 */
+    status?: number;
+  };
+
+  type FishAuthUpdateRequest = {
+    /** 应用描述 */
+    appDesc?: string;
+    /** 应用名称 */
+    appName?: string;
+    /** 应用网站地址 */
+    appWebsite?: string;
+    /** 应用 ID */
+    id: number;
+    /** 回调地址（多个用逗号分隔） */
+    redirectUri?: string;
+    /** 状态：0-禁用，1-启用 */
+    status?: number;
+  };
+
+  type FishAuthVO = {
+    /** 应用描述 */
+    appDesc?: string;
+    /** 应用名称 */
+    appName?: string;
+    /** 应用网站地址 */
+    appWebsite?: string;
+    /** Client ID */
+    clientId?: string;
+    /** 创建时间 */
+    createTime?: string;
+    /** 应用 ID */
+    id?: number;
+    /** 回调地址 */
+    redirectUri?: string;
+    /** 状态：0-禁用，1-启用 */
+    status?: number;
+  };
+
   type FluxString_ = {
     prefetch?: number;
   };
@@ -1203,6 +1312,16 @@ declare namespace API {
   type generatePresignedDownloadUrlUsingGETParams = {
     /** fileName */
     fileName: string;
+  };
+
+  type getAppByClientIdUsingGETParams = {
+    /** clientId */
+    clientId: string;
+  };
+
+  type getAppDetailUsingGETParams = {
+    /** id */
+    id: number;
   };
 
   type getBossBattleInfoUsingGETParams = {
@@ -2171,6 +2290,30 @@ declare namespace API {
     roomId: string;
   };
 
+  type OAuth2TokenVO = {
+    /** 访问令牌 */
+    access_token?: string;
+    /** 过期时间（秒） */
+    expires_in?: number;
+    /** 授权范围 */
+    scope?: string;
+    /** 令牌类型 */
+    token_type?: string;
+  };
+
+  type OAuth2UserInfoVO = {
+    /** 用户头像 */
+    avatar?: string;
+    /** 用户邮箱 */
+    email?: string;
+    /** 用户 ID */
+    id?: string;
+    /** 用户昵称 */
+    name?: string;
+    /** 用户名 */
+    username?: string;
+  };
+
   type OrderItem = {
     asc?: boolean;
     column?: string;
@@ -2910,6 +3053,11 @@ declare namespace API {
     source: string;
   };
 
+  type resetSecretUsingPOSTParams = {
+    /** id */
+    id: number;
+  };
+
   type Response = {
     credentials?: Credentials;
     expiration?: string;
@@ -3078,6 +3226,19 @@ declare namespace API {
     userProfile?: string;
     userRole?: string;
     vip?: boolean;
+  };
+
+  type tokenUsingPOSTParams = {
+    /** client_id */
+    client_id: string;
+    /** client_secret */
+    client_secret: string;
+    /** code */
+    code: string;
+    /** grant_type */
+    grant_type?: string;
+    /** redirect_uri */
+    redirect_uri: string;
   };
 
   type TournamentChallengeResultVO = {

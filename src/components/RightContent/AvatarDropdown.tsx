@@ -7,6 +7,14 @@ import {
   userEmailSendUsingPost,
   userLogoutUsingPost
 } from '@/services/backend/userController';
+import {
+  createAppUsingPost,
+  deleteAppUsingPost,
+  getAppDetailUsingGet,
+  listMyAppsUsingGet,
+  resetSecretUsingPost,
+  updateAppUsingPost,
+} from '@/services/backend/fishAuthController';
 import {getCurrentUserVipUsingGet, checkPermanentVipUsingGet} from '@/services/backend/userVipController';
 import {listAvailableFramesUsingGet1, setCurrentFrameUsingPost1} from '@/services/backend/userTitleController';
 import {uploadFileByMinioUsingPost} from '@/services/backend/fileController';
@@ -18,6 +26,13 @@ import {
   SwapOutlined,
   UploadOutlined,
   UserOutlined,
+  ApiOutlined,
+  CopyOutlined,
+  ReloadOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
 import {history, useModel} from '@umijs/max';
 import {
@@ -34,7 +49,11 @@ import {
   TimePicker,
   Tooltip,
   Upload,
-  Badge
+  Badge,
+  Table,
+  Tag,
+  Popconfirm,
+  Typography,
 } from 'antd';
 import defaultSettings from '../../../config/defaultSettings';
 import type {MenuInfo} from 'rc-menu/lib/interface';
@@ -874,6 +893,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       label: '老板键设置',
     },
     {
+      key: 'openPlatform',
+      icon: <ApiOutlined/>,
+      label: '开放平台',
+    },
+    {
       key: 'siteConfig',
       icon: <SettingOutlined/>,
       label: '网站设置',
@@ -926,6 +950,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       }
       if (key === 'bossKey') {
         setIsBossKeyOpen(true);
+        return;
+      }
+      if (key === 'openPlatform') {
+        setIsOpenPlatformOpen(true);
+        fetchMyApps();
         return;
       }
       if (key === 'siteConfig') {
@@ -1086,6 +1115,108 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const [isFoodRecommenderOpen, setIsFoodRecommenderOpen] = useState(false);
   const messageNotificationRef = useRef<MessageNotificationRef>(null);
   const [unreadMessageCount, setUnreadMessageCount] = useState<number>(0);
+
+  // ===== 开放平台 =====
+  const [isOpenPlatformOpen, setIsOpenPlatformOpen] = useState(false);
+  const [myApps, setMyApps] = useState<API.FishAuthVO[]>([]);
+  const [appLoading, setAppLoading] = useState(false);
+  const [isCreateAppOpen, setIsCreateAppOpen] = useState(false);
+  const [isEditAppOpen, setIsEditAppOpen] = useState(false);
+  const [editingApp, setEditingApp] = useState<API.FishAuthVO | null>(null);
+  const [appDetailMap, setAppDetailMap] = useState<Record<number, API.FishAuthDetailVO>>({});
+  const [visibleSecrets, setVisibleSecrets] = useState<Record<number, boolean>>({});
+  const [createAppForm] = Form.useForm();
+  const [editAppForm] = Form.useForm();
+
+  const fetchMyApps = async () => {
+    setAppLoading(true);
+    try {
+      const res = await listMyAppsUsingGet();
+      if (res.code === 0) {
+        setMyApps(res.data || []);
+      }
+    } catch (e) {
+      message.error('获取应用列表失败');
+    } finally {
+      setAppLoading(false);
+    }
+  };
+
+  const handleCreateApp = async (values: API.FishAuthAddRequest) => {
+    try {
+      const res = await createAppUsingPost(values);
+      if (res.code === 0) {
+        message.success('应用创建成功');
+        setIsCreateAppOpen(false);
+        createAppForm.resetFields();
+        fetchMyApps();
+      }
+    } catch (e: any) {
+      message.error(`创建失败：${e.message}`);
+    }
+  };
+
+  const handleUpdateApp = async (values: any) => {
+    if (!editingApp?.id) return;
+    try {
+      const res = await updateAppUsingPost({ ...values, id: editingApp.id });
+      if (res.code === 0) {
+        message.success('更新成功');
+        setIsEditAppOpen(false);
+        editAppForm.resetFields();
+        fetchMyApps();
+      }
+    } catch (e: any) {
+      message.error(`更新失败：${e.message}`);
+    }
+  };
+
+  const handleDeleteApp = async (id: number) => {
+    try {
+      const res = await deleteAppUsingPost({ id: String(id) });
+      if (res.code === 0) {
+        message.success('删除成功');
+        fetchMyApps();
+      }
+    } catch (e: any) {
+      message.error(`删除失败：${e.message}`);
+    }
+  };
+
+  const handleResetSecret = async (id: number) => {
+    try {
+      const res = await resetSecretUsingPost({ id });
+      if (res.code === 0) {
+        message.success('Secret 已重置');
+        // 刷新该应用的详情
+        const detail = await getAppDetailUsingGet({ id });
+        if (detail.code === 0 && detail.data) {
+          setAppDetailMap((prev) => ({ ...prev, [id]: detail.data! }));
+        }
+      }
+    } catch (e: any) {
+      message.error(`重置失败：${e.message}`);
+    }
+  };
+
+  const handleShowSecret = async (id: number) => {
+    if (!appDetailMap[id]) {
+      try {
+        const res = await getAppDetailUsingGet({ id });
+        if (res.code === 0 && res.data) {
+          setAppDetailMap((prev) => ({ ...prev, [id]: res.data! }));
+        }
+      } catch (e) {
+        message.error('获取详情失败');
+        return;
+      }
+    }
+    setVisibleSecrets((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => message.success('已复制'));
+  };
 
   // 破蛋日样式
   const eggBirthdayContainerStyle = useEmotionCss(() => ({
@@ -1995,6 +2126,194 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
           isOpen={isFoodRecommenderOpen}
           onClose={() => setIsFoodRecommenderOpen(false)}
         />
+
+      {/* 开放平台 Modal */}
+      <Modal
+        title={
+          <Space>
+            <ApiOutlined />
+            开放平台 - 我的应用
+          </Space>
+        }
+        open={isOpenPlatformOpen}
+        onCancel={() => setIsOpenPlatformOpen(false)}
+        footer={null}
+        width={800}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => setIsCreateAppOpen(true)}
+          >
+            创建应用
+          </Button>
+        </div>
+        <Table<API.FishAuthVO>
+          dataSource={myApps}
+          loading={appLoading}
+          rowKey="id"
+          pagination={false}
+          columns={[
+            {
+              title: '应用名称',
+              dataIndex: 'appName',
+              width: 120,
+            },
+            {
+              title: 'Client ID',
+              dataIndex: 'clientId',
+              width: 180,
+              render: (val: string) => (
+                <Space>
+                  <Typography.Text code copyable={{ text: val }} style={{ fontSize: 12 }}>
+                    {val}
+                  </Typography.Text>
+                </Space>
+              ),
+            },
+            {
+              title: 'Client Secret',
+              dataIndex: 'id',
+              width: 200,
+              render: (_: any, record: API.FishAuthVO) => {
+                const id = record.id!;
+                const detail = appDetailMap[id];
+                const visible = visibleSecrets[id];
+                return (
+                  <Space>
+                    {visible && detail?.clientSecret ? (
+                      <Typography.Text code style={{ fontSize: 11 }}>
+                        {detail.clientSecret}
+                      </Typography.Text>
+                    ) : (
+                      <Typography.Text type="secondary">••••••••</Typography.Text>
+                    )}
+                    <Button
+                      size="small"
+                      type="text"
+                      icon={visible ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                      onClick={() => handleShowSecret(id)}
+                    />
+                    {visible && detail?.clientSecret && (
+                      <Button
+                        size="small"
+                        type="text"
+                        icon={<CopyOutlined />}
+                        onClick={() => copyToClipboard(detail.clientSecret!)}
+                      />
+                    )}
+                    <Popconfirm
+                      title="确认重置 Secret？旧 Secret 将立即失效"
+                      onConfirm={() => handleResetSecret(id)}
+                      okText="确认"
+                      cancelText="取消"
+                    >
+                      <Button size="small" type="text" icon={<ReloadOutlined />} />
+                    </Popconfirm>
+                  </Space>
+                );
+              },
+            },
+            {
+              title: '状态',
+              dataIndex: 'status',
+              width: 70,
+              render: (val: number) =>
+                val === 1 ? <Tag color="success">启用</Tag> : <Tag color="default">禁用</Tag>,
+            },
+            {
+              title: '操作',
+              width: 100,
+              render: (_: any, record: API.FishAuthVO) => (
+                <Space>
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={() => {
+                      setEditingApp(record);
+                      editAppForm.setFieldsValue({
+                        appName: record.appName,
+                        appDesc: record.appDesc,
+                        appWebsite: record.appWebsite,
+                        redirectUri: record.redirectUri,
+                        status: record.status,
+                      });
+                      setIsEditAppOpen(true);
+                    }}
+                  >
+                    编辑
+                  </Button>
+                  <Popconfirm
+                    title="确认删除该应用？"
+                    onConfirm={() => handleDeleteApp(record.id!)}
+                    okText="确认"
+                    cancelText="取消"
+                  >
+                    <Button size="small" type="link" danger icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                </Space>
+              ),
+            },
+          ]}
+        />
+      </Modal>
+
+      {/* 创建应用 Modal */}
+      <Modal
+        title="创建应用"
+        open={isCreateAppOpen}
+        onCancel={() => { setIsCreateAppOpen(false); createAppForm.resetFields(); }}
+        onOk={() => createAppForm.submit()}
+        okText="创建"
+        cancelText="取消"
+      >
+        <Form form={createAppForm} onFinish={handleCreateApp} layout="vertical">
+          <Form.Item name="appName" label="应用名称" rules={[{ required: true, message: '请输入应用名称' }]}>
+            <Input placeholder="请输入应用名称" />
+          </Form.Item>
+          <Form.Item name="redirectUri" label="回调地址" rules={[{ required: true, message: '请输入回调地址' }]}>
+            <Input placeholder="多个地址用逗号分隔" />
+          </Form.Item>
+          <Form.Item name="appWebsite" label="应用网站">
+            <Input placeholder="请输入应用网站地址（选填）" />
+          </Form.Item>
+          <Form.Item name="appDesc" label="应用描述">
+            <Input.TextArea placeholder="请输入应用描述（选填）" rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 编辑应用 Modal */}
+      <Modal
+        title="编辑应用"
+        open={isEditAppOpen}
+        onCancel={() => { setIsEditAppOpen(false); editAppForm.resetFields(); }}
+        onOk={() => editAppForm.submit()}
+        okText="保存"
+        cancelText="取消"
+      >
+        <Form form={editAppForm} onFinish={handleUpdateApp} layout="vertical">
+          <Form.Item name="appName" label="应用名称" rules={[{ required: true, message: '请输入应用名称' }]}>
+            <Input placeholder="请输入应用名称" />
+          </Form.Item>
+          <Form.Item name="redirectUri" label="回调地址">
+            <Input placeholder="多个地址用逗号分隔" />
+          </Form.Item>
+          <Form.Item name="appWebsite" label="应用网站">
+            <Input placeholder="请输入应用网站地址（选填）" />
+          </Form.Item>
+          <Form.Item name="appDesc" label="应用描述">
+            <Input.TextArea placeholder="请输入应用描述（选填）" rows={3} />
+          </Form.Item>
+          <Form.Item name="status" label="状态">
+            <Select>
+              <Select.Option value={1}>启用</Select.Option>
+              <Select.Option value={0}>禁用</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
       </div>
 
       {/* 添加老板键设置Modal */}
