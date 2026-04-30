@@ -447,7 +447,7 @@ const FishCirclePage: React.FC = () => {
       if (!file) continue;
 
       try {
-        const res = await uploadFileByMinioUsingPost({ biz: 'user_post ' }, {}, file, {
+        const res = await uploadFileByMinioUsingPost({ biz: 'user_post' }, {}, file, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         if (res.data) {
