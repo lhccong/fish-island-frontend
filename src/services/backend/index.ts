@@ -43,6 +43,7 @@ import * as userController from './userController';
 import * as userMuteController from './userMuteController';
 import * as userPointsRecordController from './userPointsRecordController';
 import * as userRemarkController from './userRemarkController';
+import * as userSignInController from './userSignInController';
 import * as userTitleController from './userTitleController';
 import * as userVipController from './userVipController';
 import * as voteController from './voteController';
@@ -82,6 +83,7 @@ export default {
   postThumbController,
   propsController,
   redPacketController,
+  userSignInController,
   tagsController,
   todoController,
   towerClimbController,

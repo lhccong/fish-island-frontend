@@ -337,6 +337,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseMonthSignInVO_ = {
+    code?: number;
+    data?: MonthSignInVO;
+    message?: string;
+  };
+
   type BaseResponseOAuth2TokenVO_ = {
     code?: number;
     data?: OAuth2TokenVO;
@@ -568,6 +574,18 @@ declare namespace API {
   type BaseResponseRedPacket_ = {
     code?: number;
     data?: RedPacket;
+    message?: string;
+  };
+
+  type BaseResponseSignInStatusVO_ = {
+    code?: number;
+    data?: SignInStatusVO;
+    message?: string;
+  };
+
+  type BaseResponseSignInVO_ = {
+    code?: number;
+    data?: SignInVO;
     message?: string;
   };
 
@@ -922,6 +940,23 @@ declare namespace API {
     tmpSecretId?: string;
     tmpSecretKey?: string;
     token?: string;
+  };
+
+  type DaySignInVO = {
+    /** 是否可补签 */
+    canMakeUp?: boolean;
+    /** 完整日期，格式 yyyy-MM-dd */
+    date?: string;
+    /** 日（1-31） */
+    day?: number;
+    /** 是否是今天 */
+    isToday?: boolean;
+    /** 签到积分奖励（已签到为实际值，未签到为预测值） */
+    rewardPoints?: number;
+    /** 签到类型：1-正常签到，2-补签，null-未签到 */
+    signType?: number;
+    /** 是否已签到 */
+    signed?: boolean;
   };
 
   type DeleteFundRequest = {
@@ -1389,6 +1424,13 @@ declare namespace API {
   type getMomentDetailUsingGETParams = {
     /** id */
     id: number;
+  };
+
+  type getMonthSignInUsingGETParams = {
+    /** month */
+    month?: number;
+    /** year */
+    year?: number;
   };
 
   type getOtherUserPetUsingGETParams = {
@@ -1992,6 +2034,11 @@ declare namespace API {
     vip?: boolean;
   };
 
+  type MakeUpSignInRequest = {
+    /** 补签日期，格式 yyyy-MM-dd */
+    signDate: string;
+  };
+
   type MarketIndexVO = {
     changePercent?: string;
     changeValue?: number;
@@ -2274,6 +2321,23 @@ declare namespace API {
     visibility?: number;
   };
 
+  type MonthSignInVO = {
+    /** 连续签到天数 */
+    continuousDays?: number;
+    /** 当前可用积分 */
+    currentPoints?: number;
+    /** 本月每天签到数据列表 */
+    days?: DaySignInVO[];
+    /** 月份（1-12） */
+    month?: number;
+    /** 剩余补签数量 */
+    remainMakeUpCount?: number;
+    /** 累计签到天数 */
+    totalSignInDays?: number;
+    /** 年份 */
+    year?: number;
+  };
+
   type NewUserDataWebRequest = {
     beginTime?: string;
     endTime?: string;
@@ -2304,8 +2368,6 @@ declare namespace API {
   type OAuth2UserInfoVO = {
     /** 用户头像 */
     avatar?: string;
-    /** 用户邮箱 */
-    email?: string;
     /** 用户 ID */
     id?: string;
     /** 用户昵称 */
@@ -3119,6 +3181,38 @@ declare namespace API {
   type setCurrentFrameUsingPOSTParams = {
     /** frameId */
     frameId: number;
+  };
+
+  type SignInStatusVO = {
+    /** 当前连续签到天数 */
+    continuousDays?: number;
+    /** 可补签的日期列表 */
+    makeUpAvailableDates?: string[];
+    /** 本月已补签次数 */
+    makeUpCount?: number;
+    /** 本月最大补签次数 */
+    maxMakeUpCount?: number;
+    /** 今日是否已签到 */
+    todaySigned?: boolean;
+    /** 本周期签到状态列表（索引0对应第1天） */
+    weekStatus?: boolean[];
+  };
+
+  type SignInVO = {
+    /** 本次签到获得的基础积分 */
+    basePoints?: number;
+    /** 连续签到额外奖励积分 */
+    bonusPoints?: number;
+    /** 当前连续签到天数 */
+    continuousDays?: number;
+    /** 下一天连续签到奖励积分预告 */
+    nextDayBonus?: number;
+    /** 签到类型：1-正常签到，2-补签 */
+    signType?: number;
+    /** 本次签到总积分 */
+    totalPoints?: number;
+    /** 本周期签到状态列表（索引0对应第1天） */
+    weekStatus?: boolean[];
   };
 
   type SimpleHeroVO = {

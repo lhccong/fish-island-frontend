@@ -281,7 +281,7 @@ export async function userRegisterUsingPost(
 
 /** 签到 POST /api/user/signIn */
 export async function signInUsingPost(options?: { [key: string]: any }) {
-  return request<API.BaseResponseBoolean_>('/api/user/signIn', {
+  return request<API.BaseResponseSignInVO_>('/api/user/signIn', {
     method: 'POST',
     ...(options || {}),
   });

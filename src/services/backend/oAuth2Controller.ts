@@ -2,13 +2,13 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
-/** 授权端点（用户已登录后调用，重定向携带授权码） GET /api/oauth2/authorize */
+/** 授权端点（用户已登录后调用，返回携带授权码的回调地址） GET /api/oauth2/authorize */
 export async function authorizeUsingGet(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.authorizeUsingGETParams,
   options?: { [key: string]: any },
 ) {
-  return request<any>('/api/oauth2/authorize', {
+  return request<API.BaseResponseString_>('/api/oauth2/authorize', {
     method: 'GET',
     params: {
       // response_type has a default value: code

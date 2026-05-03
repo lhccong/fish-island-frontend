@@ -33,7 +33,15 @@ import {
   PlusOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
+  CalendarOutlined,
+  LeftOutlined,
+  RightOutlined,
+  CheckCircleFilled,
 } from '@ant-design/icons';
+import {
+  getMonthSignInUsingGet,
+  makeUpSignInUsingPost,
+} from '@/services/backend/userSignInController';
 import {history, useModel} from '@umijs/max';
 import {
   Avatar,
@@ -570,6 +578,73 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
   const [isCheckinAnimating, setIsCheckinAnimating] = useState(false);
 
+  // 签到弹窗相关 state
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [signInMonthData, setSignInMonthData] = useState<API.MonthSignInVO | null>(null);
+  const [signInMonthLoading, setSignInMonthLoading] = useState(false);
+  const [signInViewYear, setSignInViewYear] = useState(moment().year());
+  const [signInViewMonth, setSignInViewMonth] = useState(moment().month() + 1);
+  const [makeUpLoading, setMakeUpLoading] = useState<string | null>(null);
+
+  // 获取月度签到数据
+  const fetchMonthSignIn = async (year: number, month: number) => {
+    setSignInMonthLoading(true);
+    try {
+      const res = await getMonthSignInUsingGet({ year, month });
+      if (res.code === 0) {
+        setSignInMonthData(res.data ?? null);
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      setSignInMonthLoading(false);
+    }
+  };
+
+  // 打开签到弹窗
+  const handleOpenSignInModal = () => {
+    const y = moment().year();
+    const m = moment().month() + 1;
+    setSignInViewYear(y);
+    setSignInViewMonth(m);
+    setIsSignInModalOpen(true);
+    fetchMonthSignIn(y, m);
+  };
+
+  // 切换月份
+  const handleSignInMonthChange = (delta: number) => {
+    let newMonth = signInViewMonth + delta;
+    let newYear = signInViewYear;
+    if (newMonth > 12) { newMonth = 1; newYear += 1; }
+    if (newMonth < 1) { newMonth = 12; newYear -= 1; }
+    setSignInViewMonth(newMonth);
+    setSignInViewYear(newYear);
+    fetchMonthSignIn(newYear, newMonth);
+  };
+
+  // 补签
+  const handleMakeUp = async (date: string) => {
+    setMakeUpLoading(date);
+    try {
+      const res = await makeUpSignInUsingPost({ signDate: date });
+      if (res.code === 0) {
+        message.success(`补签 ${date} 成功！`);
+        fetchMonthSignIn(signInViewYear, signInViewMonth);
+        // 刷新用户信息
+        const userInfo = await getLoginUserUsingGet();
+        if (userInfo.data) {
+          setInitialState((s) => ({ ...s, currentUser: userInfo.data }));
+        }
+      } else {
+        message.error(res.message || '补签失败');
+      }
+    } catch (e) {
+      message.error('补签失败，请稍后重试');
+    } finally {
+      setMakeUpLoading(null);
+    }
+  };
+
   // 检查今日是否已签到
   useEffect(() => {
     if (currentUser?.lastSignInDate) {
@@ -771,7 +846,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
     color: '#ffffff',
     fontSize: '16px',
     position: 'fixed',
-    top: '16px',
+    top: '60px',
     right: '16px',
     zIndex: 1000,
     background: '#ffa768',
@@ -2015,23 +2090,226 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         </Form>
       </Modal>
 
-      <Tooltip title={hasCheckedIn ? '今日已完成摸鱼打卡' : '点击摸鱼打卡'}>
+      <Tooltip title={hasCheckedIn ? '今日已签到，点击查看签到日历' : '点击签到'}>
         <div
-          className={checkinButtonStyle}
           onClick={(e) => {
             e.stopPropagation();
-            handleCheckin();
+            handleOpenSignInModal();
           }}
-          style={{marginLeft: 24}}
+          style={{
+            marginLeft: 24,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: hasCheckedIn
+              ? 'linear-gradient(135deg, #40a9ff 0%, #1890ff 100%)'
+              : 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
+            boxShadow: hasCheckedIn
+              ? '0 2px 6px rgba(24, 144, 255, 0.35)'
+              : '0 1px 3px rgba(0,0,0,0.08)',
+            border: `1px solid ${hasCheckedIn ? '#1890ff' : '#d9d9d9'}`,
+            transition: 'all 0.3s ease',
+            position: 'relative',
+          }}
         >
-          <span className="checkin-emoji">
-            {hasCheckedIn ? '🐟' : ''}
-          </span>
-          <span className="checkin-text">
-            {hasCheckedIn ? '已打卡' : '摸鱼🐟'}
-          </span>
+          <CalendarOutlined style={{ fontSize: 16, color: hasCheckedIn ? '#fff' : '#595959' }} />
+          {hasCheckedIn && (
+            <span style={{
+              position: 'absolute',
+              top: -3,
+              right: -3,
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              background: '#52c41a',
+              border: '1.5px solid #fff',
+            }} />
+          )}
         </div>
       </Tooltip>
+
+      {/* 签到弹窗 */}
+      <Modal
+        open={isSignInModalOpen}
+        onCancel={() => setIsSignInModalOpen(false)}
+        footer={null}
+        title={null}
+        width={520}
+        styles={{ body: { padding: 0 } }}
+        destroyOnClose
+      >
+        <div style={{ borderRadius: 12, overflow: 'hidden' }}>
+          {/* 顶部统计区 */}
+          <div style={{
+            background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
+            padding: '20px 24px 16px',
+            color: '#fff',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <span style={{ fontSize: 18, fontWeight: 700 }}>签到日历</span>
+              <div style={{
+                background: hasCheckedIn ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.15)',
+                borderRadius: 20,
+                padding: '4px 14px',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: hasCheckedIn ? 'default' : 'pointer',
+                border: '1px solid rgba(255,255,255,0.4)',
+                transition: 'all 0.2s',
+              }}
+                onClick={() => { if (!hasCheckedIn) handleCheckin(); }}
+              >
+                {hasCheckedIn ? '✅ 今日已签到' : '🐟 立即签到'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 32 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1 }}>
+                  {signInMonthData?.continuousDays ?? 0}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>连续签到天数</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1 }}>
+                  {signInMonthData?.totalSignInDays ?? 0}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>累计签到天数</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1 }}>
+                  {signInMonthData?.currentPoints ?? 0}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>当前积分</div>
+              </div>
+            </div>
+          </div>
+
+          {/* 日历区 */}
+          <div style={{ padding: '16px 20px 20px', background: '#fff' }}>
+            {/* 月份切换 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Button
+                type="text"
+                icon={<LeftOutlined />}
+                size="small"
+                onClick={() => handleSignInMonthChange(-1)}
+              />
+              <span style={{ fontWeight: 600, fontSize: 15 }}>
+                {signInViewYear}年 {signInViewMonth}月
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, color: '#fa8c16' }}>
+                  🎫 剩余补签次数：{signInMonthData?.remainMakeUpCount ?? 0} 次
+                </span>
+                <Button
+                  type="text"
+                  icon={<RightOutlined />}
+                  size="small"
+                  onClick={() => handleSignInMonthChange(1)}
+                  disabled={
+                    signInViewYear > moment().year() ||
+                    (signInViewYear === moment().year() && signInViewMonth >= moment().month() + 1)
+                  }
+                />
+              </div>
+            </div>
+
+            {/* 星期头 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
+              {['周日', '周一', '周二', '周三', '周四', '周五', '周六'].map((d) => (
+                <div key={d} style={{ textAlign: 'center', fontSize: 12, color: '#8c8c8c', padding: '4px 0' }}>{d}</div>
+              ))}
+            </div>
+
+            {/* 日历格子 */}
+            {signInMonthLoading ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: '#999' }}>加载中...</div>
+            ) : (() => {
+              const days = signInMonthData?.days ?? [];
+              // 计算第一天是星期几
+              const firstDay = moment(`${signInViewYear}-${String(signInViewMonth).padStart(2, '0')}-01`).day();
+              const cells: React.ReactNode[] = [];
+              // 填充空格
+              for (let i = 0; i < firstDay; i++) {
+                cells.push(<div key={`empty-${i}`} />);
+              }
+              days.forEach((d) => {
+                const isSigned = d.signed;
+                const isToday = d.isToday;
+                const canMakeUp = d.canMakeUp && !isSigned && (signInMonthData?.remainMakeUpCount ?? 0) > 0;
+                const isMakeUpLoading = makeUpLoading === d.date;
+                const isMakeUpType = d.signType === 2;
+
+                cells.push(
+                  <div
+                    key={d.date}
+                    onClick={() => { if (canMakeUp && d.date) handleMakeUp(d.date); }}
+                    style={{
+                      borderRadius: 8,
+                      padding: '6px 2px',
+                      textAlign: 'center',
+                      cursor: canMakeUp ? 'pointer' : 'default',
+                      background: isToday
+                        ? 'linear-gradient(135deg, #e6f7ff, #bae7ff)'
+                        : isSigned
+                          ? 'linear-gradient(135deg, #f0f9ff, #e6f7ff)'
+                          : '#fafafa',
+                      border: isToday
+                        ? '1.5px solid #1890ff'
+                        : isSigned
+                          ? '1px solid #91d5ff'
+                          : canMakeUp
+                            ? '1px dashed #fa8c16'
+                            : '1px solid #f0f0f0',
+                      transition: 'all 0.2s',
+                      position: 'relative',
+                      opacity: isMakeUpLoading ? 0.6 : 1,
+                    }}
+                  >
+                    {/* 已签到勾 */}
+                    {isSigned && (
+                      <CheckCircleFilled style={{
+                        position: 'absolute',
+                        top: 2,
+                        right: 2,
+                        fontSize: 10,
+                        color: isMakeUpType ? '#fa8c16' : '#1890ff',
+                      }} />
+                    )}
+                    <div style={{
+                      fontSize: 14,
+                      fontWeight: isToday ? 700 : 500,
+                      color: isToday ? '#1890ff' : isSigned ? '#1890ff' : '#595959',
+                    }}>
+                      {d.day}
+                    </div>
+                    <div style={{ fontSize: 10, color: isSigned ? '#1890ff' : canMakeUp ? '#fa8c16' : '#bfbfbf', marginTop: 1 }}>
+                      {isMakeUpLoading ? '...' : `+${d.rewardPoints} 积分`}
+                    </div>
+                  </div>
+                );
+              });
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+                  {cells}
+                </div>
+              );
+            })()}
+
+            {/* 图例 */}
+            <div style={{ display: 'flex', gap: 16, marginTop: 14, fontSize: 11, color: '#8c8c8c' }}>
+              <span><span style={{ color: '#1890ff' }}>●</span> 已签到</span>
+              <span><span style={{ color: '#fa8c16' }}>●</span> 补签</span>
+              <span style={{ borderBottom: '1px dashed #fa8c16', paddingBottom: 1 }}>虚线框</span>
+              <span>= 可补签</span>
+            </div>
+          </div>
+        </div>
+      </Modal>
       <div className="App" style={{marginLeft: 'auto'}}>
         {/* 其他内容 */}
         <Modal title="工作时间设定" footer={null} open={isMoneyOpen} onCancel={() => {
