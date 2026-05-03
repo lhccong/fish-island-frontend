@@ -1964,7 +1964,7 @@ const ChatRoom: React.FC = () => {
           const res = await joinRoomUsingPost({ roomId: roomId });
           if (res.data && res.code === 0) {
           message.success('加入房间成功');
-          history.push(`/draw/${roomId}`);
+          history.push(`/game/draw/${roomId}`);
           } else {
             message.error(res.message || '加入房间失败');
           }

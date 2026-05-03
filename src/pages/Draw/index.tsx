@@ -108,7 +108,7 @@ const DrawRoomPage: React.FC = () => {
         setCustomRounds(false);
 
         // 创建完后直接进入房间
-        history.push(`/draw/${res.data}`);
+        history.push(`/game/draw/${res.data}`);
       } else {
         message.error(res.message || '创建房间失败');
       }
@@ -176,9 +176,7 @@ const DrawRoomPage: React.FC = () => {
   const handleJoinButtonClick = async (room: RoomItem, isUserInRoom: boolean | undefined)=> {
     if (isUserInRoom || room.status === 'PLAYING') {
       // 如果用户已在房间或者是观战模式，直接进入
-      history.push(`/draw/${room.roomId}`);
-    } else {
-      // 否则调用加入房间的方法
+      history.push(`/game/draw/${room.roomId}`);
       handleJoinRoom(room);
     }
   }
@@ -199,7 +197,7 @@ const DrawRoomPage: React.FC = () => {
       const res = await joinRoomUsingPost({ roomId: room.roomId });
       if (res.data && res.code === 0) {
         message.success('加入房间成功');
-        history.push(`/draw/${room.roomId}`);
+        history.push(`/game/draw/${room.roomId}`);
       } else {
         message.error(res.message || '加入房间失败');
       }

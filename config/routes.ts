@@ -8,12 +8,12 @@ export default [
   },
   {path: '/index', icon: 'BarsOutlined', component: './Index', name: '最新', requireAuth: false},
   {path: '/home', layout: false, icon: 'smile', component: './Home', name: '浏览器页面', requireAuth: false},
-  {path: '/todo', icon: 'CalendarOutlined', component: './TODO', name: '每日待办', requireAuth: true},
-  {path: '/chat', icon: 'MessageOutlined', component: './Chat', name: '摸鱼室', requireAuth: true},
+  {path: '/todo', icon: 'CalendarOutlined', component: './TODO', name: '待办', requireAuth: true},
+  {path: '/chat', icon: 'MessageOutlined', component: './Chat', name: '鱼窝', requireAuth: true},
   {
     path: '/moments',
     icon: 'TeamOutlined',
-    name: '摸鱼圈',
+    name: '鱼圈',
     requireAuth: true,
     routes: [
       {path: '/moments', redirect: '/moments/post', requireAuth: true},
@@ -24,17 +24,16 @@ export default [
   {path: '/post/create', layout: false, icon: 'EditOutlined', component: './Post/Create', requireAuth: true},
   {path: '/post/edit/:id', layout: false, component: './Post/Edit', requireAuth: true},
   {path: '/post/:id',component: './Post/Detail', requireAuth: true},
-  {path: '/reader', icon: 'BookOutlined', component: './Reader', name: '摸鱼阅读', requireAuth: true},
-  {path: '/pet', icon: 'HeartOutlined', component: './Pet', name: '摸鱼宠物', requireAuth: true},
+  {path: '/reader', icon: 'BookOutlined', component: './Reader', name: '阅读', requireAuth: true},
+  {path: '/pet', icon: 'HeartOutlined', component: './Pet', name: '宠物', requireAuth: true},
   {path: '/pet/fight', icon: 'HeartOutlined', component: './Pet/Fight',requireAuth: true},
   {path: '/pet/battle', icon: 'ThunderboltOutlined', component: './Pet/Fight', requireAuth: true},
   {path: '/tower/fight', icon: 'RocketOutlined', component: './Pet/Fight', requireAuth: true},
-  { path: '/draw', icon: 'FundViewOutlined', component: './Draw', name: '你画我猜', requireAuth: true },
-  {path: '/draw/:id',component: './Draw/Detail', requireAuth: true},
+
   {
     path: '/point',
     icon: 'DollarOutlined',
-    name: '积分玩法',
+    name: '玩法',
     requireAuth: true,
     routes: [
       {path: '/point', redirect: '/point/stock', requireAuth: true},
@@ -46,12 +45,13 @@ export default [
   {
     path: '/game',
     icon: 'DesktopOutlined',
-    name: '小游戏',
+    name: '游戏',
     requireAuth: true,
     routes: [
       {path: '/game', redirect: '/game/piece', requireAuth: true},
       {icon: 'DesktopOutlined', path: '/game/piece', component: './Game/Piece', name: '五子棋', requireAuth: true},
-      // {icon: 'DesktopOutlined', path: '/game/draw', component: './Game/Draw', name: '你画我猜', requireAuth: true},
+      {icon: 'FundViewOutlined', path: '/game/draw', component: './Draw', name: '你画我猜', requireAuth: true},
+      {path: '/game/draw/:id', component: './Draw/Detail', requireAuth: true},
       {
         icon: 'DesktopOutlined',
         path: '/game/chineseChess',
@@ -102,7 +102,7 @@ export default [
   {
     path: '/utils',
     icon: 'CodeSandboxOutlined',
-    name: ' 工具箱',
+    name: ' 工具',
     requireAuth: true,
     routes: [
       {path: '/utils', redirect: '/utils/json', requireAuth: false},
@@ -161,13 +161,13 @@ export default [
     icon: 'AccountBookOutlined',
     path: '/avatarFrames',
     component: './Utils/AvatarFrames',
-    name: '摸鱼商店',
+    name: '商店',
     requireAuth: true
   },
   {
     path: '/rank',
     icon: 'github',
-    name: '关于网站',
+    name: '关于',
     routes: [
       {icon: 'DesktopOutlined', path: '/rank/reward', component: './Rank/Reward', name: '打赏榜 👑', requireAuth: false},
       {icon: 'DesktopOutlined', path: '/rank/welfare', component: './Welfare', name: '外卖福利🎁', requireAuth: false},

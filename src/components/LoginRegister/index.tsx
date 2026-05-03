@@ -61,8 +61,6 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
   const { initialState, setInitialState } = useModel('@@initialState');
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [registerValues, setRegisterValues] = useState<any>(null);
-  const [loginValues, setLoginValues] = useState<any>(null);
-  const [showLoginCaptcha, setShowLoginCaptcha] = useState(false);
 
   // 邮箱域名选项
   const emailDomains = [
@@ -165,17 +163,6 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
       }
     }, 100);
   };
-  const validateAndShowLoginCaptcha = async (values: any) => {
-    setLoginValues(values);
-    setShowLoginCaptcha(true);
-    setTimeout(() => {
-      const current = ref.current as any;
-      if (current) {
-        current.verify();
-      }
-    }, 100);
-  };
-
 // 修改原来的 handleSubmit 为实际登录逻辑
   const handleLoginSubmit = async (values: UserLoginRequest) => {
     try {
@@ -249,7 +236,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
             }}
             onFinish={async (values) => {
               if (type === 'login') {
-                await validateAndShowLoginCaptcha(values);
+                await handleLoginSubmit(values);
               } else if (type === 'register') {
                 await validateAndShowCaptcha(values);
               }
@@ -561,22 +548,7 @@ const LoginRegister: React.FC<LoginRegisterProps> = ({ isModalOpen, onCancel, on
                 ref={ref}
               />
             )}
-            {showLoginCaptcha && (
-              <Captcha
-                onSuccess={async (data) => {
-                  if (loginValues) {
-                    const loginData: UserLoginRequest = {
-                      ...loginValues,
-                      captchaVerification: data.captchaVerification,
-                    };
-                    await handleLoginSubmit(loginData);
-                  }
-                }}
-                path={BACKEND_HOST_CODE}
-                type="auto"
-                ref={ref}
-              />
-            )}
+
           </LoginForm>
         </div>
         <Footer />

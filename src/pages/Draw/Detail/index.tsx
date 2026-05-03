@@ -861,7 +861,7 @@ const DrawPage: React.FC = () => {
             if (res.data) {
               message.success({ content: '已退出房间', key: loadingKey });
               // 退出成功后，返回到绘画游戏列表页面
-              history.push('/draw');
+              history.push('/game/draw');
             } else {
               message.error({ content: '退出房间失败: ' + (res.message || '未知错误'), key: loadingKey });
             }
