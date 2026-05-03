@@ -62,6 +62,8 @@ import {
   Tag,
   Popconfirm,
   Typography,
+  Row,
+  Col,
 } from 'antd';
 import defaultSettings from '../../../config/defaultSettings';
 import type {MenuInfo} from 'rc-menu/lib/interface';
@@ -401,10 +403,20 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const [isSiteConfigOpen, setIsSiteConfigOpen] = useState(false);
   const [siteConfig, setSiteConfig] = useState(() => {
     const savedConfig = localStorage.getItem('siteConfig');
-    return savedConfig ? JSON.parse(savedConfig) : {
+    if (savedConfig) {
+      const parsed = JSON.parse(savedConfig);
+      // 如果没有主动设置过 layoutMode（旧数据默认是 side），迁移为 top
+      if (!parsed._layoutSet && parsed.layoutMode === 'side') {
+        parsed.layoutMode = 'top';
+      }
+      return parsed;
+    }
+    return {
       siteName: '摸鱼岛',
       siteIcon: 'https://oss.cqbo.com/moyu/moyu.png',
-      notificationEnabled: true
+      notificationEnabled: true,
+      layoutMode: 'top',
+      showFishCircle: true,
     };
   });
 
@@ -412,7 +424,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const defaultSiteConfig = {
     siteName: '摸鱼岛',
     siteIcon: 'https://oss.cqbo.com/moyu/moyu.png',
-    notificationEnabled: true
+    notificationEnabled: true,
+    layoutMode: 'top',
+    showFishCircle: true,
   };
 
   const [isMoneyVisible, setIsMoneyVisible] = useState(() => {
@@ -1718,7 +1732,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
           editProfileForm.resetFields();
         }}
         footer={null}
-        width={600}
+        width={720}
       >
         <Form
           form={editProfileForm}
@@ -1730,256 +1744,278 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
             titleId: currentUser?.titleId,
             momentsBgUrl: currentUser?.momentsBgUrl || '',
           }}
+          layout="vertical"
         >
-          <Form.Item
-            name="userName"
-            label="用户名"
-            tooltip={'新用户免费修改一次用户名，后面每月只能修改一次，且消耗100积分'}
-            rules={[
-              {required: true, message: '请输入用户名！'},
-              {max: 10, message: '用户名不能超过10个字符！'},
-            ]}
-          >
-            <Input
-              maxLength={10}
-              showCount
-              placeholder="请输入用户名"
-              onChange={(e) => {
-                const value = e.target.value.replace(/\s/g, '');
-                editProfileForm.setFieldValue('userName', value);
-              }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="头像选择"
-            name="userAvatar"
-            help="可以上传图片，输入在线图片地址，或者选择下方默认头像"
-          >
-            <div style={{display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap'}}>
-              <Upload
-                accept="image/*"
-                showUploadList={false}
-                beforeUpload={async (file) => {
-                  const url = await handleUpload(file);
-                  if (url) {
-                    setPreviewAvatar(url as any);
-                    editProfileForm.setFieldValue('userAvatar', url);
-                  }
-                  return false;
-                }}
-              >
-                <Button icon={<UploadOutlined/>} loading={uploading}>
-                  上传头像
-                </Button>
-              </Upload>
-              <Input
-                placeholder="请输入头像地址（选填）"
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setSelectedAvatar('');
-                  setPreviewAvatar(value);
-                  editProfileForm.setFieldValue('userAvatar', value);
-                }}
-                value={editProfileForm.getFieldValue('userAvatar')}
-                style={{flex: 1}}
-              />
-              {(previewAvatar || editProfileForm.getFieldValue('userAvatar')) && (
-                <div style={{
-                  marginLeft: '8px',
-                  padding: '4px',
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '4px'
-                }}>
-                  <Avatar
-                    src={previewAvatar || editProfileForm.getFieldValue('userAvatar')}
-                    size={64}
-                  />
-                </div>
-              )}
-            </div>
-          </Form.Item>
-
-          <Form.Item label="默认头像">
-            <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-              {defaultAvatars.map((avatar, index) => (
-                <div
-                  key={index}
-                  onClick={() => {
-                    setSelectedAvatar(avatar);
-                    setPreviewAvatar('');
-                    editProfileForm.setFieldValue('userAvatar', '');
-                  }}
-                  style={{
-                    cursor: 'pointer',
-                    border: (selectedAvatar === avatar || currentUser?.userAvatar === avatar) ? '2px solid #1890ff' : '2px solid transparent',
-                    borderRadius: '4px',
-                    padding: '4px',
-                  }}
-                >
-                  <Avatar src={avatar} size={64}/>
-                </div>
-              ))}
-            </div>
-          </Form.Item>
-
-          <Form.Item
-            label="朋友圈背景"
-            name="momentsBgUrl"
-            help="可以上传图片或输入在线图片地址"
-          >
-            <div style={{display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap'}}>
-              <Upload
-                accept="image/*"
-                showUploadList={false}
-                beforeUpload={async (file) => {
-                  const url = await handleUpload(file);
-                  if (url) {
-                    setPreviewBgUrl(url as any);
-                    editProfileForm.setFieldValue('momentsBgUrl', url);
-                  }
-                  return false;
-                }}
-              >
-                <Button icon={<UploadOutlined/>} loading={uploading}>
-                  上传背景图
-                </Button>
-              </Upload>
-              <Input
-                placeholder="请输入背景图地址（选填）"
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setPreviewBgUrl(value);
-                  editProfileForm.setFieldValue('momentsBgUrl', value);
-                }}
-                value={previewBgUrl}
-                style={{flex: 1}}
-              />
-              {previewBgUrl && (
-                <div style={{
-                  marginLeft: '8px',
-                  padding: '4px',
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '4px',
-                }}>
-                  <img
-                    src={previewBgUrl}
-                    alt="背景预览"
-                    style={{width: 96, height: 64, objectFit: 'cover', borderRadius: '2px'}}
-                  />
-                </div>
-              )}
-            </div>
-          </Form.Item>
-
-          {!currentUser?.email ? (
-            <>
+          {/* 第一行：用户名 + 邮箱 */}
+          <Row gutter={16}>
+            <Col span={12}>
               <Form.Item
-                name="email"
-                label="绑邮箱"
+                name="userName"
+                label="用户名"
+                tooltip={'新用户免费修改一次用户名，后面每月只能修改一次，且消耗100积分'}
                 rules={[
-                  {required: true, message: '请输入邮箱地址！'},
-                  {type: 'email', message: '请输入正确的邮箱地址！'}
+                  {required: true, message: '请输入用户名！'},
+                  {max: 10, message: '用户名不能超过10个字符！'},
                 ]}
               >
-                <div style={{display: 'flex', gap: '8px'}}>
-                  <Input placeholder="请输入要绑定的邮箱地址" style={{flex: 1}}/>
-                  <Button
-                    type="primary"
-                    onClick={handleSendEmailCode}
-                    disabled={emailCountdown > 0}
-                  >
-                    {emailCountdown > 0 ? `${emailCountdown}秒` : '获取验证码'}
-                  </Button>
-                </div>
+                <Input
+                  maxLength={10}
+                  showCount
+                  placeholder="请输入用户名"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\s/g, '');
+                    editProfileForm.setFieldValue('userName', value);
+                  }}
+                />
               </Form.Item>
+            </Col>
+            <Col span={12}>
+              {!currentUser?.email ? (
+                <Form.Item
+                  name="email"
+                  label="绑定邮箱"
+                  rules={[
+                    {required: true, message: '请输入邮箱地址！'},
+                    {type: 'email', message: '请输入正确的邮箱地址！'}
+                  ]}
+                >
+                  <div style={{display: 'flex', gap: '8px'}}>
+                    <Input placeholder="请输入要绑定的邮箱地址" style={{flex: 1}}/>
+                    <Button
+                      type="primary"
+                      onClick={handleSendEmailCode}
+                      disabled={emailCountdown > 0}
+                    >
+                      {emailCountdown > 0 ? `${emailCountdown}秒` : '获取验证码'}
+                    </Button>
+                  </div>
+                </Form.Item>
+              ) : (
+                <Form.Item label="绑定邮箱">
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '5px 12px',
+                    background: '#f6ffed',
+                    border: '1px solid #b7eb8f',
+                    borderRadius: '6px',
+                    height: 32,
+                  }}>
+                    <span style={{color: '#52c41a', fontSize: 14}}>✓</span>
+                    <span style={{color: '#555', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>{currentUser.email}</span>
+                  </div>
+                </Form.Item>
+              )}
+            </Col>
+          </Row>
 
-              <Form.Item
-                name="emailCode"
-                label="验证码"
-                rules={[{required: true, message: '请输入验证码！'}]}
-              >
-                <div style={{display: 'flex', gap: '8px', alignItems: 'flex-start'}}>
-                  <Input placeholder="请输入验证码" style={{flex: 1}}/>
-                  <Button
-                    type="primary"
-                    onClick={handleEmailBind}
-                    style={{
-                      background: '#52c41a',
-                      borderColor: '#52c41a',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    绑定邮箱
-                  </Button>
-                </div>
-              </Form.Item>
-            </>
-          ) : (
-            <Form.Item label="已绑定邮箱">
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '4px 11px',
-                background: '#f6ffed',
-                border: '1px solid #b7eb8f',
-                borderRadius: '6px'
-              }}>
-                <span style={{color: '#52c41a'}}>✓</span>
-                <span style={{color: '#333'}}>{currentUser.email}</span>
-              </div>
-            </Form.Item>
+          {/* 验证码行（仅未绑定邮箱时显示） */}
+          {!currentUser?.email && (
+            <Row gutter={16}>
+              <Col span={12} offset={12}>
+                <Form.Item
+                  name="emailCode"
+                  label="验证码"
+                  rules={[{required: true, message: '请输入验证码！'}]}
+                >
+                  <div style={{display: 'flex', gap: '8px'}}>
+                    <Input placeholder="请输入验证码" style={{flex: 1}}/>
+                    <Button
+                      type="primary"
+                      onClick={handleEmailBind}
+                      style={{background: '#52c41a', borderColor: '#52c41a', whiteSpace: 'nowrap'}}
+                    >
+                      绑定邮箱
+                    </Button>
+                  </div>
+                </Form.Item>
+              </Col>
+            </Row>
           )}
 
+          {/* 头像区域：左侧当前头像大图 + 右侧操作 */}
+          <Form.Item label="头像设置" name="userAvatar" style={{marginBottom: 8}}>
+            <div style={{
+              display: 'flex',
+              gap: '16px',
+              padding: '12px 14px',
+              background: '#fafafa',
+              border: '1px solid #f0f0f0',
+              borderRadius: '8px',
+            }}>
+              {/* 左：当前头像预览 */}
+              <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
+                <Avatar
+                  src={previewAvatar || editProfileForm.getFieldValue('userAvatar') || (selectedAvatar || currentUser?.userAvatar)}
+                  size={72}
+                  style={{border: '2px solid #e8e8e8'}}
+                />
+                <span style={{fontSize: 11, color: '#999'}}>当前头像</span>
+              </div>
+              {/* 右：上传+输入+默认头像选择 */}
+              <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                  <Upload
+                    accept="image/*"
+                    showUploadList={false}
+                    beforeUpload={async (file) => {
+                      const url = await handleUpload(file);
+                      if (url) {
+                        setPreviewAvatar(url as any);
+                        editProfileForm.setFieldValue('userAvatar', url);
+                      }
+                      return false;
+                    }}
+                  >
+                    <Button icon={<UploadOutlined/>} loading={uploading} size="small">上传图片</Button>
+                  </Upload>
+                  <Input
+                    size="small"
+                    placeholder="或输入在线图片地址"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSelectedAvatar('');
+                      setPreviewAvatar(value);
+                      editProfileForm.setFieldValue('userAvatar', value);
+                    }}
+                    value={editProfileForm.getFieldValue('userAvatar')}
+                    style={{flex: 1}}
+                  />
+                </div>
+                <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center'}}>
+                  <span style={{fontSize: 12, color: '#999', marginRight: 2}}>默认：</span>
+                  {defaultAvatars.map((avatar, index) => (
+                    <div
+                      key={index}
+                      onClick={() => {
+                        setSelectedAvatar(avatar);
+                        setPreviewAvatar('');
+                        editProfileForm.setFieldValue('userAvatar', '');
+                      }}
+                      style={{
+                        cursor: 'pointer',
+                        border: (selectedAvatar === avatar || (!previewAvatar && !editProfileForm.getFieldValue('userAvatar') && currentUser?.userAvatar === avatar))
+                          ? '2px solid #1890ff' : '2px solid transparent',
+                        borderRadius: '50%',
+                        padding: '2px',
+                        transition: 'border-color 0.2s',
+                      }}
+                    >
+                      <Avatar src={avatar} size={44}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Form.Item>
+
+          {/* 第三行：朋友圈背景 + 称号 */}
+          <Row gutter={16} style={{marginTop: 8}}>
+            <Col span={14}>
+              <Form.Item
+                label="朋友圈背景"
+                name="momentsBgUrl"
+              >
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  padding: '10px 12px',
+                  background: '#fafafa',
+                  border: '1px solid #f0f0f0',
+                  borderRadius: '8px',
+                  alignItems: 'center',
+                }}>
+                  {/* 背景预览 */}
+                  <div style={{
+                    width: 72,
+                    height: 48,
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    background: '#e8e8e8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    {previewBgUrl ? (
+                      <img src={previewBgUrl} alt="背景预览" style={{width: '100%', height: '100%', objectFit: 'cover'}}/>
+                    ) : (
+                      <span style={{fontSize: 11, color: '#bbb'}}>预览</span>
+                    )}
+                  </div>
+                  <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                    <Upload
+                      accept="image/*"
+                      showUploadList={false}
+                      beforeUpload={async (file) => {
+                        const url = await handleUpload(file);
+                        if (url) {
+                          setPreviewBgUrl(url as any);
+                          editProfileForm.setFieldValue('momentsBgUrl', url);
+                        }
+                        return false;
+                      }}
+                    >
+                      <Button icon={<UploadOutlined/>} loading={uploading} size="small" style={{width: '100%'}}>上传背景图</Button>
+                    </Upload>
+                    <Input
+                      size="small"
+                      placeholder="或输入图片地址"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setPreviewBgUrl(value);
+                        editProfileForm.setFieldValue('momentsBgUrl', value);
+                      }}
+                      value={previewBgUrl}
+                    />
+                  </div>
+                </div>
+              </Form.Item>
+            </Col>
+            <Col span={10}>
+              <Form.Item label="称号设置" name="titleId">
+                <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                  <Select
+                    placeholder="请选择称号"
+                    onChange={handleSetTitle}
+                    value={currentUser?.titleId}
+                  >
+                    {availableTitles.map((title) => (
+                      <Select.Option key={title.titleId} value={title.titleId}>
+                        <span>{title.name}</span>
+                      </Select.Option>
+                    ))}
+                  </Select>
+                  {currentUser?.titleId !== undefined && currentUser?.titleId !== null && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#52c41a',
+                      padding: '4px 10px',
+                      background: '#f6ffed',
+                      border: '1px solid #b7eb8f',
+                      borderRadius: '4px',
+                    }}>
+                      当前：{currentUser.titleId == 0 ? '等级称号' : (availableTitles.find(t => t.titleId === currentUser.titleId)?.name || '未知称号')}
+                    </div>
+                  )}
+                </div>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* 个人简介 */}
           <Form.Item
             name="userProfile"
             label="个人简介"
-            rules={[
-              {max: 100, message: '个人简介不能超过100个字符！'}
-            ]}
+            rules={[{max: 100, message: '个人简介不能超过100个字符！'}]}
           >
             <Input.TextArea
-              rows={4}
+              rows={3}
               maxLength={100}
               showCount
-              placeholder="请输入不超过100个字符的个人简介"
+              placeholder="介绍一下自己吧（最多100字）"
             />
-          </Form.Item>
-
-          <Form.Item label="称号设置" name="titleId">
-            <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-              <Select
-                placeholder="请选择称号"
-                onChange={handleSetTitle}
-                value={currentUser?.titleId}
-              >
-                {availableTitles.map((title) => (
-                  <Select.Option key={title.titleId} value={title.titleId}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <span>{title.name}</span>
-                    </div>
-                  </Select.Option>
-                ))}
-              </Select>
-              {currentUser?.titleId && (
-                <div style={{
-                  fontSize: '12px',
-                  color: '#52c41a',
-                  padding: '4px 8px',
-                  background: '#f6ffed',
-                  border: '1px solid #b7eb8f',
-                  borderRadius: '4px'
-                }}>
-                  当前称号：
-                  {currentUser.titleId == 0 ? '等级称号' : (availableTitles.find(t => t.titleId === currentUser.titleId)?.name || '未知称号')}
-                </div>
-              )}
-            </div>
           </Form.Item>
 
           {/* 会员信息展示 */}
@@ -2652,13 +2688,16 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         open={isSiteConfigOpen}
         onCancel={() => setIsSiteConfigOpen(false)}
         footer={null}
+        width={620}
       >
         <Form
           form={siteConfigForm}
           initialValues={siteConfig}
+          layout="vertical"
           onFinish={(values) => {
-            setSiteConfig(values);
-            localStorage.setItem('siteConfig', JSON.stringify(values));
+            const configToSave = { ...values, _layoutSet: true };
+            setSiteConfig(configToSave);
+            localStorage.setItem('siteConfig', JSON.stringify(configToSave));
 
             // 更新通知设置
             setNotificationEnabled(values.notificationEnabled);
@@ -2689,109 +2728,151 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
             setIsSiteConfigOpen(false);
           }}
         >
-          <Form.Item
-            label="网站名称"
-            name="siteName"
-            rules={[{required: true, message: '请输入网站名称！'}]}
-          >
-            <Input placeholder="请输入网站名称"/>
-          </Form.Item>
-
-          <Form.Item
-            label="网站图标"
-            name="siteIcon"
-            help="可以上传图片，输入在线图片地址，或者选择下方默认图标"
-          >
-            <div style={{display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap'}}>
-              <Upload
-                accept="image/*"
-                showUploadList={false}
-                beforeUpload={async (file) => {
-                  const url = await handleUpload(file);
-                  if (url) {
-                    siteConfigForm.setFieldValue('siteIcon', url);
-                  }
-                  return false;
-                }}
+          {/* 第一行：网站名称 + 消息闪烁 */}
+          <Row gutter={16}>
+            <Col span={14}>
+              <Form.Item
+                label="网站名称"
+                name="siteName"
+                rules={[{required: true, message: '请输入网站名称！'}]}
               >
-                <Button icon={<UploadOutlined/>} loading={uploading}>
-                  上传图标
-                </Button>
-              </Upload>
-              <Input
-                placeholder="请输入图标地址（选填）"
-                onChange={(e) => {
-                  const value = e.target.value;
-                  siteConfigForm.setFieldValue('siteIcon', value);
-                }}
-                value={siteConfigForm.getFieldValue('siteIcon')}
-                style={{flex: 1}}
-              />
-              {siteConfigForm.getFieldValue('siteIcon') && (
-                <div style={{
-                  marginLeft: '8px',
-                  padding: '4px',
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '4px'
-                }}>
-                  <Avatar
-                    src={siteConfigForm.getFieldValue('siteIcon')}
-                    size={64}
+                <Input placeholder="请输入网站名称"/>
+              </Form.Item>
+            </Col>
+            <Col span={10}>
+              <Form.Item
+                label="消息闪烁"
+                name="notificationEnabled"
+                valuePropName="checked"
+              >
+                <Switch checkedChildren="开启" unCheckedChildren="关闭"/>
+              </Form.Item>
+              <div style={{fontSize: 12, color: '#999', marginTop: -16, marginBottom: 8}}>收到消息时标题闪烁提醒</div>
+            </Col>
+          </Row>
+
+          {/* 图标区域：卡片式，左侧预览 + 右侧操作 */}
+          <Form.Item label="网站图标" name="siteIcon" style={{marginBottom: 8}}>
+            <div style={{
+              display: 'flex',
+              gap: '16px',
+              padding: '12px 14px',
+              background: '#fafafa',
+              border: '1px solid #f0f0f0',
+              borderRadius: '8px',
+            }}>
+              {/* 左：当前图标预览 */}
+              <div style={{flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4}}>
+                <Avatar
+                  src={siteConfigForm.getFieldValue('siteIcon')}
+                  size={64}
+                  shape="square"
+                  style={{border: '1px solid #e8e8e8', borderRadius: 8}}
+                />
+                <span style={{fontSize: 11, color: '#999'}}>当前图标</span>
+              </div>
+              {/* 右：上传+输入+默认图标 */}
+              <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                  <Upload
+                    accept="image/*"
+                    showUploadList={false}
+                    beforeUpload={async (file) => {
+                      const url = await handleUpload(file);
+                      if (url) {
+                        siteConfigForm.setFieldValue('siteIcon', url);
+                      }
+                      return false;
+                    }}
+                  >
+                    <Button icon={<UploadOutlined/>} loading={uploading} size="small">上传图标</Button>
+                  </Upload>
+                  <Input
+                    size="small"
+                    placeholder="或输入在线图片地址"
+                    onChange={(e) => siteConfigForm.setFieldValue('siteIcon', e.target.value)}
+                    value={siteConfigForm.getFieldValue('siteIcon')}
+                    style={{flex: 1}}
                   />
                 </div>
-              )}
-            </div>
-          </Form.Item>
-
-          <Form.Item label="默认图标">
-            <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-              {defaultSiteIcons.map((icon, index) => (
-                <div
-                  key={index}
-                  onClick={() => {
-                    siteConfigForm.setFieldValue('siteIcon', icon);
-                  }}
-                  style={{
-                    cursor: 'pointer',
-                    border: siteConfigForm.getFieldValue('siteIcon') === icon ? '2px solid #1890ff' : '2px solid transparent',
-                    borderRadius: '4px',
-                    padding: '4px',
-                  }}
-                >
-                  <Avatar src={icon} size={64}/>
+                <div style={{display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap'}}>
+                  <span style={{fontSize: 12, color: '#999'}}>默认：</span>
+                  {defaultSiteIcons.map((icon, index) => (
+                    <div
+                      key={index}
+                      onClick={() => siteConfigForm.setFieldValue('siteIcon', icon)}
+                      style={{
+                        cursor: 'pointer',
+                        border: siteConfigForm.getFieldValue('siteIcon') === icon ? '2px solid #1890ff' : '2px solid transparent',
+                        borderRadius: '6px',
+                        padding: '2px',
+                        transition: 'border-color 0.2s',
+                      }}
+                    >
+                      <Avatar src={icon} size={44} shape="square" style={{borderRadius: 4}}/>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </Form.Item>
 
-          <Form.Item
-            label="消息闪烁"
-            name="notificationEnabled"
-            valuePropName="checked"
-            help="关闭后，收到新消息时标题和图标不会闪烁"
-          >
-            <Switch
-              checkedChildren="开启"
-              unCheckedChildren="关闭"
-            />
-          </Form.Item>
+          {/* 第三行：图片显示 + 导航布局 */}
+          <Row gutter={16} style={{marginTop: 4}}>
+            <Col span={12}>
+              <Form.Item
+                label="图片显示"
+                name="imageDisplayMode"
+              >
+                <Select
+                  placeholder="请选择"
+                  options={[
+                    { label: '显示所有图片', value: 'show' },
+                    { label: '隐藏所有图片', value: 'hide' }
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="导航布局"
+                name="layoutMode"
+              >
+                <Select
+                  placeholder="请选择"
+                  options={[
+                    { label: '侧边菜单 (side)', value: 'side' },
+                    { label: '顶部菜单 (top)', value: 'top' },
+                    { label: '混合菜单 (mix)', value: 'mix' },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Form.Item
-            label="图片显示设置"
-            name="imageDisplayMode"
-            help="设置聊天记录中图片的显示方式"
-          >
-            <Select
-              options={[
-                { label: '显示所有图片', value: 'show' },
-                { label: '隐藏所有图片', value: 'hide' }
-              ]}
-            />
-          </Form.Item>
+          {/* 鱼小圈开关 */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 14px',
+            background: '#fafafa',
+            border: '1px solid #f0f0f0',
+            borderRadius: '8px',
+            marginBottom: 20,
+          }}>
+            <div>
+              <div style={{fontWeight: 500, fontSize: 14, color: '#333'}}>鱼小圈动态栏</div>
+              <div style={{fontSize: 12, color: '#999', marginTop: 2}}>顶部/混合布局下，聊天室右侧显示鱼小圈动态</div>
+            </div>
+            <Form.Item name="showFishCircle" valuePropName="checked" style={{marginBottom: 0}}>
+              <Switch checkedChildren="显示" unCheckedChildren="隐藏"/>
+            </Form.Item>
+          </div>
 
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
+          <Form.Item style={{marginBottom: 0}}>
+            <div style={{display: 'flex', gap: 8, justifyContent: 'center'}}>
+              <Button type="primary" htmlType="submit" style={{paddingLeft: 28, paddingRight: 28}}>
                 保存设置
               </Button>
               <Button onClick={() => setIsSiteConfigOpen(false)}>
@@ -2834,7 +2915,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
               >
                 重置为默认样式
               </Button>
-            </Space>
+            </div>
           </Form.Item>
         </Form>
       </Modal>

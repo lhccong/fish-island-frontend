@@ -4,6 +4,7 @@ import EmoticonPicker from '@/components/EmoticonPicker';
 import MessageContent from '@/components/MessageContent';
 import RoomInfoCard from '@/components/RoomInfoCard';
 import MoyuPet, { MiniPet } from '@/components/MoyuPet';
+import MomentsSidebar from '@/components/MomentsSidebar';
 import {
   getOnlineUserListUsingGet,
   listMessageVoByPageUsingPost,
@@ -49,7 +50,7 @@ import {
   EllipsisOutlined,
   FileImageOutlined,
   RocketOutlined,
-  EyeOutlined,
+  MenuUnfoldOutlined,
   EyeInvisibleOutlined,
 } from '@ant-design/icons';
 import data from '@emoji-mart/data';
@@ -284,6 +285,44 @@ const ChatRoom: React.FC = () => {
   const isManuallyClosedRef = useRef(false);
   const isAutoScrollingRef = useRef(false); // 添加自动滚动标记
   const [expandedImages, setExpandedImages] = useState<Set<string>>(new Set()); // 添加展开图片的状态
+
+  // 读取布局模式，top 模式下需要额外减去 header 高度避免出现滚动条
+  const getLayoutMode = (): 'side' | 'top' | 'mix' => {
+    const savedConfig = localStorage.getItem('siteConfig');
+    if (savedConfig) {
+      const { layoutMode } = JSON.parse(savedConfig);
+      if (layoutMode === 'side' || layoutMode === 'top' || layoutMode === 'mix') return layoutMode;
+    }
+    return 'side';
+  };
+  const getLayoutOffset = () => {
+    const mode = getLayoutMode();
+    return mode === 'top' || mode === 'mix' ? '163px' : '85px';
+  };
+  const getShowFishCircle = (): boolean => {
+    const savedConfig = localStorage.getItem('siteConfig');
+    if (savedConfig) {
+      const { showFishCircle } = JSON.parse(savedConfig);
+      // 未设置过时默认显示
+      return showFishCircle !== false;
+    }
+    return true;
+  };
+  const [layoutMode, setLayoutMode] = useState<'side' | 'top' | 'mix'>(getLayoutMode);
+  const [chatHeightOffset, setChatHeightOffset] = useState<string>(getLayoutOffset);
+  const [showFishCircle, setShowFishCircle] = useState<boolean>(getShowFishCircle);
+
+  useEffect(() => {
+    const handleSiteConfigChange = () => {
+      setLayoutMode(getLayoutMode());
+      setChatHeightOffset(getLayoutOffset());
+      setShowFishCircle(getShowFishCircle());
+    };
+    window.addEventListener('siteConfigChange', handleSiteConfigChange);
+    return () => {
+      window.removeEventListener('siteConfigChange', handleSiteConfigChange);
+    };
+  }, []);
 
   // 分页相关状态
   const [current, setCurrent] = useState<number>(1);
@@ -3163,7 +3202,13 @@ const ChatRoom: React.FC = () => {
   }, []);
 
   return (
-    <div className={`${styles.chatRoom} ${isSpeedMode ? styles.speedMode : ''} ${!isUserListVisible ? styles.userListCollapsed : ''}`}>
+    <div
+      className={`${styles.chatPageWrapper} ${!showFishCircle ? styles.chatPageWrapperCentered : ''}`}
+      style={{ '--chat-height-offset': chatHeightOffset } as React.CSSProperties}
+    >
+    <div
+      className={`${styles.chatRoom} ${isSpeedMode ? styles.speedMode : ''} ${!isUserListVisible ? styles.userListCollapsed : ''}`}
+    >
         {/* 可拖动宠物组件 */}
         <MiniPet onClick={() => {
           setCurrentPetUserId(null);
@@ -3335,11 +3380,12 @@ const ChatRoom: React.FC = () => {
             <Button
               type="text"
               size="small"
-              icon={<EyeOutlined />}
               onClick={() => setIsUserListVisible(!isUserListVisible)}
               title="显示用户列表"
               className={styles.toggleButton}
-            />
+            >
+              <MenuUnfoldOutlined style={{ color: '#595959', fontSize: 16 }} />
+            </Button>
           </div>
         </div>
       )}
@@ -3352,11 +3398,12 @@ const ChatRoom: React.FC = () => {
             <Button
               type="text"
               size="small"
-              icon={<EyeInvisibleOutlined />}
               onClick={() => setIsUserListVisible(!isUserListVisible)}
               title="隐藏用户列表"
               className={styles.toggleButton}
-            />
+            >
+              <EyeInvisibleOutlined style={{ color: '#1677ff', fontSize: 14 }} />
+            </Button>
           </div>
           <div className={styles.userListContent} ref={userListRef}>
             <List
@@ -4595,6 +4642,8 @@ const ChatRoom: React.FC = () => {
           )}
         </div>
       </Modal>
+    </div>
+    {(layoutMode === 'top' || layoutMode === 'mix') && showFishCircle && <MomentsSidebar />}
     </div>
   );
 };

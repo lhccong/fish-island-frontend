@@ -190,10 +190,35 @@ export async function getInitialState(): Promise<InitialState> {
   return initialState;
 }
 
+// 获取布局模式
+const getLayoutMode = (): 'side' | 'top' | 'mix' => {
+  const savedSiteConfig = localStorage.getItem('siteConfig');
+  if (savedSiteConfig) {
+    const { layoutMode } = JSON.parse(savedSiteConfig);
+    if (layoutMode === 'side' || layoutMode === 'top' || layoutMode === 'mix') {
+      return layoutMode;
+    }
+  }
+  return defaultSettings.layout as 'side' | 'top' | 'mix' || 'top';
+};
+
 // ProLayout 支持的api https://procomponents.ant.design/components/layout
 // @ts-ignore
 export const layout: RunTimeLayoutConfig = ({initialState}) => {
   const {isBossMode, showSettings, setShowSettings, config, setConfig} = useBossKey();
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const [layoutMode, setLayoutMode] = useState<'side' | 'top' | 'mix'>(getLayoutMode);
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    const handleSiteConfigChange = () => {
+      setLayoutMode(getLayoutMode());
+    };
+    window.addEventListener('siteConfigChange', handleSiteConfigChange);
+    return () => {
+      window.removeEventListener('siteConfigChange', handleSiteConfigChange);
+    };
+  }, []);
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   // 使用全局状态
@@ -373,6 +398,7 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
     // 自定义 403 页面
     // unAccessible: <div>unAccessible</div>,
     ...defaultSettings,
+    layout: layoutMode,
     childrenRender: (children) => {
       return (
         <>

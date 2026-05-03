@@ -700,8 +700,12 @@
       }
 
       .pinned-post {
-        padding: 10px 0;
-        border-bottom: 1px dashed #f5f5f5;
+        padding: 14px 0;
+        border-bottom: 1px dashed #f0f0f0;
+
+        &:first-child {
+          padding-top: 4px;
+        }
 
         &:last-child {
           border-bottom: none;
@@ -711,8 +715,8 @@
         .pinned-post-header {
           display: flex;
           align-items: center;
-          gap: 6px;
-          margin-bottom: 6px;
+          gap: 8px;
+          margin-bottom: 8px;
 
           .pinned-post-user {
             font-size: 13px;
@@ -730,7 +734,7 @@
         .pinned-post-content {
           font-size: 13px;
           color: #555;
-          line-height: 1.6;
+          line-height: 1.8;
           padding-left: 34px;
         }
       }

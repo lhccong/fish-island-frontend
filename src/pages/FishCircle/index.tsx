@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Avatar, Image, message, Spin, Empty, Divider, Tooltip, Modal, Input, InputNumber, Upload, Button, Space, Dropdown, Popover } from 'antd';
+import { useLocation } from '@umijs/max';
 import {
   HeartOutlined,
   HeartFilled,
@@ -29,6 +30,7 @@ import {
 import { getLoginUserUsingGet, getUserVoByIdUsingGet } from '@/services/backend/userController';
 import { uploadFileByMinioUsingPost } from '@/services/backend/fileController';
 import EmoticonPicker from '@/components/EmoticonPicker';
+import PublishMomentModal from '@/components/PublishMomentModal';
 import moment from 'moment';
 import './index.less';
 
@@ -538,6 +540,22 @@ const FishCirclePage: React.FC = () => {
   // 初始化
   useEffect(() => {
     fetchCurrentUser();
+    // 读取 URL 参数 userId，自动切换到该用户视图
+    const params = new URLSearchParams(window.location.search);
+    const urlUserId = params.get('userId');
+    if (urlUserId) {
+      // 直接用字符串传参，避免 Number() 转换导致大整数精度丢失
+      const idStr = urlUserId as unknown as number;
+      viewingUserIdRef.current = idStr;
+      fetchMoments(false, idStr);
+      // 异步加载用户信息
+      import('@/services/backend/userController').then(({ getUserVoByIdUsingGet }) => {
+        getUserVoByIdUsingGet({ id: idStr }).then((res) => {
+          if (res.data) setViewingUser(res.data);
+        });
+      });
+      return;
+    }
     fetchMoments();
   }, []);
 
@@ -1114,95 +1132,11 @@ const FishCirclePage: React.FC = () => {
       </div>
 
       {/* 发布弹窗 */}
-      <Modal
-        title="发布朋友圈"
+      <PublishMomentModal
         open={publishModalVisible}
         onCancel={handleCloseModal}
-        footer={null}
-        width={520}
-        centered
-        destroyOnClose
-      >
-        <div className="publish-modal-content">
-          <Input.TextArea
-            ref={textareaRef}
-            placeholder="分享新鲜事..."
-            value={publishContent}
-            onChange={(e) => setPublishContent(e.target.value)}
-            onPaste={handlePaste}
-            autoSize={{ minRows: 4, maxRows: 8 }}
-            className="publish-textarea"
-            maxLength={500}
-            showCount
-          />
-
-          {/* 图片预览区域 */}
-          {publishImages.length > 0 && (
-            <div className="publish-images-preview">
-              {publishImages.map((url, index) => (
-                <div key={index} className="preview-item">
-                  <img src={url} alt={`预览${index + 1}`} />
-                  <span
-                    className="remove-btn"
-                    onClick={() => handleRemoveImage(index)}
-                  >
-                    <CloseOutlined />
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* 上传区域 */}
-          <div className="publish-actions">
-            <Space>
-              <Upload
-                accept="image/*"
-                beforeUpload={handleFileSelect}
-                showUploadList={false}
-                disabled={publishImages.length >= 9}
-              >
-                <Button
-                  icon={<PlusOutlined />}
-                  disabled={publishImages.length >= 9}
-                >
-                  添加图片
-                </Button>
-              </Upload>
-              <span className="upload-hint">
-                {publishImages.length > 0
-                  ? `已选择 ${publishImages.length}/9 张图片，可直接粘贴图片`
-                  : '可直接粘贴图片上传'}
-              </span>
-            </Space>
-          </div>
-
-          {/* 位置输入 */}
-          <div className="publish-location">
-            <Input
-              prefix={<EnvironmentOutlined style={{ color: '#aaa' }} />}
-              placeholder="添加位置（选填）"
-              value={publishLocation}
-              onChange={(e) => setPublishLocation(e.target.value)}
-              maxLength={50}
-              allowClear
-            />
-          </div>
-
-          {/* 发布按钮 */}
-          <div className="publish-footer">
-            <Button onClick={handleCloseModal}>取消</Button>
-            <Button
-              type="primary"
-              onClick={handlePublish}
-              loading={publishing}
-              disabled={!publishContent.trim() && publishImages.length === 0}
-            >
-              发布
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        onSuccess={() => fetchMoments()}
+      />
 
       {/* 编辑弹窗 */}
       <Modal

@@ -1,10 +1,23 @@
 @import '../../components/titles.less';
 
-.chatRoom {
-  max-width: 1200px;
+.chatPageWrapper {
+  display: flex;
+  gap: 12px;
   width: 98%;
-  height: calc(100vh - 85px);
+  max-width: 1532px; // 1200px chatRoom + 12px gap + 320px sidebar
   margin: 0 auto;
+  align-items: flex-start;
+}
+
+.chatPageWrapperCentered {
+  max-width: 1200px;
+}
+
+.chatRoom {
+  flex: 1;
+  min-width: 0;
+  max-width: 1200px;
+  height: calc(100vh - var(--chat-height-offset, 85px));
   display: grid;
   grid-template-columns: 1fr 220px;
   grid-template-rows: auto 1fr auto;
@@ -79,6 +92,7 @@
 
   @media screen and (max-width: 768px) {
     width: 100%;
+    max-width: 100%;
     height: calc(100vh - 48px);
     margin: 0;
     border-radius: 0;
@@ -435,58 +449,40 @@
         
         .toggleButton {
           margin: 0;
-          padding: 0;
-          background: rgba(255, 255, 255, 0.95);
-          border: 2px solid #1677ff;
-          border-radius: 8px;
-          color: #1677ff !important;
-          font-size: 18px !important;
-          font-weight: bold;
           width: 36px;
           height: 36px;
           position: static;
           transform: none;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          backdrop-filter: blur(10px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          line-height: 1;
-          
-          // 直接设置图标样式，确保可见
-          svg, .anticon {
-            font-size: 18px !important;
-            color: #1677ff !important;
-            font-weight: bold !important;
-            width: 18px !important;
-            height: 18px !important;
-            display: block !important;
-            opacity: 1 !important;
+          background: rgba(255, 255, 255, 0.9) !important;
+          border: 1px solid rgba(0, 0, 0, 0.1) !important;
+          border-radius: 12px !important;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12) !important;
+          backdrop-filter: blur(12px);
+          color: #595959 !important;
+          -webkit-background-clip: unset !important;
+          background-clip: unset !important;
+          transition: all 0.2s ease !important;
+
+          .anticon {
+            color: #595959 !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
           }
-          
-          // 如果图标还是不显示，用文字替代
-          &::before {
-            content: '👁';
-            font-size: 16px;
-            display: block;
-            line-height: 1;
-          }
-          
+
           &:hover {
-            background: rgba(240, 245, 255, 0.98);
-            border-color: #096dd9;
-            color: #096dd9 !important;
-            transform: scale(1.08);
-            box-shadow: 0 6px 16px rgba(22, 119, 255, 0.25);
-            
-            svg, .anticon {
-              color: #096dd9 !important;
+            background: #fff !important;
+            border-color: rgba(22, 119, 255, 0.4) !important;
+            color: #1677ff !important;
+            transform: scale(1.06) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+
+            .anticon {
+              color: #1677ff !important;
             }
           }
-          
+
           &:active {
-            transform: scale(0.95);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transform: scale(0.95) !important;
           }
         }
       }
@@ -522,7 +518,7 @@
       padding: 6px;
       border-radius: 6px;
       transition: all 0.3s ease;
-      color: #1677ff;
+      color: #1677ff !important;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -534,12 +530,20 @@
       right: 0;
       top: 50%;
       transform: translateY(-50%);
+
+      .anticon {
+        color: #1677ff !important;
+      }
       
       &:hover {
         background: rgba(22, 119, 255, 0.15);
-        color: #096dd9;
+        color: #096dd9 !important;
         transform: translateY(-50%) scale(1.1);
         box-shadow: 0 2px 6px rgba(22, 119, 255, 0.3);
+
+        .anticon {
+          color: #096dd9 !important;
+        }
       }
       
       &:active {

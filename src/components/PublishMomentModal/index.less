@@ -1,0 +1,178 @@
+// 发布弹窗样式（与鱼小圈页面保持一致）
+.publish-modal-content {
+  padding: 8px 4px;
+
+  .publish-textarea {
+    margin-bottom: 20px;
+
+    textarea {
+      font-size: 15px;
+      line-height: 1.7;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      background: #fafafa;
+      transition: all 0.3s ease;
+
+      &:focus {
+        border-color: #1890ff;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
+      }
+
+      &::placeholder {
+        color: #bfbfbf;
+      }
+    }
+
+    .ant-input-textarea-show-count {
+      &::after {
+        font-size: 12px;
+        color: #bfbfbf;
+      }
+    }
+  }
+
+  // 图片预览区域
+  .publish-images-preview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+
+    .preview-item {
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid #e8e8e8;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: all 0.3s ease;
+      }
+
+      .remove-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 24px;
+        height: 24px;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        color: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.25s ease;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+
+        &:hover {
+          background: rgba(255, 77, 79, 0.9);
+          transform: scale(1.1);
+        }
+      }
+    }
+  }
+
+  // 上传操作区
+  .publish-actions {
+    margin-bottom: 12px;
+    padding: 12px 0;
+
+    .ant-btn {
+      border-radius: 20px;
+      height: 36px;
+      padding: 0 20px;
+      font-size: 14px;
+      transition: all 0.25s ease;
+
+      &:not(:disabled):hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(24, 144, 255, 0.25);
+      }
+    }
+
+    .upload-hint {
+      font-size: 13px;
+      color: #8c8c8c;
+      margin-left: 8px;
+    }
+  }
+
+  // 位置输入
+  .publish-location {
+    margin-bottom: 20px;
+
+    .ant-input-affix-wrapper {
+      border-radius: 8px;
+      background: #f7f7f7;
+      border-color: #e8e8e8;
+
+      &:hover,
+      &:focus-within {
+        border-color: #40a9ff;
+        background: #fff;
+      }
+    }
+  }
+
+  // 底部按钮
+  .publish-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+
+    .ant-btn {
+      border-radius: 20px;
+      height: 40px;
+      padding: 0 28px;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.25s ease;
+
+      &:first-child {
+        color: #8c8c8c;
+
+        &:hover {
+          color: #595959;
+          border-color: #d9d9d9;
+        }
+      }
+
+      &.ant-btn-primary {
+        background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
+        border: none;
+        box-shadow: 0 4px 12px rgba(24, 144, 255, 0.35);
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(24, 144, 255, 0.45);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+
+        &:disabled {
+          background: #bfbfbf;
+          box-shadow: none;
+        }
+      }
+    }
+  }
+}
