@@ -8,7 +8,6 @@ export default [
   },
   {path: '/index', icon: 'BarsOutlined', component: './Index', name: '最新', requireAuth: false},
   {path: '/home', layout: false, icon: 'smile', component: './Home', name: '浏览器页面', requireAuth: false},
-  {path: '/todo', icon: 'CalendarOutlined', component: './TODO', name: '待办', requireAuth: true},
   {path: '/chat', icon: 'MessageOutlined', component: './Chat', name: '鱼窝', requireAuth: true},
   {
     path: '/moments',
@@ -42,6 +41,7 @@ export default [
       {icon: 'RocketOutlined', path: '/point/tower', component: './Game/TowerClimb', name: '无尽爬塔', requireAuth: true}
     ]
   },
+  {path: '/todo', icon: 'CalendarOutlined', component: './TODO', name: '待办', requireAuth: true},
   {
     path: '/game',
     icon: 'DesktopOutlined',
