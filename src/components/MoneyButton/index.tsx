@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { Tooltip, Button } from 'antd';
 import moment from 'moment';
 import Draggable from 'react-draggable';
@@ -28,8 +29,32 @@ const MoneyButton: React.FC<MoneyButtonProps> = ({
   useEffect(() => {
     const savedPosition = localStorage.getItem('moneyButtonPosition');
     if (savedPosition) {
-      setPosition(JSON.parse(savedPosition));
+      try {
+        const parsed = JSON.parse(savedPosition);
+        // 简单校验：坐标不能超出屏幕范围，否则视为旧数据，丢弃
+        const maxX = window.innerWidth;
+        const maxY = window.innerHeight;
+        if (
+          typeof parsed.x === 'number' && typeof parsed.y === 'number' &&
+          parsed.x > -maxX && parsed.x < maxX &&
+          parsed.y > -maxY && parsed.y < maxY
+        ) {
+          setPosition(parsed);
+        } else {
+          localStorage.removeItem('moneyButtonPosition');
+        }
+      } catch {
+        localStorage.removeItem('moneyButtonPosition');
+      }
     }
+  }, []);
+
+  useEffect(() => {
+    const handleReset = () => {
+      setPosition({ x: 0, y: 0 });
+    };
+    window.addEventListener('resetMoneyButtonPosition', handleReset);
+    return () => window.removeEventListener('resetMoneyButtonPosition', handleReset);
   }, []);
 
   const handleDragStart = () => {
@@ -52,7 +77,7 @@ const MoneyButton: React.FC<MoneyButtonProps> = ({
     return null;
   }
 
-  return (
+  return ReactDOM.createPortal(
     <Draggable
       nodeRef={nodeRef}
       position={position}
@@ -153,7 +178,8 @@ const MoneyButton: React.FC<MoneyButtonProps> = ({
           </Button>
         </Tooltip>
       </div>
-    </Draggable>
+    </Draggable>,
+    document.body
   );
 };
 

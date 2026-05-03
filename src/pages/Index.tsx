@@ -48,10 +48,6 @@ const Index: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('');
   const [categories, setCategories] = useState<string[]>([]);
-  const [isMusicOpen, setIsMusicOpen] = useState(false);
-  const [currentMusic, setCurrentMusic] = useState(
-    '//music.163.com/outchain/player?type=2&id=2674443509&auto=0&height=66',
-  );
   const [selectedSourceIds, setSelectedSourceIds] = useState<number[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [tempSelectedSourceIds, setTempSelectedSourceIds] = useState<number[]>([]);
@@ -269,23 +265,6 @@ const Index: React.FC = () => {
   return (
     <>
       <Modal
-        title="🎵"
-        footer={null}
-        open={isMusicOpen}
-        onCancel={() => {
-          setCurrentMusic('about:blank');
-          setTimeout(() => {
-            setIsMusicOpen(false);
-            setCurrentMusic('');
-          }, 100);
-        }}
-        bodyStyle={{ padding: 0 }}
-        width={350}
-      >
-        <iframe key={currentMusic} frameBorder="no" width={300} height={86} src={currentMusic} />
-      </Modal>
-
-      <Modal
         title="数据源设置"
         open={isSettingsOpen}
         onOk={handleSettingsSave}
@@ -365,13 +344,6 @@ const Index: React.FC = () => {
                       <Tooltip title={data.title} mouseEnterDelay={0.2}>
                         <Typography.Link
                           target="_blank"
-                          onClick={(e) => {
-                            if (currentSource.category === 4) {
-                              e.preventDefault();
-                              setCurrentMusic(data.url as any);
-                              setIsMusicOpen(true);
-                            }
-                          }}
                           href={data.url}
                           style={{
                             display: 'flex',
@@ -580,13 +552,6 @@ const Index: React.FC = () => {
                                 <Tooltip title={data.title} mouseEnterDelay={0.2}>
                                   <Typography.Link
                                     target="_blank"
-                                    onClick={(e) => {
-                                      if (item.category === 4) {
-                                        e.preventDefault();
-                                        setCurrentMusic(data.url as any);
-                                        setIsMusicOpen(true);
-                                      }
-                                    }}
                                     href={data.url}
                                     style={{
                                       display: 'flex',

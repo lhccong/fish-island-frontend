@@ -3145,6 +3145,14 @@ export const MiniPet: React.FC<MiniPetProps> = ({ onClick }) => {
   const petRef = useRef<HTMLDivElement>(null);
   const initialPosition = useRef({ x: 0, y: 0 });
 
+  useEffect(() => {
+    const handleReset = () => {
+      setPosition({ x: 20, y: 0 });
+    };
+    window.addEventListener('resetMiniPetPosition', handleReset);
+    return () => window.removeEventListener('resetMiniPetPosition', handleReset);
+  }, []);
+
   // 获取宠物数据，使用缓存减少请求
   const fetchPetData = async (force = false) => {
     // 检查用户是否登录

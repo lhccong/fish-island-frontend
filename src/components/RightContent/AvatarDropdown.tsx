@@ -81,7 +81,6 @@ import FoodRecommender from '@/components/FoodRecommender';
 import MessageNotification, { MessageNotificationRef } from '@/components/MessageNotification';
 import MoneyButton from '../MoneyButton';
 
-lazy(() => import('@/components/MusicPlayer'));
 export type GlobalHeaderRightProps = {
   menu?: boolean;
 };
@@ -850,10 +849,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
     },
   }));
 
-  const [isMusicVisible, setIsMusicVisible] = useState(() => {
-    const savedVisibility = localStorage.getItem('musicPlayerVisibility');
-    return savedVisibility === null ? true : savedVisibility === 'true';
-  });
+
 
   // 添加标签页模式按钮样式
   const tabModeButtonStyle = useEmotionCss(() => ({
@@ -905,48 +901,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
     }
   }));
 
-  const [musicPlayer, setMusicPlayer] = useState<React.ComponentType<any> | null>(null);
 
-  useEffect(() => {
-    if (isMusicVisible) {
-      import('@/components/MusicPlayer').then(module => {
-        setMusicPlayer(() => module.default);
-      });
-    } else {
-      setMusicPlayer(null);
-    }
-
-    // 添加清理函数
-    return () => {
-      setMusicPlayer(null);
-      // 移除所有音乐播放器相关的DOM元素
-      const elementsToRemove = [
-        '.music-player-container',
-        '#myhkTips',
-        '.myhk-player',
-        '.myhk-player-container',
-        '.myhk-player-controls',
-        '.myhk-player-progress',
-        '.myhk-player-volume',
-        '.myhk-player-playlist',
-        '.switch-player'  // 添加 switch-player 元素
-      ];
-
-      elementsToRemove.forEach(selector => {
-        const elements = document.querySelectorAll(selector);
-        elements.forEach(element => {
-          element.remove();
-        });
-      });
-
-      // 移除可能添加的全局样式
-      const styleId = 'myhk-player-styles';
-      const styleElement = document.getElementById(styleId);
-      if (styleElement) {
-        styleElement.remove();
-      }
-    };
-  }, [isMusicVisible]);
 
   const menuItems = [
     ...(menu
@@ -997,9 +952,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       label: isMoneyVisible ? '隐藏工作时间' : '显示工作时间',
     },
     {
-      key: 'toggleMusic',
+      key: 'resetMoneyPosition',
       icon: <SettingOutlined/>,
-      label: isMusicVisible ? '隐藏音乐播放器' : '显示音乐播放器',
+      label: '重置位置',
     },
     {
       key: 'logout',
@@ -1056,15 +1011,16 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         localStorage.setItem('moneyButtonVisibility', newValue.toString());
         return;
       }
-      if (key === 'toggleMusic') {
-        const newValue = !isMusicVisible;
-        setIsMusicVisible(newValue);
-        localStorage.setItem('musicPlayerVisibility', newValue.toString());
+      if (key === 'resetMoneyPosition') {
+        localStorage.removeItem('moneyButtonPosition');
+        localStorage.removeItem('miniPetPosition');
+        window.dispatchEvent(new CustomEvent('resetMoneyButtonPosition'));
+        window.dispatchEvent(new CustomEvent('resetMiniPetPosition'));
         return;
       }
       history.push(`/account/${key}`);
     },
-    [setInitialState, currentUser?.userAvatar, isMoneyVisible, isMusicVisible],
+    [setInitialState, currentUser?.userAvatar, isMoneyVisible],
   );
 
   // 发送邮箱验证码
@@ -1717,8 +1673,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
           </Tooltip>
         </Space>
       </HeaderDropdown>
-
-      {musicPlayer && React.createElement(musicPlayer, {playerId: "1742366149119", key: isMusicVisible.toString()})}
 
       {/* 添加修改信息的 Modal */}
       <Modal

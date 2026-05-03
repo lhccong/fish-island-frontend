@@ -123,23 +123,6 @@ interface Title {
   description: string;
 }
 
-// 添加歌曲类型定义
-interface Song {
-  id: string;
-  name: string;
-  artist: string;
-  url: string;
-  cover: string;
-  album?: string;
-}
-
-// 添加APlayer声明
-declare global {
-  interface Window {
-    APlayer: any;
-  }
-}
-
 // 添加用户备注类型
 interface UserRemark {
   userId: string;
@@ -2359,210 +2342,6 @@ const ChatRoom: React.FC = () => {
   }, []);
 
 
-  // 添加歌单相关状态
-  const [activeTab, setActiveTab] = useState('search');
-  const [playlist, setPlaylist] = useState<Song[]>([]);
-  // 移除未使用的状态
-  const aPlayerContainerRef = useRef<HTMLDivElement>(null);
-  const aPlayerInstanceRef = useRef<any>(null);
-
-  // 添加歌单功能相关的副作用
-  useEffect(() => {
-    // 从localStorage加载歌单
-    const savedPlaylist = localStorage.getItem('music_playlist');
-    if (savedPlaylist) {
-      try {
-        setPlaylist(JSON.parse(savedPlaylist));
-      } catch (error) {
-        console.error('加载歌单失败:', error);
-      }
-    }
-
-    // 加载APlayer依赖
-    const loadAPlayerDependencies = () => {
-      // 检查是否已加载
-      if (document.getElementById('aplayer-css') || document.getElementById('aplayer-js')) {
-        return;
-      }
-
-      // 加载APlayer CSS
-      const link = document.createElement('link');
-      link.id = 'aplayer-css';
-      link.rel = 'stylesheet';
-      link.href = 'https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.css';
-      document.head.appendChild(link);
-
-      // 加载APlayer JS
-      const script = document.createElement('script');
-      script.id = 'aplayer-js';
-      script.src = 'https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js';
-      script.async = true;
-      document.body.appendChild(script);
-    };
-
-    loadAPlayerDependencies();
-
-    return () => {
-      // 清理APlayer实例
-      if (aPlayerInstanceRef.current) {
-        aPlayerInstanceRef.current.destroy();
-        aPlayerInstanceRef.current = null;
-      }
-    };
-  }, []);
-
-  // 添加歌曲到歌单
-  const addToPlaylist = async (music: any) => {
-    try {
-      setAddingToPlaylistId(music.id);
-      setMusicApiError(null);
-
-      const response = await fetch('https://api.kxzjoker.cn/api/163_music', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        },
-        body: new URLSearchParams({
-          url: music.id,
-          level: 'lossless',
-          type: 'json',
-        }).toString(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`获取音乐链接请求失败: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (!data.url) {
-        throw new Error('未能获取到音乐链接');
-      }
-
-      const newSong: Song = {
-        id: music.id,
-        name: music.name,
-        artist: music.artists.map((a: any) => a.name).join(','),
-        url: data.url,
-        cover: data.pic,
-        album: music.album.name,
-      };
-
-      setPlaylist((prev) => {
-        // 检查是否已存在
-        if (prev.some((song) => song.id === newSong.id)) {
-          messageApi.info('歌曲已在歌单中');
-          return prev;
-        }
-
-        const updatedPlaylist = [...prev, newSong];
-        // 保存到localStorage
-        localStorage.setItem('music_playlist', JSON.stringify(updatedPlaylist));
-        messageApi.success('已添加到歌单');
-        return updatedPlaylist;
-      });
-    } catch (error) {
-      console.error('添加歌曲失败:', error);
-      setMusicApiError('音乐解析服务暂时不可用，请稍后再试');
-      messageApi.error('添加歌曲失败，音乐API可能暂时不可用');
-    } finally {
-      setAddingToPlaylistId(null);
-    }
-  };
-
-  // 播放歌单中的歌曲
-  const playFromPlaylist = (song: Song) => {
-    // 确保APlayer已加载
-    if (typeof window.APlayer === 'undefined') {
-      messageApi.error('播放器加载中，请稍后再试');
-      return;
-    }
-
-    // 初始化APlayer（如果还没有实例）
-    if (!aPlayerInstanceRef.current && aPlayerContainerRef.current) {
-      aPlayerInstanceRef.current = new window.APlayer({
-        container: aPlayerContainerRef.current,
-        audio: [song],
-        autoplay: true,
-        theme: '#41b883',
-        listFolded: false,
-        listMaxHeight: '200px',
-      });
-    } else if (aPlayerInstanceRef.current) {
-      // 如果已有实例，直接添加并播放歌曲
-      aPlayerInstanceRef.current.list.add(song);
-      // 找到歌曲在列表中的索引
-      const index = aPlayerInstanceRef.current.list.audios.findIndex(
-        (audio: any) => audio.id === song.id,
-      );
-      if (index !== -1) {
-        aPlayerInstanceRef.current.list.switch(index);
-        aPlayerInstanceRef.current.play();
-      }
-    }
-  };
-
-  // 播放整个歌单
-  const playEntirePlaylist = () => {
-    if (playlist.length === 0) {
-      messageApi.info('歌单为空');
-      return;
-    }
-
-    // 确保APlayer已加载
-    if (typeof window.APlayer === 'undefined') {
-      messageApi.error('播放器加载中，请稍后再试');
-      return;
-    }
-
-    // 销毁旧的播放器实例
-    if (aPlayerInstanceRef.current) {
-      aPlayerInstanceRef.current.destroy();
-    }
-
-    // 创建新的播放器实例，包含整个歌单
-    if (aPlayerContainerRef.current) {
-      aPlayerInstanceRef.current = new window.APlayer({
-        container: aPlayerContainerRef.current,
-        audio: playlist,
-        autoplay: true,
-        theme: '#41b883',
-        listFolded: false,
-        listMaxHeight: '200px',
-      });
-    }
-  };
-
-  // 从歌单中移除歌曲
-  const removeFromPlaylist = (songId: string) => {
-    setPlaylist((prev) => {
-      const updatedPlaylist = prev.filter((song) => song.id !== songId);
-      localStorage.setItem('music_playlist', JSON.stringify(updatedPlaylist));
-      return updatedPlaylist;
-    });
-
-    // 如果当前正在播放的歌曲被移除，需要处理播放器
-    if (aPlayerInstanceRef.current) {
-      const currentIndex = aPlayerInstanceRef.current.list.index;
-      const currentAudio = aPlayerInstanceRef.current.list.audios[currentIndex];
-
-      if (currentAudio && currentAudio.id === songId) {
-        // 如果还有下一首歌，切换到下一首，否则停止播放
-        if (aPlayerInstanceRef.current.list.audios.length > 1) {
-          aPlayerInstanceRef.current.skipForward();
-        } else {
-          aPlayerInstanceRef.current.pause();
-        }
-      }
-
-      // 从播放器列表中移除
-      const audioIndex = aPlayerInstanceRef.current.list.audios.findIndex(
-        (audio: any) => audio.id === songId,
-      );
-      if (audioIndex !== -1) {
-        aPlayerInstanceRef.current.list.remove(audioIndex);
-      }
-    }
-  };
 
   // 当搜索关键词变化时重置搜索状态
   const handleSearchKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3850,181 +3629,81 @@ const ChatRoom: React.FC = () => {
         footer={null}
         width={600}
       >
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={[
-            {
-              key: 'search',
-              label: '搜索音乐',
-              children: (
-                <div className={styles.musicSearch}>
-                  <Input.Search
-                    placeholder="输入歌曲名称"
-                    value={searchKey}
-                    onChange={handleSearchKeyChange}
-                    onSearch={handleMusicSearch}
-                    enterButton
-                    loading={isSearchingMusic}
-                    style={{ marginBottom: '10px' }}
-                  />
+        <div className={styles.musicSearch}>
+          <Input.Search
+            placeholder="输入歌曲名称"
+            value={searchKey}
+            onChange={handleSearchKeyChange}
+            onSearch={handleMusicSearch}
+            enterButton
+            loading={isSearchingMusic}
+            style={{ marginBottom: '10px' }}
+          />
 
-                  {musicApiError && (
-                    <Alert
-                      message="API服务提示"
-                      description={musicApiError}
-                      type="warning"
-                      showIcon
-                      style={{ marginBottom: '10px' }}
-                      closable
-                      onClose={() => setMusicApiError(null)}
-                    />
-                  )}
+          {musicApiError && (
+            <Alert
+              message="API服务提示"
+              description={musicApiError}
+              type="warning"
+              showIcon
+              style={{ marginBottom: '10px' }}
+              closable
+              onClose={() => setMusicApiError(null)}
+            />
+          )}
 
-                  {isSearchingMusic ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
-                      <Spin tip="正在搜索音乐..." />
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    <List
-                      className={styles.musicList}
-                      height={300}
-                      itemCount={searchResults.length}
-                      itemSize={60}
-                      width="100%"
-                    >
-                      {({ index, style }) => {
-                        const item = searchResults[index];
-                        return (
-                          <div
-                            style={{
-                              ...style,
-                              display: 'flex',
-                              alignItems: 'center',
-                              padding: '5px 10px',
-                            }}
-                            className={styles.musicListItem}
-                          >
-                            <div className={styles.musicInfo}>
-                              <div className={styles.musicTitle}>{item.name}</div>
-                              <div className={styles.musicDesc}>
-                                {`${item.artists.map((a: any) => a.name).join(',')} - ${
-                                  item.album.name
-                                }`}
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <Button
-                                type="primary"
-                                size="small"
-                                onClick={() => handleSelectMusic(item)}
-                                loading={isSelectingMusic}
-                                disabled={isSelectingMusic}
-                              >
-                                {isSelectingMusic ? '处理中' : '发送'}
-                              </Button>
-                              <Button
-                                size="small"
-                                icon={<PlusOutlined />}
-                                onClick={() => addToPlaylist(item)}
-                                loading={addingToPlaylistId === item.id}
-                                disabled={addingToPlaylistId !== null}
-                              >
-                                添加到歌单
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      }}
-                    </List>
-                  ) : (
-                    <Empty
-                      description={hasSearched ? '未找到相关歌曲' : '请输入关键词并点击搜索'}
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    />
-                  )}
-                </div>
-              ),
-            },
-            {
-              key: 'playlist',
-              label: '我的歌单',
-              children: (
-                <div className={styles.playlist}>
+          {isSearchingMusic ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+              <Spin tip="正在搜索音乐..." />
+            </div>
+          ) : searchResults.length > 0 ? (
+            <List
+              className={styles.musicList}
+              height={300}
+              itemCount={searchResults.length}
+              itemSize={60}
+              width="100%"
+            >
+              {({ index, style }) => {
+                const item = searchResults[index];
+                return (
                   <div
                     style={{
-                      marginBottom: '10px',
+                      ...style,
                       display: 'flex',
-                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '5px 10px',
                     }}
+                    className={styles.musicListItem}
                   >
-                    <div>共 {playlist.length} 首歌曲</div>
-                    {playlist.length > 0 && (
-                      <Button type="primary" size="small" onClick={playEntirePlaylist}>
-                        播放全部
-                      </Button>
-                    )}
-                  </div>
-
-                  {playlist.length === 0 ? (
-                    <Empty description="你的歌单还是空的" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                  ) : (
-                    <div
-                      className={styles.playlistContainer}
-                      style={{ maxHeight: '250px', overflow: 'auto' }}
-                    >
-                      {playlist.map((song) => (
-                        <div
-                          key={song.id}
-                          className={styles.playlistItem}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '8px',
-                            borderBottom: '1px solid #f0f0f0',
-                          }}
-                        >
-                          <img
-                            src={song.cover}
-                            alt={song.name}
-                            style={{
-                              width: '40px',
-                              height: '40px',
-                              marginRight: '10px',
-                              borderRadius: '4px',
-                            }}
-                          />
-                          <div className={styles.songInfo} style={{ flex: 1 }}>
-                            <div>{song.name}</div>
-                            <div style={{ fontSize: '12px', color: '#888' }}>{song.artist}</div>
-                          </div>
-                          <div className={styles.songActions}>
-                            <Button
-                              type="text"
-                              size="small"
-                              icon={<PlayCircleOutlined />}
-                              onClick={() => playFromPlaylist(song)}
-                            />
-                            <Button
-                              type="text"
-                              size="small"
-                              icon={<DeleteOutlined />}
-                              onClick={() => removeFromPlaylist(song.id)}
-                              danger
-                            />
-                          </div>
-                        </div>
-                      ))}
+                    <div className={styles.musicInfo}>
+                      <div className={styles.musicTitle}>{item.name}</div>
+                      <div className={styles.musicDesc}>
+                        {`${item.artists.map((a: any) => a.name).join(',')} - ${
+                          item.album.name
+                        }`}
+                      </div>
                     </div>
-                  )}
-
-                  {/* APlayer容器 */}
-                  <div ref={aPlayerContainerRef} style={{ marginTop: '20px' }} />
-                </div>
-              ),
-            },
-          ]}
-        />
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={() => handleSelectMusic(item)}
+                      loading={isSelectingMusic}
+                      disabled={isSelectingMusic}
+                    >
+                      {isSelectingMusic ? '处理中' : '发送'}
+                    </Button>
+                  </div>
+                );
+              }}
+            </List>
+          ) : (
+            <Empty
+              description={hasSearched ? '未找到相关歌曲' : '请输入关键词并点击搜索'}
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          )}
+        </div>
       </Modal>
       <Modal
         title="用户详细信息"

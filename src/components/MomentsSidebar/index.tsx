@@ -10,6 +10,7 @@ import {
   TeamOutlined,
   LeftOutlined,
   RightOutlined,
+  EnvironmentOutlined,
 } from '@ant-design/icons';
 import { listMomentsUsingPost, toggleLikeUsingPost } from '@/services/backend/momentsController';
 import PublishMomentModal from '@/components/PublishMomentModal';
@@ -301,6 +302,13 @@ const MomentsSidebar: React.FC = () => {
 
                   {item.content && (
                     <div className={styles.content}>{item.content}</div>
+                  )}
+
+                  {item.location && (
+                    <div className={styles.location}>
+                      <EnvironmentOutlined />
+                      <span>{item.location}</span>
+                    </div>
                   )}
 
                   {item.mediaJson && item.mediaJson.length > 0 && (
