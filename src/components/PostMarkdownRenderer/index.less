@@ -1,0 +1,200 @@
+.post-markdown-body {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #262626;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  // 标题
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 1.4em 0 0.6em;
+    color: #1a1a1a;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  h1 { font-size: 1.75em; border-bottom: 2px solid #f0f0f0; padding-bottom: 0.3em; }
+  h2 { font-size: 1.4em; border-bottom: 1px solid #f0f0f0; padding-bottom: 0.25em; }
+  h3 { font-size: 1.2em; }
+  h4 { font-size: 1.05em; }
+  h5, h6 { font-size: 1em; color: #595959; }
+
+  // 段落
+  p {
+    margin: 0.8em 0;
+
+    &:first-child { margin-top: 0; }
+    &:last-child  { margin-bottom: 0; }
+  }
+
+  // 行内代码
+  .post-md-inline-code {
+    background: #f5f5f5;
+    border: 1px solid #e8e8e8;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.88em;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    color: #d63384;
+  }
+
+  // 代码块容器
+  .post-md-code-block {
+    margin: 1em 0;
+    border-radius: 6px;
+    border: 1px solid #e8e8e8;
+    overflow: hidden;
+
+    .post-md-code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f7f7f7;
+      padding: 6px 12px;
+      border-bottom: 1px solid #e8e8e8;
+
+      .post-md-code-lang {
+        font-size: 12px;
+        color: #8c8c8c;
+        font-family: monospace;
+        text-transform: lowercase;
+      }
+
+      .post-md-copy-btn {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        color: #8c8c8c;
+        padding: 2px 6px;
+        border-radius: 4px;
+        transition: all 0.2s;
+
+        &:hover {
+          color: #1890ff;
+          background: rgba(24, 144, 255, 0.08);
+        }
+      }
+    }
+
+    // 覆盖 SyntaxHighlighter 默认样式
+    > div {
+      margin: 0 !important;
+      border-radius: 0 !important;
+      font-size: 13px !important;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+  }
+
+  // 引用块
+  blockquote {
+    margin: 1em 0;
+    padding: 0.6em 1em;
+    border-left: 4px solid #d9d9d9;
+    background: #fafafa;
+    color: #595959;
+    border-radius: 0 4px 4px 0;
+
+    p { margin: 0; }
+  }
+
+  // 列表
+  ul, ol {
+    padding-left: 1.8em;
+    margin: 0.6em 0;
+
+    li {
+      margin: 0.3em 0;
+      line-height: 1.7;
+    }
+  }
+
+  ul { list-style-type: disc; }
+  ol { list-style-type: decimal; }
+
+  // 任务列表（GFM）
+  input[type='checkbox'] {
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  // 表格
+  .post-md-table-wrapper {
+    overflow-x: auto;
+    margin: 1em 0;
+    border-radius: 6px;
+    border: 1px solid #e8e8e8;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+
+      th, td {
+        padding: 8px 14px;
+        border: 1px solid #e8e8e8;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      th {
+        background: #fafafa;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      tr:nth-child(even) td {
+        background: #fafafa;
+      }
+
+      tr:hover td {
+        background: #f0f7ff;
+      }
+    }
+  }
+
+  // 分割线
+  hr {
+    border: none;
+    border-top: 1px solid #f0f0f0;
+    margin: 1.5em 0;
+  }
+
+  // 图片
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    display: block;
+    margin: 0.5em 0;
+  }
+
+  // 链接
+  a {
+    color: #1890ff;
+    text-decoration: none;
+    word-break: break-all;
+
+    &:hover {
+      text-decoration: underline;
+      color: #40a9ff;
+    }
+  }
+
+  // 加粗 / 斜体
+  strong { font-weight: 600; color: #1a1a1a; }
+  em     { font-style: italic; }
+
+  // 删除线
+  del { color: #8c8c8c; }
+}

@@ -41,10 +41,9 @@ import {
 import {doThumbUsingPost} from '@/services/backend/commentThumbController';
 import {getLoginUserUsingGet} from '@/services/backend/userController';
 import {uploadFileByMinioUsingPost} from '@/services/backend/fileController';
-import Vditor from 'vditor';
 import moment from 'moment';
 import 'moment/locale/zh-cn';
-import 'vditor/dist/index.css';
+import PostMarkdownRenderer from '@/components/PostMarkdownRenderer';
 import './index.less';
 import EmoticonPicker from '@/components/EmoticonPicker';
 import data from '@emoji-mart/data';
@@ -97,7 +96,7 @@ const PostDetail: React.FC = () => {
     pageSize: 10,
     total: 0
   });
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [postContent, setPostContent] = useState<string>('');
   const [deleteModalVisible, setDeleteModalVisible] = useState<boolean>(false);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const [commentCollapsed, setCommentCollapsed] = useState<boolean>(false);
@@ -367,66 +366,7 @@ const PostDetail: React.FC = () => {
 
       if (res.data) {
         setPost(res.data);
-        // 使用 Vditor 预览模式渲染内容
-        setTimeout(() => {
-          if (contentRef.current && res.data?.content) {
-            Vditor.preview(contentRef.current, res.data?.content, {
-              mode: 'light',
-              hljs: {
-                style: 'github',
-                lineNumber: true,
-              },
-              speech: {
-                enable: true,
-              },
-              anchor: 1,
-              after() {
-                // 渲染完成后的回调
-                contentRef.current?.querySelectorAll('pre code').forEach((block) => {
-                  // 为代码块添加复制按钮
-                  Vditor.codeRender(block as HTMLElement);
-                });
-
-                // 处理表格和图片，确保不会导致横向滚动
-                contentRef.current?.querySelectorAll('table').forEach((table) => {
-                  table.style.maxWidth = '100%';
-                  table.style.display = 'block';
-                  table.style.overflowX = 'auto';
-                  table.style.width = 'fit-content';
-                  table.style.margin = '0 auto';
-                });
-
-                contentRef.current?.querySelectorAll('img').forEach((img) => {
-                  img.style.maxWidth = '100%';
-                  img.style.height = 'auto';
-                  // 防止图片加载后撑开容器
-                  img.addEventListener('load', () => {
-                    img.style.maxWidth = '100%';
-                  });
-                });
-
-                // 处理可能导致溢出的元素
-                contentRef.current?.querySelectorAll('iframe, video, embed, object').forEach((elem) => {
-                  elem.setAttribute('style', 'max-width: 100%; width: 100%;');
-                });
-
-                // 处理长链接文本
-                contentRef.current?.querySelectorAll('a').forEach((link) => {
-                  link.style.wordBreak = 'break-word';
-                  link.style.overflowWrap = 'break-word';
-                });
-
-                // 处理代码块
-                contentRef.current?.querySelectorAll('pre').forEach((pre) => {
-                  pre.style.maxWidth = '100%';
-                  pre.style.overflowX = 'auto';
-                  pre.style.whiteSpace = 'pre-wrap';
-                  pre.style.wordBreak = 'break-word';
-                });
-              }
-            });
-          }
-        }, 0);
+        setPostContent(res.data.content || '');
       }
     } catch (error) {
       message.error('获取帖子详情失败');
@@ -2189,8 +2129,7 @@ const PostDetail: React.FC = () => {
             )}
 
             <div className="post-detail-body">
-              {/* Vditor 预览区域 */}
-              <div ref={contentRef} className="vditor-reset"></div>
+              <PostMarkdownRenderer content={postContent} />
             </div>
           </Card>
         </div>
