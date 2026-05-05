@@ -51,6 +51,7 @@ import {
   Input,
   message,
   Modal,
+  Radio,
   Select,
   Space,
   Switch,
@@ -76,7 +77,6 @@ import './app.css';
 import './money-button.css';
 import {RcFile} from "antd/lib/upload";
 import LoginRegister from '../LoginRegister';
-import {setNotificationEnabled} from '@/utils/notification';
 import FoodRecommender from '@/components/FoodRecommender';
 import MessageNotification, { MessageNotificationRef } from '@/components/MessageNotification';
 import MoneyButton from '../MoneyButton';
@@ -413,9 +413,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
     return {
       siteName: '摸鱼岛',
       siteIcon: 'https://oss.cqbo.com/moyu/moyu.png',
-      notificationEnabled: true,
       layoutMode: 'top',
       showFishCircle: true,
+      fishCirclePosition: 'left',
     };
   });
 
@@ -423,9 +423,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const defaultSiteConfig = {
     siteName: '摸鱼岛',
     siteIcon: 'https://oss.cqbo.com/moyu/moyu.png',
-    notificationEnabled: true,
     layoutMode: 'top',
     showFishCircle: true,
+    fishCirclePosition: 'left',
   };
 
   const [isMoneyVisible, setIsMoneyVisible] = useState(() => {
@@ -1145,17 +1145,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       message.error(`密码重置失败：${error.message}`);
     }
   };
-
-  // 在组件加载时获取通知设置
-  useEffect(() => {
-    const savedConfig = localStorage.getItem('siteConfig');
-    if (savedConfig) {
-      const config = JSON.parse(savedConfig);
-      if (config.notificationEnabled !== undefined) {
-        setNotificationEnabled(config.notificationEnabled);
-      }
-    }
-  }, []);
 
   const [isFoodRecommenderOpen, setIsFoodRecommenderOpen] = useState(false);
   const messageNotificationRef = useRef<MessageNotificationRef>(null);
@@ -2653,9 +2642,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
             setSiteConfig(configToSave);
             localStorage.setItem('siteConfig', JSON.stringify(configToSave));
 
-            // 更新通知设置
-            setNotificationEnabled(values.notificationEnabled);
-
             // 更新所有图标相关的标签
             const iconTypes = ['icon', 'shortcut icon', 'apple-touch-icon'];
             iconTypes.forEach(type => {
@@ -2682,28 +2668,14 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
             setIsSiteConfigOpen(false);
           }}
         >
-          {/* 第一行：网站名称 + 消息闪烁 */}
-          <Row gutter={16}>
-            <Col span={14}>
-              <Form.Item
-                label="网站名称"
-                name="siteName"
-                rules={[{required: true, message: '请输入网站名称！'}]}
-              >
-                <Input placeholder="请输入网站名称"/>
-              </Form.Item>
-            </Col>
-            <Col span={10}>
-              <Form.Item
-                label="消息闪烁"
-                name="notificationEnabled"
-                valuePropName="checked"
-              >
-                <Switch checkedChildren="开启" unCheckedChildren="关闭"/>
-              </Form.Item>
-              <div style={{fontSize: 12, color: '#999', marginTop: -16, marginBottom: 8}}>收到消息时标题闪烁提醒</div>
-            </Col>
-          </Row>
+          {/* 第一行：网站名称 */}
+          <Form.Item
+            label="网站名称"
+            name="siteName"
+            rules={[{required: true, message: '请输入网站名称！'}]}
+          >
+            <Input placeholder="请输入网站名称"/>
+          </Form.Item>
 
           {/* 图标区域：卡片式，左侧预览 + 右侧操作 */}
           <Form.Item label="网站图标" name="siteIcon" style={{marginBottom: 8}}>
@@ -2806,21 +2778,35 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
 
           {/* 鱼小圈开关 */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
             padding: '10px 14px',
             background: '#fafafa',
             border: '1px solid #f0f0f0',
             borderRadius: '8px',
             marginBottom: 20,
           }}>
-            <div>
-              <div style={{fontWeight: 500, fontSize: 14, color: '#333'}}>鱼小圈动态栏</div>
-              <div style={{fontSize: 12, color: '#999', marginTop: 2}}>顶部/混合布局下，聊天室右侧显示鱼小圈动态</div>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+              <div>
+                <div style={{fontWeight: 500, fontSize: 14, color: '#333'}}>鱼小圈动态栏</div>
+                <div style={{fontSize: 12, color: '#999', marginTop: 2}}>顶部/混合布局下，聊天室侧边显示鱼小圈动态</div>
+              </div>
+              <Form.Item name="showFishCircle" valuePropName="checked" style={{marginBottom: 0}}>
+                <Switch checkedChildren="显示" unCheckedChildren="隐藏"/>
+              </Form.Item>
             </div>
-            <Form.Item name="showFishCircle" valuePropName="checked" style={{marginBottom: 0}}>
-              <Switch checkedChildren="显示" unCheckedChildren="隐藏"/>
+            <Form.Item noStyle shouldUpdate={(prev, cur) => prev.showFishCircle !== cur.showFishCircle}>
+              {({ getFieldValue }) =>
+                getFieldValue('showFishCircle') && (
+                  <div style={{marginTop: 10, display: 'flex', alignItems: 'center', gap: 8}}>
+                    <span style={{fontSize: 13, color: '#555', flexShrink: 0}}>显示位置</span>
+                    <Form.Item name="fishCirclePosition" style={{marginBottom: 0, flex: 1}}>
+                      <Radio.Group size="small" buttonStyle="solid">
+                        <Radio.Button value="left">⬅ 左侧</Radio.Button>
+                        <Radio.Button value="right">右侧 ➡</Radio.Button>
+                      </Radio.Group>
+                    </Form.Item>
+                  </div>
+                )
+              }
             </Form.Item>
           </div>
 
@@ -2838,9 +2824,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
                   siteConfigForm.setFieldsValue(defaultSiteConfig);
                   setSiteConfig(defaultSiteConfig);
                   localStorage.setItem('siteConfig', JSON.stringify(defaultSiteConfig));
-
-                  // 更新通知设置
-                  setNotificationEnabled(defaultSiteConfig.notificationEnabled);
 
                   // 更新所有图标相关的标签
                   const iconTypes = ['icon', 'shortcut icon', 'apple-touch-icon'];

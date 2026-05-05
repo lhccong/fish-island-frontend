@@ -242,6 +242,11 @@
           margin-right: 0;
           justify-content: flex-end;
         }
+
+        .repeatUsers {
+          margin-left: 0;
+          align-self: flex-end;
+        }
       }
 
       .messageHeader {
@@ -896,13 +901,25 @@
         text-decoration: underline;
       }
     }
+
+    .repeatText {
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      color: #52c41a;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
   .messageItem {
     &:hover {
       .messageFooter {
         .revokeText,
-        .quoteText {
+        .quoteText,
+        .repeatText {
           opacity: 1;
         }
       }
@@ -2675,4 +2692,44 @@
   color: #999;
   font-weight: normal;
   margin-left: 5px;
+}
+
+// ── 复读机功能 ────────────────────────────────────────────
+.repeatUsers {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  margin-left: 40px; // 与消息内容对齐
+  padding: 4px 8px;
+  background: rgba(255, 167, 104, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 167, 104, 0.2);
+  width: fit-content;
+  max-width: 100%;
+
+  .repeatLabel {
+    font-size: 11px;
+    color: #ffa768;
+    font-weight: 500;
+    margin-right: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .repeatAvatar {
+    cursor: pointer;
+    transition: transform 0.15s;
+    flex-shrink: 0;
+
+    &:hover {
+      transform: scale(1.2);
+    }
+
+    :global(.ant-avatar) {
+      border: 1.5px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+  }
 }

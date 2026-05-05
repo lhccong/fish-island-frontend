@@ -1,9 +1,9 @@
 .petPageContainer {
-  padding: 24px;
+  padding: 16px 24px;
   min-height: calc(100vh - 64px);
   
   @media (max-width: 768px) {
-    padding: 12px;
+    padding: 8px;
   }
 }
 
@@ -49,54 +49,41 @@
 
 // 游戏风格标签容器
 .gameTabsContainer {
+  display: flex;
   background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #f0f0f0;
+  min-height: 700px;
 }
 
-// 游戏标签导航
+// 左侧游戏菜单导航
 .gameTabsNav {
   display: flex;
-  padding: 16px 16px 0 16px;
+  flex-direction: column;
+  width: 80px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #fff8f3 0%, #fff3ea 100%);
+  border-right: 1px solid #ffe8d6;
+  padding: 12px 0;
   gap: 4px;
-  background: transparent;
-  border-bottom: 1px solid #f0f0f0;
 }
 
-// 单个游戏标签
+// 单个游戏菜单项
 .gameTab {
-  flex: 1;
   position: relative;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 167, 104, 0.3);
-  border-radius: 8px 8px 0 0;
-  padding: 12px 16px;
+  transition: all 0.2s ease;
+  padding: 14px 8px 10px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  
-  // 底部装饰线
-  .gameTabDecor {
-    position: absolute;
-    bottom: -1px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: #ffa768;
-    opacity: 0;
-    transition: all 0.3s ease;
-  }
+  gap: 6px;
+  border-left: 3px solid transparent;
   
   &:hover {
-    background: rgba(255, 167, 104, 0.1);
-    border-color: #ffa768;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 167, 104, 0.2);
+    background: rgba(255, 167, 104, 0.12);
     
     .gameTabIcon {
       color: #ffa768;
@@ -110,13 +97,8 @@
   
   // 激活状态
   &.gameTabActive {
-    background: rgba(255, 167, 104, 0.15);
-    border-color: #ffa768;
-    border-bottom: none;
-    
-    .gameTabDecor {
-      opacity: 1;
-    }
+    background: rgba(255, 167, 104, 0.18);
+    border-left: 3px solid #ffa768;
     
     .gameTabIcon {
       color: #ffa768;
@@ -124,31 +106,50 @@
     
     .gameTabText {
       color: #ffa768;
-      font-weight: bold;
+      font-weight: 600;
+    }
+    
+    // 右侧小三角指示器
+    &::after {
+      content: '';
+      position: absolute;
+      right: -1px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-right: 6px solid #ffffff;
     }
   }
 }
 
 // 标签图标
 .gameTabIcon {
-  font-size: 16px;
-  color: #666;
-  transition: all 0.3s ease;
+  font-size: 22px;
+  color: #bbb;
+  transition: all 0.2s ease;
+  line-height: 1;
 }
 
 // 标签文字
 .gameTabText {
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-  transition: all 0.3s ease;
+  font-size: 11px;
+  font-weight: 400;
+  color: #bbb;
+  transition: color 0.2s ease;
+  text-align: center;
+  line-height: 1.2;
+  word-break: keep-all;
 }
 
 // 内容区域
 .gameTabContent {
+  flex: 1;
   background: #ffffff;
-  border-radius: 0 0 12px 12px;
-  min-height: 600px;
+  min-height: 700px;
+  overflow: hidden;
 }
 
 .petComponentWrapper {
@@ -819,8 +820,42 @@
   .petComponentWrapper {
     margin: 0;
     border-radius: 0;
+    padding: 12px;
+    min-height: unset;
   }
-  
+
+  // 整体容器去掉最小高度限制，避免空白
+  .gameTabsContainer {
+    min-height: unset;
+    border-radius: 8px;
+  }
+
+  // 左侧导航栏在小屏下收窄
+  .gameTabsNav {
+    width: 60px;
+    padding: 8px 0;
+    gap: 2px;
+  }
+
+  .gameTab {
+    padding: 10px 4px 8px;
+    gap: 4px;
+  }
+
+  .gameTabIcon {
+    font-size: 18px;
+  }
+
+  .gameTabText {
+    font-size: 9px;
+  }
+
+  // 内容区域去掉最小高度
+  .gameTabContent {
+    min-height: unset;
+    overflow-x: hidden;
+  }
+
   .bossGrid {
     grid-template-columns: 1fr;
   }
@@ -837,6 +872,24 @@
   
   .bossName {
     font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .petPageContainer {
+    padding: 4px;
+  }
+
+  .gameTabsNav {
+    width: 52px;
+  }
+
+  .gameTabText {
+    font-size: 8px;
+  }
+
+  .petComponentWrapper {
+    padding: 8px;
   }
 }
 

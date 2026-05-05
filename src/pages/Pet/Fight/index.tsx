@@ -619,10 +619,7 @@ const PetFight: React.FC = () => {
           message.success(`恭喜！${opponentName} 被击败了！`);
           message.success('战斗胜利！');
           if (isTower) {
-            // 爬塔胜利，延迟显示退出提示
-            setTimeout(() => {
-              setShowExitModal(true);
-            }, 1500);
+            // 爬塔胜利：不弹窗，让用户通过控制面板选择继续或返回
           } else if (!isPetBattle) {
             setShowRewards(true);
           } else {
@@ -636,10 +633,13 @@ const PetFight: React.FC = () => {
           setBattleResult('defeat');
           message.error(`${pet.name} 被击败了...`);
           message.error('战斗失败！');
-          // 失败后延迟显示退出提示
-          setTimeout(() => {
-            setShowExitModal(true);
-          }, 2000);
+          if (!isTower && !isTournament) {
+            // 非爬塔、非武道大会模式：失败后延迟显示退出提示
+            setTimeout(() => {
+              setShowExitModal(true);
+            }, 2000);
+          }
+          // 爬塔/武道大会模式：不弹窗，让用户通过控制面板选择再次挑战或返回
         }
       } else {
         message.error('战斗失败');
@@ -1001,7 +1001,82 @@ const PetFight: React.FC = () => {
               </div>
             )}
 
-            {(battleStatus === 'victory' || battleStatus === 'defeat') && (
+            {(battleStatus === 'victory' || battleStatus === 'defeat') && isTower && (
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<PlayCircleOutlined />}
+                  onClick={() => {
+                    // 重新加载爬塔进度后再战
+                    setBattleStatus('idle');
+                    setBattleResult(null);
+                    setLoading(true);
+                    getProgressUsingGet().then((res) => {
+                      if (res.code === 0 && res.data) {
+                        const { nextMonster } = res.data;
+                        if (nextMonster) {
+                          setBoss({
+                            id: nextMonster.floor ?? 1,
+                            name: nextMonster.name ?? `第${nextMonster.floor ?? 1}层守卫`,
+                            level: nextMonster.floor ?? 1,
+                            hp: nextMonster.health ?? 100,
+                            maxHp: nextMonster.health ?? 100,
+                            attack: nextMonster.attack ?? 10,
+                            defense: 0,
+                            avatar: nextMonster.avatarUrl ?? '👹',
+                            rewards: {
+                              coins: nextMonster.rewardPoints ?? 0,
+                              exp: 0,
+                              items: [],
+                            },
+                            critRate: nextMonster.critRate ?? 0,
+                            dodgeRate: nextMonster.dodgeRate ?? 0,
+                            blockRate: nextMonster.blockRate ?? 0,
+                            comboRate: nextMonster.comboRate ?? 0,
+                            lifesteal: nextMonster.lifesteal ?? 0,
+                          });
+                        }
+                      }
+                    }).finally(() => setLoading(false));
+                  }}
+                  className={styles.restartButton}
+                >
+                  {battleStatus === 'victory' ? '挑战下一层' : '再次挑战'}
+                </Button>
+                <Button
+                  size="large"
+                  icon={<ArrowLeftOutlined />}
+                  onClick={handleExit}
+                >
+                  返回爬塔
+                </Button>
+              </div>
+            )}
+            {(battleStatus === 'victory' || battleStatus === 'defeat') && isTournament && (
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<PlayCircleOutlined />}
+                  onClick={() => {
+                    setBattleStatus('idle');
+                    setBattleResult(null);
+                  }}
+                  className={styles.restartButton}
+                >
+                  再次挑战
+                </Button>
+                <Button
+                  size="large"
+                  icon={<ArrowLeftOutlined />}
+                  onClick={handleExit}
+                >
+                  返回武道大会
+                </Button>
+              </div>
+            )}
+            {(battleStatus === 'victory' || battleStatus === 'defeat') && !isTower && !isTournament && (
               <Button
                 type="primary"
                 size="large"

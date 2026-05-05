@@ -509,7 +509,6 @@
   border: 1px solid #e6f0ff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(24, 144, 255, 0.08);
-  aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -556,14 +555,7 @@
   }
 
   .itemCount {
-    color: #52c41a;
-    margin-bottom: 2px;
-    font-weight: 500;
-    font-size: 10px;
-    background: rgba(82, 196, 26, 0.1);
-    padding: 1px 4px;
-    border-radius: 6px;
-    display: inline-block;
+    display: none;
   }
 
   .itemDesc {
@@ -1171,7 +1163,7 @@
     border: 2px solid #ffa768;
     border-radius: 20px;
     padding: 20px;
-    height: 700px;
+    height: auto;
     position: relative;
     box-shadow: 0 8px 24px rgba(255, 167, 104, 0.2);
     overflow: hidden;
@@ -1201,7 +1193,9 @@
         border: 1px solid #ffa768;
         border-radius: 20px;
         padding: 8px 16px;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
         
         .editableName {
           cursor: pointer;
@@ -1231,6 +1225,28 @@
             transform: scale(0.9);
             transition: all 0.3s ease;
             color: #ffa768;
+          }
+        }
+        
+        .headerPowerScore {
+          display: inline-flex;
+          align-items: center;
+          background: linear-gradient(135deg, #ffa768 0%, #f97316 100%);
+          border-radius: 12px;
+          padding: 3px 10px;
+          color: white;
+          font-size: 12px;
+          font-weight: bold;
+          box-shadow: 0 2px 6px rgba(255, 167, 104, 0.4);
+          white-space: nowrap;
+          
+          .scoreIcon {
+            margin-right: 4px;
+            font-size: 13px;
+          }
+          
+          .scoreText {
+            letter-spacing: 0.3px;
           }
         }
       }
@@ -1559,6 +1575,42 @@
         border: 2px solid #ea580c;
         box-shadow: 0 2px 8px rgba(255, 167, 104, 0.4);
       }
+      
+      .avatarQuickActions {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 10px;
+        
+        .avatarActionBtn {
+          border-radius: 12px;
+          font-size: 12px;
+          height: 30px;
+          padding: 0 10px;
+          border: none;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          
+          &:first-child {
+            background: linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%);
+            
+            &:hover {
+              background: linear-gradient(135deg, #ff9c99 0%, #ff7875 100%);
+              transform: translateY(-2px);
+              box-shadow: 0 4px 10px rgba(255, 77, 79, 0.4);
+            }
+          }
+          
+          &:last-child {
+            background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+            
+            &:hover {
+              background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%);
+              transform: translateY(-2px);
+              box-shadow: 0 4px 10px rgba(82, 196, 26, 0.4);
+            }
+          }
+        }
+      }
     }
     
 
@@ -1569,7 +1621,7 @@
       text-align: center;
       
       .statusBars {
-        margin-bottom: 15px;
+        margin-bottom: 0;
         
         .statusItem {
           display: flex;
@@ -1630,77 +1682,11 @@
       }
       
       .powerScore {
-        background: linear-gradient(135deg, #ffa768 0%, #f97316 100%);
-        border: 2px solid #ea580c;
-        border-radius: 20px;
-        padding: 12px 20px;
-        margin-bottom: 15px;
-        color: white;
-        font-weight: bold;
-        font-size: 15px;
-        text-align: center;
-        box-shadow: 0 4px 12px rgba(255, 167, 104, 0.4);
-        position: relative;
-        overflow: hidden;
-        
-        // 添加闪光效果
-        &::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-          animation: shine 3s infinite;
-          pointer-events: none;
-        }
-        
-        .scoreIcon {
-          margin-right: 8px;
-          font-size: 18px;
-          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-        }
-        
-        .scoreText {
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-          letter-spacing: 0.5px;
-        }
-        
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(255, 167, 104, 0.5);
-        }
+        display: none;
       }
       
       .quickActions {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        
-        .quickActionBtn {
-          background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
-          border: none;
-          border-radius: 12px;
-          font-size: 12px;
-          height: 32px;
-          padding: 0 12px;
-          box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
-          
-          &:hover {
-            background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(82, 196, 26, 0.4);
-          }
-          
-          &:first-child {
-            background: linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%);
-            
-            &:hover {
-              background: linear-gradient(135deg, #ff9c99 0%, #ff7875 100%);
-            }
-          }
-        }
+        display: none;
       }
     }
     
@@ -2028,6 +2014,7 @@
 }
 
 @media (max-width: 768px) {
+  // 主布局：两列改为单列堆叠
   .petMainLayout {
     flex-direction: column;
     
@@ -2038,7 +2025,245 @@
     }
     
     .petLeftColumn {
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
   }
+
+  // 装备界面整体缩小内边距
+  .petLeftColumn .equipmentInterface {
+    padding: 12px;
+    border-radius: 16px;
+
+    // 顶部名称区域
+    .petHeader {
+      margin-bottom: 12px;
+
+      .petNameSection {
+        padding: 6px 12px;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+
+        .editableName {
+          font-size: 14px;
+        }
+
+        .headerPowerScore {
+          font-size: 11px;
+          padding: 2px 8px;
+        }
+      }
+    }
+
+    // 装备布局：缩小高度和装备格
+    .equipmentLayout {
+      height: auto;
+      min-height: 200px;
+      margin: 12px 0;
+      gap: 8px;
+
+      .leftEquipments,
+      .rightEquipments {
+        gap: 8px;
+      }
+
+      // 装备格缩小
+      .equipSlot {
+        width: 54px;
+        height: 54px;
+        border-radius: 10px;
+
+        .emptySlot .slotIcon {
+          font-size: 22px;
+        }
+
+        .equippedItem {
+          .equippedItemIcon {
+            width: 44px;
+            height: 44px;
+          }
+
+          .slotIcon {
+            font-size: 22px;
+          }
+
+          .enhanceLevelBadge {
+            font-size: 9px;
+            padding: 1px 4px;
+            top: -8px;
+            right: -8px;
+          }
+        }
+      }
+
+      // 中间宠物展示区域
+      .petDisplay {
+        .petAvatar {
+          :global(.ant-avatar) {
+            width: 80px !important;
+            height: 80px !important;
+          }
+        }
+
+        .petLevel {
+          font-size: 12px;
+          padding: 4px 12px;
+        }
+
+        .avatarQuickActions {
+          gap: 6px;
+          margin-top: 8px;
+
+          .avatarActionBtn {
+            height: 26px;
+            padding: 0 8px;
+            font-size: 11px;
+          }
+        }
+      }
+    }
+
+    // 状态栏
+    .petStats .statusBars {
+      .statusItem {
+        padding: 6px 8px;
+        margin-bottom: 6px;
+
+        .statusLabel {
+          min-width: 52px;
+          font-size: 11px;
+        }
+
+        .statusProgressContainer {
+          margin-left: 4px;
+          gap: 4px;
+
+          :global(.ant-progress-text) {
+            font-size: 10px !important;
+            white-space: nowrap;
+          }
+
+          .statusInfo {
+            font-size: 11px;
+            flex-shrink: 0;
+          }
+        }
+      }
+    }
+  }
+
+  // 右侧 Tab 内容区域
+  .petRightColumn {
+    :global(.ant-tabs-nav) {
+      margin-bottom: 8px;
+    }
+
+    :global(.ant-tabs-tab) {
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+  }
+
+  // 物品容器高度适配
+  .itemsContainer {
+    height: 400px;
+    max-height: 400px;
+    padding: 8px;
+  }
+}
+
+// 超小屏（手机竖屏）进一步压缩
+@media (max-width: 480px) {
+  .petLeftColumn .equipmentInterface {
+    padding: 10px;
+
+    .equipmentLayout {
+      .equipSlot {
+        width: 46px;
+        height: 46px;
+
+        .equippedItem .equippedItemIcon {
+          width: 36px;
+          height: 36px;
+        }
+
+        .emptySlot .slotIcon {
+          font-size: 18px;
+        }
+      }
+
+      .petDisplay {
+        .petAvatar :global(.ant-avatar) {
+          width: 68px !important;
+          height: 68px !important;
+        }
+      }
+    }
+
+    .petStats .statusBars .statusItem {
+      .statusLabel {
+        min-width: 46px;
+        font-size: 10px;
+      }
+    }
+  }
+}
+
+// ===== 游戏风格翻页 =====
+.gamePageNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 6px 0;
+}
+
+.gamePageBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #e8a87c;
+  background: linear-gradient(135deg, #fff8f0, #ffe8d0);
+  color: #d4700a;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(212, 112, 10, 0.2);
+  padding: 0;
+  padding-bottom: 2px;
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #ffe8d0, #ffd0a0);
+    border-color: #d4700a;
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(212, 112, 10, 0.35);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+}
+
+.gamePageBtnDisabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.gamePageInfo {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d4700a;
+  background: linear-gradient(135deg, #fff8f0, #ffe8d0);
+  border: 2px solid #e8a87c;
+  border-radius: 20px;
+  padding: 3px 14px;
+  min-width: 60px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(212, 112, 10, 0.15);
 }

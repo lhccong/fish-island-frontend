@@ -540,8 +540,10 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   const [itemsTotal, setItemsTotal] = useState(0);
   const [itemsCurrent, setItemsCurrent] = useState(1);
   const [itemsPageSize, setItemsPageSize] = useState(30);
+  const [itemsCategory, setItemsCategory] = useState<string | undefined>(undefined); // 物品大类筛选
   const [decomposeLoading, setDecomposeLoading] = useState<number | null>(null); // 分解中的物品ID
   const [batchDecomposeLoading, setBatchDecomposeLoading] = useState(false); // 批量分解加载状态
+  const [showBatchDecompose, setShowBatchDecompose] = useState(false); // 批量分解按钮显隐
   const [equipLoading, setEquipLoading] = useState<number | null>(null); // 穿戴中的物品ID
   const [unequipLoading, setUnequipLoading] = useState<string | null>(null); // 卸下中的装备槽位
   const [contextMenuItemId, setContextMenuItemId] = useState<number | null>(null); // 右键菜单显示的物品ID
@@ -874,6 +876,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
       const res = await listMyItemInstancesByPageUsingPost({
         current: itemsCurrent,
         pageSize: itemsPageSize,
+        ...(itemsCategory ? { category: itemsCategory } : {}),
       });
 
       if (res.code === 0 && res.data) {
@@ -1028,10 +1031,11 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
     foot: 3,
     head: 4,
     necklace: 5,
+    wing: 6,
   };
 
   const slotDisplayNames: Record<string, string> = {
-    weapon: '武器', hand: '手套', foot: '鞋子', head: '头盔', necklace: '项链',
+    weapon: '武器', hand: '手套', foot: '鞋子', head: '头盔', necklace: '项链', wing: '翅膀',
     armor: '护甲', shield: '盾牌', ring: '戒指', gloves: '手套', boots: '靴子',
   };
 
@@ -1193,7 +1197,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
       fetchItems();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPageComponent, visible, itemsCurrent, itemsPageSize]);
+  }, [isPageComponent, visible, itemsCurrent, itemsPageSize, itemsCategory]);
 
   // 全局阻止右键菜单（当自定义菜单打开时）
   useEffect(() => {
@@ -1453,12 +1457,23 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
               系统说明
             </Button>
           </Popover>
+          {!isOtherUser && (
+            <Tooltip title={showBatchDecompose ? '隐藏批量分解' : '显示批量分解'}>
+              <Button
+                type="text"
+                size="small"
+                icon={<ToolOutlined />}
+                onClick={() => setShowBatchDecompose(v => !v)}
+                style={{ color: showBatchDecompose ? '#ff4d4f' : undefined }}
+              />
+            </Tooltip>
+          )}
         </div>
 
         {/* 使用分栏布局 */}
-        <Row gutter={24} className={styles.petMainLayout}>
+        <Row gutter={[24, 16]} className={styles.petMainLayout}>
           {/* 左侧装备界面 */}
-          <Col span={10} className={styles.petLeftColumn}>
+          <Col xs={24} sm={24} md={10} lg={10} className={styles.petLeftColumn}>
             <div className={styles.equipmentInterface}>
               {/* 顶部宠物信息 */}
               <div className={styles.petHeader}>
@@ -1513,6 +1528,10 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                   ) : (
                     <span>{pet?.name}</span>
                   )}
+                  <div className={styles.headerPowerScore}>
+                    <span className={styles.scoreIcon}>⚡</span>
+                    <span className={styles.scoreText}>{Math.floor((pet?.level || 1) * 100 + (pet?.mood || 0) + (pet?.hunger || 0))}</span>
+                  </div>
                 </div>
               </div>
 
@@ -1678,6 +1697,30 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                     <Avatar src={pet?.petUrl} size={140} />
                   </div>
                   <div className={styles.petLevel}>Lv.{pet?.level || 1}</div>
+                  {!isOtherUser && (
+                    <div className={styles.avatarQuickActions}>
+                      <Button
+                        type="primary"
+                        onClick={handleFeed}
+                        loading={feedLoading}
+                        icon={<GiftOutlined />}
+                        className={styles.avatarActionBtn}
+                        size="small"
+                      >
+                        喂食
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={handlePat}
+                        loading={patLoading}
+                        icon={<HeartOutlined />}
+                        className={styles.avatarActionBtn}
+                        size="small"
+                      >
+                        抚摸
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* 右侧装备栏 */}
@@ -1733,18 +1776,104 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                     })()}
                   </div>
                   <div className={styles.equipSlot} data-slot="necklace">
-                    <Tooltip title="项链 - 空闲">
-                      <div className={styles.emptySlot}>
-                        <GiftOutlined className={styles.slotIcon} />
-                      </div>
-                    </Tooltip>
+                    {(() => {
+                      const petData = pet as API.PetVO;
+                      const equippedNecklace = petData?.equippedItems?.necklace;
+                      if (!equippedNecklace) {
+                        return (
+                          <Tooltip title="项链 - 空闲">
+                            <div className={styles.emptySlot}>
+                              <GiftOutlined className={styles.slotIcon} />
+                            </div>
+                          </Tooltip>
+                        );
+                      }
+                      const rarity = equippedNecklace?.template?.rarity || 1;
+                      const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
+                      const enhanceLevel = equippedNecklace?.enhanceLevel || 0;
+                      return (
+                        <Tooltip title={renderEquipStatsTooltip(equippedNecklace, '项链', '点击卸下 | 右键强化')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                          <div
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}${getEnhanceTier(enhanceLevel) > 0 ? ` ${styles[`enhance-tier${getEnhanceTier(enhanceLevel)}`]}` : ''}`}
+                            onClick={() => !isOtherUser && handleUnequipItem('necklace')}
+                            onContextMenu={(e) => {
+                              if (isOtherUser) return;
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEquipSlotContextMenu({ slot: 'necklace', slotNum: 5, x: e.clientX, y: e.clientY });
+                            }}
+                            style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
+                          >
+                            <Spin spinning={unequipLoading === 'necklace'} size="small">
+                              {equippedNecklace?.template?.icon ? (
+                                <div className={styles.equippedItemWrapper}>
+                                  <img
+                                    src={equippedNecklace.template.icon}
+                                    alt={equippedNecklace.name}
+                                    className={styles.equippedItemIcon}
+                                  />
+                                  {enhanceLevel > 0 && (
+                                    <div className={`${styles.enhanceLevelBadge} ${styles[`enhance-badge-tier${getEnhanceTier(enhanceLevel)}`]}`}>+{enhanceLevel}</div>
+                                  )}
+                                </div>
+                              ) : (
+                                <GiftOutlined className={styles.slotIcon} />
+                              )}
+                            </Spin>
+                          </div>
+                        </Tooltip>
+                      );
+                    })()}
                   </div>
-                  <div className={styles.equipSlot} data-slot="accessory2">
-                    <Tooltip title="饰品2 - 空闲">
-                      <div className={styles.emptySlot}>
-                        <HeartOutlined className={styles.slotIcon} />
-                      </div>
-                    </Tooltip>
+                  <div className={styles.equipSlot} data-slot="wing">
+                    {(() => {
+                      const petData = pet as API.PetVO;
+                      const equippedWing = petData?.equippedItems?.wing;
+                      if (!equippedWing) {
+                        return (
+                          <Tooltip title="翅膀 - 空闲">
+                            <div className={styles.emptySlot}>
+                              <HeartOutlined className={styles.slotIcon} />
+                            </div>
+                          </Tooltip>
+                        );
+                      }
+                      const rarity = equippedWing?.template?.rarity || 1;
+                      const rarityClass = rarity === 1 ? 'rarity-1' : rarity === 2 ? 'rarity-2' : rarity === 3 ? 'rarity-3' : rarity === 4 ? 'rarity-4' : rarity === 5 ? 'rarity-5' : 'rarity-red';
+                      const enhanceLevel = equippedWing?.enhanceLevel || 0;
+                      return (
+                        <Tooltip title={renderEquipStatsTooltip(equippedWing, '翅膀', '点击卸下 | 右键强化')} overlayInnerStyle={{ backgroundColor: '#fff' }}>
+                          <div
+                            className={`${styles.equippedItem} ${styles[`rarity-${rarityClass}`]}${getEnhanceTier(enhanceLevel) > 0 ? ` ${styles[`enhance-tier${getEnhanceTier(enhanceLevel)}`]}` : ''}`}
+                            onClick={() => !isOtherUser && handleUnequipItem('wing')}
+                            onContextMenu={(e) => {
+                              if (isOtherUser) return;
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setEquipSlotContextMenu({ slot: 'wing', slotNum: 6, x: e.clientX, y: e.clientY });
+                            }}
+                            style={{ cursor: isOtherUser ? 'default' : 'pointer' }}
+                          >
+                            <Spin spinning={unequipLoading === 'wing'} size="small">
+                              {equippedWing?.template?.icon ? (
+                                <div className={styles.equippedItemWrapper}>
+                                  <img
+                                    src={equippedWing.template.icon}
+                                    alt={equippedWing.name}
+                                    className={styles.equippedItemIcon}
+                                  />
+                                  {enhanceLevel > 0 && (
+                                    <div className={`${styles.enhanceLevelBadge} ${styles[`enhance-badge-tier${getEnhanceTier(enhanceLevel)}`]}`}>+{enhanceLevel}</div>
+                                  )}
+                                </div>
+                              ) : (
+                                <HeartOutlined className={styles.slotIcon} />
+                              )}
+                            </Spin>
+                          </div>
+                        </Tooltip>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1775,7 +1904,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       size="small"
                       icon={<ToolOutlined />}
                       onClick={() => {
-                        const slotDisplayNames: Record<string, string> = { weapon: '武器', hand: '手套', foot: '鞋子', head: '头盔', necklace: '项链' };
+                        const slotDisplayNames: Record<string, string> = { weapon: '武器', hand: '手套', foot: '鞋子', head: '头盔', necklace: '项链', wing: '翅膀' };
                         openForgeModal(equipSlotContextMenu.slot, equipSlotContextMenu.slotNum, slotDisplayNames[equipSlotContextMenu.slot] || equipSlotContextMenu.slot);
                         setEquipSlotContextMenu(null);
                       }}
@@ -1846,41 +1975,13 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                   </div>
                 </div>
 
-                <div className={styles.powerScore}>
-                  <span className={styles.scoreIcon}>⚡</span>
-                  <span className={styles.scoreText}>宠物战力 {Math.floor((pet?.level || 1) * 100 + (pet?.mood || 0) + (pet?.hunger || 0))}</span>
-                </div>
 
-                {!isOtherUser && (
-                  <div className={styles.quickActions}>
-                    <Button
-                      type="primary"
-                      onClick={handleFeed}
-                      loading={feedLoading}
-                      icon={<GiftOutlined />}
-                      className={styles.quickActionBtn}
-                      size="small"
-                    >
-                      喂食
-                    </Button>
-                    <Button
-                      type="primary"
-                      onClick={handlePat}
-                      loading={patLoading}
-                      icon={<HeartOutlined />}
-                      className={styles.quickActionBtn}
-                      size="small"
-                    >
-                      抚摸
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
           </Col>
 
           {/* 右侧Tab内容 */}
-          <Col span={14} className={styles.petRightColumn}>
+          <Col xs={24} sm={24} md={14} lg={14} className={styles.petRightColumn}>
             <Tabs
           defaultActiveKey={isOtherUser ? "equipment" : "items"}
           items={[
@@ -1893,16 +1994,43 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
               ),
               children: (
                 <div className={styles.itemsContainer}>
-                  {/* 批量分解按钮 */}
-                  <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                      danger
-                      loading={batchDecomposeLoading}
-                      onClick={handleBatchDecomposeBlueGreen}
-                      disabled={isOtherUser}
-                    >
-                      批量分解蓝绿装备
-                    </Button>
+                  {/* 物品大类筛选 + 批量分解同一行 */}
+                  <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {([
+                      { key: undefined as string | undefined, label: '全部' },
+                      { key: 'equipment', label: '⚔️ 装备' },
+                      { key: 'consumable', label: '🧪 消耗品' },
+                      { key: 'material', label: '💎 材料' },
+                    ] as { key: string | undefined; label: string }[]).map(({ key, label }) => (
+                      <button
+                        key={key ?? 'all'}
+                        onClick={() => { setItemsCategory(key); setItemsCurrent(1); }}
+                        style={{
+                          padding: '2px 10px',
+                          borderRadius: '12px',
+                          border: `1px solid ${itemsCategory === key ? '#1890ff' : '#d9d9d9'}`,
+                          background: itemsCategory === key ? '#e6f7ff' : '#fff',
+                          color: itemsCategory === key ? '#1890ff' : '#595959',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: itemsCategory === key ? 600 : 400,
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    {showBatchDecompose && (
+                      <Button
+                        danger
+                        size="small"
+                        loading={batchDecomposeLoading}
+                        onClick={handleBatchDecomposeBlueGreen}
+                        disabled={isOtherUser}
+                        style={{ marginLeft: 'auto' }}
+                      >
+                        批量分解蓝绿装备
+                      </Button>
+                    )}
                   </div>
                   <Spin spinning={itemsLoading}>
                     {items.length > 0 ? (
@@ -1938,7 +2066,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                             );
                           })();
                           return (
-                            <Col span={4} key={item.id}>
+                            <Col xs={8} sm={6} md={4} key={item.id}>
                               <Tooltip
                                 title={
                                   item.equipStats
@@ -2065,28 +2193,30 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       </div>
                     </>
                   )}
-                  {itemsTotal > 0 && (
-                    <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
-                      <Pagination
-                        current={itemsCurrent}
-                        pageSize={itemsPageSize}
-                        total={itemsTotal}
-                        showSizeChanger
-                        showQuickJumper
-                        showTotal={(total) => `共 ${total} 条`}
-                        onChange={(page, pageSize) => {
-                          setItemsCurrent(page);
-                          if (pageSize !== itemsPageSize) {
-                            setItemsPageSize(pageSize);
-                          }
-                        }}
-                        onShowSizeChange={(current, size) => {
-                          setItemsCurrent(1);
-                          setItemsPageSize(size);
-                        }}
-                      />
-                    </div>
-                  )}
+                  {itemsTotal > 0 && (() => {
+                    const totalPages = Math.ceil(itemsTotal / itemsPageSize);
+                    return (
+                      <div className={styles.gamePageNav}>
+                        <button
+                          className={`${styles.gamePageBtn} ${itemsCurrent <= 1 ? styles.gamePageBtnDisabled : ''}`}
+                          disabled={itemsCurrent <= 1}
+                          onClick={() => setItemsCurrent(itemsCurrent - 1)}
+                        >
+                          ‹
+                        </button>
+                        <span className={styles.gamePageInfo}>
+                          {itemsCurrent} / {totalPages}
+                        </span>
+                        <button
+                          className={`${styles.gamePageBtn} ${itemsCurrent >= totalPages ? styles.gamePageBtnDisabled : ''}`}
+                          disabled={itemsCurrent >= totalPages}
+                          onClick={() => setItemsCurrent(itemsCurrent + 1)}
+                        >
+                          ›
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               ),
             }]),
@@ -2428,6 +2558,17 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 className={styles.titleHelpButton}
               />
             </Popover>
+            {!isOtherUser && (
+              <Tooltip title={showBatchDecompose ? '隐藏批量分解' : '显示批量分解'}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<ToolOutlined />}
+                  onClick={() => setShowBatchDecompose(v => !v)}
+                  style={{ color: showBatchDecompose ? '#ff4d4f' : undefined }}
+                />
+              </Tooltip>
+            )}
           </span>
         </div>
       }
@@ -2612,16 +2753,43 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
               ),
               children: (
                 <div className={styles.itemsContainer}>
-                  {/* 批量分解按钮 */}
-                  <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                      danger
-                      loading={batchDecomposeLoading}
-                      onClick={handleBatchDecomposeBlueGreen}
-                      disabled={isOtherUser}
-                    >
-                      批量分解蓝绿装备
-                    </Button>
+                  {/* 物品大类筛选 + 批量分解同一行 */}
+                  <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {([
+                      { key: undefined as string | undefined, label: '全部' },
+                      { key: 'equipment', label: '⚔️ 装备' },
+                      { key: 'consumable', label: '🧪 消耗品' },
+                      { key: 'material', label: '💎 材料' },
+                    ] as { key: string | undefined; label: string }[]).map(({ key, label }) => (
+                      <button
+                        key={key ?? 'all'}
+                        onClick={() => { setItemsCategory(key); setItemsCurrent(1); }}
+                        style={{
+                          padding: '2px 10px',
+                          borderRadius: '12px',
+                          border: `1px solid ${itemsCategory === key ? '#1890ff' : '#d9d9d9'}`,
+                          background: itemsCategory === key ? '#e6f7ff' : '#fff',
+                          color: itemsCategory === key ? '#1890ff' : '#595959',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: itemsCategory === key ? 600 : 400,
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    {showBatchDecompose && (
+                      <Button
+                        danger
+                        size="small"
+                        loading={batchDecomposeLoading}
+                        onClick={handleBatchDecomposeBlueGreen}
+                        disabled={isOtherUser}
+                        style={{ marginLeft: 'auto' }}
+                      >
+                        批量分解蓝绿装备
+                      </Button>
+                    )}
                   </div>
                   <Spin spinning={itemsLoading}>
                     {items.length > 0 ? (
@@ -2657,7 +2825,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                             );
                           })();
                           return (
-                            <Col span={4} key={item.id}>
+                            <Col xs={8} sm={6} md={4} key={item.id}>
                               <Tooltip
                                 title={
                                   item.equipStats
@@ -2784,28 +2952,30 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       </div>
                     </>
                   )}
-                  {itemsTotal > 0 && (
-                    <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
-                      <Pagination
-                        current={itemsCurrent}
-                        pageSize={itemsPageSize}
-                        total={itemsTotal}
-                        showSizeChanger
-                        showQuickJumper
-                        showTotal={(total) => `共 ${total} 条`}
-                        onChange={(page, pageSize) => {
-                          setItemsCurrent(page);
-                          if (pageSize !== itemsPageSize) {
-                            setItemsPageSize(pageSize);
-                          }
-                        }}
-                        onShowSizeChange={(current, size) => {
-                          setItemsCurrent(1);
-                          setItemsPageSize(size);
-                        }}
-                      />
-                    </div>
-                  )}
+                  {itemsTotal > 0 && (() => {
+                    const totalPages = Math.ceil(itemsTotal / itemsPageSize);
+                    return (
+                      <div className={styles.gamePageNav}>
+                        <button
+                          className={`${styles.gamePageBtn} ${itemsCurrent <= 1 ? styles.gamePageBtnDisabled : ''}`}
+                          disabled={itemsCurrent <= 1}
+                          onClick={() => setItemsCurrent(itemsCurrent - 1)}
+                        >
+                          ‹
+                        </button>
+                        <span className={styles.gamePageInfo}>
+                          {itemsCurrent} / {totalPages}
+                        </span>
+                        <button
+                          className={`${styles.gamePageBtn} ${itemsCurrent >= totalPages ? styles.gamePageBtnDisabled : ''}`}
+                          disabled={itemsCurrent >= totalPages}
+                          onClick={() => setItemsCurrent(itemsCurrent + 1)}
+                        >
+                          ›
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               ),
             }]),

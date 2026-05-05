@@ -1153,6 +1153,29 @@ const FishCirclePage: React.FC = () => {
             placeholder="修改内容..."
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
+            onPaste={async (e) => {
+              const items = e.clipboardData?.items;
+              if (!items) return;
+              const imageItems = Array.from(items).filter((item) => item.type.startsWith('image/'));
+              if (imageItems.length === 0) return;
+              e.preventDefault();
+              const { uploadFileByMinioUsingPost: upload } = await import('@/services/backend/fileController');
+              for (const item of imageItems) {
+                const file = item.getAsFile();
+                if (!file) continue;
+                try {
+                  const res = await upload({ biz: 'user_post' }, {}, file, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                  });
+                  if (res.data) {
+                    setEditImages((prev) => [...prev, res.data!]);
+                    message.success('图片上传成功');
+                  }
+                } catch {
+                  message.error('图片上传失败');
+                }
+              }
+            }}
             autoSize={{ minRows: 4, maxRows: 8 }}
             className="publish-textarea"
             maxLength={500}

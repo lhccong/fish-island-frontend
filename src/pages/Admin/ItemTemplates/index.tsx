@@ -98,6 +98,8 @@ const ItemTemplatesAdminPage: React.FC = () => {
         head: { text: '头盔' },
         foot: { text: '鞋子' },
         hand: { text: '手套' },
+        necklace: { text: '项链' },
+        wing: { text: '翅膀' },
       },
       renderFormItem: () => (
         <Select placeholder="选择物品子类型" allowClear>
@@ -105,6 +107,8 @@ const ItemTemplatesAdminPage: React.FC = () => {
           <Select.Option value="head">头盔</Select.Option>
           <Select.Option value="foot">鞋子</Select.Option>
           <Select.Option value="hand">手套</Select.Option>
+          <Select.Option value="necklace">项链</Select.Option>
+          <Select.Option value="wing">翅膀</Select.Option>
         </Select>
       ),
       render: (text) => {
@@ -113,6 +117,8 @@ const ItemTemplatesAdminPage: React.FC = () => {
           head: '头盔',
           foot: '鞋子',
           hand: '手套',
+          necklace: '项链',
+          wing: '翅膀',
         };
         return typeMap[text as string] || text;
       },
@@ -126,6 +132,8 @@ const ItemTemplatesAdminPage: React.FC = () => {
         hand: { text: '手部' },
         foot: { text: '脚部' },
         weapon: { text: '武器' },
+        necklace: { text: '项链' },
+        wing: { text: '翅膀' },
       },
       renderFormItem: () => (
         <Select placeholder="选择槽位" allowClear>
@@ -133,6 +141,8 @@ const ItemTemplatesAdminPage: React.FC = () => {
           <Select.Option value="hand">手部</Select.Option>
           <Select.Option value="foot">脚部</Select.Option>
           <Select.Option value="weapon">武器</Select.Option>
+          <Select.Option value="necklace">项链</Select.Option>
+          <Select.Option value="wing">翅膀</Select.Option>
         </Select>
       ),
       render: (text) => {
@@ -142,6 +152,8 @@ const ItemTemplatesAdminPage: React.FC = () => {
           hand: '手部',
           foot: '脚部',
           weapon: '武器',
+          necklace: '项链',
+          wing: '翅膀',
         };
         return slotMap[text as string] || text;
       },

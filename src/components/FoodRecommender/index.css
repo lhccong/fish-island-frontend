@@ -62,7 +62,7 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
 
-  .ant-radio-button-wrapper {
+  .meal-tabs .ant-radio-button-wrapper {
     border: none !important;
     background: transparent !important;
     color: #666 !important;
@@ -76,25 +76,25 @@
     transition: all 0.3s ease !important;
   }
 
-  .ant-radio-button-wrapper::before {
+  .meal-tabs .ant-radio-button-wrapper::before {
     display: none !important;
   }
 
-  .ant-radio-button-wrapper-checked {
+  .meal-tabs .ant-radio-button-wrapper-checked {
     background: var(--primary-color) !important;
     color: white !important;
     font-weight: normal !important;
   }
 
-  .ant-radio-button-wrapper-checked::after {
+  .meal-tabs .ant-radio-button-wrapper-checked::after {
     display: none !important;
   }
 
-  .ant-radio-button-wrapper:hover {
+  .meal-tabs .ant-radio-button-wrapper:hover {
     color: var(--primary-color) !important;
   }
 
-  .ant-radio-button-wrapper-checked:hover {
+  .meal-tabs .ant-radio-button-wrapper-checked:hover {
     color: white !important;
   }
 

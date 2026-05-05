@@ -6,7 +6,6 @@ import {AvatarDropdown} from './components/RightContent/AvatarDropdown';
 import {requestConfig} from './requestConfig';
 import {getLoginUserUsingGet} from "@/services/backend/userController";
 import {useEffect, useState} from "react";
-import AnnouncementModal from '@/components/AnnouncementModal';
 import BossKeySettings from '@/components/BossKeySettings';
 import SideAnnouncement from '@/components/SideAnnouncement';
 import GlobalReader from '@/components/GlobalFloatingReader';
@@ -14,7 +13,6 @@ import routes from '../config/routes';
 import GlobalTitle from '@/components/GlobalTitle';
 import {Board, Player, Position, Move, WinningLine} from '@/game';
 import {unregisterServiceWorker} from './utils/unregisterServiceWorker';
-import {setNotificationEnabled} from './utils/notification';
 
 const loginPath = '/user/login';
 
@@ -148,7 +146,7 @@ export async function getInitialState(): Promise<InitialState> {
   // 应用网站设置
   const savedSiteConfig = localStorage.getItem('siteConfig');
   if (savedSiteConfig) {
-    const {siteName, siteIcon, notificationEnabled} = JSON.parse(savedSiteConfig);
+    const {siteName, siteIcon} = JSON.parse(savedSiteConfig);
     // 更新所有图标相关的标签
     const iconTypes = ['icon', 'shortcut icon', 'apple-touch-icon'];
     iconTypes.forEach(type => {
@@ -165,11 +163,6 @@ export async function getInitialState(): Promise<InitialState> {
 
     // 使用getSiteName获取标题，优先使用用户设置的网站名称
     document.title = getSiteName();
-
-    // 更新通知设置
-    if (notificationEnabled !== undefined) {
-      setNotificationEnabled(notificationEnabled);
-    }
   } else {
     // 如果没有自定义设置，使用defaultSettings中的标题
     document.title = defaultSettings.title;
@@ -200,6 +193,32 @@ const getLayoutMode = (): 'side' | 'top' | 'mix' => {
     }
   }
   return defaultSettings.layout as 'side' | 'top' | 'mix' || 'top';
+};
+
+// sider 模式下的菜单名称映射
+const SIDER_MENU_NAME_MAP: Record<string, string> = {
+  '鱼窝': '摸鱼室',
+  '鱼圈': '摸鱼圈',
+  '阅读': '摸鱼阅读',
+  '宠物': '摸鱼宠物',
+  '玩法': '积分玩法',
+  '游戏': '小游戏',
+  ' 工具': '工具箱',
+  '商店': '摸鱼商店',
+  '关于': '关于网站',
+};
+
+// 递归替换菜单名称
+const remapMenuNames = (menuData: any[]): any[] => {
+  return menuData.map((item) => {
+    const newName = SIDER_MENU_NAME_MAP[item.name] ?? item.name;
+    return {
+      ...item,
+      name: newName,
+      children: item.children ? remapMenuNames(item.children) : undefined,
+      routes: item.routes ? remapMenuNames(item.routes) : undefined,
+    };
+  });
 };
 
 // ProLayout 支持的api https://procomponents.ant.design/components/layout
@@ -399,6 +418,9 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
     // unAccessible: <div>unAccessible</div>,
     ...defaultSettings,
     layout: layoutMode,
+    menuDataRender: (layoutMode === 'side' || layoutMode === 'mix')
+      ? (menuData: any[]) => remapMenuNames(menuData)
+      : undefined,
     childrenRender: (children) => {
       return (
         <>

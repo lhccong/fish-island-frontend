@@ -26,7 +26,7 @@ const Settings: ProLayoutProps & {
   // iconfontUrl: 'https://oss.cqbo.com/moyu/moyu.png',
   token: {
     header: {
-      heightLayoutHeader: 78,
+      heightLayoutHeader: 52,
       colorTextMenuSelected: '#FFA768',
 
     },

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Avatar, Button, Image, Spin, Empty, Tooltip } from 'antd';
+import { Avatar, Button, Image, Spin, Empty, Tooltip, Popover, Radio, Card } from 'antd';
 import {
   HeartFilled,
   HeartOutlined,
@@ -11,6 +11,7 @@ import {
   LeftOutlined,
   RightOutlined,
   EnvironmentOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { listMomentsUsingPost, toggleLikeUsingPost } from '@/services/backend/momentsController';
 import PublishMomentModal from '@/components/PublishMomentModal';
@@ -19,7 +20,7 @@ import { useModel } from '@umijs/max';
 import moment from 'moment';
 import styles from './index.less';
 
-const MomentsSidebar: React.FC = () => {
+const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 'left' }) => {
   const [moments, setMoments] = useState<API.MomentsVO[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -28,6 +29,20 @@ const MomentsSidebar: React.FC = () => {
   const currentPageRef = useRef(1);
   const loadingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // 位置设置（本地维护，保存到 siteConfig）
+  const [settingPosition, setSettingPosition] = useState<'left' | 'right'>(position);
+  const [settingPopoverOpen, setSettingPopoverOpen] = useState(false);
+
+  const handleSavePosition = (val: 'left' | 'right') => {
+    setSettingPosition(val);
+    const raw = localStorage.getItem('siteConfig');
+    const config = raw ? JSON.parse(raw) : {};
+    config.fishCirclePosition = val;
+    localStorage.setItem('siteConfig', JSON.stringify(config));
+    window.dispatchEvent(new CustomEvent('siteConfigChange'));
+    setSettingPopoverOpen(false);
+  };
 
   // 收起时给 chatPageWrapper 加 class，让聊天室居中
   useEffect(() => {
@@ -42,7 +57,10 @@ const MomentsSidebar: React.FC = () => {
     }
   }, [collapsed]);
 
-  const [publishVisible, setPublishVisible] = useState(false);
+  // 收起时的展开箭头：左侧栏收起显示右箭头，右侧栏收起显示左箭头
+  const collapseIcon = position === 'left' ? <RightOutlined /> : <LeftOutlined />;
+  // 展开时的收起箭头：左侧栏显示左箭头，右侧栏显示右箭头
+  const expandIcon = position === 'left' ? <LeftOutlined /> : <RightOutlined />;  const [publishVisible, setPublishVisible] = useState(false);
   const [detailMomentId, setDetailMomentId] = useState<number | null>(null);
   const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -219,12 +237,12 @@ const MomentsSidebar: React.FC = () => {
       {collapsed ? (
         <Tooltip title="展开鱼小圈" placement="top">
           <div className={styles.toggleBtn} onClick={() => setCollapsed(false)}>
-            <LeftOutlined />
+            {collapseIcon}
           </div>
         </Tooltip>
       ) : (
-      <div className={styles.sidebar}>
-        {/* 头部：标题 + 刷新 + 发布 */}
+      <div className={`${styles.sidebar} ${position === 'left' ? styles.sidebarLeft : ''}`}>
+        {/* 头部：标题 + 刷新 + 发布 + 设置 + 收起 */}
         <div className={styles.header}>
           <span className={styles.title}><TeamOutlined /> 鱼小圈</span>
           <div className={styles.headerActions}>
@@ -246,11 +264,42 @@ const MomentsSidebar: React.FC = () => {
                 className={styles.iconBtn}
               />
             </Tooltip>
+            <Popover
+              open={settingPopoverOpen}
+              onOpenChange={setSettingPopoverOpen}
+              trigger="click"
+              placement="bottomRight"
+              arrow={false}
+              overlayClassName="moments-sidebar-setting-popover"
+              content={
+                <Card>
+                  <span>显示位置：</span>
+                  <Radio.Group
+                    value={settingPosition}
+                    onChange={(e) => handleSavePosition(e.target.value)}
+                    className="settingRadioGroup"
+                    buttonStyle="solid"
+                  >
+                    <Radio.Button value="left">⬅ 左侧</Radio.Button>
+                    <Radio.Button value="right">右侧 ➡</Radio.Button>
+                  </Radio.Group>
+                </Card>
+              }
+            >
+              <Tooltip title="设置" open={settingPopoverOpen ? false : undefined}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<SettingOutlined />}
+                  className={`${styles.iconBtn} ${settingPopoverOpen ? styles.iconBtnActive : ''}`}
+                />
+              </Tooltip>
+            </Popover>
             <Tooltip title="收起">
               <Button
                 type="text"
                 size="small"
-                icon={<RightOutlined />}
+                icon={expandIcon}
                 onClick={() => setCollapsed(true)}
                 className={styles.iconBtn}
               />

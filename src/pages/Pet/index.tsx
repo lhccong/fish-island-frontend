@@ -557,57 +557,42 @@ const PetPage: React.FC = () => {
   return (
     <div className={styles.petPageContainer}>
       <div className={styles.gameTabsContainer}>
-        {/* 游戏风格标签导航 */}
+        {/* 左侧游戏菜单 */}
         <div className={styles.gameTabsNav}>
           <div 
             className={`${styles.gameTab} ${activeTab === 'pet' ? styles.gameTabActive : ''}`}
             onClick={() => setActiveTab('pet')}
           >
-            <div className={styles.gameTabIcon}>
-              <HomeOutlined />
-            </div>
+            <div className={styles.gameTabIcon}><HomeOutlined /></div>
             <div className={styles.gameTabText}>我的宠物</div>
-            <div className={styles.gameTabDecor}></div>
           </div>
           <div 
             className={`${styles.gameTab} ${activeTab === 'ranking' ? styles.gameTabActive : ''}`}
             onClick={() => setActiveTab('ranking')}
           >
-            <div className={styles.gameTabIcon}>
-              <TrophyOutlined />
-            </div>
+            <div className={styles.gameTabIcon}><TrophyOutlined /></div>
             <div className={styles.gameTabText}>排行榜</div>
-            <div className={styles.gameTabDecor}></div>
           </div>
           <div 
             className={`${styles.gameTab} ${activeTab === 'boss' ? styles.gameTabActive : ''}`}
             onClick={() => setActiveTab('boss')}
           >
-            <div className={styles.gameTabIcon}>
-              <ThunderboltOutlined />
-            </div>
+            <div className={styles.gameTabIcon}><ThunderboltOutlined /></div>
             <div className={styles.gameTabText}>摸鱼BOSS</div>
-            <div className={styles.gameTabDecor}></div>
           </div>
           <div 
             className={`${styles.gameTab} ${activeTab === 'gallery' ? styles.gameTabActive : ''}`}
             onClick={() => setActiveTab('gallery')}
           >
-            <div className={styles.gameTabIcon}>
-              <BookOutlined />
-            </div>
+            <div className={styles.gameTabIcon}><BookOutlined /></div>
             <div className={styles.gameTabText}>图鉴</div>
-            <div className={styles.gameTabDecor}></div>
           </div>
           <div 
             className={`${styles.gameTab} ${activeTab === 'lottery' ? styles.gameTabActive : ''}`}
             onClick={() => setActiveTab('lottery')}
           >
-            <div className={styles.gameTabIcon}>
-              <GiftOutlined />
-            </div>
+            <div className={styles.gameTabIcon}><GiftOutlined /></div>
             <div className={styles.gameTabText}>抽奖</div>
-            <div className={styles.gameTabDecor}></div>
           </div>
         </div>
 
@@ -652,12 +637,23 @@ const PetPage: React.FC = () => {
         <Spin spinning={rankingLoading}>
           <div className={styles.bossRankingContainer}>
             {rankingData.length > 0 ? (
-              <Table
+              <div>
+                <div className={styles.rankingTip} style={{ marginBottom: 8 }}>点击行可查看该玩家宠物详情</div>
+                <Table
                 dataSource={rankingData}
                 rowKey={(record, index) => `${record.userId}-${index}`}
                 pagination={false}
                 // 限制 Boss 排行榜表格高度
                 scroll={{ y: 360 }}
+                onRow={(record: API.BossChallengeRankingVO) => ({
+                  onClick: () => {
+                    if (record.userId) {
+                      setSelectedUser({ id: record.userId, name: record.userName || '未知用户' });
+                      setPetModalVisible(true);
+                    }
+                  },
+                  style: { cursor: 'pointer' },
+                })}
                 columns={[
                   {
                     title: '排名',
@@ -707,6 +703,7 @@ const PetPage: React.FC = () => {
                   }
                 ]}
               />
+              </div>
             ) : (
               !rankingLoading && (
                 <div className={styles.emptyState}>

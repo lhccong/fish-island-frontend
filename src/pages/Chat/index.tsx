@@ -72,6 +72,7 @@ import {
   Tabs,
   Badge,
   Switch,
+  Tooltip,
 } from 'antd';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList as List } from 'react-window';
@@ -143,6 +144,10 @@ interface MessageItemProps {
   renderMessageContent: (content: string) => React.ReactNode;
   handleRevokeMessage: (messageId: string) => void;
   handleQuoteMessage: (message: Message) => void;
+  /** 复读该消息的其他用户列表（连续2条及以上相同内容时填充） */
+  repeatUsers?: User[];
+  /** 一键复读回调 */
+  onRepeat: (content: string) => void;
 }
 
 const MessageItem = React.memo<MessageItemProps>(({
@@ -158,6 +163,8 @@ const MessageItem = React.memo<MessageItemProps>(({
   renderMessageContent,
   handleRevokeMessage,
   handleQuoteMessage,
+  repeatUsers,
+  onRepeat,
 }) => {
   const isSelf = currentUser?.id && String(msg.sender.id) === String(currentUser.id);
   const isMentioned = notifications.some((n) => n.id === msg.id);
@@ -246,7 +253,26 @@ const MessageItem = React.memo<MessageItemProps>(({
         <span className={styles.quoteText} onClick={() => handleQuoteMessage(msg)}>
           引用
         </span>
+        <span className={styles.repeatText} onClick={() => onRepeat(msg.content)}>
+          复读
+        </span>
       </div>
+      {/* 复读用户头像区域：连续3条及以上相同内容时显示 */}
+      {repeatUsers && repeatUsers.length > 0 && (
+        <div className={styles.repeatUsers}>
+          <span className={styles.repeatLabel}>复读机</span>
+          {repeatUsers.map((user) => (
+            <Tooltip key={user.id} title={getUserDisplayName(user)} placement="top">
+              <div
+                className={styles.repeatAvatar}
+                onClick={() => handleSelectMention(user)}
+              >
+                <Avatar src={user.avatar} size={20} />
+              </div>
+            </Tooltip>
+          ))}
+        </div>
+      )}
     </div>
   );
 });
@@ -291,15 +317,25 @@ const ChatRoom: React.FC = () => {
     }
     return true;
   };
+  const getFishCirclePosition = (): 'left' | 'right' => {
+    const savedConfig = localStorage.getItem('siteConfig');
+    if (savedConfig) {
+      const { fishCirclePosition } = JSON.parse(savedConfig);
+      if (fishCirclePosition === 'left' || fishCirclePosition === 'right') return fishCirclePosition;
+    }
+    return 'left';
+  };
   const [layoutMode, setLayoutMode] = useState<'side' | 'top' | 'mix'>(getLayoutMode);
   const [chatHeightOffset, setChatHeightOffset] = useState<string>(getLayoutOffset);
   const [showFishCircle, setShowFishCircle] = useState<boolean>(getShowFishCircle);
+  const [fishCirclePosition, setFishCirclePosition] = useState<'left' | 'right'>(getFishCirclePosition);
 
   useEffect(() => {
     const handleSiteConfigChange = () => {
       setLayoutMode(getLayoutMode());
       setChatHeightOffset(getLayoutOffset());
       setShowFishCircle(getShowFishCircle());
+      setFishCirclePosition(getFishCirclePosition());
     };
     window.addEventListener('siteConfigChange', handleSiteConfigChange);
     return () => {
@@ -2985,6 +3021,7 @@ const ChatRoom: React.FC = () => {
       className={`${styles.chatPageWrapper} ${!showFishCircle ? styles.chatPageWrapperCentered : ''}`}
       style={{ '--chat-height-offset': chatHeightOffset } as React.CSSProperties}
     >
+    {(layoutMode === 'top' || layoutMode === 'mix') && showFishCircle && fishCirclePosition === 'left' && <MomentsSidebar position="left" />}
     <div
       className={`${styles.chatRoom} ${isSpeedMode ? styles.speedMode : ''} ${!isUserListVisible ? styles.userListCollapsed : ''}`}
     >
@@ -3132,23 +3169,61 @@ const ChatRoom: React.FC = () => {
             <Spin />
           </div>
         )}
-        {messages.map((msg) => (
-          <MessageItem
-            key={msg.id}
-            msg={msg}
-            currentUser={currentUser}
-            notifications={notifications}
-            styles={styles}
-            UserInfoCard={UserInfoCard}
-            handleSelectMention={handleSelectMention}
-            handleViewUserDetail={handleViewUserDetail}
-            getUserDisplayName={getUserDisplayName}
-            getAdminTag={getAdminTag}
-            renderMessageContent={renderMessageContent}
-            handleRevokeMessage={handleRevokeMessage}
-            handleQuoteMessage={handleQuoteMessage}
-          />
-        ))}
+        {(() => {
+          // 计算复读信息：连续3条及以上相同内容（不同用户），合并为一条显示
+          // repeatMap: 第一条消息id -> 后续复读用户列表
+          // skipSet: 需要跳过渲染的消息id集合
+          const repeatMap = new Map<string, User[]>();
+          const skipSet = new Set<string>();
+
+          for (let i = 0; i < messages.length; i++) {
+            if (skipSet.has(messages[i].id)) continue;
+            const baseContent = messages[i].content;
+            // 跳过引用消息（有 quotedMessage 的不参与复读检测）
+            if (messages[i].quotedMessage) continue;
+            // 向后查找连续相同内容的消息
+            const group: Message[] = [messages[i]];
+            for (let j = i + 1; j < messages.length; j++) {
+              if (messages[j].content === baseContent && !messages[j].quotedMessage) {
+                group.push(messages[j]);
+              } else {
+                break;
+              }
+            }
+            // 连续2条及以上才触发复读合并
+            if (group.length >= 2) {
+              const repeatUsers: User[] = [];
+              for (let k = 1; k < group.length; k++) {
+                skipSet.add(group[k].id);
+                repeatUsers.push(group[k].sender);
+              }
+              repeatMap.set(messages[i].id, repeatUsers);
+            }
+          }
+
+          return messages.map((msg) => {
+            if (skipSet.has(msg.id)) return null;
+            return (
+              <MessageItem
+                key={msg.id}
+                msg={msg}
+                currentUser={currentUser}
+                notifications={notifications}
+                styles={styles}
+                UserInfoCard={UserInfoCard}
+                handleSelectMention={handleSelectMention}
+                handleViewUserDetail={handleViewUserDetail}
+                getUserDisplayName={getUserDisplayName}
+                getAdminTag={getAdminTag}
+                renderMessageContent={renderMessageContent}
+                handleRevokeMessage={handleRevokeMessage}
+                handleQuoteMessage={handleQuoteMessage}
+                repeatUsers={repeatMap.get(msg.id)}
+                onRepeat={handleSend}
+              />
+            );
+          });
+        })()}
         <div ref={messagesEndRef} />
       </div>
 
@@ -4322,7 +4397,7 @@ const ChatRoom: React.FC = () => {
         </div>
       </Modal>
     </div>
-    {(layoutMode === 'top' || layoutMode === 'mix') && showFishCircle && <MomentsSidebar />}
+    {(layoutMode === 'top' || layoutMode === 'mix') && showFishCircle && fishCirclePosition === 'right' && <MomentsSidebar position="right" />}
     </div>
   );
 };
