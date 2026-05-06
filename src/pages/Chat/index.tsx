@@ -253,9 +253,11 @@ const MessageItem = React.memo<MessageItemProps>(({
         <span className={styles.quoteText} onClick={() => handleQuoteMessage(msg)}>
           引用
         </span>
-        <span className={styles.repeatText} onClick={() => onRepeat(msg.content)}>
-          复读
-        </span>
+        {!/\[redpacket\]/i.test(msg.content) && (
+          <span className={styles.repeatText} onClick={() => onRepeat(msg.content)}>
+            复读
+          </span>
+        )}
       </div>
       {/* 复读用户头像区域：连续3条及以上相同内容时显示 */}
       {repeatUsers && repeatUsers.length > 0 && (
@@ -3181,6 +3183,8 @@ const ChatRoom: React.FC = () => {
             const baseContent = messages[i].content;
             // 跳过引用消息（有 quotedMessage 的不参与复读检测）
             if (messages[i].quotedMessage) continue;
+            // 跳过红包消息（红包不参与复读检测）
+            if (/\[redpacket\]/i.test(baseContent)) continue;
             // 向后查找连续相同内容的消息
             const group: Message[] = [messages[i]];
             for (let j = i + 1; j < messages.length; j++) {
