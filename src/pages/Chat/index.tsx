@@ -3021,7 +3021,7 @@ const ChatRoom: React.FC = () => {
       className={`${styles.chatPageWrapper} ${!showFishCircle ? styles.chatPageWrapperCentered : ''}`}
       style={{ '--chat-height-offset': chatHeightOffset } as React.CSSProperties}
     >
-    {(layoutMode === 'top' || layoutMode === 'mix') && showFishCircle && fishCirclePosition === 'left' && <MomentsSidebar position="left" />}
+    {showFishCircle && fishCirclePosition === 'left' && <MomentsSidebar position="left" />}
     <div
       className={`${styles.chatRoom} ${isSpeedMode ? styles.speedMode : ''} ${!isUserListVisible ? styles.userListCollapsed : ''}`}
     >
@@ -4397,7 +4397,7 @@ const ChatRoom: React.FC = () => {
         </div>
       </Modal>
     </div>
-    {(layoutMode === 'top' || layoutMode === 'mix') && showFishCircle && fishCirclePosition === 'right' && <MomentsSidebar position="right" />}
+    {showFishCircle && fishCirclePosition === 'right' && <MomentsSidebar position="right" />}
     </div>
   );
 };
