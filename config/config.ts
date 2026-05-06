@@ -118,6 +118,12 @@ export default defineConfig({
       src: '/scripts/loading.js',
       async: true,
     },
+    // 广告 SDK
+    {
+      src: 'https://cdn.adwork.net/js/makemoney.js',
+      async: true,
+      charset: 'UTF-8',
+    },
   ],
   //================ pro 插件配置 =================
   presets: ['umi-presets-pro'],

@@ -310,6 +310,12 @@ const Index: React.FC = () => {
             paddingBottom: '50px', // 为底部 tab-bar 留出空间
           }}
         >
+          {/* 广告容器 - 移动端顶部 */}
+          <div
+            className="adwork-net adwork-auto"
+            data-id="1075"
+            style={{ width: '100%', maxHeight: '60px', overflow: 'hidden', margin: '0 0 10px 0' }}
+          />
           {loading ? (
             <Skeleton active />
           ) : currentSource ? (
@@ -472,6 +478,18 @@ const Index: React.FC = () => {
         </div>
       ) : (
         <>
+          {/* 广告容器 - PC 端顶部长条 */}
+          <div
+            className="adwork-net adwork-auto"
+            data-id="1075"
+            style={{
+              width: '100%',
+              maxHeight: '120px',
+              overflow: 'hidden',
+              margin: '0 0 16px 0',
+              display: 'block',
+            }}
+          />
           <div
             style={{
               marginBottom: 16,
