@@ -47,6 +47,21 @@ export async function listCommentsUsingPost(
   });
 }
 
+/** 置顶/取消置顶评论（动态发布者或管理员） POST /api/moments/comment/top */
+export async function topCommentUsingPost(
+  body: API.MomentsCommentTopRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/moments/comment/top', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 删除朋友圈动态（本人或管理员） POST /api/moments/delete */
 export async function deleteMomentUsingPost(
   body: API.DeleteRequest,
@@ -107,6 +122,21 @@ export async function listMomentsUsingPost(
   });
 }
 
+/** 朋友圈抽奖（从点赞用户中随机抽取，自动在评论区发布结果） POST /api/moments/lottery/start */
+export async function startLotteryUsingPost(
+  body: API.MomentsLotteryRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseMomentsLotteryVO_>('/api/moments/lottery/start', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 发布朋友圈动态 POST /api/moments/publish */
 export async function publishMomentUsingPost(
   body: API.MomentsAddRequest,
@@ -128,6 +158,21 @@ export async function rewardMomentUsingPost(
   options?: { [key: string]: any },
 ) {
   return request<API.BaseResponseBoolean_>('/api/moments/reward', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 置顶/取消置顶朋友圈动态（仅管理员） POST /api/moments/top */
+export async function topMomentUsingPost(
+  body: API.MomentsTopRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/moments/top', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

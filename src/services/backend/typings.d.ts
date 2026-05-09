@@ -331,6 +331,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseMomentsLotteryVO_ = {
+    code?: number;
+    data?: MomentsLotteryVO;
+    message?: string;
+  };
+
   type BaseResponseMomentsVO_ = {
     code?: number;
     data?: MomentsVO;
@@ -475,6 +481,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageRedeemCodeVO_ = {
+    code?: number;
+    data?: PageRedeemCodeVO_;
+    message?: string;
+  };
+
   type BaseResponsePageRoomMessageVo_ = {
     code?: number;
     data?: PageRoomMessageVo_;
@@ -568,6 +580,12 @@ declare namespace API {
   type BaseResponsePostVO_ = {
     code?: number;
     data?: PostVO;
+    message?: string;
+  };
+
+  type BaseResponseRedeemCodeUseResultVO_ = {
+    code?: number;
+    data?: RedeemCodeUseResultVO;
     message?: string;
   };
 
@@ -962,6 +980,11 @@ declare namespace API {
   type DeleteFundRequest = {
     /** 基金代码 */
     code: string;
+  };
+
+  type deleteRedeemCodeUsingDELETEParams = {
+    /** id */
+    id: number;
   };
 
   type DeleteRequest = {
@@ -1991,6 +2014,17 @@ declare namespace API {
     type?: string;
   };
 
+  type listRedeemCodePageUsingGETParams = {
+    code?: string;
+    current?: number;
+    pageSize?: number;
+    rewardType?: number;
+    sortField?: string;
+    sortOrder?: string;
+    status?: number;
+    type?: number;
+  };
+
   type listTurntablesUsingGETParams = {
     current?: number;
     pageSize?: number;
@@ -2034,6 +2068,15 @@ declare namespace API {
     vip?: boolean;
   };
 
+  type LotteryWinnerVO = {
+    /** 用户头像 */
+    userAvatar?: string;
+    /** 用户ID */
+    userId?: number;
+    /** 用户昵称 */
+    userName?: string;
+  };
+
   type MakeUpSignInRequest = {
     /** 补签日期，格式 yyyy-MM-dd */
     signDate: string;
@@ -2045,6 +2088,13 @@ declare namespace API {
     currentValue?: number;
     indexCode?: string;
     indexName?: string;
+  };
+
+  type markScriptUserUsingPOSTParams = {
+    /** true=标记为脚本，false=取消标记 */
+    mark: boolean;
+    /** 目标用户ID */
+    userId: number;
   };
 
   type MediaItem = {
@@ -2229,6 +2279,13 @@ declare namespace API {
     sortOrder?: string;
   };
 
+  type MomentsCommentTopRequest = {
+    /** 评论ID */
+    commentId: number;
+    /** 是否置顶：true-置顶，false-取消置顶 */
+    top: boolean;
+  };
+
   type MomentsCommentVO = {
     /** 子评论列表（仅顶级评论携带） */
     children?: MomentsCommentVO[];
@@ -2238,6 +2295,8 @@ declare namespace API {
     createTime?: string;
     /** 评论ID */
     id?: number;
+    /** 是否置顶：0-否，1-是 */
+    isTop?: number;
     /** 动态ID */
     momentId?: number;
     /** 父评论ID，为空表示顶级评论 */
@@ -2259,6 +2318,22 @@ declare namespace API {
     momentId: number;
   };
 
+  type MomentsLotteryRequest = {
+    /** 动态ID */
+    momentId: number;
+    /** 抽奖人数（1-100） */
+    winnerCount: number;
+  };
+
+  type MomentsLotteryVO = {
+    /** 评论ID（系统自动发布的抽奖结果评论） */
+    commentId?: number;
+    /** 动态ID */
+    momentId?: number;
+    /** 中奖用户列表 */
+    winners?: LotteryWinnerVO[];
+  };
+
   type MomentsQueryRequest = {
     current?: number;
     pageSize?: number;
@@ -2273,6 +2348,13 @@ declare namespace API {
     momentId: number;
     /** 打赏积分数量（消耗 usedPoints） */
     points: number;
+  };
+
+  type MomentsTopRequest = {
+    /** 动态ID */
+    momentId: number;
+    /** 是否置顶：true-置顶，false-取消置顶 */
+    top: boolean;
   };
 
   type MomentsUpdateRequest = {
@@ -2301,6 +2383,8 @@ declare namespace API {
     createTime?: string;
     /** 动态ID */
     id?: number;
+    /** 是否置顶：0-否，1-是 */
+    isTop?: number;
     /** 点赞数 */
     likeNum?: number;
     /** 点赞用户名称，逗号拼接 */
@@ -2638,6 +2722,19 @@ declare namespace API {
     orders?: OrderItem[];
     pages?: number;
     records?: PropsVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
+  type PageRedeemCodeVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: RedeemCodeVO[];
     searchCount?: boolean;
     size?: number;
     total?: number;
@@ -3073,6 +3170,50 @@ declare namespace API {
   type recordGuessSuccessUsingPOSTParams = {
     /** heroId */
     heroId?: number;
+  };
+
+  type RedeemCodeAddRequest = {
+    batchCount?: number;
+    code?: string;
+    description?: string;
+    expireTime?: string;
+    maxUseCount?: number;
+    rewardCount?: number;
+    rewardType?: number;
+    rewardValue?: number;
+    targetUserId?: number;
+    type?: number;
+  };
+
+  type RedeemCodeUseRequest = {
+    code?: string;
+  };
+
+  type RedeemCodeUseResultVO = {
+    code?: string;
+    message?: string;
+    rewardCount?: number;
+    rewardType?: number;
+    rewardTypeName?: string;
+    rewardValue?: number;
+  };
+
+  type RedeemCodeVO = {
+    code?: string;
+    createTime?: string;
+    description?: string;
+    expireTime?: string;
+    id?: number;
+    maxUseCount?: number;
+    rewardCount?: number;
+    rewardType?: number;
+    rewardTypeName?: string;
+    rewardValue?: number;
+    status?: number;
+    targetUserId?: number;
+    type?: number;
+    typeName?: string;
+    usedCount?: number;
   };
 
   type RedPacket = {

@@ -61,3 +61,18 @@ export async function getRedPacketRecordsUsingGet(
     ...(options || {}),
   });
 }
+
+/** 手动标记/取消标记脚本用户（仅管理员） POST /api/redpacket/script/mark */
+export async function markScriptUserUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.markScriptUserUsingPOSTParams,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/redpacket/script/mark', {
+    method: 'POST',
+    params: {
+      ...params,
+    },
+    ...(options || {}),
+  });
+}

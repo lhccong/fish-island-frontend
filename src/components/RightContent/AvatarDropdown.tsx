@@ -16,6 +16,7 @@ import {
   updateAppUsingPost,
 } from '@/services/backend/fishAuthController';
 import {getCurrentUserVipUsingGet, checkPermanentVipUsingGet} from '@/services/backend/userVipController';
+import {useRedeemCodeUsingPost} from '@/services/backend/redeemCodeController';
 import {listAvailableFramesUsingGet1, setCurrentFrameUsingPost1} from '@/services/backend/userTitleController';
 import {uploadFileByMinioUsingPost} from '@/services/backend/fileController';
 import {
@@ -37,6 +38,7 @@ import {
   LeftOutlined,
   RightOutlined,
   CheckCircleFilled,
+  GiftOutlined,
 } from '@ant-design/icons';
 import {
   getMonthSignInUsingGet,
@@ -273,6 +275,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const [availableTitles, setAvailableTitles] = useState<API.UserTitle[]>([]);
   const [userVipInfo, setUserVipInfo] = useState<API.UserVipVO | null>(null);
   const [isPermanentVip, setIsPermanentVip] = useState<boolean>(false);
+  const [isRedeemCodeOpen, setIsRedeemCodeOpen] = useState(false);
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeemLoading, setRedeemLoading] = useState(false);
 
   // 获取可用称号列表
   const fetchAvailableTitles = async () => {
@@ -957,6 +962,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       label: '重置位置',
     },
     {
+      key: 'redeemCode',
+      icon: <GiftOutlined/>,
+      label: '兑换码',
+    },
+    {
       key: 'logout',
       icon: <LogoutOutlined/>,
       label: '退出登录',
@@ -1016,6 +1026,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         localStorage.removeItem('miniPetPosition');
         window.dispatchEvent(new CustomEvent('resetMoneyButtonPosition'));
         window.dispatchEvent(new CustomEvent('resetMiniPetPosition'));
+        return;
+      }
+      if (key === 'redeemCode') {
+        setRedeemCode('');
+        setIsRedeemCodeOpen(true);
         return;
       }
       history.push(`/account/${key}`);
@@ -2855,6 +2870,85 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
             </div>
           </Form.Item>
         </Form>
+      </Modal>
+      {/* 兑换码 Modal */}
+      <Modal
+        title={<><GiftOutlined style={{ marginRight: 8, color: '#fa8c16' }} />兑换码</>}
+        open={isRedeemCodeOpen}
+        onCancel={() => setIsRedeemCodeOpen(false)}
+        footer={null}
+        width={400}
+        destroyOnClose
+      >
+        <div style={{ padding: '8px 0 16px' }}>
+          <p style={{ color: '#666', marginBottom: 16 }}>请输入兑换码，兑换成功后奖励将自动发放到您的账户。</p>
+          <Input
+            placeholder="请输入兑换码"
+            value={redeemCode}
+            onChange={(e) => setRedeemCode(e.target.value)}
+            onPressEnter={async () => {
+              if (!redeemCode.trim()) {
+                message.warning('请输入兑换码');
+                return;
+              }
+              setRedeemLoading(true);
+              try {
+                const res = await useRedeemCodeUsingPost({ code: redeemCode.trim() });
+                if (res.code === 0) {
+                  message.success(res.data?.message || '兑换成功！');
+                  setIsRedeemCodeOpen(false);
+                  // 刷新用户信息
+                  const userInfo = await getLoginUserUsingGet();
+                  if (userInfo.data) {
+                    setInitialState((s) => ({ ...s, currentUser: userInfo.data }));
+                  }
+                } else {
+                  message.error(res.message || '兑换失败，请检查兑换码是否正确');
+                }
+              } catch (e: any) {
+                message.error(e?.message || '兑换失败，请稍后重试');
+              } finally {
+                setRedeemLoading(false);
+              }
+            }}
+            style={{ marginBottom: 16 }}
+            allowClear
+          />
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <Button onClick={() => setIsRedeemCodeOpen(false)}>取消</Button>
+            <Button
+              type="primary"
+              loading={redeemLoading}
+              onClick={async () => {
+                if (!redeemCode.trim()) {
+                  message.warning('请输入兑换码');
+                  return;
+                }
+                setRedeemLoading(true);
+                try {
+                  const res = await useRedeemCodeUsingPost({ code: redeemCode.trim() });
+                  if (res.code === 0) {
+                    message.success(res.data?.message || '兑换成功！');
+                    setIsRedeemCodeOpen(false);
+                    // 刷新用户信息
+                    const userInfo = await getLoginUserUsingGet();
+                    if (userInfo.data) {
+                      setInitialState((s) => ({ ...s, currentUser: userInfo.data }));
+                    }
+                  } else {
+                    message.error(res.message || '兑换失败，请检查兑换码是否正确');
+                  }
+                } catch (e: any) {
+                  message.error(e?.message || '兑换失败，请稍后重试');
+                } finally {
+                  setRedeemLoading(false);
+                }
+              }}
+            >
+              立即兑换
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

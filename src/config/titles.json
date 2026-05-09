@@ -140,6 +140,13 @@
       "description": "kuzwlu专属",
       "titleImg": "https://oss.cqbo.com/moyu/title/badge-kuzwlu.png"
 
+    },
+    {
+      "id": "23",
+      "name": "中国 NPC",
+      "description": "中国 NPC专属",
+      "titleImg": "https://oss.cqbo.com/moyu/title/npc.png"
+
     }
   ]
 }

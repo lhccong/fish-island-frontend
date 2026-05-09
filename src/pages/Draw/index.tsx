@@ -177,6 +177,8 @@ const DrawRoomPage: React.FC = () => {
     if (isUserInRoom || room.status === 'PLAYING') {
       // 如果用户已在房间或者是观战模式，直接进入
       history.push(`/game/draw/${room.roomId}`);
+    } else {
+      // 正常加入房间
       handleJoinRoom(room);
     }
   }

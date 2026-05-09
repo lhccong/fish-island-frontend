@@ -15,6 +15,9 @@ import {
   CloseOutlined,
   ArrowLeftOutlined,
   SmileOutlined,
+  PushpinOutlined,
+  PushpinFilled,
+  TrophyOutlined,
 } from '@ant-design/icons';
 import {
   listMomentsUsingPost,
@@ -26,6 +29,9 @@ import {
   listCommentsUsingPost,
   addCommentUsingPost1,
   deleteCommentUsingPost,
+  topMomentUsingPost,
+  startLotteryUsingPost,
+  topCommentUsingPost,
 } from '@/services/backend/momentsController';
 import { getLoginUserUsingGet, getUserVoByIdUsingGet } from '@/services/backend/userController';
 import { uploadFileByMinioUsingPost } from '@/services/backend/fileController';
@@ -67,6 +73,13 @@ const FishCirclePage: React.FC = () => {
   const [rewardPoints, setRewardPoints] = useState<number>(10);
   const [rewarding, setRewarding] = useState<boolean>(false);
 
+  // 抽奖弹窗状态
+  const [lotteryModalVisible, setLotteryModalVisible] = useState<boolean>(false);
+  const [lotteryMomentId, setLotteryMomentId] = useState<number | null>(null);
+  const [lotteryWinnerCount, setLotteryWinnerCount] = useState<number>(1);
+  const [lotterying, setLotterying] = useState<boolean>(false);
+  const [lotteryResult, setLotteryResult] = useState<API.MomentsLotteryVO | null>(null);
+
   // 评论状态
   const [commentsMap, setCommentsMap] = useState<Record<number, API.MomentsCommentVO[]>>({});
   const [commentInputMap, setCommentInputMap] = useState<Record<number, string>>({});
@@ -81,6 +94,8 @@ const FishCirclePage: React.FC = () => {
 
   const scrollRef = useRef<HTMLDivElement>(null); // kept for potential future use
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const momentRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const [highlightId, setHighlightId] = useState<number | null>(null);
 
   // 用 ref 追踪分页和 loading，避免 useCallback 闭包捕获旧值
   const currentPageRef = useRef(1);
@@ -159,6 +174,15 @@ const FishCirclePage: React.FC = () => {
     await fetchMoments(false, undefined);
   };
 
+  // 点击置顶帖跳转到对应动态
+  const handleScrollToMoment = (momentId: number) => {
+    const el = momentRefs.current[momentId];
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightId(momentId);
+    setTimeout(() => setHighlightId(null), 1800);
+  };
+
   // 获取朋友圈列表
   const fetchMoments = useCallback(async (isLoadMore = false, overrideUserId?: number) => {
     if (loadingRef.current || loadingMoreRef.current) return;
@@ -188,10 +212,15 @@ const FishCirclePage: React.FC = () => {
         const newRecords = result.data.records || [];
         const total = result.data.total || 0;
 
+        // 置顶帖子排在最前面（仅首页第一次加载时）
+        const sortedRecords = isLoadMore
+          ? newRecords
+          : [...newRecords].sort((a, b) => (b.isTop || 0) - (a.isTop || 0));
+
         if (isLoadMore) {
-          setMoments((prev) => [...prev, ...newRecords]);
+          setMoments((prev) => [...prev, ...sortedRecords]);
         } else {
-          setMoments(newRecords);
+          setMoments(sortedRecords);
         }
 
         currentPageRef.current = nextPage;
@@ -201,7 +230,7 @@ const FishCirclePage: React.FC = () => {
         setPagination({ current: nextPage, pageSize, total });
 
         // 批量加载评论
-        newRecords.forEach(async (m) => {
+        sortedRecords.forEach(async (m) => {
           if (m.id) {
             try {
               const res = await listCommentsUsingPost({ momentId: m.id, current: 1, pageSize: 50 });
@@ -335,6 +364,47 @@ const FishCirclePage: React.FC = () => {
     }
   };
 
+  // 置顶/取消置顶动态（仅管理员）
+  const handleToggleTop = async (momentId: number, currentIsTop: number) => {
+    try {
+      const res = await topMomentUsingPost({ momentId, top: currentIsTop !== 1 });
+      if (res.data) {
+        const newIsTop = currentIsTop === 1 ? 0 : 1;
+        message.success(newIsTop === 1 ? '置顶成功' : '已取消置顶');
+        setMoments((prev) => {
+          const updated = prev.map((item) =>
+            item.id === momentId ? { ...item, isTop: newIsTop } : item,
+          );
+          // 重新排序：置顶的排前面
+          return [...updated].sort((a, b) => (b.isTop || 0) - (a.isTop || 0));
+        });
+      }
+    } catch {
+      message.error('操作失败');
+    }
+  };
+
+  // 发起抽奖
+  const handleStartLottery = async () => {
+    if (!lotteryMomentId) return;
+    if (!currentUser) { message.warning('请先登录'); return; }
+    setLotterying(true);
+    try {
+      const res = await startLotteryUsingPost({ momentId: lotteryMomentId, winnerCount: lotteryWinnerCount });
+      if (res.data) {
+        setLotteryResult(res.data);
+        // 刷新该动态的评论（抽奖结果会自动发布为评论）
+        const updated = await listCommentsUsingPost({ momentId: lotteryMomentId, current: 1, pageSize: 50 });
+        setCommentsMap((prev) => ({ ...prev, [lotteryMomentId]: updated.data?.records || [] }));
+        setShowInputId(lotteryMomentId);
+      }
+    } catch {
+      message.error('抽奖失败，请确保有足够的点赞用户');
+    } finally {
+      setLotterying(false);
+    }
+  };
+
   // 展开/收起评论输入框
   const handleToggleComments = async (momentId: number) => {
     setShowInputId((prev) => (prev === momentId ? null : momentId));
@@ -381,6 +451,29 @@ const FishCirclePage: React.FC = () => {
       message.error('评论失败');
     } finally {
       setCommentSubmitting(false);
+    }
+  };
+
+  // 置顶/取消置顶评论（动态发布者或管理员）
+  const handleToggleTopComment = async (commentId: number, momentId: number, currentIsTop: number) => {
+    try {
+      const res = await topCommentUsingPost({ commentId, top: currentIsTop !== 1 });
+      if (res.data) {
+        const newIsTop = currentIsTop === 1 ? 0 : 1;
+        message.success(newIsTop === 1 ? '评论已置顶' : '已取消置顶');
+        setCommentsMap((prev) => {
+          const list = (prev[momentId] || []).map((c) =>
+            c.id === commentId ? { ...c, isTop: newIsTop } : c,
+          );
+          // 置顶评论排最前
+          return {
+            ...prev,
+            [momentId]: [...list].sort((a, b) => (b.isTop || 0) - (a.isTop || 0)),
+          };
+        });
+      }
+    } catch {
+      message.error('操作失败');
     }
   };
 
@@ -722,7 +815,17 @@ const FishCirclePage: React.FC = () => {
         ) : (
           <>
             {moments.map((moment, index) => (
-              <div key={moment.id} className="moment-item">
+              <div
+                key={moment.id}
+                ref={(el) => { momentRefs.current[moment.id!] = el; }}
+                className={`moment-item${moment.isTop === 1 ? ' moment-item-pinned' : ''}${highlightId === moment.id ? ' moment-item-highlight' : ''}`}
+              >
+                {/* 置顶角标 */}
+                {moment.isTop === 1 && (
+                  <div className="moment-top-corner">
+                    <PushpinFilled />
+                  </div>
+                )}
                 <div className="moment-content">
                   {/* 用户头像 */}
                   <Avatar
@@ -811,6 +914,27 @@ const FishCirclePage: React.FC = () => {
                             trigger={['click']}
                             menu={{
                               items: [
+                                ...(currentUser?.id === moment.userId ? [
+                                  {
+                                    key: 'lottery',
+                                    icon: <TrophyOutlined />,
+                                    label: '发起抽奖',
+                                    onClick: () => {
+                                      setLotteryMomentId(moment.id!);
+                                      setLotteryWinnerCount(1);
+                                      setLotteryResult(null);
+                                      setLotteryModalVisible(true);
+                                    },
+                                  },
+                                ] : []),
+                                ...(isAdmin ? [
+                                  {
+                                    key: 'top',
+                                    icon: moment.isTop === 1 ? <PushpinFilled style={{ color: '#f4ac70' }} /> : <PushpinOutlined />,
+                                    label: moment.isTop === 1 ? '取消置顶' : '置顶动态',
+                                    onClick: () => handleToggleTop(moment.id!, moment.isTop || 0),
+                                  },
+                                ] : []),
                                 {
                                   key: 'edit',
                                   icon: <EditOutlined />,
@@ -856,16 +980,25 @@ const FishCirclePage: React.FC = () => {
                       return (
                         <div className="comment-list">
                           {visibleComments.map((comment) => (
-                            <div key={comment.id} className="comment-item">
+                            <div key={comment.id} className={`comment-item${comment.isTop === 1 ? ' comment-item-pinned' : ''}`}>
                               <Avatar size={28} src={comment.userAvatar} className="comment-avatar">
                                 {comment.userName?.charAt(0)}
                               </Avatar>
                               <div className="comment-body">
                                 <span className="comment-username">{comment.userName}</span>
+                                {comment.isTop === 1 && <span className="comment-top-tag">置顶</span>}
                                 <div className="comment-content">{renderCommentContent(comment.content)}</div>
                                 <div className="comment-meta">
                                   <span className="comment-time">{formatTime(comment.createTime)}</span>
                                   <span className="comment-reply-btn" onClick={() => { setReplyTarget({ commentId: comment.id!, userName: comment.userName!, momentId: moment.id! }); setShowInputId(moment.id!); }}>回复</span>
+                                  {(currentUser?.id === moment.userId || isAdmin) && (
+                                    <span
+                                      className={`comment-top-btn${comment.isTop === 1 ? ' active' : ''}`}
+                                      onClick={() => handleToggleTopComment(comment.id!, moment.id!, comment.isTop || 0)}
+                                    >
+                                      {comment.isTop === 1 ? '取消置顶' : '置顶'}
+                                    </span>
+                                  )}
                                   {(currentUser?.id === comment.userId || isAdmin) && (
                                     <span className="comment-delete-btn" onClick={() => handleDeleteComment(comment.id!, moment.id!)}>删除</span>
                                   )}
@@ -1102,23 +1235,25 @@ const FishCirclePage: React.FC = () => {
         {/* 右侧置顶帖 */}
         <div className="sidebar">
           <div className="sidebar-card">
-            <div className="sidebar-card-title">📌 置顶公告</div>
-            {[
-              { id: 1, user: '管理员', avatar: '', content: '🎉 欢迎来到摸鱼朋友圈！请文明发言，互相尊重。', time: '3天前' },
-              { id: 2, user: '小助手', avatar: '', content: '📢 每周五下午茶时间，大家一起来摸鱼吧～', time: '1周前' },
-              { id: 3, user: '管理员', avatar: '', content: '🔔 有问题可以私信管理员，我们会尽快处理。', time: '2周前' },
-            ].map((post) => (
-              <div key={post.id} className="pinned-post">
-                <div className="pinned-post-header">
-                  <Avatar size={28} style={{ background: '#1890ff', fontSize: 12 }}>
-                    {post.user[0]}
+            <div className="sidebar-card-title">📌 置顶动态</div>
+            {moments.filter((m) => m.isTop === 1).length === 0 ? (
+              <div className="sidebar-empty">暂无置顶动态</div>
+            ) : (
+              moments.filter((m) => m.isTop === 1).map((post) => (
+                <div key={post.id} className="pinned-post" onClick={() => handleScrollToMoment(post.id!)}>
+                  <Avatar size={28} src={post.userAvatar} className="pinned-post-avatar" style={{ background: '#1890ff', fontSize: 12 }}>
+                    {post.userName?.[0]}
                   </Avatar>
-                  <span className="pinned-post-user">{post.user}</span>
-                  <span className="pinned-post-time">{post.time}</span>
+                  <div className="pinned-post-body">
+                    <div className="pinned-post-meta">
+                      <span className="pinned-post-user">{post.userName}</span>
+                      <span className="pinned-post-time">{formatTime(post.createTime)}</span>
+                    </div>
+                    <div className="pinned-post-content">{post.content || '（图片动态）'}</div>
+                  </div>
                 </div>
-                <div className="pinned-post-content">{post.content}</div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -1284,6 +1419,78 @@ const FishCirclePage: React.FC = () => {
               确认打赏
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* 抽奖弹窗 */}
+      <Modal
+        title={<span><TrophyOutlined style={{ color: '#f4ac70', marginRight: 8 }} />发起抽奖</span>}
+        open={lotteryModalVisible}
+        onCancel={() => { setLotteryModalVisible(false); setLotteryMomentId(null); setLotteryResult(null); }}
+        footer={null}
+        width={420}
+        centered
+        destroyOnClose
+      >
+        <div className="lottery-modal-content">
+          {!lotteryResult ? (
+            <>
+              <p className="lottery-desc">从给这条动态点赞的用户中随机抽取幸运儿，抽奖结果将自动发布到评论区</p>
+              <div className="lottery-count-row">
+                <span className="lottery-count-label">抽取人数</span>
+                <InputNumber
+                  min={1}
+                  max={100}
+                  value={lotteryWinnerCount}
+                  onChange={(v) => setLotteryWinnerCount(v || 1)}
+                  addonAfter="人"
+                  style={{ width: 160 }}
+                />
+              </div>
+              <div className="lottery-presets">
+                {[1, 3, 5, 10].map((v) => (
+                  <span
+                    key={v}
+                    className={`lottery-preset-item ${lotteryWinnerCount === v ? 'active' : ''}`}
+                    onClick={() => setLotteryWinnerCount(v)}
+                  >
+                    {v} 人
+                  </span>
+                ))}
+              </div>
+              <div className="lottery-footer">
+                <Button onClick={() => { setLotteryModalVisible(false); setLotteryMomentId(null); }}>取消</Button>
+                <Button type="primary" loading={lotterying} onClick={handleStartLottery} icon={<TrophyOutlined />}>
+                  开始抽奖
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="lottery-result">
+              <div className="lottery-result-title">🎉 抽奖结果</div>
+              {(lotteryResult.winners || []).length === 0 ? (
+                <div className="lottery-no-winner">暂无点赞用户，无法抽奖</div>
+              ) : (
+                <div className="lottery-winners-list">
+                  {(lotteryResult.winners || []).map((winner, idx) => (
+                    <div key={winner.userId} className="lottery-winner-item">
+                      <span className="lottery-winner-rank">第 {idx + 1} 名</span>
+                      <Avatar size={36} src={winner.userAvatar} style={{ background: '#f4ac70' }}>
+                        {winner.userName?.[0]}
+                      </Avatar>
+                      <span className="lottery-winner-name">{winner.userName}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="lottery-result-hint">抽奖结果已自动发布到评论区 🎊</p>
+              <div className="lottery-footer">
+                <Button type="primary" onClick={() => { setLotteryModalVisible(false); setLotteryMomentId(null); setLotteryResult(null); }}>
+                  好的
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>
