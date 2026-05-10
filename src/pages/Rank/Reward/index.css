@@ -1,6 +1,6 @@
 .leaderboard-container {
   padding: 16px;
-  max-width: 1200px;
+  max-width: 1400px;
   width: 100%;
   min-height: calc(100vh - 85px);
   margin: 0 auto;
@@ -73,12 +73,148 @@
   transform: translateY(-5px);
 }
 
-.stats-value-donors {
-  color: #722ed1;
+/* 主体左右布局 */
+.main-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
 }
 
-.stats-value-amount {
-  color: #13c2c2;
+.rank-section {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 右侧详情面板 */
+.detail-section {
+  width: 280px;
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  position: sticky;
+  top: 16px;
+}
+
+@media (max-width: 900px) {
+  .main-layout {
+    flex-direction: column;
+  }
+  .detail-section {
+    width: 100%;
+    position: static;
+  }
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  background: linear-gradient(135deg, #fff7e6 0%, #fff1f0 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.detail-header-icon {
+  color: #fa8c16;
+  margin-right: 6px;
+  font-size: 15px;
+}
+
+.detail-list-wrap {
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.detail-list-wrap::-webkit-scrollbar {
+  width: 4px;
+}
+
+.detail-list-wrap::-webkit-scrollbar-thumb {
+  background: #f0d0a0;
+  border-radius: 4px;
+}
+
+.detail-item {
+  padding: 10px 14px !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+  transition: background 0.2s;
+}
+
+.detail-item:hover {
+  background: #fffbf5;
+}
+
+.detail-item:last-child {
+  border-bottom: none !important;
+}
+
+.detail-item-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+}
+
+.detail-avatar {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.detail-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.detail-name {
+  font-size: 13px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110px;
+}
+
+.detail-amount {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fa8c16;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.detail-remark {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
+.detail-time {
+  font-size: 11px;
+  color: #bbb;
+  display: flex;
+  align-items: center;
+}
+
+/* 分页样式微调 */
+.detail-list-wrap .ant-list-pagination {
+  padding: 8px 14px;
+  margin: 0;
 }
 
 .divider {

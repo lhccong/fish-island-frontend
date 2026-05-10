@@ -7,6 +7,7 @@ import * as bossController from './bossController';
 import * as chatController from './chatController';
 import * as commentController from './commentController';
 import * as commentThumbController from './commentThumbController';
+import * as donationDetailRecordsController from './donationDetailRecordsController';
 import * as donationRecordsController from './donationRecordsController';
 import * as drawGameController from './drawGameController';
 import * as emoticonFavourController from './emoticonFavourController';
@@ -23,6 +24,7 @@ import * as itemTemplatesController from './itemTemplatesController';
 import * as mockInterviewController from './mockInterviewController';
 import * as momentsController from './momentsController';
 import * as oAuth2Controller from './oAuth2Controller';
+import * as payOrderController from './payOrderController';
 import * as petBattleController from './petBattleController';
 import * as petEquipForgeController from './petEquipForgeController';
 import * as petRankController from './petRankController';
@@ -61,6 +63,7 @@ export default {
   commentController,
   commentThumbController,
   donationRecordsController,
+  donationDetailRecordsController,
   drawGameController,
   emoticonFavourController,
   eventRemindController,
@@ -75,6 +78,7 @@ export default {
   momentsController,
   restAuthController,
   oAuth2Controller,
+  payOrderController,
   petBattleController,
   fishPetController,
   petEquipForgeController,

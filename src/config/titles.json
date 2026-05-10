@@ -147,6 +147,13 @@
       "description": "中国 NPC专属",
       "titleImg": "https://oss.cqbo.com/moyu/title/npc.png"
 
+    },
+    {
+      "id": "24",
+      "name": "897 福报者",
+      "description": "打螺丝专属",
+      "titleImg": "https://oss.cqbo.com/moyu/title/luosi.png"
+
     }
   ]
 }

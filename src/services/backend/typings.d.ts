@@ -385,6 +385,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageDonationDetailRecordsVO_ = {
+    code?: number;
+    data?: PageDonationDetailRecordsVO_;
+    message?: string;
+  };
+
   type BaseResponsePageDonationRecords_ = {
     code?: number;
     data?: PageDonationRecords_;
@@ -544,6 +550,12 @@ declare namespace API {
   type BaseResponsePageWordLibrary_ = {
     code?: number;
     data?: PageWordLibrary_;
+    message?: string;
+  };
+
+  type BaseResponsePayOrderVO_ = {
+    code?: number;
+    data?: PayOrderVO;
     message?: string;
   };
 
@@ -994,6 +1006,23 @@ declare namespace API {
   type deleteVoteUsingPOSTParams = {
     /** voteId */
     voteId: string;
+  };
+
+  type DonationDetailRecordsQueryRequest = {
+    current?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    userId?: number;
+  };
+
+  type DonationDetailRecordsVO = {
+    amount?: number;
+    createTime?: string;
+    donorUser?: LoginUserVO;
+    id?: number;
+    remark?: string;
+    userId?: number;
   };
 
   type DonationRecords = {
@@ -2519,6 +2548,19 @@ declare namespace API {
     total?: number;
   };
 
+  type PageDonationDetailRecordsVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: DonationDetailRecordsVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
   type PageDonationRecords_ = {
     countId?: string;
     current?: number;
@@ -2887,6 +2929,61 @@ declare namespace API {
     petId: number;
   };
 
+  type PayCreateRequest = {
+    /** 用户备注信息（可选） */
+    remark?: string;
+    /** 支付成功后跳转地址（可选） */
+    returnUrl?: string;
+    /** 订单金额（元） */
+    totalFee: number;
+    /** 支付类型：1-赞助摸鱼岛 */
+    type: number;
+  };
+
+  type payNotifyUsingPOSTParams = {
+    /** 支付渠道 APPID */
+    appid?: string;
+    /** 备注/附加数据 */
+    attach?: string;
+    /** 签名 */
+    hash?: string;
+    /** 随机字符串 */
+    nonce_str?: string;
+    /** 虎皮椒内部订单号 */
+    open_order_id?: string;
+    /** 订单标题 */
+    order_title?: string;
+    /** 插件 ID */
+    plugins?: string;
+    /** 订单状态：OD-已支付，CD-已退款，RD-退款中，UD-退款失败 */
+    status?: string;
+    /** 时间戳 */
+    time?: string;
+    /** 订单支付金额（元） */
+    total_fee?: number;
+    /** 商户订单号 */
+    trade_order_id?: string;
+    /** 支付平台交易号 */
+    transaction_id?: string;
+  };
+
+  type PayOrderVO = {
+    /** 订单ID */
+    id?: number;
+    /** 支付跳转链接（手机端） */
+    payUrl?: string;
+    /** 订单状态 */
+    status?: string;
+    /** 订单标题 */
+    title?: string;
+    /** 订单金额（元） */
+    totalFee?: number;
+    /** 商户订单号 */
+    tradeOrderId?: string;
+    /** 支付二维码地址（PC端） */
+    urlQrcode?: string;
+  };
+
   type PetBattleInfoVO = {
     myPet?: PetInfo1;
     opponentPet?: PetInfo1;
@@ -3160,6 +3257,11 @@ declare namespace API {
     name?: string;
     points?: number;
     type?: string;
+  };
+
+  type queryOrderUsingGETParams = {
+    /** tradeOrderId */
+    tradeOrderId: string;
   };
 
   type quitRoomUsingPOSTParams = {
