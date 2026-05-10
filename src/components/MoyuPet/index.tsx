@@ -29,6 +29,60 @@ import { listPetSkinsUsingGet, exchangePetSkinUsingPost, setPetSkinUsingPost } f
 import { listMyItemInstancesByPageUsingPost, decomposeItemInstanceUsingPost, equipItemUsingPost, unequipItemUsingPost, batchDecomposeBlueGreenEquipmentsUsingPost } from '@/services/backend/itemInstancesController';
 import { getForgeDetailUsingPost, upgradeEquipUsingPost, refreshEntriesUsingPost, lockEntriesUsingPost } from '@/services/backend/petEquipForgeController';
 import { useModel, history } from '@umijs/max';
+import PetSprite, { PetAction } from '@/components/PetSprite';
+
+// 默认精灵图动作配置（适用于标准三行布局的 webp 精灵图）
+const DEFAULT_SPRITE_ACTIONS: PetAction[] = [
+  { name: '待机', row: 0, frames: 6, duration: 1100 },
+  { name: '走路', row: 1, frames: 8, duration: 700 },
+  { name: '跳跃', row: 2, frames: 6, duration: 900 },
+];
+
+/** 判断是否为 webp 精灵图 URL */
+const isWebpSprite = (url?: string | null): boolean =>
+  !!url && url.toLowerCase().endsWith('.webp');
+
+/**
+ * 渲染宠物图片：webp 精灵图用 PetSprite，其他格式用 Avatar/img
+ * @param url      宠物图片地址
+ * @param size     Avatar 尺寸（非 webp 时使用），同时作为 PetSprite 的缩放基准
+ * @param asImg    是否渲染为 <img> 而非 <Avatar>（MiniPet 场景）
+ * @param imgClass img 的 className（asImg=true 时使用）
+ */
+const renderPetImage = (
+  url: string | undefined | null,
+  size: number,
+  asImg = false,
+  imgClass?: string,
+): React.ReactNode => {
+  if (isWebpSprite(url)) {
+    // webp 精灵图：单帧 192×208，精灵图共 9 行（1872px / 208px）
+    const scale = size / 192;
+    return (
+      <PetSprite
+        spriteUrl={url!}
+        frameWidth={192}
+        frameHeight={208}
+        totalCols={8}
+        totalRows={9}
+        actions={DEFAULT_SPRITE_ACTIONS}
+        scale={scale}
+        style={{ display: 'inline-block' }}
+      />
+    );
+  }
+  if (asImg) {
+    return (
+      <img
+        src={url}
+        alt="我的宠物"
+        className={imgClass}
+        draggable={false}
+      />
+    );
+  }
+  return <Avatar src={url} size={size} />;
+};
 
 export interface PetInfo {
   id: string;
@@ -1372,11 +1426,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 size="small"
                 cover={
                   <div className={styles.skinImageContainer}>
-                    <img
-                      alt={skin.name}
-                      src={skin.url}
-                      className={styles.skinImage}
-                    />
+                    {renderPetImage(skin.url, 80, true, styles.skinImage)}
                     {skin.owned && (
                       (skin.skinId === -1 && (!pet?.petUrl || pet.petUrl === skin.url)) ||
                       (skin.skinId !== -1 && pet?.petUrl === skin.url)
@@ -1694,7 +1744,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                 {/* 中央宠物展示 */}
                 <div className={styles.petDisplay}>
                   <div className={styles.petAvatar}>
-                    <Avatar src={pet?.petUrl} size={140} />
+                    {renderPetImage(pet?.petUrl, 140)}
                   </div>
                   <div className={styles.petLevel}>Lv.{pet?.level || 1}</div>
                   {!isOtherUser && (
@@ -2446,11 +2496,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                   size="small"
                                   cover={
                                     <div className={styles.skinImageContainer}>
-                                      <img
-                                        alt={skin.name}
-                                        src={skin.url}
-                                        className={styles.skinImage}
-                                      />
+                                      {renderPetImage(skin.url, 80, true, styles.skinImage)}
                                       {(skin.skinId === -1 && (!pet?.petUrl || pet.petUrl === skin.url)) ||
                                        (skin.skinId !== -1 && pet?.petUrl === skin.url) ? (
                                         <div className={styles.currentSkinBadge}>
@@ -2475,7 +2521,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                           <div style={{ fontSize: '16px', marginBottom: '20px' }}>
                             当前宠物
                           </div>
-                          <Avatar src={pet?.petUrl} size={100} />
+                          {renderPetImage(pet?.petUrl, 100)}
                         </div>
                       )}
                     </div>
@@ -2581,7 +2627,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
       <div className={styles.petContainer}>
         <div className={styles.petInfo}>
           <div className={styles.petAvatar}>
-            <Avatar src={pet?.petUrl} size={100} />
+                          {renderPetImage(pet?.petUrl, 100)}
           </div>
           <div className={styles.petDetails}>
             <div className={styles.petName}>
@@ -3205,11 +3251,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                   size="small"
                                   cover={
                                     <div className={styles.skinImageContainer}>
-                                      <img
-                                        alt={skin.name}
-                                        src={skin.url}
-                                        className={styles.skinImage}
-                                      />
+                                      {renderPetImage(skin.url, 80, true, styles.skinImage)}
                                       {(skin.skinId === -1 && (!pet?.petUrl || pet.petUrl === skin.url)) ||
                                        (skin.skinId !== -1 && pet?.petUrl === skin.url) ? (
                                         <div className={styles.currentSkinBadge}>
@@ -3234,7 +3276,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                           <div style={{ fontSize: '16px', marginBottom: '20px' }}>
                             当前宠物
                           </div>
-                          <Avatar src={pet?.petUrl} size={100} />
+                          {renderPetImage(pet?.petUrl, 100)}
                         </div>
                       )}
                     </div>
@@ -3496,12 +3538,7 @@ export const MiniPet: React.FC<MiniPetProps> = ({ onClick }) => {
     >
       <div onClick={handlePetClick} style={{ width: '100%', height: '100%' }}>
         <Tooltip title={`${pet.name} (Lv.${pet.level}) - 可拖动调整位置`}>
-          <img
-            src={pet.petUrl}
-            alt="我的宠物"
-            className={styles.miniPetImage}
-            draggable={false}
-          />
+          {renderPetImage(pet.petUrl, 60, true, styles.miniPetImage)}
         </Tooltip>
       </div>
     </div>

@@ -15,7 +15,45 @@ import { getPetBattleInfoUsingGet, battleUsingGet1 } from '@/services/backend/pe
 import { challengeUsingPost } from '@/services/backend/petTournamentController';
 import { challengeUsingPost1, getProgressUsingGet } from '@/services/backend/towerClimbController';
 import { getPetDetailUsingGet } from '@/services/backend/fishPetController';
+import PetSprite, { PetAction } from '@/components/PetSprite';
 import styles from './index.less';
+
+const SPRITE_ACTIONS: PetAction[] = [
+  { name: '待机', row: 0, frames: 6, duration: 1100 },
+  { name: '走路', row: 1, frames: 8, duration: 700 },
+  { name: '跳跃', row: 2, frames: 6, duration: 900 },
+];
+
+/** 判断是否为 webp 精灵图，是则用 PetSprite，否则用 Avatar */
+const renderFightAvatar = (
+  avatarUrl: string,
+  size: number,
+  className?: string,
+): React.ReactNode => {
+  const isUrlStr = (s: string) => s.startsWith('http://') || s.startsWith('https://') || s.startsWith('/');
+  if (avatarUrl && avatarUrl.toLowerCase().endsWith('.webp')) {
+    // webp 精灵图：外层 div 继承动画 class（attacking/hurt），
+    // 同时加 spriteWrapper 覆盖掉白背景/圆形裁剪，PetSprite 透明背景自然渲染
+    return (
+      <div className={className ? `${className} ${styles.spriteWrapper}` : styles.spriteWrapper}>
+        <PetSprite
+          spriteUrl={avatarUrl}
+          frameWidth={192}
+          frameHeight={208}
+          totalCols={8}
+          totalRows={9}
+          actions={SPRITE_ACTIONS}
+          scale={size / 192}
+        />
+      </div>
+    );
+  }
+  return (
+    <Avatar size={size} className={className} src={isUrlStr(avatarUrl) ? avatarUrl : undefined}>
+      {!isUrlStr(avatarUrl) ? avatarUrl : undefined}
+    </Avatar>
+  );
+};
 
 // 宠物数据接口
 interface Pet {
@@ -734,13 +772,7 @@ const PetFight: React.FC = () => {
       <div className={styles.healthBarsContainer}>
         <div className={styles.petHealthBar}>
           <div className={styles.healthBarHeader}>
-            <Avatar 
-              size={40} 
-              className={styles.petAvatarSmall}
-              src={isUrl(pet.avatar) ? pet.avatar : undefined}
-            >
-              {!isUrl(pet.avatar) ? pet.avatar : undefined}
-            </Avatar>
+            {renderFightAvatar(pet.avatar, 40, styles.petAvatarSmall)}
             <div className={styles.healthBarInfo}>
               <div className={styles.healthBarName}>
                 {pet.name} <Badge count={pet.level} color="#1890ff" size="small" />
@@ -813,13 +845,7 @@ const PetFight: React.FC = () => {
                   <FireOutlined /> {opponent.attack} <SafetyOutlined /> {opponent.defense}
                 </div>
               </div>
-              <Avatar 
-                size={40} 
-                className={styles.petAvatarSmall}
-                src={isUrl(opponent.avatar) ? opponent.avatar : undefined}
-              >
-                {!isUrl(opponent.avatar) ? opponent.avatar : undefined}
-              </Avatar>
+              {renderFightAvatar(opponent.avatar, 40, styles.petAvatarSmall)}
             </div>
             <Progress
               percent={(opponent.hp / opponent.maxHp) * 100}
@@ -878,13 +904,7 @@ const PetFight: React.FC = () => {
                   {boss.lifesteal ? <span title="吸血">🩸{(boss.lifesteal * 100).toFixed(0)}%</span> : null}
                 </div>
               </div>
-              <Avatar 
-                size={40} 
-                className={styles.bossAvatarSmall}
-                src={isUrl(boss.avatar) ? boss.avatar : undefined}
-              >
-                {!isUrl(boss.avatar) ? boss.avatar : undefined}
-              </Avatar>
+              {renderFightAvatar(boss.avatar, 40, styles.bossAvatarSmall)}
             </div>
             <Progress
               percent={(boss.hp / boss.maxHp) * 100}
@@ -918,13 +938,11 @@ const PetFight: React.FC = () => {
         {/* 宠物区域 */}
         <div className={styles.petArea}>
           <div className={`${styles.combatant} ${currentTurn === 'pet' ? styles.activeTurn : ''}`}>
-            <Avatar 
-              size={120} 
-              className={`${styles.petAvatar} ${petAttacking ? styles.attacking : ''} ${petHurt ? styles.hurt : ''}`}
-              src={isUrl(pet.avatar) ? pet.avatar : undefined}
-            >
-              {!isUrl(pet.avatar) ? pet.avatar : undefined}
-            </Avatar>
+            {renderFightAvatar(
+              pet.avatar,
+              120,
+              `${styles.petAvatar} ${petAttacking ? styles.attacking : ''} ${petHurt ? styles.hurt : ''}`,
+            )}
             {currentTurn === 'pet' && battleStatus === 'fighting' && (
               <div className={styles.turnIndicator}>
                 <FireOutlined />
@@ -937,13 +955,11 @@ const PetFight: React.FC = () => {
         {/* 对手区域 (BOSS或对方宠物) */}
         <div className={styles.bossArea}>
           <div className={`${styles.combatant} ${currentTurn === 'boss' ? styles.activeTurn : ''}`}>
-            <Avatar
-              size={120}
-              className={`${isPetBattle ? styles.petAvatar : styles.bossAvatar} ${bossAttacking ? styles.attacking : ''} ${bossHurt ? styles.hurt : ''}`}
-              src={isUrl(isPetBattle && opponent ? opponent.avatar : boss.avatar) ? (isPetBattle && opponent ? opponent.avatar : boss.avatar) : undefined}
-            >
-              {!isUrl(isPetBattle && opponent ? opponent.avatar : boss.avatar) ? (isPetBattle && opponent ? opponent.avatar : boss.avatar) : undefined}
-            </Avatar>
+            {renderFightAvatar(
+              isPetBattle && opponent ? opponent.avatar : boss.avatar,
+              120,
+              `${isPetBattle ? styles.petAvatar : styles.bossAvatar} ${bossAttacking ? styles.attacking : ''} ${bossHurt ? styles.hurt : ''}`,
+            )}
             {currentTurn === 'boss' && battleStatus === 'fighting' && (
               <div className={styles.turnIndicator}>
                 <FireOutlined />

@@ -487,6 +487,21 @@
       0 6px 12px rgba(82, 196, 26, 0.3),
       inset 0 2px 4px rgba(255, 255, 255, 0.5) !important;
   }
+
+  // webp 精灵图容器：透明背景，不裁圆形，自然尺寸
+  &.spriteWrapper {
+    background: transparent !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: auto !important;
+    height: auto !important;
+    inset: unset !important;
+    // 保留浮动动画
+    animation: pet-float 3s ease-in-out infinite;
+    &.attacking { animation: pet-attack 0.5s ease-in-out; }
+    &.hurt { animation: avatar-hurt 0.3s ease-in-out; }
+  }
 }
 
 // BOSS头像 - 远处：优化大小和发光
@@ -529,6 +544,19 @@
       0 8px 24px rgba(0, 0, 0, 0.4),
       0 4px 8px rgba(245, 34, 45, 0.3),
       inset 0 1px 3px rgba(255, 255, 255, 0.3) !important;
+  }
+
+  // webp 精灵图容器：透明背景，不裁圆形，自然尺寸
+  &.spriteWrapper {
+    background: transparent !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: auto !important;
+    height: auto !important;
+    animation: boss-float 3s ease-in-out infinite reverse;
+    &.attacking { animation: boss-attack 0.5s ease-in-out; }
+    &.hurt { animation: avatar-hurt 0.3s ease-in-out; }
   }
 }
 
