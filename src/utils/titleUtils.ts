@@ -130,6 +130,10 @@ export const getTitleTagProperties = (isAdmin: boolean, level: number, titleId?:
           tagEmoji = '🦊';
           tagClass = 'titleTagFox';
           break;
+        case '25': // 划水新秀（固定等级称号）
+          tagEmoji = '💦';
+          tagClass = 'levelTagNewbie';
+          break;
         default:
           tagEmoji = '🎯';
           tagClass = 'levelTagBeginner';

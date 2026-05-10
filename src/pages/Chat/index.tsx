@@ -18,7 +18,8 @@ import {
 } from '@/services/backend/redPacketController';
 import { muteUserUsingPost, getUserMuteInfoUsingGet, unmuteUserUsingPost } from '@/services/backend/userMuteController';
 import { getRemarkUsingGet, saveRemarkUsingPost } from '@/services/backend/userRemarkController';
-import { generateAnnualReportUsingGet } from '@/services/backend/userController';
+import { generateAnnualReportUsingGet, getUserVoByIdUsingGet } from '@/services/backend/userController';
+import { isFollowingUsingGet, toggleFollowUsingGet, listMyFollowersUsingGet, listMyFollowingUsingGet } from '@/services/backend/userFollowController';
 import {
   getActiveVoteIdsUsingGet,
   getVoteResultUsingGet,
@@ -116,6 +117,9 @@ interface User {
   avatarFramerUrl?: string;
   titleId?: number;
   titleIdList?: string;
+  momentsBgUrl?: string;
+  followerCount?: number;
+  followingCount?: number;
 }
 
 interface Title {
@@ -304,7 +308,8 @@ const ChatRoom: React.FC = () => {
       const { layoutMode } = JSON.parse(savedConfig);
       if (layoutMode === 'side' || layoutMode === 'top' || layoutMode === 'mix') return layoutMode;
     }
-    return 'side';
+    // 未保存过设置时，读取 defaultSettings 的默认布局（top）
+    return 'top';
   };
   const getLayoutOffset = () => {
     const mode = getLayoutMode();
@@ -479,6 +484,14 @@ const ChatRoom: React.FC = () => {
 
   const [isUserDetailModalVisible, setIsUserDetailModalVisible] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
+  const [followLoading, setFollowLoading] = useState<boolean>(false);
+  const [isHoveringFollow, setIsHoveringFollow] = useState<boolean>(false);
+  // 关注/粉丝列表弹窗
+  const [followListVisible, setFollowListVisible] = useState<boolean>(false);
+  const [followListType, setFollowListType] = useState<'following' | 'followers'>('following');
+  const [followListData, setFollowListData] = useState<API.UserFollowVO[]>([]);
+  const [followListLoading, setFollowListLoading] = useState<boolean>(false);
 
   const [isRoomInfoVisible, setIsRoomInfoVisible] = useState<boolean>(false);
   const [undercoverNotification, setUndercoverNotification] = useState<string>(UNDERCOVER_NOTIFICATION.NONE);
@@ -2394,6 +2407,34 @@ const ChatRoom: React.FC = () => {
   const handleViewUserDetail = async (user: User) => {
     setSelectedUser(user);
     setIsUserDetailModalVisible(true);
+    setIsFollowing(false);
+
+    // 拉取完整用户信息，补充 momentsBgUrl / followerCount / followingCount 等字段
+    try {
+      const voRes = await getUserVoByIdUsingGet({ id: user.id as any });
+      if (voRes.code === 0 && voRes.data) {
+        setSelectedUser((prev) => prev ? {
+          ...prev,
+          momentsBgUrl: voRes.data!.momentsBgUrl,
+          followerCount: voRes.data!.followerCount,
+          followingCount: voRes.data!.followingCount,
+        } : prev);
+      }
+    } catch (e) {
+      // 忽略，不影响弹窗展示
+    }
+
+    // 查询是否已关注（不能关注自己）
+    if (currentUser && String(currentUser.id) !== user.id) {
+      try {
+        const followRes = await isFollowingUsingGet({ followUserId: user.id });
+        if (followRes.code === 0) {
+          setIsFollowing(!!followRes.data);
+        }
+      } catch (e) {
+        // 忽略
+      }
+    }
 
     // 如果是管理员，获取用户禁言状态
     if (currentUser?.userRole === 'admin') {
@@ -2411,6 +2452,57 @@ const ChatRoom: React.FC = () => {
         console.error('获取用户禁言状态失败:', error);
         setUserMuteInfo(null);
       }
+    }
+  };
+
+  // 关注/取消关注
+  const handleToggleFollow = async () => {
+    if (!selectedUser || !currentUser) return;
+    setFollowLoading(true);
+    try {
+      const res = await toggleFollowUsingGet({ followUserId: selectedUser.id });
+      if (res.code === 0) {
+        const nowFollowing = !!res.data;
+        setIsFollowing(nowFollowing);
+        // 前端同步更新对方粉丝数
+        setSelectedUser((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            followerCount: Math.max(0, (prev.followerCount ?? 0) + (nowFollowing ? 1 : -1)),
+          };
+        });
+        messageApi.success(nowFollowing ? '关注成功' : '已取消关注');
+      }
+    } catch (e) {
+      messageApi.error('操作失败，请稍后重试');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  // 打开关注/粉丝列表（仅支持查看自己的）
+  const handleOpenFollowList = async (type: 'following' | 'followers') => {
+    if (!currentUser || !selectedUser) return;
+    // 只有查看自己的卡片时才能查列表
+    if (String(currentUser.id) !== selectedUser.id) {
+      messageApi.info('暂时只支持查看自己的关注/粉丝列表');
+      return;
+    }
+    setFollowListType(type);
+    setFollowListVisible(true);
+    setFollowListLoading(true);
+    setFollowListData([]);
+    try {
+      const fn = type === 'following' ? listMyFollowingUsingGet : listMyFollowersUsingGet;
+      const res = await fn({ current: 1, pageSize: 50 });
+      if (res.code === 0 && res.data?.records) {
+        setFollowListData(res.data.records);
+      }
+    } catch (e) {
+      messageApi.error('获取列表失败');
+    } finally {
+      setFollowListLoading(false);
     }
   };
 
@@ -3785,7 +3877,7 @@ const ChatRoom: React.FC = () => {
         </div>
       </Modal>
       <Modal
-        title="用户详细信息"
+        title={null}
         open={isUserDetailModalVisible}
         onCancel={() => setIsUserDetailModalVisible(false)}
         footer={
@@ -3824,168 +3916,277 @@ const ChatRoom: React.FC = () => {
             </div>
           )
         }
-        width={400}
+        width={selectedUser?.momentsBgUrl ? 680 : 420}
+        styles={{ body: { padding: 0 } }}
       >
         {selectedUser && (
           <div className={styles.userDetailModal}>
-            <div className={styles.userDetailHeader}>
-              <div className={styles.avatarWrapper}>
-                <div className={styles.avatarWithFrame}>
-                  <Avatar src={selectedUser.avatar} size={64} />
-                  {selectedUser.avatarFramerUrl && (
-                    <img
-                      src={selectedUser.avatarFramerUrl}
-                      className={styles.avatarFrame}
-                      alt="avatar-frame"
-                    />
-                  )}
-                </div>
-              </div>
-              <div className={styles.userDetailInfo}>
-                <div className={styles.userDetailName} style={{ display: 'flex', alignItems: 'center' }}>
-                  <span>
-                    {getUserDisplayName(selectedUser)}
-                    {userRemarks[selectedUser.id] && (
-                      <span style={{ fontSize: '12px', color: '#999', marginLeft: '5px' }}>
-                        ({selectedUser.name})
+            <div className={styles.userDetailBody}>
+              {/* 左侧：信息区 */}
+              <div
+                className={styles.userDetailLeft}
+                style={!selectedUser.momentsBgUrl ? { alignItems: 'center' } : undefined}
+              >
+                {/* 头像 + 名字行 */}
+                <div className={styles.userDetailTopRow}>
+                  <div className={styles.avatarWrapper}>
+                    <div className={styles.avatarWithFrame}>
+                      <Avatar src={selectedUser.avatar} size={60} />
+                      {selectedUser.avatarFramerUrl && (
+                        <img
+                          src={selectedUser.avatarFramerUrl}
+                          className={styles.avatarFrame}
+                          alt="avatar-frame"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div className={styles.userNameBlock}>
+                    <div className={styles.userDetailName}>
+                      <span>
+                        {getUserDisplayName(selectedUser)}
+                        {userRemarks[selectedUser.id] && (
+                          <span style={{ fontSize: '11px', color: '#aaa', marginLeft: '4px', fontWeight: 400 }}>
+                            ({selectedUser.name})
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                  {(selectedUser.vip || selectedUser.isVip) && (
-                    <span className={styles.vipBadge} style={{ marginLeft: '8px' }}>V</span>
-                  )}
+                      {(selectedUser.vip || selectedUser.isVip) && (
+                        <span className={styles.vipBadge}>V</span>
+                      )}
+                    </div>
+                    <div className={styles.userDetailActions2}>
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={() => openRemarkModal(selectedUser)}
+                      >
+                        {userRemarks[selectedUser.id] ? '修改备注' : '设置备注'}
+                      </Button>
+                      {currentUser?.userRole === 'admin' && (
+                        <Button
+                          type="link"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedUser.id);
+                            messageApi.success('已复制用户ID到剪贴板');
+                          }}
+                        >
+                          复制ID
+                        </Button>
+                      )}
+                    </div>
+
+                {/* 关注按钮（不显示自己） */}
+                {currentUser && String(currentUser.id) !== selectedUser.id && (
                   <Button
-                    type="link"
                     size="small"
-                    onClick={() => openRemarkModal(selectedUser)}
-                    style={{ marginLeft: '8px', padding: '0 4px' }}
+                    loading={followLoading}
+                    onClick={handleToggleFollow}
+                    onMouseEnter={() => isFollowing && setIsHoveringFollow(true)}
+                    onMouseLeave={() => setIsHoveringFollow(false)}
+                    className={isFollowing ? styles.followBtnActive : styles.followBtnDefault}
                   >
-                    {userRemarks[selectedUser.id] ? '修改备注' : '设置备注'}
+                    {isFollowing ? (isHoveringFollow ? '取消关注' : '✓ 已关注') : '+ 关注'}
                   </Button>
-                  {currentUser?.userRole === 'admin' && (
-                    <Button
-                      type="link"
-                      size="small"
-                      icon={<CopyOutlined />}
-                      style={{ marginLeft: '8px', padding: '0 4px' }}
-                      onClick={() => {
-                        navigator.clipboard.writeText(selectedUser.id);
-                        messageApi.success('已复制用户ID到剪贴板');
-                      }}
-                    >
-                      复制ID
-                    </Button>
-                  )}
+                )}                  </div>
                 </div>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  gap: '0px',
-                  marginTop: '12px',
-                  marginBottom: '12px',
-                  maxWidth: '100%'
-                }}>
-                  <div style={{ display: 'inline-flex', marginRight: '-2px', transform: 'scale(0.85)' }}>
+
+                {/* 关注数 / 粉丝数 */}
+                <div className={styles.userFollowStats}>
+                  <div
+                    className={`${styles.followStatItem} ${String(currentUser?.id) === selectedUser.id ? styles.followStatClickable : ''}`}
+                    onClick={() => handleOpenFollowList('following')}
+                  >
+                    <span className={styles.followStatNum}>{selectedUser.followingCount ?? '-'}</span>
+                    <span className={styles.followStatLabel}>关注</span>
+                  </div>
+                  <div className={styles.followStatDivider} />
+                  <div
+                    className={`${styles.followStatItem} ${String(currentUser?.id) === selectedUser.id ? styles.followStatClickable : ''}`}
+                    onClick={() => handleOpenFollowList('followers')}
+                  >
+                    <span className={styles.followStatNum}>{selectedUser.followerCount ?? '-'}</span>
+                    <span className={styles.followStatLabel}>粉丝</span>
+                  </div>
+                </div>
+
+                {/* 称号标签 */}
+                <div className={styles.userDetailTags}>
+                  <div style={{ display: 'inline-flex', transform: 'scale(0.85)', transformOrigin: 'left center' }}>
                     {getAdminTag(selectedUser.isAdmin, selectedUser.level, selectedUser.titleId)}
                   </div>
                   {selectedUser.titleIdList &&
                     JSON.parse(selectedUser.titleIdList || '[]')
                       .filter((id: number) => id !== selectedUser.titleId && id !== 0)
                       .map((titleId: number) => (
-                        <div key={titleId} style={{ display: 'inline-flex', marginRight: '-2px', transform: 'scale(0.85)' }}>
+                        <div key={titleId} style={{ display: 'inline-flex', transform: 'scale(0.85)', transformOrigin: 'left center' }}>
                           {getAdminTag(selectedUser.isAdmin, selectedUser.level, titleId)}
                         </div>
                       ))
                   }
                 </div>
-              </div>
-            </div>
-            <div className={styles.userDetailContent}>
 
-              <div className={styles.userDetailItem}>
-                <span className={styles.itemLabel}>等级：</span>
-                <span className={styles.itemValue}>
-                  {getLevelEmoji(selectedUser.level)} {selectedUser.level}
-                </span>
-              </div>
-              <div className={styles.userDetailItem}>
-                <span className={styles.itemLabel}>积分：</span>
-                {currentUser?.userRole === 'admin' && isEditingPoints ? (
-                  <div className={styles.pointsEditContainer}>
-                    <Input
-                      type="number"
-                      value={pointsInputValue}
-                      onChange={(e) => setPointsInputValue(Number(e.target.value))}
-                      size="small"
-                      style={{ width: 100 }}
-                    />
-                    <Button type="primary" size="small" onClick={handleSavePoints}>
-                      保存
-                    </Button>
-                    <Button
-                      size="small"
-                      onClick={() => setIsEditingPoints(false)}
-                      style={{ marginLeft: 4 }}
-                    >
-                      取消
-                    </Button>
-                  </div>
-                ) : (
-                  <div className={styles.pointsContainer}>
-                    <span className={styles.itemValue}>{selectedUser.points || 0}</span>
-                  </div>
-                )}
-              </div>
-              {selectedUser.region && (
-                <div className={styles.userDetailItem}>
-                  <span className={styles.itemLabel}>地区：</span>
-                  <span className={styles.itemValue}>
-                    {selectedUser.country ? `${selectedUser.country} · ${selectedUser.region}` : selectedUser.region}
-                  </span>
-                </div>
-              )}
-              {currentUser?.userRole === 'admin' && (
-                <div className={styles.userDetailItem}>
-                  <span className={styles.itemLabel}>管理员：</span>
-                  <span className={styles.itemValue}>{selectedUser.isAdmin ? '是' : '否'}</span>
-                </div>
-              )}
-              <div className={styles.userDetailItem}>
-                <span className={styles.itemLabel}>上次活跃：</span>
-                <span className={styles.itemValue}>刚刚</span>
-              </div>
-              {currentUser?.userRole === 'admin' && userMuteInfo?.isMuted ? (
-                <div className={styles.userDetailItem}>
-                  <span className={styles.itemLabel}>状态：</span>
-                  <span className={styles.itemValue} style={{ color: '#ff4d4f' }}>
-                    已禁言（剩余 {userMuteInfo.remainingTime}）
-                  </span>
-                </div>
-              ) : (
-                <div className={styles.userDetailItem}>
-                  <span className={styles.itemLabel}>状态：</span>
-                  <span className={styles.itemValue}>{selectedUser.status || '在线'}</span>
-                </div>
-              )}
-                            <div className={styles.userDetailItem}>
-                <span className={styles.itemLabel}>宠物：</span>
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<BugOutlined />}
-                  onClick={() => {
-                    if (selectedUser) {
-                      setCurrentPetUserId(selectedUser.id);
-                      setIsUserDetailModalVisible(false);
-                      setIsPetModalVisible(true);
-                    }
-                  }}
+                {/* 信息列表 */}
+                <div
+                  className={styles.userDetailContent}
+                  style={!selectedUser.momentsBgUrl ? { width: '100%' } : undefined}
                 >
-                  查看宠物
-                </Button>
+                  <div className={styles.userDetailItem}>
+                    <span className={styles.itemLabel}>等级</span>
+                    <span className={styles.itemValue}>
+                      {getLevelEmoji(selectedUser.level)} {selectedUser.level}
+                    </span>
+                  </div>
+                  <div className={styles.userDetailItem}>
+                    <span className={styles.itemLabel}>积分</span>
+                    {currentUser?.userRole === 'admin' && isEditingPoints ? (
+                      <div className={styles.pointsEditContainer}>
+                        <Input
+                          type="number"
+                          value={pointsInputValue}
+                          onChange={(e) => setPointsInputValue(Number(e.target.value))}
+                          size="small"
+                          style={{ width: 80 }}
+                        />
+                        <Button type="primary" size="small" onClick={handleSavePoints}>保存</Button>
+                        <Button size="small" onClick={() => setIsEditingPoints(false)}>取消</Button>
+                      </div>
+                    ) : (
+                      <div className={styles.pointsContainer}>
+                        <span className={styles.itemValue}>{selectedUser.points || 0}</span>
+                      </div>
+                    )}
+                  </div>
+                  {selectedUser.region && (
+                    <div className={styles.userDetailItem}>
+                      <span className={styles.itemLabel}>地区</span>
+                      <span className={styles.itemValue}>
+                        {selectedUser.country ? `${selectedUser.country} · ${selectedUser.region}` : selectedUser.region}
+                      </span>
+                    </div>
+                  )}
+                  {currentUser?.userRole === 'admin' && (
+                    <div className={styles.userDetailItem}>
+                      <span className={styles.itemLabel}>管理员</span>
+                      <span className={styles.itemValue}>{selectedUser.isAdmin ? '是' : '否'}</span>
+                    </div>
+                  )}
+                  <div className={styles.userDetailItem}>
+                    <span className={styles.itemLabel}>上次活跃</span>
+                    <span className={styles.itemValue}>刚刚</span>
+                  </div>
+                  {currentUser?.userRole === 'admin' && userMuteInfo?.isMuted ? (
+                    <div className={styles.userDetailItem}>
+                      <span className={styles.itemLabel}>状态</span>
+                      <span className={styles.itemValue} style={{ color: '#ff4d4f' }}>
+                        已禁言（剩余 {userMuteInfo.remainingTime}）
+                      </span>
+                    </div>
+                  ) : (
+                    <div className={styles.userDetailItem}>
+                      <span className={styles.itemLabel}>状态</span>
+                      <span className={styles.itemValue}>{selectedUser.status || '在线'}</span>
+                    </div>
+                  )}
+                  <div className={styles.userDetailItem}>
+                    <span className={styles.itemLabel}>更多</span>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <Tooltip title="查看宠物">
+                        <Button
+                          size="small"
+                          shape="circle"
+                          icon={<BugOutlined />}
+                          style={{
+                            background: 'linear-gradient(135deg, #f7971e, #ffd200)',
+                            border: 'none',
+                            color: '#fff',
+                          }}
+                          onClick={() => {
+                            if (selectedUser) {
+                              setCurrentPetUserId(selectedUser.id);
+                              setIsUserDetailModalVisible(false);
+                              setIsPetModalVisible(true);
+                            }
+                          }}
+                        />
+                      </Tooltip>
+                      <Tooltip title="查看鱼小圈">
+                        <Button
+                          size="small"
+                          shape="circle"
+                          icon={<TeamOutlined />}
+                          style={{
+                            background: 'linear-gradient(135deg, #36d1dc, #5b86e5)',
+                            border: 'none',
+                            color: '#fff',
+                          }}
+                          onClick={() => {
+                            if (selectedUser) {
+                              setIsUserDetailModalVisible(false);
+                              history.push(`/moments/fish-circle?userId=${selectedUser.id}`);
+                            }
+                          }}
+                        />
+                      </Tooltip>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* 右侧：朋友圈背景图（有背景才显示） */}
+              {selectedUser.momentsBgUrl && (
+                <div className={styles.userDetailRight}>
+                  <img
+                    src={selectedUser.momentsBgUrl}
+                    className={styles.momentsBg}
+                    alt="moments-bg"
+                  />
+                </div>
+              )}
             </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* 关注/粉丝列表弹窗 */}
+      <Modal
+        title={followListType === 'following' ? '我的关注' : '我的粉丝'}
+        open={followListVisible}
+        onCancel={() => setFollowListVisible(false)}
+        footer={null}
+        width={360}
+      >
+        {followListLoading ? (
+          <div style={{ textAlign: 'center', padding: '32px 0' }}>
+            <Spin />
+          </div>
+        ) : followListData.length === 0 ? (
+          <Empty description={followListType === 'following' ? '还没有关注任何人' : '还没有粉丝'} />
+        ) : (
+          <div className={styles.followListContainer}>
+            {followListData.map((item) => (
+              <div key={item.userId} className={styles.followListItem}>
+                <div className={styles.followListAvatar}>
+                  <Avatar src={item.userAvatar} size={42} />
+                  {item.avatarFramerUrl && (
+                    <img src={item.avatarFramerUrl} className={styles.followListAvatarFrame} alt="" />
+                  )}
+                </div>
+                <div className={styles.followListInfo}>
+                  <div className={styles.followListName}>
+                    {item.userName}
+                    {item.isMutual && (
+                      <span className={styles.mutualBadge}>互相关注</span>
+                    )}
+                  </div>
+                  {item.userProfile && (
+                    <div className={styles.followListProfile}>{item.userProfile}</div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </Modal>

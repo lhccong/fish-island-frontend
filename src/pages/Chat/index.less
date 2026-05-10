@@ -2221,157 +2221,409 @@
   }
 }
 
-// 添加用户详情弹窗样式
+// 用户详情弹窗样式
+// 用户详情弹窗 - 横向布局（右侧朋友圈背景图）
 .userDetailModal {
-  padding: 10px;
+  padding: 0;
+  margin: -20px -24px 0;
+  border-radius: 8px;
+  overflow: hidden;
 
-  .userDetailHeader {
+  // 整体横向：左侧信息 + 右侧背景图
+  .userDetailBody {
     display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-
-    .avatarWrapper {
-      position: relative;
-      display: inline-block;
-      width: 64px;
-      height: 64px;
-
-      .avatarWithFrame {
-        position: relative;
-        width: 64px;
-        height: 64px;
-        display: inline-block;
-
-        .ant-avatar {
-          z-index: 0;
-        }
-
-        .avatarFrame {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 160%;
-          height: 160%;
-          pointer-events: none;
-          z-index: 1;
-          transition: all 0.3s ease;
-        }
-      }
-    }
-
-    .userDetailInfo {
-      flex: 1;
-
-      .userDetailName {
-        font-size: 18px;
-        font-weight: 500;
-        margin-bottom: 4px;
-        color: #1a1c1e;
-      }
-
-      .userDetailId {
-        font-size: 12px;
-        color: #999;
-        margin-bottom: 8px;
-        font-family: monospace;
-      }
-    }
+    min-height: 260px;
   }
 
-  .userDetailContent {
-    background-color: #f7f8fa;
-    border-radius: 8px;
-    padding: 15px;
+  // 左侧：信息区
+  .userDetailLeft {
+    display: flex;
+    flex-direction: column;
+    flex: 3;
+    padding: 20px 16px 16px;
+    min-width: 0;
 
-    .userDetailItem {
+    // 头像 + 名字行
+    .userDetailTopRow {
       display: flex;
       align-items: center;
-      margin-bottom: 10px;
+      gap: 12px;
+      margin-bottom: 14px;
 
-      &:last-child {
-        margin-bottom: 0;
-      }
-
-      .itemLabel {
-        width: 80px;
-        font-size: 14px;
-        color: #666;
+      .avatarWrapper {
+        position: relative;
+        display: inline-block;
         flex-shrink: 0;
-      }
+        width: 60px;
+        height: 60px;
 
-      .itemValue {
-        font-size: 14px;
-        color: #333;
-        font-weight: 500;
-      }
+        .avatarWithFrame {
+          position: relative;
+          width: 60px;
+          height: 60px;
+          display: inline-block;
 
-      .pointsContainer {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+          :global(.ant-avatar) {
+            z-index: 0;
+            border: 2px solid #fff;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+            border-radius: 50%;
+          }
 
-        .ant-btn-link {
-          color: #1890ff;
-          font-size: 12px;
-          opacity: 0.8;
-
-          &:hover {
-            opacity: 1;
-            text-decoration: underline;
+          .avatarFrame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 170%;
+            height: 170%;
+            pointer-events: none;
+            z-index: 1;
+            transition: all 0.3s ease;
           }
         }
       }
 
-      .pointsEditContainer {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+      .userNameBlock {
+        min-width: 0;
 
-        .ant-input-number, .ant-input {
-          border-radius: 4px;
+        .userDetailName {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1a1c1e;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          flex-wrap: wrap;
         }
 
-        .ant-btn {
-          padding: 0 8px;
-          font-size: 12px;
+        .userDetailActions2 {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0;
+          margin-top: 2px;
+
+          :global(.ant-btn-link) {
+            font-size: 12px;
+            color: #667eea;
+            padding: 0 4px 0 0;
+            height: auto;
+
+            &:hover {
+              color: #764ba2;
+            }
+          }
         }
       }
+    }
+
+    // 关注数 / 粉丝数统计行
+    .userFollowStats {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 10px 0 6px;
+      width: 100%;
+
+      .followStatItem {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 14px;
+        border-radius: 8px;
+        transition: background 0.2s;
+
+        .followStatNum {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1a1c1e;
+          line-height: 1.2;
+        }
+
+        .followStatLabel {
+          font-size: 11px;
+          color: #aaa;
+          margin-top: 1px;
+        }
+      }
+
+      .followStatClickable {
+        cursor: pointer;
+
+        &:hover {
+          background: #f0f0f0;
+
+          .followStatNum {
+            color: #667eea;
+          }
+        }
+      }
+
+      .followStatDivider {
+        width: 1px;
+        height: 24px;
+        background: #eee;
+      }
+    }
+
+    // 称号标签
+    .userDetailTags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    // 信息列表
+    .userDetailContent {
+      flex: 1;
+      background: #f7f8fc;
+      border-radius: 10px;
+      padding: 2px 0;
+      border: 1px solid #eef0f6;
+
+      .userDetailItem {
+        display: flex;
+        align-items: center;
+        padding: 7px 12px;
+        border-bottom: 1px solid #eef0f6;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .itemLabel {
+          width: 60px;
+          font-size: 12px;
+          color: #aaa;
+          flex-shrink: 0;
+        }
+
+        .itemValue {
+          font-size: 13px;
+          color: #222;
+          font-weight: 600;
+        }
+
+        .pointsContainer {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          :global(.ant-btn-link) {
+            color: #667eea;
+            font-size: 12px;
+            padding: 0;
+            height: auto;
+
+            &:hover {
+              color: #764ba2;
+            }
+          }
+        }
+
+        .pointsEditContainer {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          :global(.ant-input-number),
+          :global(.ant-input) {
+            border-radius: 6px;
+          }
+
+          :global(.ant-btn) {
+            padding: 0 8px;
+            font-size: 12px;
+            border-radius: 6px;
+          }
+        }
+      }
+    }
+  }
+
+  // 右侧：朋友圈背景图
+  .userDetailRight {
+    flex: 7;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .momentsBg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    // 左侧渐变遮罩，让左右过渡自然
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(255,255,255,0.45) 0%, transparent 35%);
+      z-index: 1;
+      pointer-events: none;
+    }
+  }
+}
+
+// 关注按钮样式
+.followBtnDefault {
+  margin-top: 8px;
+  border-radius: 16px !important;
+  font-weight: 500 !important;
+  background: linear-gradient(135deg, #ff8c00, #ff6b00) !important;
+  border: none !important;
+  color: #fff !important;
+  transition: all 0.25s !important;
+
+  &:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.4) !important;
+  }
+}
+
+.followBtnActive {
+  margin-top: 8px;
+  border-radius: 16px !important;
+  font-weight: 500 !important;
+  background: #f5f5f5 !important;
+  border: 1px solid #e0e0e0 !important;
+  color: #888 !important;
+  transition: all 0.25s !important;
+
+  &:hover {
+    background: #fff0f0 !important;
+    border-color: #ffb3b3 !important;
+    color: #ff4d4f !important;
+  }
+}
+
+// 关注/粉丝列表弹窗
+.followListContainer {
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.followListItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.15s;
+  border-radius: 8px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #fafafa;
+  }
+
+  .followListAvatar {
+    position: relative;
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+
+    .followListAvatarFrame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 170%;
+      height: 170%;
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
+
+  .followListInfo {
+    flex: 1;
+    min-width: 0;
+
+    .followListName {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1c1e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .mutualBadge {
+        font-size: 11px;
+        font-weight: 400;
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 8px;
+        padding: 1px 6px;
+      }
+    }
+
+    .followListProfile {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 }
 
 .userDetailActions {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 10px;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 0 2px;
   flex-wrap: wrap;
 
   @media screen and (max-width: 768px) {
     justify-content: center;
   }
 
-  .ant-btn {
-    transition: all 0.3s;
+  :global(.ant-btn) {
+    border-radius: 20px;
+    min-width: 88px;
+    font-weight: 500;
+    transition: all 0.25s;
 
-    &.ant-btn-dangerous {
-      background: #ff4d4f;
-      border-color: #ff4d4f;
+    &:global(.ant-btn-dangerous) {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      border-color: transparent;
+      color: #fff;
 
       &:hover {
-        background: #ff7875;
-        border-color: #ff7875;
-        box-shadow: 0 2px 8px rgba(255, 77, 79, 0.2);
+        background: linear-gradient(135deg, #ff8585, #ff6b35);
+        box-shadow: 0 4px 12px rgba(238, 90, 36, 0.35);
+        transform: translateY(-1px);
       }
     }
 
-    &.ant-btn-default {
+    &:global(.ant-btn-default) {
+      border-color: #d9d9d9;
+      color: #555;
+
       &:hover {
-        color: #40a9ff;
-        border-color: #40a9ff;
-        background: rgba(24, 144, 255, 0.05);
+        color: #667eea;
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.06);
       }
     }
   }

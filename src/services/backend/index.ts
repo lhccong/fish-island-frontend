@@ -43,6 +43,7 @@ import * as towerClimbController from './towerClimbController';
 import * as turntableController from './turntableController';
 import * as undercoverGameController from './undercoverGameController';
 import * as userController from './userController';
+import * as userFollowController from './userFollowController';
 import * as userMuteController from './userMuteController';
 import * as userPointsRecordController from './userPointsRecordController';
 import * as userRemarkController from './userRemarkController';
@@ -68,6 +69,7 @@ export default {
   emoticonFavourController,
   eventRemindController,
   fileController,
+  userFollowController,
   fundController,
   heroController,
   hotPostController,

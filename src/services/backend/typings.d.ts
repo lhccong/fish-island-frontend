@@ -517,6 +517,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePageUserFollowVO_ = {
+    code?: number;
+    data?: PageUserFollowVO_;
+    message?: string;
+  };
+
   type BaseResponsePageUserTitle_ = {
     code?: number;
     data?: PageUserTitle_;
@@ -1761,6 +1767,11 @@ declare namespace API {
     tradeTypeName?: string;
   };
 
+  type isFollowingUsingGETParams = {
+    /** 被关注用户ID */
+    followUserId: string;
+  };
+
   type ItemEquipRequest = {
     itemInstanceId?: number;
   };
@@ -2010,6 +2021,20 @@ declare namespace API {
     turntableId?: number;
   };
 
+  type listMyFollowersUsingGETParams = {
+    current?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+  };
+
+  type listMyFollowingUsingGETParams = {
+    current?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+  };
+
   type listMyPointsRecordsBySourceUsingGETParams = {
     /** current */
     current?: number;
@@ -2081,6 +2106,8 @@ declare namespace API {
     bindPlatforms?: PlatformBindVO[];
     createTime?: string;
     email?: string;
+    followerCount?: number;
+    followingCount?: number;
     id?: number;
     lastSignInDate?: string;
     level?: number;
@@ -2841,6 +2868,19 @@ declare namespace API {
     total?: number;
   };
 
+  type PageUserFollowVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: UserFollowVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
   type PageUserTitle_ = {
     countId?: string;
     current?: number;
@@ -3543,11 +3583,18 @@ declare namespace API {
     type?: number;
   };
 
+  type toggleFollowUsingGETParams = {
+    /** 被关注用户ID */
+    followUserId: string;
+  };
+
   type TokenLoginUserVo = {
     avatarFramerUrl?: string;
     bindPlatforms?: PlatformBindVO[];
     createTime?: string;
     email?: string;
+    followerCount?: number;
+    followingCount?: number;
     id?: number;
     lastSignInDate?: string;
     level?: number;
@@ -3885,6 +3932,23 @@ declare namespace API {
     email?: string;
   };
 
+  type UserFollowVO = {
+    /** 用户头像框地址 */
+    avatarFramerUrl?: string;
+    /** 关注时间 */
+    followTime?: string;
+    /** 是否互相关注 */
+    isMutual?: boolean;
+    /** 用户头像 */
+    userAvatar?: string;
+    /** 用户ID */
+    userId?: string;
+    /** 用户昵称 */
+    userName?: string;
+    /** 用户简介 */
+    userProfile?: string;
+  };
+
   type userLoginByGithubUsingPOSTParams = {
     auth_code?: string;
     authorization_code?: string;
@@ -4066,6 +4130,8 @@ declare namespace API {
 
   type UserVO = {
     createTime?: string;
+    followerCount?: number;
+    followingCount?: number;
     id?: number;
     momentsBgUrl?: string;
     userAvatar?: string;

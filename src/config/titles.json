@@ -154,6 +154,11 @@
       "description": "打螺丝专属",
       "titleImg": "https://oss.cqbo.com/moyu/title/luosi.png"
 
+    },
+    {
+      "id": "25",
+      "name": "划水新秀",
+      "description": "固定等级称号：划水新秀"
     }
   ]
 }
