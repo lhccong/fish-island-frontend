@@ -31,11 +31,18 @@ import { getForgeDetailUsingPost, upgradeEquipUsingPost, refreshEntriesUsingPost
 import { useModel, history } from '@umijs/max';
 import PetSprite, { PetAction } from '@/components/PetSprite';
 
-// 默认精灵图动作配置（适用于标准三行布局的 webp 精灵图）
+// 默认精灵图动作配置（9 行标准 webp 精灵图）
+// 添加权重配置，Idle 和 Waiting 权重更高，更常出现
 const DEFAULT_SPRITE_ACTIONS: PetAction[] = [
-  { name: '待机', row: 0, frames: 6, duration: 1100 },
-  { name: '走路', row: 1, frames: 8, duration: 700 },
-  { name: '跳跃', row: 2, frames: 6, duration: 900 },
+  { name: 'Idle',      row: 0, frames: 6, duration: 1100, weight: 3 },
+  { name: 'Run Right', row: 1, frames: 8, duration:  700, weight: 1 },
+  { name: 'Run Left',  row: 2, frames: 8, duration:  700, weight: 1 },
+  { name: 'Waving',    row: 3, frames: 4, duration:  800, weight: 2 },
+  { name: 'Jumping',   row: 4, frames: 5, duration:  600, weight: 1 },
+  { name: 'Failed',    row: 5, frames: 8, duration:  900, weight: 1 },
+  { name: 'Waiting',   row: 6, frames: 6, duration: 1200, weight: 3 },
+  { name: 'Running',   row: 7, frames: 6, duration:  600, weight: 1 },
+  { name: 'Review',    row: 8, frames: 6, duration: 1000, weight: 2 },
 ];
 
 /** 判断是否为 webp 精灵图 URL */
@@ -48,12 +55,14 @@ const isWebpSprite = (url?: string | null): boolean =>
  * @param size     Avatar 尺寸（非 webp 时使用），同时作为 PetSprite 的缩放基准
  * @param asImg    是否渲染为 <img> 而非 <Avatar>（MiniPet 场景）
  * @param imgClass img 的 className（asImg=true 时使用）
+ * @param autoPlay 是否启用自动播放随机动作（仅 webp 精灵图有效）
  */
-const renderPetImage = (
+export const renderPetImage = (
   url: string | undefined | null,
   size: number,
   asImg = false,
   imgClass?: string,
+  autoPlay = true,
 ): React.ReactNode => {
   if (isWebpSprite(url)) {
     // webp 精灵图：单帧 192×208，精灵图共 9 行（1872px / 208px）
@@ -68,6 +77,9 @@ const renderPetImage = (
         actions={DEFAULT_SPRITE_ACTIONS}
         scale={scale}
         style={{ display: 'inline-block' }}
+        autoPlay={autoPlay}
+        autoPlayMinInterval={3000}
+        autoPlayMaxInterval={8000}
       />
     );
   }

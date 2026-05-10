@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface PetAction {
   /** 动作名称（可选，用于 tooltip） */
@@ -9,6 +9,8 @@ export interface PetAction {
   frames: number;
   /** 播放一轮的时长（ms） */
   duration: number;
+  /** 动作权重，用于随机选择，默认 1 */
+  weight?: number;
 }
 
 export interface PetSpriteProps {
@@ -34,6 +36,14 @@ export interface PetSpriteProps {
   style?: React.CSSProperties;
   /** 点击回调（在切换动作之后触发） */
   onClick?: (actionIndex: number, action: PetAction) => void;
+  /** 是否启用自动播放随机动作，默认 false */
+  autoPlay?: boolean;
+  /** 自动播放的最小间隔时间（ms），默认 3000 */
+  autoPlayMinInterval?: number;
+  /** 自动播放的最大间隔时间（ms），默认 8000 */
+  autoPlayMaxInterval?: number;
+  /** 初始是否处于 Idle 动作（index 0），默认 true */
+  startWithIdle?: boolean;
 }
 
 /**
@@ -57,11 +67,17 @@ const PetSprite: React.FC<PetSpriteProps> = ({
   className,
   style,
   onClick,
+  autoPlay = false,
+  autoPlayMinInterval = 3000,
+  autoPlayMaxInterval = 8000,
+  startWithIdle = true,
 }) => {
   const [actionIndex, setActionIndex] = useState(
-    Math.min(defaultActionIndex, actions.length - 1),
+    startWithIdle && actions.length > 0 ? 0 : Math.min(defaultActionIndex, actions.length - 1),
   );
   const lastClickRef = useRef(0);
+  const autoPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAutoSwitchingRef = useRef(false);
 
   const currentAction = actions[actionIndex] ?? actions[0];
 
@@ -90,15 +106,72 @@ const PetSprite: React.FC<PetSpriteProps> = ({
     `;
   }, [animName, currentAction.frames, scaledW]);
 
+  // 根据权重随机选择下一个动作
+  const getRandomActionIndex = useCallback(() => {
+    const totalWeight = actions.reduce((sum, a) => sum + (a.weight ?? 1), 0);
+    let random = Math.random() * totalWeight;
+    for (let i = 0; i < actions.length; i++) {
+      random -= actions[i].weight ?? 1;
+      if (random <= 0) return i;
+    }
+    return Math.floor(Math.random() * actions.length);
+  }, [actions]);
+
+  // 自动播放逻辑
+  useEffect(() => {
+    if (!autoPlay || actions.length <= 1) {
+      if (autoPlayTimerRef.current) {
+        clearTimeout(autoPlayTimerRef.current);
+        autoPlayTimerRef.current = null;
+      }
+      return;
+    }
+
+    const scheduleNextAction = () => {
+      // 随机间隔
+      const interval = autoPlayMinInterval + Math.random() * (autoPlayMaxInterval - autoPlayMinInterval);
+      
+      autoPlayTimerRef.current = setTimeout(() => {
+        // 随机选择新动作
+        let newIndex = getRandomActionIndex();
+        
+        // 避免连续两次选择相同动作（如果有多个动作可选）
+        if (actions.length > 1 && newIndex === actionIndex) {
+          newIndex = (newIndex + 1 + Math.floor(Math.random() * (actions.length - 1))) % actions.length;
+        }
+        
+        isAutoSwitchingRef.current = true;
+        setActionIndex(newIndex);
+        
+        // 安排下一次动作切换
+        scheduleNextAction();
+      }, interval);
+    };
+
+    scheduleNextAction();
+
+    return () => {
+      if (autoPlayTimerRef.current) {
+        clearTimeout(autoPlayTimerRef.current);
+        autoPlayTimerRef.current = null;
+      }
+    };
+  }, [autoPlay, actions.length, actionIndex, autoPlayMinInterval, autoPlayMaxInterval, getRandomActionIndex]);
+
   const handleClick = useCallback(() => {
     const now = Date.now();
     if (now - lastClickRef.current < 100) return;
     lastClickRef.current = now;
 
+    // 点击时清除自动播放定时器，手动切换后重新开始
+    if (autoPlay && autoPlayTimerRef.current) {
+      clearTimeout(autoPlayTimerRef.current);
+    }
+
     const nextIndex = (actionIndex + 1) % actions.length;
     setActionIndex(nextIndex);
     onClick?.(nextIndex, actions[nextIndex]);
-  }, [actionIndex, actions, onClick]);
+  }, [actionIndex, actions, onClick, autoPlay]);
 
   const containerStyle: React.CSSProperties = {
     // 容器尺寸 = 缩放后的单帧尺寸，overflow hidden 精确裁剪到一帧

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Avatar, Badge, Spin, Modal, Pagination } from 'antd';
 import { TrophyOutlined, CrownOutlined, HomeOutlined, BarChartOutlined, ThunderboltOutlined, BookOutlined, GiftOutlined } from '@ant-design/icons';
 import { history, useSearchParams } from '@umijs/max';
-import MoyuPet from '@/components/MoyuPet';
+import MoyuPet, { renderPetImage } from '@/components/MoyuPet';
 import Lottery from './Lottery';
 import styles from './index.less';
 import { getPetRankListUsingGet } from '@/services/backend/petRankController';
@@ -184,7 +184,7 @@ const PetPage: React.FC = () => {
       key: 'name',
       render: (name: string, record: API.PetRankVO) => (
         <div className={styles.petInfo}>
-          <Avatar src={record.petUrl} size={36} className={styles.petAvatar} />
+          {renderPetImage(record.petUrl, 36)}
           <div className={styles.petNameContainer}>
             <div className={styles.petName}>{name}</div>
             <div className={styles.petOwner}>{record.userName}</div>
@@ -686,7 +686,7 @@ const PetPage: React.FC = () => {
                     key: 'pet',
                     render: (_, record: API.BossChallengeRankingVO) => (
                       <div className={styles.petInfo}>
-                        <Avatar src={record.petAvatar} size={32} className={styles.petAvatar} />
+                        {renderPetImage(record.petAvatar, 32)}
                         <span className={styles.petName}>{record.petName || '未知宠物'}</span>
                       </div>
                     )

@@ -2111,7 +2111,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
           }}
         >
           <CalendarOutlined style={{ fontSize: 16, color: hasCheckedIn ? '#fff' : '#595959' }} />
-          {hasCheckedIn && (
+          {!hasCheckedIn && (
             <span style={{
               position: 'absolute',
               top: -3,
@@ -2119,7 +2119,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
               width: 10,
               height: 10,
               borderRadius: '50%',
-              background: '#52c41a',
+              background: '#ff4d4f',
               border: '1.5px solid #fff',
             }} />
           )}
