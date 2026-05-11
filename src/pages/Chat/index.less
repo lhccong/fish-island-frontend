@@ -125,6 +125,7 @@
     grid-area: messages;
     padding: 20px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-bottom: 20px;
     display: flex;
     flex-direction: column;
@@ -2844,7 +2845,7 @@
   background: transparent;
   box-shadow: none;
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   padding: 0;
   margin: 0;
   border: none;
@@ -2866,10 +2867,10 @@
 
 .titleSweepLight {
   position: absolute;
-  top: -5px;
-  left: -10px;
-  right: -10px;
-  bottom: -5px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: linear-gradient(90deg, 
     transparent 0%,
     rgba(255,255,255,0.1) 20%, 
@@ -2897,8 +2898,8 @@
 
 .titleStar1 {
   position: absolute;
-  top: -1px;
-  left: -1px;
+  top: 0;
+  left: 0;
   font-size: 7px;
   color: #FFD700;
   text-shadow: 0 0 2px #FFD700, 0 0 3px rgba(255, 215, 0, 0.5);
@@ -2916,8 +2917,8 @@
 
 .titleStar2 {
   position: absolute;
-  bottom: -1px;
-  right: -1px;
+  bottom: 0;
+  right: 0;
   font-size: 7px;
   color: #FFD700;
   text-shadow: 0 0 2px #FFD700, 0 0 3px rgba(255, 215, 0, 0.5);

@@ -158,7 +158,55 @@
     {
       "id": "25",
       "name": "划水新秀",
-      "description": "固定等级称号：划水新秀"
+      "description": "摸鱼助手专属"
+    },
+    {
+      "id": "26",
+      "name": "牛牛专属",
+      "description": "牛牛专属",
+      "titleImg": "https://oss.cqbo.com/moyu/title/niuniu.png"
+    },
+    {
+      "id": "27",
+      "name": "青丝专属",
+      "description": "青丝专属",
+      "titleImg": "https://oss.cqbo.com/moyu/title/qingsi.png"
+    },
+    {
+      "id": "28",
+      "name": "0",
+      "description": "0",
+      "titleImg": "https://oss.cqbo.com/moyu/title/28.png"
+    },
+    {
+      "id": "29",
+      "name": "0",
+      "description": "0",
+      "titleImg": "https://oss.cqbo.com/moyu/title/29.png"
+    },
+    {
+      "id": "30",
+      "name": "0",
+      "description": "0",
+      "titleImg": "https://oss.cqbo.com/moyu/title/30.png"
+    },
+    {
+      "id": "31",
+      "name": "0",
+      "description": "0",
+      "titleImg": "https://oss.cqbo.com/moyu/title/31.png"
+    },
+    {
+      "id": "32",
+      "name": "0",
+      "description": "0",
+      "titleImg": "https://oss.cqbo.com/moyu/title/32.png"
+    },
+    {
+      "id": "33",
+      "name": "0",
+      "description": "0",
+      "titleImg": "https://oss.cqbo.com/moyu/title/33.png"
     }
   ]
 }
