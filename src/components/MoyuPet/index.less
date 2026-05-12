@@ -1081,8 +1081,6 @@
   }
 
   .miniPetImage {
-    width: 60px;
-    height: 60px;
     object-fit: contain;
     animation: none; /* 移除呼吸动画 */
     pointer-events: none; /* 防止图片干扰拖动 */
@@ -1091,8 +1089,7 @@
 
   @media screen and (max-width: 768px) {
     .miniPetImage {
-      width: 50px;
-      height: 50px;
+      /* 移动端大小由 size prop 控制 */
     }
   }
 }

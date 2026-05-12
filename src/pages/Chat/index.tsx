@@ -332,10 +332,28 @@ const ChatRoom: React.FC = () => {
     }
     return 'left';
   };
+  const getShowChatPet = (): boolean => {
+    const savedConfig = localStorage.getItem('siteConfig');
+    if (savedConfig) {
+      const { showChatPet } = JSON.parse(savedConfig);
+      return showChatPet !== false;
+    }
+    return true;
+  };
+  const getChatPetSize = (): number => {
+    const savedConfig = localStorage.getItem('siteConfig');
+    if (savedConfig) {
+      const { chatPetSize } = JSON.parse(savedConfig);
+      return typeof chatPetSize === 'number' ? chatPetSize : 100;
+    }
+    return 100;
+  };
   const [layoutMode, setLayoutMode] = useState<'side' | 'top' | 'mix'>(getLayoutMode);
   const [chatHeightOffset, setChatHeightOffset] = useState<string>(getLayoutOffset);
   const [showFishCircle, setShowFishCircle] = useState<boolean>(getShowFishCircle);
   const [fishCirclePosition, setFishCirclePosition] = useState<'left' | 'right'>(getFishCirclePosition);
+  const [showChatPet, setShowChatPet] = useState<boolean>(getShowChatPet);
+  const [chatPetSize, setChatPetSize] = useState<number>(getChatPetSize);
 
   useEffect(() => {
     const handleSiteConfigChange = () => {
@@ -343,6 +361,8 @@ const ChatRoom: React.FC = () => {
       setChatHeightOffset(getLayoutOffset());
       setShowFishCircle(getShowFishCircle());
       setFishCirclePosition(getFishCirclePosition());
+      setShowChatPet(getShowChatPet());
+      setChatPetSize(getChatPetSize());
     };
     window.addEventListener('siteConfigChange', handleSiteConfigChange);
     return () => {
@@ -458,6 +478,9 @@ const ChatRoom: React.FC = () => {
   // 添加发红包防抖相关的状态
   const [isRedPacketSending, setIsRedPacketSending] = useState(false);
   const redPacketDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 抢红包防抖：记录正在处理中的红包 ID，防止重复点击
+  const grabbingRedPacketIds = useRef<Set<string>>(new Set());
 
   // 添加红包记录相关状态
   const [isRedPacketRecordsVisible, setIsRedPacketRecordsVisible] = useState(false);
@@ -2132,6 +2155,32 @@ const ChatRoom: React.FC = () => {
     setIsRedPacketRecordsVisible(true);
     await fetchRedPacketRecords(redPacketId);
   };
+
+  // 抢红包处理函数（带防抖：同一红包 500ms 内只允许触发一次）
+  const handleGrabRedPacket = async (redPacketId: string) => {
+    if (grabbingRedPacketIds.current.has(redPacketId)) {
+      return;
+    }
+    grabbingRedPacketIds.current.add(redPacketId);
+    try {
+      const response = await grabRedPacketUsingPost({ redPacketId });
+      if (response.data) {
+        messageApi.success(`恭喜你抢到 ${response.data} 积分！`);
+        await Promise.all([
+          fetchRedPacketRecords(redPacketId),
+          fetchRedPacketDetail(redPacketId),
+        ]);
+      }
+    } catch (error) {
+      messageApi.error('红包已被抢完或已过期！');
+    } finally {
+      // 500ms 后解除锁定，防止手抖连点
+      setTimeout(() => {
+        grabbingRedPacketIds.current.delete(redPacketId);
+      }, 500);
+    }
+  };
+
   // 修改 renderMessageContent 函数，添加红包消息的渲染
 
   // 添加一个全局音频引用
@@ -2247,23 +2296,7 @@ const ChatRoom: React.FC = () => {
                 <Button
                   type="primary"
                   size="small"
-                  onClick={async () => {
-                    try {
-                      const response = await grabRedPacketUsingPost({
-                        redPacketId: redPacketId,
-                      });
-                      if (response.data) {
-                        messageApi.success(`恭喜你抢到 ${response.data} 积分！`);
-                        // 刷新红包记录和详情
-                        await Promise.all([
-                          fetchRedPacketRecords(redPacketId),
-                          fetchRedPacketDetail(redPacketId),
-                        ]);
-                      }
-                    } catch (error) {
-                      messageApi.error('红包已被抢完或已过期！');
-                    }
-                  }}
+                  onClick={() => handleGrabRedPacket(redPacketId)}
                   className={styles.grabRedPacketButton}
                   disabled={detail?.remainingCount === 0 || detail?.status === 2}
                 >
@@ -3120,10 +3153,12 @@ const ChatRoom: React.FC = () => {
       className={`${styles.chatRoom} ${isSpeedMode ? styles.speedMode : ''} ${!isUserListVisible ? styles.userListCollapsed : ''}`}
     >
         {/* 可拖动宠物组件 */}
-        <MiniPet onClick={() => {
-          setCurrentPetUserId(null);
-          setIsPetModalVisible(true);
-        }} />
+        {showChatPet && (
+          <MiniPet size={chatPetSize} onClick={() => {
+            setCurrentPetUserId(null);
+            setIsPetModalVisible(true);
+          }} />
+        )}
 
       {/* 摸鱼宠物组件 */}
       <MoyuPet

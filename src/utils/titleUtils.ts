@@ -154,7 +154,22 @@ export const getTitleTagProperties = (isAdmin: boolean, level: number, titleId?:
   let tagClass = '';
 
   switch (level) {
-    case 12:
+    case 17:
+      tagText = '摸鱼皇帝';
+      tagEmoji = '🔱';
+      tagClass = 'levelTagGrandMaster';
+      break;
+    case 16:
+      tagText = '摸鱼皇帝';
+      tagEmoji = '🔱';
+      tagClass = 'levelTagGrandMaster';
+      break;
+    case 15:
+      tagText = '摸鱼皇帝';
+      tagEmoji = '🔱';
+      tagClass = 'levelTagGrandMaster';
+      break;
+    case 14:
       tagText = '摸鱼皇帝';
       tagEmoji = '🔱';
       tagClass = 'levelTagGrandMaster';

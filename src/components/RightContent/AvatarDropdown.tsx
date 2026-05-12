@@ -55,6 +55,7 @@ import {
   Modal,
   Radio,
   Select,
+  Slider,
   Space,
   Switch,
   TimePicker,
@@ -406,6 +407,15 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
 
   const [isSiteConfigOpen, setIsSiteConfigOpen] = useState(false);
   const [siteConfig, setSiteConfig] = useState(() => {
+    const defaults = {
+      siteName: '摸鱼岛',
+      siteIcon: 'https://oss.cqbo.com/moyu/moyu.png',
+      layoutMode: 'top',
+      showFishCircle: true,
+      fishCirclePosition: 'left',
+      showChatPet: true,
+      chatPetSize: 100,
+    };
     const savedConfig = localStorage.getItem('siteConfig');
     if (savedConfig) {
       const parsed = JSON.parse(savedConfig);
@@ -413,15 +423,10 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       if (!parsed._layoutSet && parsed.layoutMode === 'side') {
         parsed.layoutMode = 'top';
       }
-      return parsed;
+      // 用默认值兜底，确保新增字段在旧数据中也有正确初始值
+      return { ...defaults, ...parsed };
     }
-    return {
-      siteName: '摸鱼岛',
-      siteIcon: 'https://oss.cqbo.com/moyu/moyu.png',
-      layoutMode: 'top',
-      showFishCircle: true,
-      fishCirclePosition: 'left',
-    };
+    return defaults;
   });
 
   // 添加默认网站配置
@@ -431,6 +436,8 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
     layoutMode: 'top',
     showFishCircle: true,
     fishCirclePosition: 'left',
+    showChatPet: true,
+    chatPetSize: 100,
   };
 
   const [isMoneyVisible, setIsMoneyVisible] = useState(() => {
@@ -2818,6 +2825,37 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
                         <Radio.Button value="left">⬅ 左侧</Radio.Button>
                         <Radio.Button value="right">右侧 ➡</Radio.Button>
                       </Radio.Group>
+                    </Form.Item>
+                  </div>
+                )
+              }
+            </Form.Item>
+          </div>
+
+          {/* 聊天室宠物开关 */}
+          <div style={{
+            padding: '10px 14px',
+            background: '#fafafa',
+            border: '1px solid #f0f0f0',
+            borderRadius: '8px',
+            marginBottom: 20,
+          }}>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+              <div>
+                <div style={{fontWeight: 500, fontSize: 14, color: '#333'}}>聊天室宠物</div>
+                <div style={{fontSize: 12, color: '#999', marginTop: 2}}>聊天室内可拖动的宠物小图标</div>
+              </div>
+              <Form.Item name="showChatPet" valuePropName="checked" style={{marginBottom: 0}}>
+                <Switch checkedChildren="显示" unCheckedChildren="隐藏"/>
+              </Form.Item>
+            </div>
+            <Form.Item noStyle shouldUpdate={(prev, cur) => prev.showChatPet !== cur.showChatPet}>
+              {({ getFieldValue }) =>
+                getFieldValue('showChatPet') && (
+                  <div style={{marginTop: 10, display: 'flex', alignItems: 'center', gap: 8}}>
+                    <span style={{fontSize: 13, color: '#555', flexShrink: 0}}>宠物大小</span>
+                    <Form.Item name="chatPetSize" style={{marginBottom: 0, flex: 1}}>
+                      <Slider min={40} max={200} step={10} marks={{ 40: '小', 100: '中', 200: '大' }} />
                     </Form.Item>
                   </div>
                 )

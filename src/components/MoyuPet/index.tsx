@@ -838,7 +838,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
           skinId: -1,
           name: '原皮',
           description: '最初的样子，朴素而自然',
-          url: 'https://oss.cqbo.com/moyu/pet/超级玛丽马里奥 (73)_爱给网_aigei_com.png', // 使用默认图片，可以根据实际情况调整
+          url: 'https://oss.cqbo.com/moyu/pet/luobo.webp', // 使用默认图片，可以根据实际情况调整
           points: 0,
           owned: true, // 默认拥有
         };
@@ -3347,6 +3347,8 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
 // 添加一个新的MiniPet组件，用于在聊天输入框上方显示
 export interface MiniPetProps {
   onClick?: () => void;
+  /** 宠物显示大小（px），默认 100 */
+  size?: number;
 }
 
 // 使用全局变量缓存宠物数据，避免组件重新渲染时重复请求
@@ -3354,7 +3356,7 @@ let cachedPet: API.PetVO | null = null;
 let lastFetchTime = 0;
 const CACHE_DURATION = 30 * 60 * 1000; // 30分钟缓存时间
 
-export const MiniPet: React.FC<MiniPetProps> = ({ onClick }) => {
+export const MiniPet: React.FC<MiniPetProps> = ({ onClick, size = 100 }) => {
   const { initialState } = useModel('@@initialState');
   const [pet, setPet] = useState<API.PetVO | null>(cachedPet);
   const [loading, setLoading] = useState(!cachedPet);
@@ -3550,7 +3552,7 @@ export const MiniPet: React.FC<MiniPetProps> = ({ onClick }) => {
     >
       <div onClick={handlePetClick} style={{ width: '100%', height: '100%' }}>
         <Tooltip title={`${pet.name} (Lv.${pet.level}) - 可拖动调整位置`}>
-          {renderPetImage(pet.petUrl, 60, true, styles.miniPetImage)}
+          {renderPetImage(pet.petUrl, size, true, styles.miniPetImage)}
         </Tooltip>
       </div>
     </div>
