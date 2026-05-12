@@ -1027,6 +1027,19 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         return;
       }
       if (key === 'siteConfig') {
+        // 打开弹窗前先同步最新配置到表单，避免 initialValues 只生效一次的问题
+        const latestConfig = localStorage.getItem('siteConfig');
+        const defaults = {
+          siteName: '摸鱼岛',
+          siteIcon: 'https://oss.cqbo.com/moyu/moyu.png',
+          layoutMode: 'top',
+          showFishCircle: true,
+          fishCirclePosition: 'left',
+          showChatPet: true,
+          chatPetSize: 100,
+        };
+        const configValues = latestConfig ? { ...defaults, ...JSON.parse(latestConfig) } : defaults;
+        siteConfigForm.setFieldsValue(configValues);
         setIsSiteConfigOpen(true);
         return;
       }

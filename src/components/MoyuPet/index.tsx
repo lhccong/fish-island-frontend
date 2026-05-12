@@ -3544,7 +3544,9 @@ export const MiniPet: React.FC<MiniPetProps> = ({ onClick, size = 100 }) => {
         bottom: 'auto',
         right: 'auto',
         zIndex: 1000,
-        cursor: isDragging ? 'grabbing' : 'grab'
+        cursor: isDragging ? 'grabbing' : 'grab',
+        width: `${size}px`,
+        height: `${size}px`,
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleMouseDown}
