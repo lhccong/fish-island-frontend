@@ -366,3 +366,126 @@
     }
   }
 }
+
+// ── 深色模式覆盖 ──────────────────────────────────────────
+body.dark-mode {
+  .detail-modal-username {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  .detail-modal-time {
+    color: rgba(255, 255, 255, 0.35) !important;
+  }
+
+  .detail-content {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .detail-actions {
+    border-top-color: rgba(255, 255, 255, 0.06) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .detail-action-btn {
+    color: rgba(255, 255, 255, 0.35) !important;
+
+    &:hover {
+      color: #ffa768 !important;
+    }
+
+    &.liked {
+      color: #ff4d4f !important;
+    }
+  }
+
+  .detail-comment-item {
+    border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .detail-comment-name {
+    color: #7b9fd4 !important;
+  }
+
+  .detail-reply-to {
+    color: rgba(255, 255, 255, 0.3) !important;
+
+    span {
+      color: #7b9fd4 !important;
+    }
+  }
+
+  .detail-comment-content,
+  .detail-comment-text-part,
+  .detail-comment-text {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .detail-comment-meta {
+    color: rgba(255, 255, 255, 0.25) !important;
+  }
+
+  .detail-reply-btn {
+    color: #7b9fd4 !important;
+  }
+
+  .detail-child-comment {
+    border-left-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .detail-comment-img-item {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .detail-input-area {
+    border-top-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  .detail-reply-hint {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.4) !important;
+
+    span {
+      color: #7b9fd4 !important;
+    }
+  }
+
+  .detail-input {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+
+    &:focus {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-color: #ffa768 !important;
+    }
+  }
+
+  // 打赏弹窗
+  .reward-modal-content {
+    .reward-desc {
+      color: rgba(255, 255, 255, 0.35) !important;
+    }
+
+    .reward-presets {
+      .reward-preset-item {
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: rgba(255, 255, 255, 0.65) !important;
+
+        &:hover {
+          border-color: #f4ac70 !important;
+          color: #f4ac70 !important;
+        }
+
+        &.active {
+          border-color: #f4ac70 !important;
+          background: rgba(244, 172, 112, 0.12) !important;
+          color: #f4ac70 !important;
+        }
+      }
+    }
+
+    .reward-footer {
+      border-top-color: rgba(255, 255, 255, 0.06) !important;
+    }
+  }
+}

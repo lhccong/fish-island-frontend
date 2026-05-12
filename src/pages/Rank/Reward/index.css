@@ -4,12 +4,12 @@
   width: 100%;
   min-height: calc(100vh - 85px);
   margin: 0 auto;
-  background: linear-gradient(135deg, #f6f8ff 0%, #f0f7ff 100%);
+  background: var(--ant-color-bg-layout, #f6f8ff);
   border-radius: 16px;
   overflow: visible;
   position: relative;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(128, 128, 128, 0.15);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
@@ -56,7 +56,9 @@
 }
 
 .stats-card-donors {
-  background: linear-gradient(135deg, #fff7e6 0%, #fff1f0 100%);
+  flex: 1;
+  border-radius: 8px;
+  background: var(--ant-color-bg-container) !important;
   transition: transform 0.3s ease;
 }
 
@@ -65,7 +67,9 @@
 }
 
 .stats-card-amount {
-  background: linear-gradient(135deg, #e6f7ff 0%, #f6ffed 100%);
+  flex: 1;
+  border-radius: 8px;
+  background: var(--ant-color-bg-container) !important;
   transition: transform 0.3s ease;
 }
 
@@ -89,9 +93,9 @@
 .detail-section {
   width: 280px;
   flex-shrink: 0;
-  background: #fff;
+  background: var(--ant-color-bg-container) !important;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(128, 128, 128, 0.12);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   position: sticky;
@@ -114,9 +118,9 @@
   padding: 14px 16px;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
-  background: linear-gradient(135deg, #fff7e6 0%, #fff1f0 100%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  color: var(--ant-color-text);
+  background: var(--ant-color-bg-container) !important;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.12);
 }
 
 .detail-header-icon {
@@ -147,7 +151,7 @@
 }
 
 .detail-item:hover {
-  background: #fffbf5;
+  background: var(--ant-color-bg-text-hover, rgba(0,0,0,0.04));
 }
 
 .detail-item:last-child {
@@ -227,7 +231,7 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  background-color: white;
+  background-color: var(--ant-color-bg-layout, #f6f8ff);
   padding: 0 16px;
   display: flex;
   align-items: center;
@@ -263,9 +267,9 @@
   overflow: hidden;
   transition: all 0.3s;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(128, 128, 128, 0.1);
   padding: 16px;
-  background: white;
+  background: var(--ant-color-bg-container) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 

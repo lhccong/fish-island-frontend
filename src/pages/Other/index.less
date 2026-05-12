@@ -3,7 +3,7 @@
   max-width: 1200px;
   margin: 0 auto;
   min-height: calc(100vh - 64px);
-  background: #f5f7fa;
+  background: var(--ant-color-bg-layout, #f5f7fa);
 
   .card-link {
     display: flex;
@@ -31,7 +31,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #f0f7ff;
+    background: var(--ant-color-bg-container);
     transition: all 0.3s ease;
     text-decoration: none;
     color: #1890ff;
@@ -54,14 +54,14 @@
     transition: all 0.3s ease;
     border: none;
     overflow: hidden;
-    background: #fff;
+    background: var(--ant-color-bg-container) !important;
     cursor: pointer;
     height: 100%;
     display: flex;
     flex-direction: column;
 
     .ant-card-head {
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid rgba(128, 128, 128, 0.12);
       padding: 16px 24px;
 
       .ant-card-head-title {
@@ -81,7 +81,7 @@
     }
 
     .ant-card-cover {
-      background: linear-gradient(135deg, #f0f7ff 0%, #e6f7ff 100%);
+      background: var(--ant-color-bg-container-disabled, rgba(128,128,128,0.06));
     }
   }
 
@@ -95,7 +95,6 @@
 
   h2.ant-typography {
     margin-bottom: 32px;
-    color: #1a1a1a;
     font-weight: 600;
     text-align: center;
   }
@@ -114,7 +113,7 @@
     display: inline-block;
     padding: 8px 16px;
     border-radius: 6px;
-    background: #f0f7ff;
+    background: var(--ant-color-bg-container);
     font-weight: 500;
     transition: all 0.3s ease;
   }

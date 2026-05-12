@@ -8,15 +8,14 @@
     textarea {
       font-size: 15px;
       line-height: 1.7;
-      border: 1px solid #e8e8e8;
+      border: 1px solid rgba(128, 128, 128, 0.3);
       border-radius: 12px;
       padding: 16px;
-      background: #fafafa;
+      background: transparent;
       transition: all 0.3s ease;
 
       &:focus {
         border-color: #1890ff;
-        background: #fff;
         box-shadow: 0 0 0 3px rgba(24, 144, 255, 0.1);
       }
 
@@ -118,13 +117,20 @@
 
     .ant-input-affix-wrapper {
       border-radius: 8px;
-      background: #f7f7f7;
-      border-color: #e8e8e8;
+      background: var(--ant-color-bg-container) !important;
+      border-color: rgba(128, 128, 128, 0.3);
 
-      &:hover,
+      input {
+        background: transparent !important;
+      }
+
+      &:hover {
+        border-color: #40a9ff;
+      }
+
       &:focus-within {
         border-color: #40a9ff;
-        background: #fff;
+        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
       }
     }
   }

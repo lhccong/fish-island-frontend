@@ -222,8 +222,8 @@
 
         .messageContent {
           margin-top: 4px;
-          background: linear-gradient(135deg, #ffa768 0%, #ffcba4 100%);
-          color: white;
+          background: #F8F8F8;
+          color: #1a1c1e;
           border-radius: 12px 4px 12px 12px;
           box-shadow: 0 2px 8px rgba(255, 167, 104, 0.15);
           margin-right: 0;
@@ -2984,5 +2984,465 @@
       border: 1.5px solid rgba(255, 255, 255, 0.8);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     }
+  }
+}
+
+// ── 深色模式覆盖 ──────────────────────────────────────────
+:global([data-theme="dark"]) {
+  // 聊天室主容器
+  .chatRoom {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+
+    &::before {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.06) 0%,
+        rgba(255, 255, 255, 0.02) 50%,
+        rgba(255, 255, 255, 0.06) 100%
+      );
+    }
+
+    // 公告栏
+    .announcement {
+      :global(.ant-alert) {
+        background: rgba(30, 30, 30, 0.9);
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    // 消息区域
+    .messageContainer {
+      background: rgba(18, 18, 18, 0.85);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+      .loadingWrapper {
+        background: rgba(30, 30, 30, 0.8);
+      }
+
+      // 消息气泡 - 他人
+      .messageItem {
+        .messageContent {
+          background: #2a2a2a;
+          color: rgba(255, 255, 255, 0.85);
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+
+          .quotedMessage {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left-color: #4facfe;
+
+            .quotedMessageHeader {
+              color: rgba(255, 255, 255, 0.45);
+
+              .quotedMessageSender {
+                color: rgba(255, 255, 255, 0.65);
+              }
+
+              .quotedMessageTime {
+                color: rgba(255, 255, 255, 0.3);
+              }
+            }
+
+            .quotedMessageContent {
+              color: rgba(255, 255, 255, 0.55);
+            }
+          }
+        }
+
+        // 自己的消息气泡
+        &.self {
+          .messageContent {
+            background: #2e2e2e;
+            color: rgba(255, 255, 255, 0.85);
+
+            .quotedMessage {
+              background-color: rgba(255, 255, 255, 0.06);
+              border-left-color: rgba(255, 255, 255, 0.3);
+
+              .quotedMessageHeader {
+                color: rgba(255, 255, 255, 0.45);
+
+                .quotedMessageSender {
+                  color: rgba(255, 255, 255, 0.65);
+                }
+              }
+
+              .quotedMessageContent {
+                color: rgba(255, 255, 255, 0.55);
+              }
+            }
+          }
+        }
+
+        // @提及高亮
+        &.mentioned {
+          background-color: rgba(79, 172, 254, 0.08);
+        }
+
+        .messageHeader {
+          .senderName {
+            color: rgba(255, 255, 255, 0.45);
+          }
+
+          .avatar .levelBadge {
+            background: #2a2a2a;
+            color: rgba(255, 255, 255, 0.35);
+          }
+        }
+
+        .timestamp {
+          color: rgba(255, 255, 255, 0.25);
+        }
+      }
+    }
+
+    // 右侧用户列表
+    .userList {
+      background: rgba(30, 30, 30, 0.9);
+      border-left-color: rgba(255, 255, 255, 0.06);
+      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.3);
+
+      &.userListHidden {
+        background: transparent;
+
+        .userListHeader .toggleButton {
+          background: rgba(30, 30, 30, 0.9) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          color: rgba(255, 255, 255, 0.65) !important;
+
+          .anticon {
+            color: rgba(255, 255, 255, 0.65) !important;
+          }
+
+          &:hover {
+            background: rgba(40, 40, 40, 0.95) !important;
+            border-color: rgba(22, 119, 255, 0.5) !important;
+            color: #4facfe !important;
+
+            .anticon {
+              color: #4facfe !important;
+            }
+          }
+        }
+      }
+
+      .userListHeader {
+        border-bottom-color: rgba(255, 255, 255, 0.06);
+      }
+
+      .userItem {
+        background: rgba(255, 255, 255, 0.04);
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.08);
+          box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .userInfo {
+          .userName {
+            color: rgba(255, 255, 255, 0.75);
+          }
+
+          .userStatus {
+            color: rgba(255, 255, 255, 0.35);
+          }
+        }
+
+        .levelBadge {
+          background: #2a2a2a;
+          color: rgba(255, 255, 255, 0.35);
+        }
+      }
+    }
+
+    // 输入区域
+    .inputArea {
+      background: rgba(30, 30, 30, 0.9);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+      .quotePreview {
+        background-color: #2a2a2a;
+
+        .quotePreviewContent {
+          .quotePreviewSender {
+            color: rgba(255, 255, 255, 0.65);
+          }
+
+          .quotePreviewText {
+            color: rgba(255, 255, 255, 0.4);
+          }
+        }
+      }
+
+      .inputRow {
+        .chatTextArea {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.08);
+          color: rgba(255, 255, 255, 0.85);
+
+          &:hover,
+          &:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.15);
+          }
+
+          &::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+          }
+        }
+
+        .inputCounter {
+          color: rgba(255, 255, 255, 0.3);
+        }
+      }
+
+      .mobileToolbar {
+        background-color: #1e1e1e;
+
+        .mobileTool {
+          .mobileToolIcon {
+            background-color: #2a2a2a;
+            color: #4facfe;
+          }
+
+          .mobileToolText {
+            color: rgba(255, 255, 255, 0.55);
+          }
+        }
+      }
+    }
+
+    // 消息底部操作栏
+    .messageFooter {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    // 更多选项菜单
+    .moreOptionsMenu {
+      background-color: #2a2a2a;
+
+      .moreOptionsItem {
+        color: rgba(255, 255, 255, 0.75);
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.06);
+          color: #4facfe;
+        }
+      }
+    }
+
+    // @提及列表
+    .mentionList {
+      background: rgba(30, 30, 30, 0.98);
+      border-color: rgba(255, 255, 255, 0.08);
+
+      .mentionItem {
+        &:hover {
+          background: rgba(79, 172, 254, 0.12);
+        }
+
+        .mentionName {
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+    }
+
+    // 文件预览
+    .filePreview {
+      background-color: #2a2a2a;
+
+      .fileName {
+        color: rgba(255, 255, 255, 0.65);
+      }
+    }
+  }
+
+  // 用户信息卡片（Popover）
+  .userInfoCard {
+    background: rgba(30, 30, 30, 0.98);
+    border-color: rgba(255, 255, 255, 0.08);
+
+    &::before {
+      background: linear-gradient(135deg, rgba(79, 172, 254, 0.08) 0%, rgba(0, 242, 254, 0.08) 100%);
+    }
+
+    .userInfoCardTitle {
+      .userInfoCardNameRow {
+        .userInfoCardName {
+          color: rgba(255, 255, 255, 0.85);
+        }
+      }
+
+      .userShortId {
+        color: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+    .userInfoCardPoints {
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    .userInfoCardLocation {
+      color: rgba(255, 255, 255, 0.45);
+
+      .locationText {
+        color: rgba(255, 255, 255, 0.45);
+      }
+    }
+  }
+
+  // 用户详情弹窗
+  .userDetailModal {
+    .userDetailLeft {
+      .userNameBlock {
+        .userDetailName {
+          color: rgba(255, 255, 255, 0.85);
+        }
+      }
+
+      .userFollowStats {
+        .followStatItem {
+          .followStatNum {
+            color: rgba(255, 255, 255, 0.85);
+          }
+
+          .followStatLabel {
+            color: rgba(255, 255, 255, 0.35);
+          }
+        }
+
+        .followStatClickable:hover {
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .followStatDivider {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      }
+
+      .userDetailContent {
+        background: #1e1e1e;
+        border-color: rgba(255, 255, 255, 0.06);
+
+        .userDetailItem {
+          border-bottom-color: rgba(255, 255, 255, 0.06);
+
+          .itemLabel {
+            color: rgba(255, 255, 255, 0.35);
+          }
+
+          .itemValue {
+            color: rgba(255, 255, 255, 0.85);
+          }
+        }
+      }
+    }
+
+    .userDetailRight {
+      background: #1a1a1a;
+
+      &::before {
+        background: linear-gradient(to right, rgba(18, 18, 18, 0.6) 0%, transparent 35%);
+      }
+    }
+  }
+
+  // 关注列表
+  .followListItem {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .followListInfo {
+      .followListName {
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .followListProfile {
+        color: rgba(255, 255, 255, 0.35);
+      }
+    }
+  }
+
+  // 音乐播放器
+  .musicFloatingPlayer {
+    background: rgba(30, 30, 30, 0.95);
+
+    .musicInfo {
+      .musicArtist {
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      .progressBar {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .timeInfo {
+        color: rgba(255, 255, 255, 0.4);
+      }
+    }
+  }
+
+  // 音乐消息
+  .musicMessage {
+    background: #2a2a2a;
+
+    .musicInfo {
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  .musicPlayer {
+    background: #2a2a2a;
+  }
+
+  // 红包消息
+  .redPacketMessage {
+    .redPacketContent {
+      background: rgba(255, 77, 79, 0.08);
+      border-color: rgba(255, 77, 79, 0.2);
+    }
+  }
+
+  // 红包记录
+  .redPacketRecords {
+    .recordItem {
+      border-bottom-color: rgba(255, 255, 255, 0.06);
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.04);
+      }
+
+      .userInfo {
+        .userName {
+          color: rgba(255, 255, 255, 0.8);
+        }
+
+        .grabTime {
+          color: rgba(255, 255, 255, 0.35);
+        }
+      }
+    }
+  }
+
+  // 邀请消息
+  .inviteMessage {
+    background: linear-gradient(135deg, #1e2a3a 0%, #1a2535 100%);
+    border-color: rgba(102, 126, 234, 0.2);
+  }
+
+  .inviteText {
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  // 复读机
+  .repeatUsers {
+    background: rgba(255, 167, 104, 0.08);
+    border-color: rgba(255, 167, 104, 0.15);
   }
 }

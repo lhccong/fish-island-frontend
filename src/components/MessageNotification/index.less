@@ -201,3 +201,79 @@
     }
   }
 } 
+
+// ── 深色模式覆盖 ──────────────────────────────────────────
+body.dark-mode {
+  // Drawer 抽屉背景
+  .message-notification-drawer {
+    .ant-drawer-content {
+      background: #1e1e1e !important;
+    }
+
+    .ant-drawer-header {
+      background: #1e1e1e !important;
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .ant-drawer-title {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .ant-drawer-body {
+      background: #1e1e1e !important;
+    }
+
+    .message-list-container {
+      &::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+      }
+
+      &::-webkit-scrollbar-track {
+        background-color: rgba(255, 255, 255, 0.04) !important;
+      }
+    }
+
+    .loading-more,
+    .no-more-data {
+      color: rgba(255, 255, 255, 0.3) !important;
+    }
+  }
+
+  // 消息卡片
+  .message-item {
+    &.unread {
+      .message-card {
+        background-color: rgba(24, 144, 255, 0.06) !important;
+      }
+    }
+
+    .message-card {
+      background: #2a2a2a !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+      }
+    }
+
+    .message-user-name span {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .message-body {
+      .message-title {
+        color: rgba(255, 255, 255, 0.85) !important;
+      }
+
+      .message-content-text {
+        color: rgba(255, 255, 255, 0.55) !important;
+      }
+    }
+
+    .message-footer {
+      .message-time {
+        color: rgba(255, 255, 255, 0.25) !important;
+      }
+    }
+  }
+}

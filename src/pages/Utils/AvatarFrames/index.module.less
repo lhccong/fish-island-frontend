@@ -346,3 +346,68 @@
   overflow: hidden;
   text-overflow: ellipsis;
 } 
+
+// ── 深色模式覆盖 ──────────────────────────────────────────
+:global(body.dark-mode) {
+  :local(.header) {
+    background: #1e1e1e !important;
+    border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+
+    &::after {
+      background: linear-gradient(to bottom, #1e1e1e, transparent) !important;
+    }
+
+    :local(.title) {
+      h1 {
+        color: rgba(255, 255, 255, 0.85) !important;
+      }
+
+      .subtitle {
+        color: rgba(255, 255, 255, 0.45) !important;
+      }
+    }
+
+    :local(.userPreview) {
+      :local(.userPoints) {
+        color: rgba(255, 255, 255, 0.55) !important;
+      }
+    }
+  }
+
+  :local(.tabsContainer) {
+    background: #1e1e1e !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  :local(.frameItem) {
+    background: #252535 !important;
+  }
+
+  :local(.frameInfo) {
+    h3 {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    p {
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+
+    :local(.priceTag) {
+      background: rgba(255, 77, 79, 0.1) !important;
+      border-color: rgba(255, 77, 79, 0.2) !important;
+    }
+  }
+
+  :local(.pagination) {
+    background: #1e1e1e !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  :local(.propsName) {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  :local(.propsDescription) {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+}

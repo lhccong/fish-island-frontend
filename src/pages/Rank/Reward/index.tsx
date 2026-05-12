@@ -308,7 +308,7 @@ export default function DonationLeaderboard() {
         />
       </div>
 
-      <div style={{ backgroundColor: '#f9f0ff', padding: 12, borderRadius: 8, marginBottom: 20 }}>
+      <div style={{ backgroundColor: 'var(--ant-color-bg-container)', border: '1px solid rgba(250,140,22,0.2)', padding: 12, borderRadius: 8, marginBottom: 20 }}>
         <p style={{ fontWeight: 'bold', color: '#fa8c16', marginBottom: 8 }}>打赏福利通知：</p>
         <ul style={{ paddingLeft: 20, margin: 0, color: '#555' }}>
           <li>1 - 获得"天使投资人"头衔</li>

@@ -17,9 +17,18 @@
       width: 100%;
       height: 100%;
       border-radius: 16px;
-      background-size: 100% 100%;
-      background-position: center;
+      background: #e8e8e8;
       position: relative;
+      overflow: hidden;
+
+      .cover-bg-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+        border-radius: 16px;
+      }
 
       // 渐变遮罩 - 底部更深，让名字更清晰
       &::after {
@@ -29,7 +38,7 @@
         left: 0;
         right: 0;
         height: 60%;
-        background: linear-gradiet(to bottom, transparent 0%, rgba(0, 0, 0, 0.35) 100%);
+        background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.35) 100%);
         pointer-events: none;
       }
     }
@@ -202,6 +211,38 @@
             letter-spacing: 0.3px;
           }
 
+          .moment-text-wrap {
+            margin-bottom: 14px;
+
+            .moment-text {
+              font-size: 15px;
+              line-height: 1.7;
+              color: #262626;
+              white-space: pre-wrap;
+              word-break: break-word;
+              letter-spacing: 0.3px;
+              margin-bottom: 0;
+
+              &.moment-text-collapsed {
+                display: -webkit-box;
+                -webkit-line-clamp: 6;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+              }
+            }
+
+            .moment-text-toggle {
+              display: inline-block;
+              margin-top: 4px;
+              font-size: 13px;
+              color: #576b95;
+              cursor: pointer;
+              &:hover {
+                text-decoration: underline;
+              }
+            }
+          }
+
           // 九宫格图片
           .media-grid {
             margin-bottom: 14px;
@@ -355,6 +396,17 @@
               font-size: 13px;
               color: #576b95;
               word-break: break-word;
+
+              .like-users-toggle {
+                color: #576b95;
+                cursor: pointer;
+                font-size: 12px;
+                opacity: 0.75;
+                &:hover {
+                  opacity: 1;
+                  text-decoration: underline;
+                }
+              }
             }
           }
 
@@ -459,6 +511,30 @@
 
       .comment-list {
         margin-bottom: 12px;
+        padding-right: 4px;
+
+        // 展开后限制最大高度，启用滚动
+        &.comment-list-expanded {
+          max-height: 320px;
+          overflow-x: hidden;
+          overflow-y: auto;
+          padding-right: 6px;
+
+          // 自定义滚动条
+          &::-webkit-scrollbar {
+            width: 4px;
+          }
+          &::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          &::-webkit-scrollbar-thumb {
+            background: #e0e0e0;
+            border-radius: 2px;
+            &:hover {
+              background: #bbb;
+            }
+          }
+        }
 
         .comment-item {
           display: flex;
@@ -1320,4 +1396,370 @@
   0%   { box-shadow: 0 0 0 3px rgba(244, 172, 112, 0.7); }
   40%  { box-shadow: 0 0 0 6px rgba(244, 172, 112, 0.4); }
   100% { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06); }
+}
+
+// ── 深色模式覆盖 ──────────────────────────────────────────
+body.dark-mode {
+  .fish-circle-page {
+    background-color: #121212 !important;
+
+    .cover-header {
+      background: #1e1e1e;
+    }
+
+    // 动态卡片
+    .moments-container {
+      .loading-container {
+        color: rgba(255, 255, 255, 0.35);
+      }
+
+      .moment-item {
+        background: #1e1e1e !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+
+        &:hover {
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        &.moment-item-pinned {
+          border-color: rgba(244, 172, 112, 0.25);
+        }
+
+        .moment-content {
+          .moment-avatar {
+            border-color: rgba(255, 255, 255, 0.08);
+          }
+
+          .moment-body {
+            .moment-user {
+              color: rgba(255, 255, 255, 0.85);
+
+              &:hover {
+                color: #4facfe;
+              }
+            }
+
+            .moment-text {
+              color: rgba(255, 255, 255, 0.75) !important;
+            }
+
+            .like-users-bar {
+              background: rgba(255, 255, 255, 0.04);
+
+              .like-users-names {
+                color: #7b9fd4;
+              }
+            }
+
+            .moment-footer {
+              border-top-color: rgba(255, 255, 255, 0.06);
+
+              .moment-time {
+                color: rgba(255, 255, 255, 0.3);
+              }
+
+              .moment-actions {
+                .action-btn {
+                  color: rgba(255, 255, 255, 0.4);
+
+                  &:hover {
+                    background-color: rgba(255, 255, 255, 0.06);
+                  }
+
+                  &.like-btn {
+                    &.liked {
+                      color: #ff4d4f;
+                      background: rgba(255, 77, 79, 0.1);
+                    }
+
+                    &:hover {
+                      color: #ff4d4f;
+                      background: rgba(255, 77, 79, 0.1);
+                    }
+                  }
+
+                  &.comment-btn:hover {
+                    color: #4facfe;
+                    background: rgba(79, 172, 254, 0.1);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // 评论区
+        .comment-section {
+          border-top-color: rgba(255, 255, 255, 0.06);
+
+          .comment-list {
+            .comment-item {
+              &.comment-item-pinned {
+                background: rgba(244, 172, 112, 0.06);
+              }
+
+              .comment-body {
+                .comment-username {
+                  color: #7b9fd4;
+                }
+
+                .comment-content {
+                  color: rgba(255, 255, 255, 0.7);
+
+                  .comment-text-part {
+                    color: rgba(255, 255, 255, 0.7);
+                  }
+
+                  .comment-img-item {
+                    border-color: rgba(255, 255, 255, 0.08);
+                  }
+                }
+
+                .comment-meta {
+                  .comment-time {
+                    color: rgba(255, 255, 255, 0.25);
+                  }
+
+                  .comment-reply-btn,
+                  .comment-delete-btn,
+                  .comment-top-btn {
+                    color: rgba(255, 255, 255, 0.3);
+
+                    &:hover {
+                      color: #7b9fd4;
+                    }
+                  }
+
+                  .comment-delete-btn:hover {
+                    color: #ff4d4f;
+                  }
+                }
+              }
+            }
+          }
+
+          .expand-replies-btn,
+          .load-more-comments {
+            color: #7b9fd4;
+          }
+
+          .comment-input-area {
+            .reply-hint {
+              background: rgba(255, 255, 255, 0.06);
+              color: rgba(255, 255, 255, 0.4);
+
+              span {
+                color: #7b9fd4;
+              }
+            }
+
+            .comment-images-preview {
+              .comment-preview-item {
+                border-color: rgba(255, 255, 255, 0.08);
+              }
+            }
+
+            .comment-input-row {
+              .comment-input {
+                background: rgba(255, 255, 255, 0.06);
+                color: rgba(255, 255, 255, 0.85);
+
+                &:focus {
+                  background: rgba(255, 255, 255, 0.08);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      .loading-more {
+        color: rgba(255, 255, 255, 0.3);
+      }
+
+      .no-more {
+        .ant-divider {
+          color: rgba(255, 255, 255, 0.2);
+
+          &::before,
+          &::after {
+            border-color: rgba(255, 255, 255, 0.08);
+          }
+        }
+      }
+    }
+
+    // 右侧边栏
+    .sidebar {
+      .sidebar-card {
+        background: #1e1e1e !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+
+        .sidebar-card-title {
+          color: rgba(255, 255, 255, 0.85);
+          border-bottom-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .pinned-post {
+          border-bottom-color: rgba(255, 255, 255, 0.06);
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.04);
+          }
+
+          .pinned-post-body {
+            .pinned-post-meta {
+              .pinned-post-user {
+                color: rgba(255, 255, 255, 0.75);
+              }
+
+              .pinned-post-time {
+                color: rgba(255, 255, 255, 0.25);
+              }
+            }
+
+            .pinned-post-content {
+              color: rgba(255, 255, 255, 0.45);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 发布弹窗
+  .publish-modal-content {
+    .publish-textarea {
+      textarea {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.85);
+
+        &:focus {
+          background: rgba(255, 255, 255, 0.08);
+        }
+
+        &::placeholder {
+          color: rgba(255, 255, 255, 0.25);
+        }
+      }
+    }
+
+    .publish-images-preview {
+      .preview-item {
+        border-color: rgba(255, 255, 255, 0.08);
+      }
+    }
+
+    .publish-actions {
+      .upload-hint {
+        color: rgba(255, 255, 255, 0.35);
+      }
+    }
+
+    .publish-location {
+      :global(.ant-input-affix-wrapper) {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.85);
+      }
+    }
+
+    .publish-footer {
+      border-top-color: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  // 打赏弹窗
+  .reward-modal-content {
+    .reward-desc {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .reward-presets {
+      .reward-preset-item {
+        border-color: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.65);
+
+        &:hover {
+          border-color: #f4ac70;
+          color: #f4ac70;
+        }
+
+        &.active {
+          border-color: #f4ac70;
+          background: rgba(244, 172, 112, 0.12);
+          color: #f4ac70;
+        }
+      }
+    }
+
+    .reward-footer {
+      border-top-color: rgba(255, 255, 255, 0.06);
+    }
+  }
+
+  // 抽奖弹窗
+  .lottery-modal-content {
+    .lottery-desc {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .lottery-count-row {
+      .lottery-count-label {
+        color: rgba(255, 255, 255, 0.75);
+      }
+    }
+
+    .lottery-presets {
+      .lottery-preset-item {
+        border-color: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.65);
+
+        &:hover {
+          border-color: #f4ac70;
+          color: #f4ac70;
+        }
+
+        &.active {
+          border-color: #f4ac70;
+          background: rgba(244, 172, 112, 0.12);
+          color: #f4ac70;
+        }
+      }
+    }
+
+    .lottery-footer {
+      border-top-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .lottery-result {
+      .lottery-result-title {
+        color: rgba(255, 255, 255, 0.85);
+      }
+
+      .lottery-no-winner {
+        color: rgba(255, 255, 255, 0.35);
+      }
+
+      .lottery-winners-list {
+        .lottery-winner-item {
+          background: linear-gradient(135deg, #2a2010 0%, #241a0a 100%);
+          border-color: rgba(244, 172, 112, 0.2);
+
+          .lottery-winner-name {
+            color: rgba(255, 255, 255, 0.85);
+          }
+        }
+      }
+
+      .lottery-result-hint {
+        color: rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
+
+  .sidebar-empty {
+    color: rgba(255, 255, 255, 0.2);
+  }
 }

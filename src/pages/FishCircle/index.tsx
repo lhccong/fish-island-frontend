@@ -91,6 +91,8 @@ const FishCirclePage: React.FC = () => {
   const [commentSubmitting, setCommentSubmitting] = useState<boolean>(false);
   const [expandedRepliesMap, setExpandedRepliesMap] = useState<Record<number, boolean>>({}); // 子评论展开状态
   const [expandedCommentsMap, setExpandedCommentsMap] = useState<Record<number, boolean>>({}); // 评论列表展开状态
+  const [expandedLikesMap, setExpandedLikesMap] = useState<Record<number, boolean>>({}); // 点赞列表展开状态
+  const [expandedTextMap, setExpandedTextMap] = useState<Record<number, boolean>>({}); // 动态正文展开状态
 
   const scrollRef = useRef<HTMLDivElement>(null); // kept for potential future use
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -774,14 +776,19 @@ const FishCirclePage: React.FC = () => {
     <div className="fish-circle-page">
       {/* 头部封面 */}
       <div className="cover-header">
-        <div
-          className="cover-bg"
-          style={
-            (viewingUser?.momentsBgUrl || currentUser?.momentsBgUrl)
-              ? { backgroundImage: `url(${viewingUser ? viewingUser.momentsBgUrl : currentUser?.momentsBgUrl})` }
-              : undefined
-          }
-        />
+        <div className="cover-bg">
+          {(() => {
+            const bgUrl = viewingUser ? viewingUser.momentsBgUrl : currentUser?.momentsBgUrl;
+            return bgUrl && bgUrl.trim() ? (
+              <img
+                src={bgUrl}
+                alt=""
+                className="cover-bg-img"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            ) : null;
+          })()}
+        </div>
         {(viewingUser || viewingSelf) && (
           <div className="cover-back-btn" onClick={handleBackToMain}>
             <ArrowLeftOutlined /> 返回
@@ -846,9 +853,26 @@ const FishCirclePage: React.FC = () => {
                     >{moment.userName}</div>
 
                     {/* 文字内容 */}
-                    {moment.content && (
-                      <div className="moment-text">{moment.content}</div>
-                    )}
+                    {moment.content && (() => {
+                      const COLLAPSE_THRESHOLD = 200; // 超过200字符折叠
+                      const isLong = moment.content.length > COLLAPSE_THRESHOLD;
+                      const isTextExpanded = expandedTextMap[moment.id!];
+                      return (
+                        <div className="moment-text-wrap">
+                          <div className={`moment-text${isLong && !isTextExpanded ? ' moment-text-collapsed' : ''}`}>
+                            {moment.content}
+                          </div>
+                          {isLong && (
+                            <span
+                              className="moment-text-toggle"
+                              onClick={() => setExpandedTextMap((prev) => ({ ...prev, [moment.id!]: !isTextExpanded }))}
+                            >
+                              {isTextExpanded ? '收起' : '展开'}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* 九宫格图片 */}
                     {renderMediaGrid(moment.mediaJson)}
@@ -862,14 +886,36 @@ const FishCirclePage: React.FC = () => {
                     )}
 
                     {/* 点赞用户名列表（微信风格） */}
-                    {moment.likeUserNames && moment.likeUserNames.trim() && (
-                      <div className="like-users-bar">
-                        <HeartFilled className="like-users-icon" />
-                        <span className="like-users-names">
-                          {moment.likeUserNames.split(',').filter(Boolean).join('，')}
-                        </span>
-                      </div>
-                    )}
+                    {moment.likeUserNames && moment.likeUserNames.trim() && (() => {
+                      const names = moment.likeUserNames.split(',').filter(Boolean);
+                      const LIMIT = 20;
+                      const isLikesExpanded = expandedLikesMap[moment.id!];
+                      const visibleNames = isLikesExpanded ? names : names.slice(0, LIMIT);
+                      return (
+                        <div className="like-users-bar">
+                          <HeartFilled className="like-users-icon" />
+                          <span className="like-users-names">
+                            {visibleNames.join('，')}
+                            {!isLikesExpanded && names.length > LIMIT && (
+                              <span
+                                className="like-users-toggle"
+                                onClick={() => setExpandedLikesMap((prev) => ({ ...prev, [moment.id!]: true }))}
+                              >
+                                {' '}等{names.length}人 ▾
+                              </span>
+                            )}
+                            {isLikesExpanded && names.length > LIMIT && (
+                              <span
+                                className="like-users-toggle"
+                                onClick={() => setExpandedLikesMap((prev) => ({ ...prev, [moment.id!]: false }))}
+                              >
+                                {' '}收起 ▴
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     {/* 时间和操作 */}
                     <div className="moment-footer">
@@ -978,76 +1024,78 @@ const FishCirclePage: React.FC = () => {
                       const isExpanded = expandedCommentsMap[moment.id!];
                       const visibleComments = isExpanded ? allComments : allComments.slice(0, 3);
                       return (
-                        <div className="comment-list">
-                          {visibleComments.map((comment) => (
-                            <div key={comment.id} className={`comment-item${comment.isTop === 1 ? ' comment-item-pinned' : ''}`}>
-                              <Avatar size={28} src={comment.userAvatar} className="comment-avatar">
-                                {comment.userName?.charAt(0)}
-                              </Avatar>
-                              <div className="comment-body">
-                                <span className="comment-username">{comment.userName}</span>
-                                {comment.isTop === 1 && <span className="comment-top-tag">置顶</span>}
-                                <div className="comment-content">{renderCommentContent(comment.content)}</div>
-                                <div className="comment-meta">
-                                  <span className="comment-time">{formatTime(comment.createTime)}</span>
-                                  <span className="comment-reply-btn" onClick={() => { setReplyTarget({ commentId: comment.id!, userName: comment.userName!, momentId: moment.id! }); setShowInputId(moment.id!); }}>回复</span>
-                                  {(currentUser?.id === moment.userId || isAdmin) && (
-                                    <span
-                                      className={`comment-top-btn${comment.isTop === 1 ? ' active' : ''}`}
-                                      onClick={() => handleToggleTopComment(comment.id!, moment.id!, comment.isTop || 0)}
-                                    >
-                                      {comment.isTop === 1 ? '取消置顶' : '置顶'}
-                                    </span>
-                                  )}
-                                  {(currentUser?.id === comment.userId || isAdmin) && (
-                                    <span className="comment-delete-btn" onClick={() => handleDeleteComment(comment.id!, moment.id!)}>删除</span>
-                                  )}
-                                </div>
-                                {/* 子评论 - 默认折叠 */}
-                                {(comment.children || []).length > 0 && (
-                                  <>
-                                    {!expandedRepliesMap[comment.id!] ? (
+                        <>
+                          <div className={`comment-list${isExpanded ? ' comment-list-expanded' : ''}`}>
+                            {visibleComments.map((comment) => (
+                              <div key={comment.id} className={`comment-item${comment.isTop === 1 ? ' comment-item-pinned' : ''}`}>
+                                <Avatar size={28} src={comment.userAvatar} className="comment-avatar">
+                                  {comment.userName?.charAt(0)}
+                                </Avatar>
+                                <div className="comment-body">
+                                  <span className="comment-username">{comment.userName}</span>
+                                  {comment.isTop === 1 && <span className="comment-top-tag">置顶</span>}
+                                  <div className="comment-content">{renderCommentContent(comment.content)}</div>
+                                  <div className="comment-meta">
+                                    <span className="comment-time">{formatTime(comment.createTime)}</span>
+                                    <span className="comment-reply-btn" onClick={() => { setReplyTarget({ commentId: comment.id!, userName: comment.userName!, momentId: moment.id! }); setShowInputId(moment.id!); }}>回复</span>
+                                    {(currentUser?.id === moment.userId || isAdmin) && (
                                       <span
-                                        className="expand-replies-btn"
-                                        onClick={() => setExpandedRepliesMap((prev) => ({ ...prev, [comment.id!]: true }))}
+                                        className={`comment-top-btn${comment.isTop === 1 ? ' active' : ''}`}
+                                        onClick={() => handleToggleTopComment(comment.id!, moment.id!, comment.isTop || 0)}
                                       >
-                                        查看 {comment.children!.length} 条回复
+                                        {comment.isTop === 1 ? '取消置顶' : '置顶'}
                                       </span>
-                                    ) : (
-                                      <>
-                                        {comment.children!.map((child) => (
-                                          <div key={child.id} className="comment-item child">
-                                            <Avatar size={22} src={child.userAvatar} className="comment-avatar">
-                                              {child.userName?.charAt(0)}
-                                            </Avatar>
-                                            <div className="comment-body">
-                                              <span className="comment-username">{child.userName}</span>
-                                              {child.replyUserName && <span className="comment-reply-to">回复 <span>{child.replyUserName}</span></span>}
-                                              <div className="comment-content">{renderCommentContent(child.content)}</div>
-                                              <div className="comment-meta">
-                                                <span className="comment-time">{formatTime(child.createTime)}</span>
-                                                <span className="comment-reply-btn" onClick={() => { setReplyTarget({ commentId: comment.id!, userName: child.userName!, momentId: moment.id! }); setShowInputId(moment.id!); }}>回复</span>
-                                                {(currentUser?.id === child.userId || isAdmin) && (
-                                                  <span className="comment-delete-btn" onClick={() => handleDeleteComment(child.id!, moment.id!)}>删除</span>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
+                                    )}
+                                    {(currentUser?.id === comment.userId || isAdmin) && (
+                                      <span className="comment-delete-btn" onClick={() => handleDeleteComment(comment.id!, moment.id!)}>删除</span>
+                                    )}
+                                  </div>
+                                  {/* 子评论 - 默认折叠 */}
+                                  {(comment.children || []).length > 0 && (
+                                    <>
+                                      {!expandedRepliesMap[comment.id!] ? (
                                         <span
                                           className="expand-replies-btn"
-                                          onClick={() => setExpandedRepliesMap((prev) => ({ ...prev, [comment.id!]: false }))}
+                                          onClick={() => setExpandedRepliesMap((prev) => ({ ...prev, [comment.id!]: true }))}
                                         >
-                                          收起回复
+                                          查看 {comment.children!.length} 条回复
                                         </span>
-                                      </>
-                                    )}
-                                  </>
-                                )}
+                                      ) : (
+                                        <>
+                                          {comment.children!.map((child) => (
+                                            <div key={child.id} className="comment-item child">
+                                              <Avatar size={22} src={child.userAvatar} className="comment-avatar">
+                                                {child.userName?.charAt(0)}
+                                              </Avatar>
+                                              <div className="comment-body">
+                                                <span className="comment-username">{child.userName}</span>
+                                                {child.replyUserName && <span className="comment-reply-to">回复 <span>{child.replyUserName}</span></span>}
+                                                <div className="comment-content">{renderCommentContent(child.content)}</div>
+                                                <div className="comment-meta">
+                                                  <span className="comment-time">{formatTime(child.createTime)}</span>
+                                                  <span className="comment-reply-btn" onClick={() => { setReplyTarget({ commentId: comment.id!, userName: child.userName!, momentId: moment.id! }); setShowInputId(moment.id!); }}>回复</span>
+                                                  {(currentUser?.id === child.userId || isAdmin) && (
+                                                    <span className="comment-delete-btn" onClick={() => handleDeleteComment(child.id!, moment.id!)}>删除</span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                          <span
+                                            className="expand-replies-btn"
+                                            onClick={() => setExpandedRepliesMap((prev) => ({ ...prev, [comment.id!]: false }))}
+                                          >
+                                            收起回复
+                                          </span>
+                                        </>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                          {/* 加载更多评论 */}
+                            ))}
+                          </div>
+                          {/* 加载更多 / 收起 */}
                           {!isExpanded && allComments.length > 3 && (
                             <span
                               className="load-more-comments"
@@ -1064,7 +1112,7 @@ const FishCirclePage: React.FC = () => {
                               收起
                             </span>
                           )}
-                        </div>
+                        </>
                       );
                     })()}
                     {/* 输入框 - 点击评论按钮才显示 */}
@@ -1313,8 +1361,6 @@ const FishCirclePage: React.FC = () => {
             }}
             autoSize={{ minRows: 4, maxRows: 8 }}
             className="publish-textarea"
-            maxLength={500}
-            showCount
           />
 
           {editImages.length > 0 && (

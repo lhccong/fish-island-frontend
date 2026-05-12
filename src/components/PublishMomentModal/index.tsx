@@ -120,8 +120,6 @@ const PublishMomentModal: React.FC<PublishMomentModalProps> = ({ open, onCancel,
           onPaste={handlePaste}
           autoSize={{ minRows: 4, maxRows: 8 }}
           className="publish-textarea"
-          maxLength={500}
-          showCount
         />
 
         {/* 图片预览 */}
@@ -171,6 +169,7 @@ const PublishMomentModal: React.FC<PublishMomentModalProps> = ({ open, onCancel,
             onChange={(e) => setLocation(e.target.value)}
             maxLength={50}
             allowClear
+            style={{ background: 'var(--ant-color-bg-container)', borderRadius: 8 }}
           />
         </div>
 

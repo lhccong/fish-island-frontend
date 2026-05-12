@@ -1941,24 +1941,25 @@
       background: transparent;
       
       &:hover {
-        background: rgba(24, 144, 255, 0.06);
-        color: #1890ff;
+        background: rgba(255, 167, 104, 0.08);
+        color: #ffa768;
       }
       
       &.ant-tabs-tab-active {
-        background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
-        color: white !important;
-        font-weight: 500;
-        box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+        background: transparent;
+        color: #ffa768 !important;
+        font-weight: 600;
+        box-shadow: none;
+        border-bottom: 2px solid #ffa768;
         
         .anticon {
-          color: white;
+          color: #ffa768;
         }
       }
     }
     
     :global(.ant-tabs-ink-bar) {
-      display: none;
+      background: #ffa768;
     }
     
     :global(.ant-tabs-content-holder) {
@@ -2265,4 +2266,199 @@
   min-width: 60px;
   text-align: center;
   box-shadow: 0 2px 6px rgba(212, 112, 10, 0.15);
+}
+
+// ── 深色模式覆盖 ──────────────────────────────────────────
+:global([data-theme="dark"]) {
+  // 宠物信息区
+  .petInfo {
+    background-color: #1e1e1e;
+  }
+
+  .petName {
+    .name {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+
+  .petStatus {
+    .statusItem {
+      .statusLabel {
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .statusInfo {
+        color: rgba(255, 255, 255, 0.3);
+
+        &:hover {
+          color: #4facfe;
+        }
+      }
+    }
+  }
+
+  // 物品卡片
+  .itemCard {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252535 100%);
+    border-color: rgba(79, 172, 254, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
+    &:hover {
+      border-color: #4facfe;
+      box-shadow: 0 4px 12px rgba(79, 172, 254, 0.2);
+    }
+
+    .itemDesc {
+      color: rgba(255, 255, 255, 0.4);
+    }
+  }
+
+  // 商店空状态
+  .shopEmpty {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-color: rgba(79, 172, 254, 0.15);
+
+    .emptyText {
+      color: rgba(255, 255, 255, 0.45);
+    }
+  }
+
+  // 成就卡片
+  .achievementCard {
+    background: linear-gradient(135deg, #1e1e1e 0%, #1a2035 100%);
+    border-color: rgba(79, 172, 254, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    &:hover {
+      border-color: #4facfe;
+      box-shadow: 0 8px 20px rgba(79, 172, 254, 0.2);
+    }
+
+    .achievementDesc {
+      color: rgba(255, 255, 255, 0.45);
+    }
+  }
+
+  // 商店类型选择器
+  .shopContainer {
+    .shopTypeSelector {
+      :global(.ant-radio-button-wrapper) {
+        background: linear-gradient(135deg, #1e1e1e 0%, #252535 100%);
+        border-color: rgba(79, 172, 254, 0.2);
+        color: rgba(255, 255, 255, 0.55);
+
+        &:hover {
+          border-color: #4facfe;
+          background: linear-gradient(135deg, #1a2535 0%, #1e2a40 100%);
+          color: #4facfe;
+        }
+
+        &:global(.ant-radio-button-wrapper-checked) {
+          background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+          color: white;
+        }
+      }
+    }
+
+    .shopContent {
+      .shopSection {
+        .sectionTitle {
+          background: linear-gradient(135deg, #1a2535 0%, #1e2a40 100%);
+          border-left-color: #4facfe;
+          color: #4facfe;
+        }
+      }
+    }
+  }
+
+  // 宠物馆
+  .skinContainer {
+    .otherUserSkins {
+      background: rgba(255, 255, 255, 0.03);
+    }
+  }
+
+  // 右侧 Tab 面板
+  .petRightColumn {
+    :global(.ant-tabs) {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+      border-color: rgba(79, 172, 254, 0.1);
+
+      :global(.ant-tabs-nav) {
+        background: linear-gradient(135deg, #1e1e1e 0%, #252535 100%);
+        border-bottom-color: rgba(79, 172, 254, 0.1);
+      }
+
+      :global(.ant-tabs-tab) {
+        color: rgba(255, 255, 255, 0.55);
+
+        &:hover {
+          background: rgba(255, 167, 104, 0.08);
+          color: #ffa768;
+        }
+
+        &:global(.ant-tabs-tab-active) {
+          background: transparent;
+          color: #ffa768 !important;
+          border-bottom: 2px solid #ffa768;
+        }
+      }
+
+      :global(.ant-tabs-content-holder) {
+        background: rgba(18, 18, 18, 0.8);
+      }
+    }
+  }
+
+  // 装备界面（左侧橙色区域保持原色，只调整文字和状态栏）
+  .petLeftColumn {
+    .equipmentInterface {
+      // 保持橙色渐变背景不变，只调整状态栏背景
+      .petStats {
+        .statusBars {
+          .statusItem {
+            background: rgba(0, 0, 0, 0.15);
+            border-color: rgba(212, 175, 55, 0.2);
+          }
+        }
+      }
+
+      .petDetails {
+        .petStatus {
+          background: rgba(0, 0, 0, 0.2);
+          border-color: rgba(255, 255, 255, 0.1);
+
+          .statusItem {
+            .statusLabel {
+              color: #c2410c;
+            }
+
+            .statusProgressContainer {
+              :global(.ant-progress-inner) {
+                background-color: rgba(0, 0, 0, 0.2);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 翻页按钮
+  .gamePageBtn {
+    background: linear-gradient(135deg, #2a1f10, #3a2a15);
+    border-color: rgba(232, 168, 124, 0.4);
+    color: #e8a87c;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #3a2a15, #4a3520);
+      border-color: #e8a87c;
+    }
+  }
+
+  .gamePageInfo {
+    background: linear-gradient(135deg, #2a1f10, #3a2a15);
+    border-color: rgba(232, 168, 124, 0.4);
+    color: #e8a87c;
+  }
 }

@@ -60,3 +60,910 @@ ol {
   object-fit: contain; /* 保持图片比例，确保完整显示 */
 }
 
+
+// ── 深色模式全局覆盖（鱼小圈 + 宠物） ──────────────────────────────────────
+body.dark-mode {
+  // 鱼小圈页面
+  .fish-circle-page {
+    background-color: #121212 !important;
+
+    .cover-header {
+      background: #1e1e1e !important;
+    }
+
+    .moment-item {
+      background: #1e1e1e !important;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+
+      .moment-user {
+        color: rgba(255, 255, 255, 0.85) !important;
+      }
+
+      .moment-text {
+        color: rgba(255, 255, 255, 0.75) !important;
+      }
+
+      .like-users-bar {
+        background: rgba(255, 255, 255, 0.04) !important;
+
+        .like-users-names {
+          color: #7b9fd4 !important;
+        }
+      }
+
+      .moment-time {
+        color: rgba(255, 255, 255, 0.3) !important;
+      }
+
+      .action-btn {
+        color: rgba(255, 255, 255, 0.4) !important;
+      }
+    }
+
+    .sidebar-card {
+      background: #1e1e1e !important;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+
+      .sidebar-card-title {
+        color: rgba(255, 255, 255, 0.85) !important;
+      }
+
+      .pinned-post-user {
+        color: rgba(255, 255, 255, 0.75) !important;
+      }
+
+      .pinned-post-content {
+        color: rgba(255, 255, 255, 0.45) !important;
+      }
+    }
+
+    .comment-section {
+      .comment-username {
+        color: #7b9fd4 !important;
+      }
+
+      .comment-content {
+        color: rgba(255, 255, 255, 0.7) !important;
+      }
+    }
+  }
+
+  // 宠物弹窗（Modal 内容）
+  .ant-modal-content {
+    background: #1e1e1e !important;
+  }
+
+  // 宠物信息区（通过属性选择器匹配哈希类名）
+  [class*="petInfo"] {
+    background-color: #1e1e1e !important;
+  }
+
+  [class*="petName"] {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  [class*="itemCard"] {
+    background: linear-gradient(135deg, #1e1e1e 0%, #252535 100%) !important;
+    border-color: rgba(79, 172, 254, 0.15) !important;
+
+    [class*="itemDesc"] {
+      color: rgba(255, 255, 255, 0.4) !important;
+    }
+  }
+
+  [class*="shopEmpty"] {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%) !important;
+
+    [class*="emptyText"] {
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+  }
+
+  [class*="achievementCard"] {
+    background: linear-gradient(135deg, #1e1e1e 0%, #1a2035 100%) !important;
+
+    [class*="achievementDesc"] {
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+  }
+
+  [class*="petRightColumn"] {
+    .ant-tabs {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%) !important;
+
+      .ant-tabs-nav {
+        background: linear-gradient(135deg, #1e1e1e 0%, #252535 100%) !important;
+      }
+
+      .ant-tabs-tab {
+        color: rgba(255, 255, 255, 0.55) !important;
+
+        &:hover {
+          color: #ffa768 !important;
+        }
+
+        &.ant-tabs-tab-active {
+          color: #ffa768 !important;
+        }
+      }
+
+      .ant-tabs-content-holder {
+        background: rgba(18, 18, 18, 0.8) !important;
+      }
+    }
+  }
+
+  [class*="gamePageBtn"] {
+    background: linear-gradient(135deg, #2a1f10, #3a2a15) !important;
+    color: #e8a87c !important;
+  }
+
+  [class*="gamePageInfo"] {
+    background: linear-gradient(135deg, #2a1f10, #3a2a15) !important;
+    color: #e8a87c !important;
+  }
+
+  // 打赏榜
+  .leaderboard-container {
+    background: #1a1a1a !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+
+    .stats-card-donors,
+    .stats-card-amount {
+      background: #1e1e1e !important;
+
+      .ant-card-body {
+        background: #1e1e1e !important;
+      }
+    }
+
+    .donor-card {
+      background: #1e1e1e !important;
+      border-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .detail-section {
+      background: #1e1e1e !important;
+      border-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .detail-header {
+      background: #252525 !important;
+      color: rgba(255, 255, 255, 0.85) !important;
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .detail-item {
+      border-bottom-color: rgba(255, 255, 255, 0.04) !important;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+      }
+    }
+
+    .divider-text {
+      background-color: #1a1a1a !important;
+    }
+  }
+
+  // 其他产品
+  .other-products-container {
+    background: #121212 !important;
+
+    .ant-card {
+      background: #1e1e1e !important;
+
+      .ant-card-head {
+        background: #1e1e1e !important;
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      }
+
+      .ant-card-body {
+        background: #1e1e1e !important;
+      }
+
+      .ant-card-cover > div {
+        background: #252525 !important;
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      }
+    }
+
+    .link-text {
+      background: #252525 !important;
+      color: rgba(255, 255, 255, 0.65) !important;
+    }
+
+    .copy-link {
+      background: #252525 !important;
+    }
+  }
+
+  // 无尽爬塔
+  .tower-climb-container {
+    background: #121212 !important;
+
+    .stat-card-blue,
+    .stat-card-purple,
+    .stat-card-orange,
+    .stat-card-green {
+      background: #1e1e1e !important;
+      .ant-card-body { background: #1e1e1e !important; }
+    }
+
+    .challenge-card,
+    .progress-card,
+    .ranking-card {
+      background: #1e1e1e !important;
+      .ant-card-body { background: #1e1e1e !important; }
+      .ant-card-head {
+        background: #1e1e1e !important;
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      }
+    }
+
+    .stat-item {
+      background: #252525 !important;
+      border-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .ranking-item {
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      &:hover { background: #252525 !important; }
+      &.my-rank { background: rgba(114, 46, 209, 0.15) !important; }
+    }
+
+    .rank-number { background: #2a2a2a !important; }
+    .rank-username { color: rgba(255, 255, 255, 0.85) !important; }
+    .ranking-title { color: rgba(255, 255, 255, 0.85) !important; }
+  }
+
+  // 无尽爬塔弹窗
+  .monster-preview-modal {
+    .preview-stats-body {
+      background: #1e1e1e !important;
+      .stat-item {
+        background: #252525 !important;
+        border-color: rgba(255, 255, 255, 0.06) !important;
+      }
+    }
+    .preview-footer {
+      background: #1e1e1e !important;
+      border-top-color: rgba(255, 255, 255, 0.06) !important;
+    }
+  }
+
+  // 武道大会
+  .tournament-container {
+    background: #1a1a1a !important;
+    .ant-card-body { background: #1a1a1a !important; }
+
+    .ant-row .ant-col .ant-card {
+      background: #1e1e1e !important;
+      .ant-card-body { background: #1e1e1e !important; }
+    }
+
+    .top-three-wrapper {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .top-three-item.empty {
+      background: linear-gradient(135deg, #252525 0%, #1e1e1e 100%) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      .empty-avatar { background: #2a2a2a !important; }
+    }
+
+    .rest-ranking-card {
+      background: #1e1e1e !important;
+      .ant-card-body { background: #1e1e1e !important; }
+    }
+
+    .ranking-list-item {
+      &:nth-child(even) { background: #252525 !important; }
+      &:hover { background: #2a2a2a !important; }
+      &.my-rank { background: rgba(24, 144, 255, 0.1) !important; border-color: rgba(24, 144, 255, 0.3) !important; }
+      &.empty-item { background: #1e1e1e !important; &:hover { background: #252525 !important; } }
+    }
+
+    .rank-badge-normal { background: #2a2a2a !important; }
+    .empty-avatar-small { background: #2a2a2a !important; }
+
+    .player-name-list { color: rgba(255, 255, 255, 0.85) !important; }
+    .header-title { color: rgba(255, 255, 255, 0.85) !important; }
+  }
+
+  // 摸鱼股市
+  .stock-market-container {
+    background: #121212 !important;
+
+    .stock-market-header {
+      background: #1e1e1e !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .ant-card {
+      background: #1e1e1e !important;
+      .ant-card-body { background: #1e1e1e !important; }
+      .ant-card-actions {
+        background: #252525 !important;
+        border-top-color: rgba(255, 255, 255, 0.06) !important;
+      }
+    }
+
+    // 统计卡片标题
+    .ant-statistic-title {
+      color: rgba(255, 255, 255, 0.55) !important;
+    }
+
+    // 指数卡片
+    .index-name { color: rgba(255, 255, 255, 0.85) !important; }
+    .index-code {
+      background: #2a2a2a !important;
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+
+    // 持仓卡片
+    .position-name { color: rgba(255, 255, 255, 0.85) !important; }
+    .position-code { color: rgba(255, 255, 255, 0.45) !important; }
+    .stat-label { color: rgba(255, 255, 255, 0.45) !important; }
+    .stat-value { color: rgba(255, 255, 255, 0.85) !important; }
+    .position-header { border-bottom-color: rgba(255, 255, 255, 0.06) !important; }
+    .position-actions { border-top-color: rgba(255, 255, 255, 0.06) !important; }
+
+    // Tabs
+    .ant-tabs-nav {
+      .ant-tabs-tab {
+        background: #252525 !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        color: rgba(255, 255, 255, 0.55) !important;
+        &.ant-tabs-tab-active {
+          background: #1e1e1e !important;
+          border-color: #1890ff !important;
+          .ant-tabs-tab-btn { color: #1890ff !important; }
+        }
+      }
+    }
+    .ant-tabs-content-holder {
+      background: transparent !important;
+    }
+
+    // 交易信息框
+    .trade-info {
+      background: rgba(82, 196, 26, 0.08) !important;
+      border-color: rgba(82, 196, 26, 0.2) !important;
+    }
+
+    // 表格
+    .ant-table {
+      background: #1e1e1e !important;
+      color: rgba(255, 255, 255, 0.75) !important;
+      .ant-table-thead > tr > th {
+        background: #252525 !important;
+        color: rgba(255, 255, 255, 0.65) !important;
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      }
+      .ant-table-tbody > tr > td {
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+        color: rgba(255, 255, 255, 0.75) !important;
+      }
+      .ant-table-tbody > tr:hover > td { background: #2a2a2a !important; }
+      .ant-table-placeholder { background: #1e1e1e !important; }
+    }
+  }
+
+  // 帖子详情页
+  .post-detail-container {
+    background: transparent !important;
+
+    .post-detail-card {
+      background: #1e1e1e !important;
+      .ant-card-body { background: #1e1e1e !important; }
+    }
+
+    // 正文内容
+    .post-markdown-body {
+      color: rgba(255, 255, 255, 0.82) !important;
+
+      h1, h2, h3, h4, h5, h6 {
+        color: rgba(255, 255, 255, 0.92) !important;
+        border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+      }
+      h5, h6 { color: rgba(255, 255, 255, 0.6) !important; }
+      p, li { color: rgba(255, 255, 255, 0.82) !important; }
+      strong { color: rgba(255, 255, 255, 0.92) !important; }
+      del { color: rgba(255, 255, 255, 0.35) !important; }
+      a { color: #4facfe !important; &:hover { color: #74c0fc !important; } }
+
+      .post-md-inline-code {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #e6a070 !important;
+      }
+
+      .post-md-code-block {
+        border-color: rgba(255, 255, 255, 0.1) !important;
+
+        .post-md-code-header {
+          background: #2a2a2a !important;
+          border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+          .post-md-code-lang { color: rgba(255, 255, 255, 0.4) !important; }
+          .post-md-copy-btn { color: rgba(255, 255, 255, 0.4) !important; }
+        }
+      }
+
+      blockquote {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border-left-color: rgba(255, 255, 255, 0.2) !important;
+        color: rgba(255, 255, 255, 0.5) !important;
+      }
+
+      hr { border-top-color: rgba(255, 255, 255, 0.08) !important; }
+
+      .post-md-table-wrapper {
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        table {
+          th, td { border-color: rgba(255, 255, 255, 0.08) !important; }
+          th { background: #252525 !important; color: rgba(255, 255, 255, 0.85) !important; }
+          tr:nth-child(even) td { background: rgba(255, 255, 255, 0.03) !important; }
+          tr:hover td { background: rgba(255, 255, 255, 0.06) !important; }
+        }
+      }
+    }
+
+    // 标题、作者信息
+    .post-detail-title h3 { color: rgba(255, 255, 255, 0.92) !important; }
+    .post-detail-meta { color: rgba(255, 255, 255, 0.45) !important; }
+
+    // 评论区
+    .post-detail-comments {
+      background: #1e1e1e !important;
+      .ant-card-body { background: #1e1e1e !important; }
+      .ant-card-head {
+        background: #1e1e1e !important;
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      }
+    }
+
+    .comment-fixed-top { border-bottom-color: rgba(255, 255, 255, 0.06) !important; }
+    .comment-item-body { color: rgba(255, 255, 255, 0.75) !important; }
+    .reply-info { color: rgba(255, 255, 255, 0.35) !important; }
+    .comment-collapse-button {
+      background: #2a2a2a !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      color: rgba(255, 255, 255, 0.6) !important;
+    }
+  }
+
+  // 谁是卧底 - 游戏介绍页
+  .app-container {
+    background: #121212 !important;
+
+    .header-section {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .game-card {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .card-title { color: rgba(255, 255, 255, 0.85) !important; }
+    .card-subtitle { color: rgba(255, 255, 255, 0.45) !important; }
+    .subtitle { color: rgba(255, 255, 255, 0.45) !important; }
+
+    .identity-item {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      &.civilian { background: rgba(16, 185, 129, 0.08) !important; }
+      &.undercover { background: rgba(239, 68, 68, 0.08) !important; }
+    }
+
+    .identity-desc { color: rgba(255, 255, 255, 0.65) !important; }
+
+    .goal-item {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      &.goal-civilian { background: rgba(59, 130, 246, 0.08) !important; }
+      &.goal-undercover { background: rgba(245, 158, 11, 0.08) !important; }
+    }
+
+    .goal-title { color: rgba(255, 255, 255, 0.85) !important; }
+    .goal-desc { color: rgba(255, 255, 255, 0.5) !important; }
+
+    .step-title { color: rgba(255, 255, 255, 0.85) !important; }
+    .step-desc { color: rgba(255, 255, 255, 0.5) !important; }
+
+    .secondary-button {
+      background: rgba(255, 255, 255, 0.06) !important;
+      color: #a78bfa !important;
+      border-color: #a78bfa !important;
+    }
+  }
+
+  // 谁是卧底 - 房间浮窗聊天区域
+  [class*="chatContainer"] {
+    background-color: #1e1e1e !important;
+
+    [class*="chatHeader"] {
+      background-color: #252525 !important;
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    [class*="chatMessages"] {
+      background-color: #1a1a1a !important;
+    }
+
+    [class*="chatMessage"] {
+      background-color: #252525 !important;
+      [class*="messageSender"] { color: rgba(255, 255, 255, 0.65) !important; }
+      [class*="messageTime"] { color: rgba(255, 255, 255, 0.3) !important; }
+      [class*="messageContent"] { color: rgba(255, 255, 255, 0.82) !important; }
+    }
+
+    [class*="myMessage"] { background-color: rgba(24, 144, 255, 0.15) !important; }
+
+    [class*="chatInputContainer"] {
+      background-color: #1e1e1e !important;
+      border-top-color: rgba(255, 255, 255, 0.06) !important;
+    }
+  }
+
+  // 谁是卧底 - 房间信息区域
+  [class*="infoSection"] {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+  }
+
+  [class*="adminActionsSection"],
+  [class*="userActionsSection"],
+  [class*="creatorActionsSection"] {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  [class*="sectionTitle"] { color: rgba(255, 255, 255, 0.65) !important; }
+  [class*="creatorName"] { color: rgba(255, 255, 255, 0.75) !important; }
+  [class*="playersTitle"] { color: rgba(255, 255, 255, 0.75) !important; }
+  [class*="playerName"] { color: rgba(255, 255, 255, 0.82) !important; }
+
+  [class*="roomList"] {
+    background-color: #1e1e1e !important;
+  }
+
+  [class*="userMessageContent"] {
+    background-color: #252525 !important;
+    color: rgba(255, 255, 255, 0.82) !important;
+  }
+
+  [class*="userMessageTime"] { color: rgba(255, 255, 255, 0.35) !important; }
+
+  // 你画我猜 - 房间列表页
+  .room-list-card {
+    background: #1e1e1e !important;
+
+    .ant-card-head {
+      background-color: #252525 !important;
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .ant-card-head-title { color: rgba(255, 255, 255, 0.85) !important; }
+
+    .ant-card-body { background: #1e1e1e !important; }
+
+    .ant-list { background: #1e1e1e !important; }
+  }
+
+  .room-list-item {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.04) !important;
+      box-shadow: none !important;
+    }
+  }
+
+  .room-name { color: rgba(255, 255, 255, 0.85) !important; }
+  .room-info { color: rgba(255, 255, 255, 0.55) !important; }
+  .room-create-time { color: rgba(255, 255, 255, 0.35) !important; }
+
+  // 你画我猜 - 游戏房间页
+  .draw-canvas-card,
+  .chat-card,
+  .users-card {
+    background: #1e1e1e !important;
+    .ant-card-head {
+      background: #1e1e1e !important;
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+    .ant-card-body { background: #1e1e1e !important; }
+  }
+
+  .canvas-container {
+    background-color: #fff !important; // 画布保持白色，否则绘画颜色会乱
+    border-color: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .canvas-toolbar {
+    background-color: #252525 !important;
+  }
+
+  .word-hint-display {
+    background-color: #252525 !important;
+    .word-hint-label { color: rgba(255, 255, 255, 0.55) !important; }
+  }
+
+  // 摸鱼论坛
+  .post-page {
+    background-color: #121212 !important;
+
+    .post-filter-card,
+    .post-list-card {
+      background-color: #1e1e1e !important;
+      .ant-card-body { background-color: #1e1e1e !important; }
+      .ant-card-head {
+        background-color: #1e1e1e !important;
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      }
+    }
+
+    .filter-label { color: rgba(255, 255, 255, 0.75) !important; }
+
+    .search-input {
+      background: rgba(255, 255, 255, 0.06) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      input { background: transparent !important; color: rgba(255, 255, 255, 0.85) !important; }
+    }
+
+    .post-item {
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.04) !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      .author-name {
+        span:first-child { color: rgba(255, 255, 255, 0.85) !important; }
+        .post-time { color: rgba(255, 255, 255, 0.35) !important; }
+      }
+      .post-title a {
+        color: rgba(255, 255, 255, 0.85) !important;
+        &:hover { color: #4facfe !important; }
+      }
+      .post-content { color: rgba(255, 255, 255, 0.5) !important; }
+      .hot-comment {
+        background: rgba(250, 140, 22, 0.1) !important;
+        border-left-color: #fa8c16 !important;
+        color: #fa8c16 !important;
+      }
+      .ant-list-item-action li { color: rgba(255, 255, 255, 0.4) !important; }
+    }
+
+    .skeleton-item { background: #1e1e1e !important; }
+
+    .hot-topics-card,
+    .announcement-card {
+      background-color: #1e1e1e !important;
+      .ant-card-body { background-color: #1e1e1e !important; }
+      .ant-card-head {
+        background-color: #1e1e1e !important;
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      }
+    }
+
+    .hot-topic-item {
+      &:hover { background-color: rgba(255, 255, 255, 0.04) !important; }
+      a { color: rgba(255, 255, 255, 0.75) !important; &:hover { color: #4facfe !important; } }
+      .topic-count { background: #2a2a2a !important; color: rgba(255, 255, 255, 0.4) !important; }
+    }
+
+    .announcement-card p {
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      color: rgba(255, 255, 255, 0.65) !important;
+      &:hover { color: #4facfe !important; background-color: rgba(255, 255, 255, 0.04) !important; }
+    }
+
+    .ant-tabs-tab { color: rgba(255, 255, 255, 0.55) !important; }
+    .ant-tabs-tab-active .ant-tabs-tab-btn { color: #1890ff !important; }
+    .ant-tabs-ink-bar { background: #1890ff !important; }
+  }
+
+  [class*="moreOptionsMenu"] {
+    background-color: #2a2a2a !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  [class*="moreOptionsItem"] {
+    color: rgba(255, 255, 255, 0.75) !important;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.06) !important;
+      color: #ffa768 !important;
+    }
+
+    [class*="moreOptionsIcon"] {
+      color: #ffa768 !important;
+    }
+  }
+
+  // 头像框商城（CSS Modules 哈希类名）
+  [class*="container"] {
+    // 只匹配头像框商城的 header，避免误伤其他 container
+  }
+
+  [class*="tabsContainer"] {
+    background: #1e1e1e !important;
+  }
+
+  [class*="frameItem"] {
+    background: #252535 !important;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    }
+  }
+
+  [class*="frameInfo"] {
+    h3 {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    p {
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+
+    [class*="priceTag"] {
+      background: rgba(255, 77, 79, 0.1) !important;
+    }
+  }
+
+  [class*="propsName"] {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  [class*="propsDescription"] {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+
+  // 宠物页面容器（Pet/index.less CSS Modules）
+  [class*="gameTabsContainer"] {
+    background: #1e1e1e !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  [class*="gameTabsNav"] {
+    background: linear-gradient(180deg, #1a1a1a 0%, #161616 100%) !important;
+    border-right-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  [class*="gameTab"] {
+    [class*="gameTabIcon"] {
+      color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    [class*="gameTabText"] {
+      color: rgba(255, 255, 255, 0.3) !important;
+    }
+
+    &:hover {
+      background: rgba(255, 167, 104, 0.1) !important;
+    }
+
+    // 激活态三角指示器颜色
+    &::after {
+      border-right-color: #1e1e1e !important;
+    }
+  }
+
+  [class*="gameTabContent"] {
+    background: #1e1e1e !important;
+  }
+
+  [class*="petComponentWrapper"] {
+    background: #1e1e1e !important;
+
+    [class*="pageComponentHeader"] {
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+  }
+
+  [class*="rankingContainer"],
+  [class*="bossContainer"],
+  [class*="galleryContainer"] {
+    background: #1e1e1e !important;
+  }
+
+  // 排行榜表格
+  [class*="rankTable"],
+  [class*="rankingTable"] {
+    .ant-table {
+      background: #1e1e1e !important;
+      color: rgba(255, 255, 255, 0.75) !important;
+    }
+
+    .ant-table-thead > tr > th {
+      background: #252535 !important;
+      color: rgba(255, 255, 255, 0.65) !important;
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .ant-table-tbody > tr > td {
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      color: rgba(255, 255, 255, 0.75) !important;
+    }
+
+    .ant-table-tbody > tr:hover > td {
+      background: rgba(79, 172, 254, 0.08) !important;
+    }
+  }
+
+  [class*="rankNormal"] {
+    background: #2a2a2a !important;
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+
+  [class*="petName"] {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  [class*="petOwner"] {
+    color: rgba(255, 255, 255, 0.35) !important;
+  }
+
+  [class*="rankingTip"] {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+
+  // 图鉴筛选器
+  [class*="galleryFilters"] {
+    background: #252535 !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  [class*="filterLabel"] {
+    color: rgba(255, 255, 255, 0.65) !important;
+  }
+
+  [class*="filterBtn"] {
+    background: #2a2a2a !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(255, 255, 255, 0.55) !important;
+
+    &:hover {
+      border-color: #ffa768 !important;
+      color: #ffa768 !important;
+    }
+  }
+
+  // 图鉴物品卡片（Pet 页面的，非 MoyuPet 组件的）
+  [class*="galleryContainer"] [class*="itemCard"] {
+    background: #252535 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+
+    [class*="itemHeader"] {
+      background: linear-gradient(135deg, #2a2a3a 0%, #1e1e2e 100%) !important;
+    }
+
+    [class*="itemName"] {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    [class*="itemCategory"],
+    [class*="itemDescription"],
+    [class*="itemStat"] {
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+
+    [class*="itemLevel"] {
+      background: rgba(255, 255, 255, 0.06) !important;
+      color: rgba(255, 255, 255, 0.55) !important;
+    }
+  }
+
+  [class*="emptyState"] {
+    [class*="emptyText"] {
+      color: rgba(255, 255, 255, 0.35) !important;
+    }
+  }
+}

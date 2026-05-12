@@ -1,0 +1,304 @@
+.userDetailModal {
+  padding: 0;
+  margin: -20px -24px 0;
+  border-radius: 8px;
+  overflow: hidden;
+
+  .userDetailBody {
+    display: flex;
+    min-height: 260px;
+  }
+
+  .userDetailLeft {
+    display: flex;
+    flex-direction: column;
+    flex: 3;
+    padding: 20px 16px 16px;
+    min-width: 0;
+
+    .userDetailTopRow {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+
+      .avatarWrapper {
+        position: relative;
+        display: inline-block;
+        flex-shrink: 0;
+        width: 60px;
+        height: 60px;
+
+        .avatarWithFrame {
+          position: relative;
+          width: 60px;
+          height: 60px;
+          display: inline-block;
+
+          :global(.ant-avatar) {
+            z-index: 0;
+            border: 2px solid #fff;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+            border-radius: 50%;
+          }
+
+          .avatarFrame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 170%;
+            height: 170%;
+            pointer-events: none;
+            z-index: 1;
+          }
+        }
+      }
+
+      .userNameBlock {
+        min-width: 0;
+
+        .userDetailName {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1a1c1e;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          flex-wrap: wrap;
+        }
+      }
+    }
+
+    .userFollowStats {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 10px 0 6px;
+      width: 100%;
+
+      .followStatItem {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 14px;
+        border-radius: 8px;
+
+        .followStatNum {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1a1c1e;
+          line-height: 1.2;
+        }
+
+        .followStatLabel {
+          font-size: 11px;
+          color: #aaa;
+          margin-top: 1px;
+        }
+      }
+
+      .followStatDivider {
+        width: 1px;
+        height: 24px;
+        background: #eee;
+      }
+    }
+
+    .userDetailTags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+
+    .userDetailContent {
+      flex: 1;
+      background: #f7f8fc;
+      border-radius: 10px;
+      padding: 2px 0;
+      border: 1px solid #eef0f6;
+
+      .userDetailItem {
+        display: flex;
+        align-items: center;
+        padding: 7px 12px;
+        border-bottom: 1px solid #eef0f6;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .itemLabel {
+          width: 60px;
+          font-size: 12px;
+          color: #aaa;
+          flex-shrink: 0;
+        }
+
+        .itemValue {
+          font-size: 13px;
+          color: #222;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  .userDetailRight {
+    flex: 7;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .momentsBg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(255, 255, 255, 0.45) 0%, transparent 35%);
+      z-index: 1;
+      pointer-events: none;
+    }
+  }
+}
+
+.userDetailActions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 4px 0 2px;
+}
+
+.followBtnDefault {
+  margin-top: 8px;
+  border-radius: 16px !important;
+  font-weight: 500 !important;
+  background: linear-gradient(135deg, #ff8c00, #ff6b00) !important;
+  border: none !important;
+  color: #fff !important;
+  transition: all 0.25s !important;
+
+  &:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.4) !important;
+  }
+}
+
+.followBtnActive {
+  margin-top: 8px;
+  border-radius: 16px !important;
+  font-weight: 500 !important;
+  background: #f5f5f5 !important;
+  border: 1px solid #e0e0e0 !important;
+  color: #888 !important;
+  transition: all 0.25s !important;
+
+  &:hover {
+    background: #fff0f0 !important;
+    border-color: #ffb3b3 !important;
+    color: #ff4d4f !important;
+  }
+}
+
+.vipBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 3px;
+  margin-left: 2px;
+}
+
+// 称号样式（从 Chat 页面复用）
+.adminTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  .adminText {
+    font-size: 11px;
+  }
+}
+
+.titleImageContainer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+
+  .titleImage {
+    height: 22px;
+    width: auto;
+  }
+
+  .titleSweepLight {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.6),
+      transparent
+    );
+    animation: sweep 2.5s infinite;
+  }
+
+  .titleStar1,
+  .titleStar2 {
+    position: absolute;
+    font-size: 8px;
+    animation: twinkle 1.5s infinite alternate;
+  }
+
+  .titleStar1 {
+    top: -4px;
+    right: -4px;
+  }
+
+  .titleStar2 {
+    bottom: -4px;
+    left: -4px;
+    animation-delay: 0.75s;
+  }
+}
+
+@keyframes sweep {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.3; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); }
+}

@@ -433,6 +433,12 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
             algorithm: isDarkMode ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
             token: {
               colorPrimary: '#FFA768',
+              ...(isDarkMode ? {
+                colorBgBase: '#121212',
+                colorBgContainer: '#1e1e1e',
+                colorBgElevated: '#1e1e1e',
+                colorBgLayout: '#121212',
+              } : {}),
             },
           }}
         >

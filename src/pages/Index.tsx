@@ -51,10 +51,10 @@ const Index: React.FC = () => {
   // 主题相关颜色
   const textColor = isDarkMode ? 'rgba(255,255,255,0.85)' : '#495060';
   const subTextColor = isDarkMode ? 'rgba(255,255,255,0.45)' : 'gray';
-  const cardBg = isDarkMode ? '#1f1f1f' : '#fff';
-  const tabBarBg = isDarkMode ? '#141414' : '#fff';
-  const tabBarBorder = isDarkMode ? '#303030' : '#f0f0f0';
-  const mobileItemBg = isDarkMode ? '#1f1f1f' : '#fff';
+  const cardBg = isDarkMode ? '#1e1e1e' : '#fff';
+  const tabBarBg = isDarkMode ? '#121212' : '#fff';
+  const tabBarBorder = isDarkMode ? '#2a2a2a' : '#f0f0f0';
+  const mobileItemBg = isDarkMode ? '#1e1e1e' : '#fff';
 
   const [hostPostVoList, setHostPostVoList] = useState<API.HotPostVO[]>([]);
   const [loading, setLoading] = useState(true);

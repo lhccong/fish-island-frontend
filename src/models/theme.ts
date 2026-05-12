@@ -10,11 +10,12 @@ export default function useThemeModel() {
 
   useEffect(() => {
     localStorage.setItem('themeMode', isDarkMode ? 'dark' : 'light');
-    // 给 body 加 class，方便全局 CSS 变量覆盖
     if (isDarkMode) {
       document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.classList.add('dark-mode');
     } else {
       document.documentElement.removeAttribute('data-theme');
+      document.body.classList.remove('dark-mode');
     }
     // 派发事件，让其他组件感知主题变化
     window.dispatchEvent(new CustomEvent('themeChange', { detail: { isDarkMode } }));

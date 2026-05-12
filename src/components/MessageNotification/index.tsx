@@ -4,6 +4,7 @@ import { BellOutlined, CheckCircleOutlined, CheckOutlined, CloseOutlined, Delete
 import { batchDeleteUsingPost, batchSetReadUsingPost, listMyEventRemindByPageUsingPost } from '@/services/backend/eventRemindController';
 import { getMomentDetailUsingGet, listCommentsUsingPost, addCommentUsingPost1 } from '@/services/backend/momentsController';
 import MomentDetailModal from '@/components/MomentDetailModal';
+import UserDetailModal from '@/components/UserDetailModal';
 import { history } from '@umijs/max';
 import moment from 'moment';
 import './index.less';
@@ -59,6 +60,10 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
 
     // 动态详情弹窗
     const [detailMomentId, setDetailMomentId] = useState<number | null>(null);
+
+    // 用户卡片弹窗
+    const [userDetailVisible, setUserDetailVisible] = useState(false);
+    const [userDetailTarget, setUserDetailTarget] = useState<API.UserVO | null>(null);
     // 保留以下变量避免其他地方引用报错（已不再使用）
     const [detailVisible, setDetailVisible] = useState<boolean>(false);
     const [detailMoment, setDetailMoment] = useState<API.MomentsVO | null>(null);
@@ -192,6 +197,13 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
         // 如果消息未读，先标记为已读
         if (!item.isRead && item.id) {
           await markSingleAsRead(item.id);
+        }
+
+        // 系统通知（如关注通知）且有发送者 → 打开用户卡片
+        if (item.title === '系统通知' && item.senderUser) {
+          setUserDetailTarget(item.senderUser);
+          setUserDetailVisible(true);
+          return;
         }
 
         // sourceType === 4 (MOMENTS) → 直接弹出动态详情
@@ -542,6 +554,13 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
       <MomentDetailModal
         momentId={detailMomentId}
         onClose={() => { setDetailMomentId(null); setDetailVisible(false); setDetailMoment(null); setDetailCommentInput(''); setDetailReplyTarget(null); }}
+      />
+
+      {/* 用户卡片弹窗 */}
+      <UserDetailModal
+        user={userDetailTarget as any}
+        open={userDetailVisible}
+        onClose={() => { setUserDetailVisible(false); setUserDetailTarget(null); }}
       />
     </>
     );

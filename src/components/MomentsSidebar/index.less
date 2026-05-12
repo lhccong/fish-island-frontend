@@ -316,3 +316,109 @@
     }
   }
 }
+
+// ── 深色模式覆盖 ──────────────────────────────────────────
+:global([data-theme="dark"]) {
+  .sidebar {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  }
+
+  .toggleBtn {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.3);
+
+    &:hover {
+      color: #ffa768;
+      box-shadow: 0 4px 12px rgba(255, 167, 104, 0.3);
+    }
+  }
+
+  .header {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .title {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .iconBtn {
+    color: rgba(255, 255, 255, 0.35) !important;
+
+    &:hover {
+      color: #ffa768 !important;
+      background: rgba(255, 167, 104, 0.1) !important;
+    }
+  }
+
+  .iconBtnActive {
+    color: #4facfe !important;
+    background: rgba(79, 172, 254, 0.1) !important;
+  }
+
+  .list {
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .item {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+
+    &:hover {
+      background: rgba(255, 167, 104, 0.06);
+    }
+
+    &:active {
+      background: rgba(255, 167, 104, 0.1);
+    }
+  }
+
+  .name {
+    color: #7b9fd4;
+
+    &:hover {
+      color: #4facfe;
+    }
+  }
+
+  .time {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .content {
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .location {
+    color: #4facfe;
+    background: rgba(79, 172, 254, 0.1);
+  }
+
+  .moreImages {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .action {
+    color: rgba(255, 255, 255, 0.3);
+
+    &:hover {
+      color: #ffa768;
+    }
+
+    &.liked {
+      color: #ff4d4f;
+    }
+  }
+
+  .noMore {
+    color: rgba(255, 255, 255, 0.2);
+  }
+}

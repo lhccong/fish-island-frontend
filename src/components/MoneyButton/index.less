@@ -44,3 +44,17 @@
     font-weight: bold;
   }
 }
+
+// ── 深色模式覆盖 ──────────────────────────────────────────
+body.dark-mode {
+  .money-button {
+    background: linear-gradient(135deg, #2a2a2a, #1e1e1e) !important;
+    border-color: rgba(255, 167, 104, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+
+    .money-button-time,
+    .money-button-amount {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+  }
+}
