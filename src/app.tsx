@@ -6,6 +6,7 @@ import {AvatarDropdown} from './components/RightContent/AvatarDropdown';
 import {requestConfig} from './requestConfig';
 import {getLoginUserUsingGet} from "@/services/backend/userController";
 import {useEffect, useState} from "react";
+import {ConfigProvider, theme as antdTheme} from 'antd';
 import BossKeySettings from '@/components/BossKeySettings';
 import SideAnnouncement from '@/components/SideAnnouncement';
 import GlobalReader from '@/components/GlobalFloatingReader';
@@ -243,6 +244,9 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
   // 使用全局状态
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const { isReaderVisible, hideReader } = useModel('globalReader');
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // @ts-ignore
+  const { isDarkMode } = useModel('theme');
 
   // 注册 Service Worker
   const registerServiceWorker = () => {
@@ -418,12 +422,20 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
     // unAccessible: <div>unAccessible</div>,
     ...defaultSettings,
     layout: layoutMode,
+    navTheme: isDarkMode ? 'realDark' : 'light',
     menuDataRender: (layoutMode === 'side' || layoutMode === 'mix')
       ? (menuData: any[]) => remapMenuNames(menuData)
       : undefined,
     childrenRender: (children) => {
       return (
-        <>
+        <ConfigProvider
+          theme={{
+            algorithm: isDarkMode ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+            token: {
+              colorPrimary: '#FFA768',
+            },
+          }}
+        >
           <GlobalTitle/>
           {children}
           <SideAnnouncement/>
@@ -436,7 +448,7 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
             visible={isReaderVisible}
             onClose={hideReader}
           />
-        </>
+        </ConfigProvider>
       );
     },
   };

@@ -39,6 +39,7 @@ import {
   RightOutlined,
   CheckCircleFilled,
   GiftOutlined,
+  BulbOutlined,
 } from '@ant-design/icons';
 import {
   getMonthSignInUsingGet,
@@ -264,6 +265,8 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
 
   const {initialState, setInitialState} = useModel('@@initialState');
   const {currentUser}: any = initialState || {};
+  // @ts-ignore
+  const { isDarkMode, toggleTheme } = useModel('theme');
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [editProfileForm] = Form.useForm();
@@ -974,6 +977,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       label: '兑换码',
     },
     {
+      key: 'toggleTheme',
+      icon: <BulbOutlined/>,
+      label: isDarkMode ? '切换浅色模式' : '切换深色模式',
+    },
+    {
       key: 'logout',
       icon: <LogoutOutlined/>,
       label: '退出登录',
@@ -1040,9 +1048,13 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         setIsRedeemCodeOpen(true);
         return;
       }
+      if (key === 'toggleTheme') {
+        toggleTheme();
+        return;
+      }
       history.push(`/account/${key}`);
     },
-    [setInitialState, currentUser?.userAvatar, isMoneyVisible],
+    [setInitialState, currentUser?.userAvatar, isMoneyVisible, toggleTheme],
   );
 
   // 发送邮箱验证码

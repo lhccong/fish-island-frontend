@@ -29,6 +29,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { TouchEvent, useEffect, useRef, useState } from 'react';
 import './Index.less';
 import eventBus from '@/utils/eventBus';
+import { useModel } from '@umijs/max';
 
 const STORAGE_KEY = 'selected_source_ids';
 const TAB_VISIBLE_KEY = 'tab_visible';
@@ -44,6 +45,17 @@ const isSmallScreen = () => {
 };
 
 const Index: React.FC = () => {
+  // @ts-ignore
+  const { isDarkMode } = useModel('theme');
+
+  // 主题相关颜色
+  const textColor = isDarkMode ? 'rgba(255,255,255,0.85)' : '#495060';
+  const subTextColor = isDarkMode ? 'rgba(255,255,255,0.45)' : 'gray';
+  const cardBg = isDarkMode ? '#1f1f1f' : '#fff';
+  const tabBarBg = isDarkMode ? '#141414' : '#fff';
+  const tabBarBorder = isDarkMode ? '#303030' : '#f0f0f0';
+  const mobileItemBg = isDarkMode ? '#1f1f1f' : '#fff';
+
   const [hostPostVoList, setHostPostVoList] = useState<API.HotPostVO[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('');
@@ -329,14 +341,14 @@ const Index: React.FC = () => {
             >
               <div
                 style={{
-                  background: '#fff',
+                  background: mobileItemBg,
                   borderRadius: '16px',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                   padding: '20px 12px',
                   margin: '10px 0',
                 }}
               >
-                <div style={{ marginBottom: 12, color: '#888', fontSize: 13 }}>
+                <div style={{ marginBottom: 12, color: subTextColor, fontSize: 13 }}>
                   上次更新时间：
                   {currentSource.updateTime ? dayjs(currentSource.updateTime).fromNow() : '--'}
                 </div>
@@ -401,7 +413,7 @@ const Index: React.FC = () => {
                           style={{
                             display: 'flex',
                             width: '100%',
-                            color: 'black',
+                            color: textColor,
                             justifyContent: 'space-between',
                           }}
                         >
@@ -470,8 +482,8 @@ const Index: React.FC = () => {
               left: 0,
               right: 0,
               height: '50px',
-              backgroundColor: '#fff',
-              borderTop: '1px solid #f0f0f0',
+              backgroundColor: tabBarBg,
+              borderTop: `1px solid ${tabBarBorder}`,
               display: 'flex',
               justifyContent: 'space-around',
               alignItems: 'center',
@@ -630,12 +642,12 @@ const Index: React.FC = () => {
                                   style={{ width: 20, height: 20, marginRight: 8 }}
                                 />
                                 <Typography.Text
-                                  style={{ fontSize: '14px', color: '#495060', fontWeight: 400 }}
+                                  style={{ fontSize: '14px', color: textColor, fontWeight: 400 }}
                                 >
                                   {item.name}
                                 </Typography.Text>
                                 <Typography.Text
-                                  style={{ marginLeft: '10px', color: 'gray', fontSize: '12px' }}
+                                  style={{ marginLeft: '10px', color: subTextColor, fontSize: '12px' }}
                                 >
                                   (更新时间：{dayjs(item.updateTime).fromNow()})
                                 </Typography.Text>
@@ -664,7 +676,7 @@ const Index: React.FC = () => {
                                         style={{
                                           display: 'flex',
                                           width: '100%',
-                                          color: '#495060',
+                                          color: textColor,
                                           justifyContent: 'space-between',
                                           fontSize: '14px',
                                           fontWeight: 400,

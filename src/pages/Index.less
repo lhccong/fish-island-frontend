@@ -21,7 +21,6 @@
       .ant-tabs-tab-btn {
         color: inherit !important; // 保持文字颜色不变
       }
-      background-color: #e6f7ff !important; // 使用主题色的浅色版本作为背景
     }
     
     &:hover {
@@ -49,7 +48,7 @@
     
     .ant-tabs-nav-wrap {
       .ant-tabs-nav-list {
-        background: #f5f5f5;
+        background: rgba(0, 0, 0, 0.04);
         padding: 4px;
         border-radius: 20px;
         
@@ -71,7 +70,7 @@
         }
         
         .ant-tabs-tab-active {
-          background: #fff;
+          background: var(--ant-color-bg-container, #fff);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           
           .ant-tabs-tab-btn {
