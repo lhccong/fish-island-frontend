@@ -287,7 +287,7 @@ const ChatRoom: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [workdayType, setWorkdayType] = useState<'single' | 'double' | 'mixed'>('double');
   const [currentWeekType, setCurrentWeekType] = useState<'big' | 'small'>('big');
-  const [inputValue, setInputValue] = useState('');
+  // inputValue state 已移除，改用非受控 inputRef.current.value 直接读写，避免打字触发全量重渲染
   const [isEmojiPickerVisible, setIsEmojiPickerVisible] = useState(false);
   const [isEmoticonPickerVisible, setIsEmoticonPickerVisible] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -408,7 +408,7 @@ const ChatRoom: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [userIpInfo, setUserIpInfo] = useState<{ region: string; country: string } | null>(null);
 
-  const inputRef = useRef<any>(null); // 添加输入框的ref
+  const inputRef = useRef<HTMLTextAreaElement>(null); // 输入框原生 ref，非受控模式
 
   const [isMentionListVisible, setIsMentionListVisible] = useState(false);
   const [mentionListPosition, setMentionListPosition] = useState({ top: 0, left: 0 });
@@ -798,9 +798,14 @@ const ChatRoom: React.FC = () => {
     };
   }, [updateListHeight]);
 
+  // 排序后的在线用户列表，用 useMemo 缓存，避免 UserItem 每次渲染都重新排序
+  const sortedOnlineUsers = useMemo(
+    () => [...onlineUsers].sort((a, b) => (b.points || 0) - (a.points || 0)),
+    [onlineUsers],
+  );
+
   const UserItem = ({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const sortedUsers = [...onlineUsers].sort((a, b) => (b.points || 0) - (a.points || 0));
-    const user = sortedUsers[index];
+    const user = sortedOnlineUsers[index];
 
     return (
       <div
@@ -1543,7 +1548,7 @@ const ChatRoom: React.FC = () => {
       return;
     }
 
-    let content = customContent || inputValue;
+    let content = customContent || inputRef.current?.value || '';
 
     // 检查是否包含 iframe 标签
     const iframeRegex = /\<iframe.*?\>.*?\<\/iframe\>/gi;
@@ -1616,7 +1621,10 @@ const ChatRoom: React.FC = () => {
     setHasMore(true);
 
     // 清空输入框、预览图片、文件和引用消息
-    setInputValue('');
+    if (inputRef.current) {
+      inputRef.current.value = '';
+      inputRef.current.style.height = 'auto';
+    }
     setPendingImageUrl(null);
     setPendingFileUrl(null);
     setQuotedMessage(null);
@@ -1658,17 +1666,24 @@ const ChatRoom: React.FC = () => {
   const handleMentionInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     let value = e.target.value;
 
-    // 过滤掉 ``` 字符
-    value = value.replace(/```/g, '');
+    // 过滤掉 ``` 字符，直接写回 DOM，不触发 setState
+    if (value.includes('```')) {
+      value = value.replace(/```/g, '');
+      e.target.value = value;
+    }
 
-    // 更新输入值 - 这个操作必须立即执行，确保用户输入的即时反馈
-    setInputValue(value);
+    // textarea 自动撑高（模拟 autoSize）
+    const ta = e.target;
+    ta.style.height = 'auto';
+    ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`;
 
     // 如果输入框有内容并且功能面板显示中，则关闭功能面板
     if (value.trim().length > 0 && isMobileToolbarVisible) {
       closeMobileToolbar();
     }
 
+    // 在防抖外同步读取位置，防止 e.target 在回调里失效
+    // （已改为 CSS bottom: 100% 定位，无需坐标计算）
 
     // 使用防抖处理@功能，减少频繁计算
     if (mentionDebounceRef.current) {
@@ -1682,36 +1697,18 @@ const ChatRoom: React.FC = () => {
         const searchText = value.slice(lastAtPos + 1);
         setMentionSearchText(searchText);
 
-        // 如果搜索文本为空，显示所有在线用户（限制数量）
         if (!searchText.trim()) {
-          setFilteredUsers(onlineUsers.slice(0, 10)); // 限制显示数量
+          setFilteredUsers(onlineUsers.slice(0, 10));
         } else {
-          // 优化过滤逻辑，使用缓存的小写名称进行比较
           const searchTextLower = searchText.toLowerCase();
           const filtered = onlineUsers.filter((user) => {
             if (!user || !user.name) return false;
             return user.name.toLowerCase().includes(searchTextLower);
-          }).slice(0, 10); // 限制结果数量
+          }).slice(0, 10);
           setFilteredUsers(filtered);
         }
 
-        // 只有当有过滤结果时才计算位置
         if (onlineUsers.length > 0) {
-          // 获取输入框位置
-          const textarea = e.target;
-          const rect = textarea.getBoundingClientRect();
-
-          // 简化位置计算逻辑
-          const itemHeight = 40; // 每个选项的高度
-          const maxItems = 3; // 最多显示3条数据时紧贴显示
-          const listHeight = Math.min(onlineUsers.length, maxItems) * itemHeight;
-          const topOffset = -listHeight - 10; // 固定在输入框上方，加一点间距
-
-          setMentionListPosition({
-            top: rect.top + topOffset,
-            left: rect.left + 10, // 固定在左侧，稍微缩进
-          });
-
           setIsMentionListVisible(true);
         } else {
           setIsMentionListVisible(false);
@@ -1719,7 +1716,7 @@ const ChatRoom: React.FC = () => {
       } else {
         setIsMentionListVisible(false);
       }
-    }, 150); // 150ms的防抖延迟，平衡响应速度和性能
+    }, 150);
   };
 
   // 点击空白处隐藏成员列表
@@ -1744,18 +1741,22 @@ const ChatRoom: React.FC = () => {
       mentionDebounceRef.current = null;
     }
 
-    // 使用函数式更新确保使用最新的inputValue
-    setInputValue(currentValue => {
+    // 直接操作 DOM，不触发 setState
+    const textarea = inputRef.current;
+    if (textarea) {
+      const currentValue = textarea.value;
       const lastAtPos = currentValue.lastIndexOf('@');
       if (lastAtPos !== -1) {
-        return currentValue.slice(0, lastAtPos) +
+        textarea.value =
+          currentValue.slice(0, lastAtPos) +
           `@${user.name} ` +
           currentValue.slice(lastAtPos + mentionSearchText.length + 1);
       } else {
-        const cursorPos = inputRef.current?.selectionStart || 0;
-        return currentValue.slice(0, cursorPos) + `@${user.name} ` + currentValue.slice(cursorPos);
+        const cursorPos = textarea.selectionStart || 0;
+        textarea.value =
+          currentValue.slice(0, cursorPos) + `@${user.name} ` + currentValue.slice(cursorPos);
       }
-    });
+    }
 
     setIsMentionListVisible(false);
     setMentionSearchText('');
@@ -1766,6 +1767,47 @@ const ChatRoom: React.FC = () => {
   }, [mentionSearchText]);
 
   // Using utility function from titleUtils
+
+  // getAdminTag 用 useCallback 包裹，避免每次渲染都生成新引用导致 MessageItem memo 失效
+  const getAdminTag = useCallback((isAdmin: boolean, level: number, titleId?: number) => {
+    const { tagText, tagEmoji, tagClass: baseTagClass, titleImg } = getTitleTagProperties(isAdmin, level, titleId);
+    const tagClass = styles[baseTagClass];
+
+    if (titleId !== undefined && titleId != 0) {
+      const titles: Title[] = require('@/config/titles.json').titles;
+      const title = titles.find((t: Title) => String(t.id) === String(titleId));
+
+      if (title) {
+        if (titleImg) {
+          return (
+            <span className={styles.titleImageContainer}>
+              <img
+                src={titleImg}
+                alt={title.name}
+                className={styles.titleImage}
+              />
+              <span className={styles.titleSweepLight}></span>
+              <span className={styles.titleStar1}>✨</span>
+              <span className={styles.titleStar2}>✨</span>
+            </span>
+          );
+        }
+        return (
+          <span className={`${styles.adminTag} ${tagClass}`}>
+            {tagEmoji}
+            <span className={styles.adminText}>{title.name}</span>
+          </span>
+        );
+      }
+    }
+
+    return (
+      <span className={`${styles.adminTag} ${tagClass}`}>
+        {tagEmoji}
+        <span className={styles.adminText}>{tagText}</span>
+      </span>
+    );
+  }, []); // styles 和 getTitleTagProperties 都是稳定引用，无需列入依赖
 
   const UserInfoCard: React.FC<{ user: User }> = ({ user }) => {
     // 从 titleIdList 字符串解析称号 ID 数组
@@ -1913,56 +1955,15 @@ const ChatRoom: React.FC = () => {
 
   // Using utility function from titleUtils
 
-    // Using utility function from titleUtils
-  const getAdminTag = (isAdmin: boolean, level: number, titleId?: number) => {
-    const { tagText, tagEmoji, tagClass: baseTagClass, titleImg } = getTitleTagProperties(isAdmin, level, titleId);
-    const tagClass = styles[baseTagClass]; // Convert string class name to styles reference
-
-    // 如果有特定的称号ID且不是0（0表示使用等级称号）
-    if (titleId !== undefined && titleId != 0) {
-      // 从 titles.json 中获取对应的称号
-      const titles: Title[] = require('@/config/titles.json').titles;
-      const title = titles.find((t: Title) => String(t.id) === String(titleId));
-
-      if (title) {
-        // 如果有titleImg，则只使用图片渲染称号
-                  if (titleImg) {
-            return (
-              <span className={styles.titleImageContainer}>
-                <img
-                  src={titleImg}
-                  alt={title.name}
-                  className={styles.titleImage}
-                />
-                <span className={styles.titleSweepLight}></span>
-                <span className={styles.titleStar1}>✨</span>
-                <span className={styles.titleStar2}>✨</span>
-              </span>
-            );
-          }
-        // 否则使用emoji渲染
-        return (
-          <span className={`${styles.adminTag} ${tagClass}`}>
-            {tagEmoji}
-            <span className={styles.adminText}>{title.name}</span>
-          </span>
-        );
-      }
-    }
-
-    // 如果没有特定称号或称号ID为0，则使用原有的等级称号逻辑
-    return (
-      <span className={`${styles.adminTag} ${tagClass}`}>
-        {tagEmoji}
-        <span className={styles.adminText}>{tagText}</span>
-      </span>
-    );
-  };
+    // getAdminTag 已在上方通过 useCallback 定义
 
   const handleEmojiClick = (emoji: any) => {
-    setInputValue((prev) => prev + emoji.native);
+    if (inputRef.current) {
+      const pos = inputRef.current.selectionStart || inputRef.current.value.length;
+      const cur = inputRef.current.value;
+      inputRef.current.value = cur.slice(0, pos) + emoji.native + cur.slice(pos);
+    }
     setIsEmojiPickerVisible(false);
-    // 使用 requestAnimationFrame 延迟聚焦，提高渲染性能
     requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
@@ -2004,7 +2005,7 @@ const ChatRoom: React.FC = () => {
     // 更新总消息数和分页状态
     setTotal((prev) => prev + 1);
     setHasMore(true);
-    setInputValue('');
+    if (inputRef.current) inputRef.current.value = '';
     setIsEmoticonPickerVisible(false);
 
     // 发送消息到服务器
@@ -2222,7 +2223,8 @@ const ChatRoom: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const renderMessageContent = (content: string) => {
+  // renderMessageContent 用 useCallback 包裹，避免每次渲染都生成新引用导致 MessageItem memo 失效
+  const renderMessageContent = useCallback((content: string) => {
     const musicMatch = /\[music\]([^\[\]]*)\[\/music\]/i.exec(content);
     const coverMatch = /\[cover\]([^\[\]]*)\[\/cover\]/i.exec(content);
     if (musicMatch) {
@@ -2396,7 +2398,9 @@ const ChatRoom: React.FC = () => {
       }
     }
     return <MessageContent content={content} />;
-  };
+  }, [redPacketDetailsMap, fetchRedPacketDetail, handleGrabRedPacket, handleViewRedPacketRecords,
+      handleInviteClick, isSpeedMode, expandedImages, messages, isNearBottom, currentUser,
+      isAutoScrollingRef, scrollToBottom]);
 
   // 修改获取红包记录的函数
   const fetchRedPacketRecords = async (redPacketId: string) => {
@@ -2437,7 +2441,7 @@ const ChatRoom: React.FC = () => {
   };
 
   // 添加处理查看用户详情的函数
-  const handleViewUserDetail = async (user: User) => {
+  const handleViewUserDetail = useCallback(async (user: User) => {
     setSelectedUser(user);
     setIsUserDetailModalVisible(true);
     setIsFollowing(false);
@@ -2486,7 +2490,7 @@ const ChatRoom: React.FC = () => {
         setUserMuteInfo(null);
       }
     }
-  };
+  }, [currentUser]);
 
   // 关注/取消关注
   const handleToggleFollow = async () => {
@@ -2670,11 +2674,46 @@ const ChatRoom: React.FC = () => {
     setIsMobileToolbarVisible(!isMobileToolbarVisible);
   };
 
-  // 直接派生发送按钮状态，不需要额外的 state 和 useEffect
-  const shouldShowSendButton = useMemo(
-    () => inputValue.trim().length > 0 || pendingImageUrl !== null || pendingFileUrl !== null,
-    [inputValue, pendingImageUrl, pendingFileUrl],
-  );
+  // 非受控模式下无法从 state 判断输入框是否有内容，发送按钮始终显示
+  const shouldShowSendButton = pendingImageUrl !== null || pendingFileUrl !== null || true;
+
+  // 用 ref 存储最新的 handleSend，使 onRepeat 的引用保持稳定，避免破坏 MessageItem memo
+  const handleSendRef = useRef<(content?: string) => void>(handleSend);
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  });
+  const handleRepeat = useCallback((content: string) => {
+    handleSendRef.current(content);
+  }, []);
+
+  // 复读检测：用 useMemo 缓存，避免每次渲染都做 O(n²) 遍历
+  const { repeatMap, skipSet } = useMemo(() => {
+    const rMap = new Map<string, User[]>();
+    const sSet = new Set<string>();
+    for (let i = 0; i < messages.length; i++) {
+      if (sSet.has(messages[i].id)) continue;
+      const baseContent = messages[i].content;
+      if (messages[i].quotedMessage) continue;
+      if (/\[redpacket\]/i.test(baseContent)) continue;
+      const group: Message[] = [messages[i]];
+      for (let j = i + 1; j < messages.length; j++) {
+        if (messages[j].content === baseContent && !messages[j].quotedMessage) {
+          group.push(messages[j]);
+        } else {
+          break;
+        }
+      }
+      if (group.length >= 2) {
+        const repeatUsers: User[] = [];
+        for (let k = 1; k < group.length; k++) {
+          sSet.add(group[k].id);
+          repeatUsers.push(group[k].sender);
+        }
+        rMap.set(messages[i].id, repeatUsers);
+      }
+    }
+    return { repeatMap: rMap, skipSet: sSet };
+  }, [messages]);
 
 
   // 处理移动端功能按钮点击
@@ -3299,39 +3338,6 @@ const ChatRoom: React.FC = () => {
           </div>
         )}
         {(() => {
-          // 计算复读信息：连续3条及以上相同内容（不同用户），合并为一条显示
-          // repeatMap: 第一条消息id -> 后续复读用户列表
-          // skipSet: 需要跳过渲染的消息id集合
-          const repeatMap = new Map<string, User[]>();
-          const skipSet = new Set<string>();
-
-          for (let i = 0; i < messages.length; i++) {
-            if (skipSet.has(messages[i].id)) continue;
-            const baseContent = messages[i].content;
-            // 跳过引用消息（有 quotedMessage 的不参与复读检测）
-            if (messages[i].quotedMessage) continue;
-            // 跳过红包消息（红包不参与复读检测）
-            if (/\[redpacket\]/i.test(baseContent)) continue;
-            // 向后查找连续相同内容的消息
-            const group: Message[] = [messages[i]];
-            for (let j = i + 1; j < messages.length; j++) {
-              if (messages[j].content === baseContent && !messages[j].quotedMessage) {
-                group.push(messages[j]);
-              } else {
-                break;
-              }
-            }
-            // 连续2条及以上才触发复读合并
-            if (group.length >= 2) {
-              const repeatUsers: User[] = [];
-              for (let k = 1; k < group.length; k++) {
-                skipSet.add(group[k].id);
-                repeatUsers.push(group[k].sender);
-              }
-              repeatMap.set(messages[i].id, repeatUsers);
-            }
-          }
-
           return messages.map((msg) => {
             if (skipSet.has(msg.id)) return null;
             return (
@@ -3350,7 +3356,7 @@ const ChatRoom: React.FC = () => {
                 handleRevokeMessage={handleRevokeMessage}
                 handleQuoteMessage={handleQuoteMessage}
                 repeatUsers={repeatMap.get(msg.id)}
-                onRepeat={handleSend}
+                onRepeat={handleRepeat}
               />
             );
           });
@@ -3457,7 +3463,7 @@ const ChatRoom: React.FC = () => {
             </div>
           </div>
         )}
-        <div className={styles.inputRow}>
+        <div className={styles.inputRow} style={{ position: 'relative' }}>
           <input
             type="file"
             ref={fileInputRef}
@@ -3589,9 +3595,8 @@ const ChatRoom: React.FC = () => {
           >
             <Button icon={<EllipsisOutlined />} className={`${styles.moreOptionsButton} ${styles.hideOnMobile}`} />
           </Popover>
-          <Input.TextArea
+          <textarea
             ref={inputRef}
-            value={inputValue}
             onChange={handleMentionInput}
             onFocus={closeMobileToolbar}
             onKeyDown={(e) => {
@@ -3609,8 +3614,9 @@ const ChatRoom: React.FC = () => {
             placeholder={uploading ? '正在上传图片...' : '输入消息或粘贴图片...'}
             maxLength={200}
             disabled={uploading}
-            autoSize={{ minRows: 1, maxRows: 4 }}
+            rows={1}
             className={`${styles.chatTextArea} ${styles.hidePlaceholderOnMobile}`}
+            style={{ resize: 'none', width: '100%', overflow: 'hidden', minHeight: '32px', maxHeight: '120px' }}
           />
 
           {isMentionListVisible && filteredUsers.length > 0 && (
@@ -3618,10 +3624,11 @@ const ChatRoom: React.FC = () => {
               ref={mentionListRef}
               className={styles.mentionList}
               style={{
-                position: 'fixed',
-                top: mentionListPosition.top,
-                left: mentionListPosition.left,
+                position: 'absolute',
+                bottom: '100%',
+                left: 0,
                 zIndex: 1000,
+                marginBottom: 4,
               }}
             >
               {filteredUsers.map((user) => (
@@ -3636,7 +3643,7 @@ const ChatRoom: React.FC = () => {
               ))}
             </div>
           )}
-          <span className={styles.inputCounter}>{inputValue.length}/200</span>
+
 
           {/* PC端发送按钮 */}
           <Button
