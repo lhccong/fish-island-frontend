@@ -174,6 +174,12 @@ const MessageItem = React.memo<MessageItemProps>(({
   const isMentioned = notifications.some((n) => n.id === msg.id);
   const canRevoke = isSelf || currentUser?.userRole === 'admin';
 
+  // 判断当前用户是否已复读过该消息（原发送者或已在复读列表中）
+  const hasRepeated = isSelf || (
+    currentUser?.id &&
+    repeatUsers?.some((u) => String(u.id) === String(currentUser.id))
+  );
+
   return (
     <div
       id={`message-${msg.id}`}
@@ -258,15 +264,24 @@ const MessageItem = React.memo<MessageItemProps>(({
           引用
         </span>
         {!/\[redpacket\]/i.test(msg.content) && (
-          <span className={styles.repeatText} onClick={() => onRepeat(msg.content)}>
-            复读
-          </span>
+          <Tooltip title={hasRepeated ? '你已经复读过啦' : ''} placement="top">
+            <span
+              className={`${styles.repeatText} ${hasRepeated ? styles.repeatTextDisabled : ''}`}
+              onClick={() => {
+                if (hasRepeated) return;
+                onRepeat(msg.content);
+              }}
+              style={hasRepeated ? { cursor: 'not-allowed', opacity: 0.4 } : {}}
+            >
+              复读
+            </span>
+          </Tooltip>
         )}
       </div>
-      {/* 复读用户头像区域：连续3条及以上相同内容时显示 */}
+      {/* 复读用户头像区域：连续2条及以上相同内容时显示 */}
       {repeatUsers && repeatUsers.length > 0 && (
         <div className={styles.repeatUsers}>
-          <span className={styles.repeatLabel}>复读机</span>
+          <span className={styles.repeatLabel}>🔁 {repeatUsers.length} 人复读</span>
           {repeatUsers.map((user) => (
             <Tooltip key={user.id} title={getUserDisplayName(user)} placement="top">
               <div
@@ -2706,11 +2721,19 @@ const ChatRoom: React.FC = () => {
           break;
         }
       }
-      if (group.length >= 2) {
+      if (group.length >= 3) {
+        const seenUserIds = new Set<string>();
         const repeatUsers: User[] = [];
+        // 第1条保留显示，第2条也保留显示，从第3条起才隐藏合并
         for (let k = 1; k < group.length; k++) {
-          sSet.add(group[k].id);
-          repeatUsers.push(group[k].sender);
+          if (k >= 2) {
+            sSet.add(group[k].id);
+          }
+          const senderId = String(group[k].sender.id);
+          if (!seenUserIds.has(senderId)) {
+            seenUserIds.add(senderId);
+            repeatUsers.push(group[k].sender);
+          }
         }
         rMap.set(messages[i].id, repeatUsers);
       }

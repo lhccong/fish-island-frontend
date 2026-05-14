@@ -280,6 +280,75 @@ interface ShopTabsProps {
 
 const ShopTabs: React.FC<ShopTabsProps> = ({ renderSkinsList }) => {
   const [shopType, setShopType] = useState<'skin' | 'props'>('skin');
+  const [foodShopItems, setFoodShopItems] = useState<API.ItemTemplateVO[]>([]);
+  const [foodShopLoading, setFoodShopLoading] = useState(false);
+  const [buyLoadingId, setBuyLoadingId] = useState<number | null>(null);
+  const [buyQuantity, setBuyQuantity] = useState<Record<number, number>>({});
+
+  const fetchFoodShop = async () => {
+    setFoodShopLoading(true);
+    try {
+      const res = await listPurchasableItemsByPageUsingPost({
+        current: 1,
+        pageSize: 50,
+        category: 'consumable',
+        subType: 'food',
+      });
+      if (res.code === 0 && res.data?.records) {
+        setFoodShopItems(res.data.records);
+      }
+    } catch (e) {
+      console.error('获取食物商店失败', e);
+    } finally {
+      setFoodShopLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (shopType === 'props') {
+      fetchFoodShop();
+    }
+  }, [shopType]);
+
+  const handleBuy = async (item: API.ItemTemplateVO) => {
+    if (!item.id) return;
+    const qty = buyQuantity[item.id] ?? 1;
+    Modal.confirm({
+      title: '确认购买',
+      content: (
+        <div>
+          <p>购买 <strong>{item.name}</strong> × {qty}</p>
+          <p>消耗积分：<strong style={{ color: '#fa8c16' }}>{(item.purchasePoint || 0) * qty}</strong></p>
+        </div>
+      ),
+      okText: '确认购买',
+      cancelText: '取消',
+      onOk: async () => {
+        setBuyLoadingId(item.id!);
+        try {
+          const res = await purchaseItemUsingPost({ templateId: item.id!, quantity: qty });
+          if (res.code === 0 && res.data) {
+            message.success(`购买成功，${item.name} ×${qty} 已进入背包`);
+          } else {
+            message.error(res.message || '购买失败');
+          }
+        } catch (e) {
+          message.error('购买失败');
+        } finally {
+          setBuyLoadingId(null);
+        }
+      },
+    });
+  };
+
+  const rarityColors: Record<number, string> = {
+    1: '#8c8c8c', 2: '#52c41a', 3: '#1890ff', 4: '#722ed1',
+    5: '#fa8c16', 6: '#f5222d', 7: '#eb2f96', 8: '#fadb14',
+  };
+  const rarityNames: Record<number, string> = {
+    1: '普通', 2: '优良', 3: '精良', 4: '史诗',
+    5: '传说', 6: '神话', 7: '至尊', 8: '神器',
+  };
 
   return (
     <div className={styles.shopContainer}>
@@ -303,10 +372,77 @@ const ShopTabs: React.FC<ShopTabsProps> = ({ renderSkinsList }) => {
         {shopType === 'skin' ? (
           renderSkinsList(true)
         ) : (
-          <div className={styles.shopEmpty}>
-            <div className={styles.emptyIcon}>🛒</div>
-            <div className={styles.emptyText}>更多道具即将上架，敬请期待！</div>
-          </div>
+          <Spin spinning={foodShopLoading}>
+            {foodShopItems.length > 0 ? (
+              <Row gutter={[12, 12]}>
+                {foodShopItems.map(item => (
+                  <Col span={8} key={item.id}>
+                    <Card
+                      size="small"
+                      style={{ borderColor: rarityColors[item.rarity || 1], borderRadius: 10 }}
+                      bodyStyle={{ padding: '10px 8px', textAlign: 'center' }}
+                    >
+                      {/* 稀有度角标 */}
+                      <div style={{
+                        position: 'absolute', top: 4, right: 4,
+                        background: rarityColors[item.rarity || 1],
+                        color: '#fff', fontSize: 10, padding: '1px 5px',
+                        borderRadius: 6, fontWeight: 600,
+                      }}>
+                        {rarityNames[item.rarity || 1]}
+                      </div>
+                      {/* 图标 */}
+                      <div style={{ marginBottom: 6 }}>
+                        {item.icon ? (
+                          <img src={item.icon} alt={item.name} style={{ width: 44, height: 44 }} />
+                        ) : (
+                          <span style={{ fontSize: 36 }}>🍖</span>
+                        )}
+                      </div>
+                      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.name}
+                      </div>
+                      {item.description && (
+                        <div style={{ fontSize: 11, color: '#999', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.description}
+                        </div>
+                      )}
+                      <div style={{ color: '#fa8c16', fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
+                        💰 {item.purchasePoint} 积分/个
+                      </div>
+                      {/* 数量选择 + 购买 */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <InputNumber
+                          min={1}
+                          max={99}
+                          size="small"
+                          value={buyQuantity[item.id!] ?? 1}
+                          onChange={v => setBuyQuantity(prev => ({ ...prev, [item.id!]: v ?? 1 }))}
+                          style={{ width: 52 }}
+                        />
+                        <Button
+                          type="primary"
+                          size="small"
+                          loading={buyLoadingId === item.id}
+                          onClick={() => handleBuy(item)}
+                          style={{ flex: 1 }}
+                        >
+                          购买
+                        </Button>
+                      </div>
+                    </Card>
+                  </Col>
+                ))}
+              </Row>
+            ) : (
+              !foodShopLoading && (
+                <div className={styles.shopEmpty}>
+                  <div className={styles.emptyIcon}>🛒</div>
+                  <div className={styles.emptyText}>暂无可购买的道具</div>
+                </div>
+              )
+            )}
+          </Spin>
         )}
       </div>
     </div>
@@ -2297,7 +2433,9 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                   )}
                                 </div>
                                 <div className={styles.itemName}>{item.template?.name || '未知物品'}</div>
-                                <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
+                                {item.template?.category !== 'equipment' && (
+                                  <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
+                                )}
                                 {/*<div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>*/}
                                 <div className={styles.itemActions}>
                                   {item.template?.equipSlot && !isEquipped ? (
@@ -3178,7 +3316,9 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                                   )}
                                 </div>
                                 <div className={styles.itemName}>{item.template?.name || '未知物品'}</div>
-                                <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
+                                {item.template?.category !== 'equipment' && (
+                                  <div className={styles.itemCount}>数量: {item.quantity || 0}</div>
+                                )}
                                 {/*<div className={styles.itemDesc}>{item.template?.description || '暂无描述'}</div>*/}
                                 <div className={styles.itemActions}>
                                   {item.template?.equipSlot && !isEquipped ? (
