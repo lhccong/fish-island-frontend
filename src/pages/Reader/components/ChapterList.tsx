@@ -11,6 +11,7 @@ import {
 } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import { ACCESS_TOKEN } from '@/constants';
 
 const { Text } = Typography;
 const { Search } = Input;
@@ -224,7 +225,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ book, onChapterSelect, settin
     try {
       const timestamp = new Date().getTime();
       // 从settings中获取accessToken和apiBaseUrl
-      const accessToken = settings.accessToken || 'congg:7e0efee65786976202e4fc20c6a98d89';
+      const accessToken = ACCESS_TOKEN;
       const apiBaseUrl = settings.apiBaseUrl || 'https://reader.yucoder.cn/reader3';
       const apiUrl = `${apiBaseUrl}${API_URLS.BOOK_CONTENT}?accessToken=${accessToken}&v=${timestamp}`;
 
@@ -360,7 +361,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ book, onChapterSelect, settin
 
       const timestamp = new Date().getTime();
       // 从settings中获取accessToken和apiBaseUrl
-      const accessToken = settings.accessToken || 'congg:7e0efee65786976202e4fc20c6a98d89';
+      const accessToken = ACCESS_TOKEN;
       const apiBaseUrl = settings.apiBaseUrl || 'https://reader.yucoder.cn/reader3';
       const apiUrl = `${apiBaseUrl}${API_URLS.CHAPTER_LIST}?accessToken=${accessToken}&v=${timestamp}`;
 

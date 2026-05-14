@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
+import { ACCESS_TOKEN } from '@/constants';
 // 添加虚拟列表依赖，解决大量章节渲染性能问题
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -165,10 +166,10 @@ const GlobalReader: React.FC<ReaderProps> = ({ visible, onClose }): React.ReactN
   // 添加当前主题状态
   const [currentThemeId, setCurrentThemeId] = useState<string>(DEFAULT_SETTINGS.themeId || 'default');
   const [showThemes, setShowThemes] = useState(false); // 用于控制主题设置的显示
-  
+
   // 添加摸鱼模式状态
   const [isMoyuMode, setIsMoyuMode] = useState(false);
-  
+
   // 添加自定义主题相关状态
   const [userThemes, setUserThemes] = useState<Theme[]>([]); // 用户自定义主题列表
   const [showThemeCreator, setShowThemeCreator] = useState(false); // 控制主题创建器的显示
@@ -217,7 +218,7 @@ const GlobalReader: React.FC<ReaderProps> = ({ visible, onClose }): React.ReactN
   const [selectedVoice, setSelectedVoice] = useState<string>("");
   const [currentHighlightedIndex, setCurrentHighlightedIndex] = useState<number>(-1);
   const [paragraphs, setParagraphs] = useState<string[]>([]);
-  
+
   // TTS引用
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -322,7 +323,7 @@ const GlobalReader: React.FC<ReaderProps> = ({ visible, onClose }): React.ReactN
             isCustom: true
           }));
           setUserThemes(validatedUserThemes);
-          
+
           // 合并系统主题和用户自定义主题
           setAllThemes([...PRESET_THEMES, ...validatedUserThemes]);
         }
@@ -729,7 +730,7 @@ useEffect(() => {
 useEffect(() => {
   chapterIndexRef.current = chapterIndex;
 }, [chapterIndex]);
-  
+
 // 同步章节内容引用
 useEffect(() => {
   chapterContentRef.current = chapterContent;
@@ -785,12 +786,11 @@ const loadChapterList = async (book: Book): Promise<Book | null> => {
   try {
     // 获取API设置
     const savedSettings = localStorage.getItem('fish-reader-settings');
-    let accessToken = 'congg:7e0efee65786976202e4fc20c6a98d89';
+    const accessToken = ACCESS_TOKEN;
     let apiBaseUrl = 'https://reader.yucoder.cn/reader3';
 
     if (savedSettings) {
       const parsedSettings = JSON.parse(savedSettings);
-      accessToken = parsedSettings.accessToken || accessToken;
       apiBaseUrl = parsedSettings.apiBaseUrl || apiBaseUrl;
     }
 
@@ -837,12 +837,11 @@ const loadChapterContent = async (book: Book, chapter: Chapter): Promise<Chapter
   try {
     // 获取API设置
     const savedSettings = localStorage.getItem('fish-reader-settings');
-    let accessToken = 'congg:7e0efee65786976202e4fc20c6a98d89';
+    const accessToken = ACCESS_TOKEN;
     let apiBaseUrl = 'https://reader.yucoder.cn/reader3';
 
     if (savedSettings) {
       const parsedSettings = JSON.parse(savedSettings);
-      accessToken = parsedSettings.accessToken || accessToken;
       apiBaseUrl = parsedSettings.apiBaseUrl || apiBaseUrl;
     }
 
@@ -1631,8 +1630,8 @@ const handlePictureInPicture = async () => {
     // 创建章节标题
     const chapterTitle = document.createElement('h2');
     chapterTitle.className = 'chapter-title';
-    chapterTitle.textContent = book?.chapters ? 
-      book.chapters[chapterIndex]?.title || `第${chapterIndex + 1}章` : 
+    chapterTitle.textContent = book?.chapters ?
+      book.chapters[chapterIndex]?.title || `第${chapterIndex + 1}章` :
       '加载中...';
 
     // 创建控制栏
@@ -1646,25 +1645,25 @@ const handlePictureInPicture = async () => {
     const showLoadingIndicator = () => {
       // 标记为加载状态
       pipWindow.isLoading = true;
-      
+
       // 获取当前内容区域高度，避免内容切换时的抖动
       const currentHeight = contentContainer.scrollHeight;
-      
+
       // 创建加载指示器，但保留原内容
       const loadingDiv = document.createElement('div');
       loadingDiv.className = 'loading-indicator';
       loadingDiv.id = 'pip-loading-indicator';
-      
+
       const spinner = document.createElement('div');
       spinner.className = 'spinner';
-      
+
       const loadingText = document.createElement('div');
       loadingText.className = 'loading-text';
       loadingText.textContent = '章节加载中...';
-      
+
       loadingDiv.appendChild(spinner);
       loadingDiv.appendChild(loadingText);
-      
+
       // 先检查是否已经存在加载指示器
       const existingIndicator = pipWindow.document.getElementById('pip-loading-indicator');
       if (!existingIndicator) {
@@ -1681,10 +1680,10 @@ const handlePictureInPicture = async () => {
     prevButton.addEventListener('click', () => {
       // 如果正在加载中，不响应点击
       if (pipWindow.isLoading) return;
-      
+
       // 显示加载指示器
       showLoadingIndicator();
-      
+
       // 使用当前的引用值而不是闭包中的值
       const currentIndex = chapterIndexRef.current;
       if (currentIndex > 0) {
@@ -1710,10 +1709,10 @@ const handlePictureInPicture = async () => {
     nextButton.addEventListener('click', () => {
       // 如果正在加载中，不响应点击
       if (pipWindow.isLoading) return;
-      
+
       // 显示加载指示器
       showLoadingIndicator();
-      
+
       // 使用当前的引用值而不是闭包中的值
       const currentIndex = chapterIndexRef.current;
       const currentBook = bookRef.current;
@@ -1766,12 +1765,12 @@ const handlePictureInPicture = async () => {
     // 在章节或内容更改时更新画中画内容的函数
     const updatePipContent = (forceUpdate = false) => {
       if (!pipWindowRef.current) return;
-      
+
       try {
         // 始终使用最新的引用值
         const currentIndex = chapterIndexRef.current;
         const currentBook = bookRef.current;
-        
+
         // 记录内容容器的当前高度
         const currentHeight = contentContainer.scrollHeight;
 
@@ -1798,8 +1797,8 @@ const handlePictureInPicture = async () => {
         }
 
         // 更新章节标题
-        chapterTitle.textContent = currentBook?.chapters ? 
-          currentBook.chapters[currentIndex]?.title || `第${currentIndex + 1}章` : 
+        chapterTitle.textContent = currentBook?.chapters ?
+          currentBook.chapters[currentIndex]?.title || `第${currentIndex + 1}章` :
           '加载中...';
 
         // 更新章节导航状态
@@ -1814,7 +1813,7 @@ const handlePictureInPicture = async () => {
         content.style.paddingTop = '35px'; // 仅保留控制栏所需的空间
         content.style.paddingLeft = '16px'; // 添加左边距
         content.style.paddingRight = '16px'; // 添加右边距
-        
+
         // 始终使用最新的章节内容引用
         const currentChapterContent = chapterContentRef.current;
         // 获取缩进em数
@@ -1837,12 +1836,12 @@ const handlePictureInPicture = async () => {
             }
           });
         }
-        
+
         contentContainer.appendChild(content);
-        
+
         // 恢复自动高度，不设置margin和padding
         contentContainer.style.minHeight = 'auto';
-        
+
         // 立即滚动到顶部（不使用延时）
         pipWindowRef.current.document.body.scrollTop = 0;
         pipWindowRef.current.document.documentElement.scrollTop = 0;
@@ -1852,7 +1851,7 @@ const handlePictureInPicture = async () => {
           behavior: 'auto'
         });
         contentContainer.scrollTop = 0;
-        
+
         // 重置加载状态
         pipWindow.isLoading = false;
       } catch (error) {
@@ -1899,7 +1898,7 @@ const applyTheme = useCallback((themeId: string) => {
       message.error('主题不存在');
       return false;
     }
-    
+
     // 创建新的设置，合并主题和当前设置
     const currentSettings = settings; // 使用当前最新的settings
     const newSettings: ReaderSettings = {
@@ -1913,19 +1912,19 @@ const applyTheme = useCallback((themeId: string) => {
       // 保留当前的不透明度设置
       opacity: currentSettings.opacity
     };
-    
+
     // 如果主题有指定字体，则更新字体
     if (theme.fontFamily) {
       newSettings.fontFamily = theme.fontFamily;
     }
-    
+
     // 更新当前主题ID
     setCurrentThemeId(themeId);
-    
+
     // 保存设置
     setSettings(newSettings);
     localStorage.setItem('fish-reader-settings', JSON.stringify(newSettings));
-    
+
     // 如果在画中画模式，也更新画中画窗口样式
     if (isPipActive && readerContentRef.current && pipWindowRef.current) {
       try {
@@ -1935,7 +1934,7 @@ const applyTheme = useCallback((themeId: string) => {
         pipWindow.document.body.style.fontFamily = newSettings.fontFamily;
         pipWindow.document.body.style.fontSize = `${newSettings.fontSize}px`;
         pipWindow.document.body.style.lineHeight = String(newSettings.lineHeight);
-        
+
         if (newSettings.letterSpacing !== undefined) {
           pipWindow.document.body.style.letterSpacing = `${newSettings.letterSpacing}px`;
         }
@@ -1943,7 +1942,7 @@ const applyTheme = useCallback((themeId: string) => {
         console.error('更新画中画样式失败:', e);
       }
     }
-    
+
     message.success(`已应用"${theme.name}"主题`);
     return true;
   } catch (error) {
@@ -1984,7 +1983,7 @@ const saveUserTheme = useCallback((theme: Theme) => {
 
     // 更新状态
     setUserThemes(updatedUserThemes);
-    
+
     // 合并系统和用户主题
     const updatedAllThemes = [...PRESET_THEMES, ...updatedUserThemes];
     setAllThemes(updatedAllThemes);
@@ -2012,10 +2011,10 @@ const deleteUserTheme = useCallback((themeId: string) => {
 
     // 过滤掉要删除的主题
     const updatedUserThemes = userThemes.filter(theme => theme.id !== themeId);
-    
+
     // 更新状态
     setUserThemes(updatedUserThemes);
-    
+
     // 合并系统和用户主题
     const updatedAllThemes = [...PRESET_THEMES, ...updatedUserThemes];
     setAllThemes(updatedAllThemes);
@@ -2052,7 +2051,7 @@ const openThemeCreator = useCallback(() => {
     isCustom: true
   };
   setEditingTheme(newTheme);
-  
+
   // 显示创建窗口
   setShowThemeCreator(true);
 }, [settings]);
@@ -2062,15 +2061,15 @@ const saveSettings = useCallback((newSettings: ReaderSettings) => {
   try {
     // 更新状态
     setSettings(newSettings);
-    
+
     // 如果有主题ID，同步更新
     if (newSettings.themeId) {
       setCurrentThemeId(newSettings.themeId);
     }
-    
+
     // 保存到本地存储
     localStorage.setItem('fish-reader-settings', JSON.stringify(newSettings));
-    
+
     // 如果在画中画模式，也更新画中画内容
     if (isPipActive && readerContentRef.current && pipWindowRef.current) {
       // 更新画中画窗口的样式
@@ -2081,7 +2080,7 @@ const saveSettings = useCallback((newSettings: ReaderSettings) => {
         pipWindow.document.body.style.fontFamily = newSettings.fontFamily;
         pipWindow.document.body.style.fontSize = `${newSettings.fontSize}px`;
         pipWindow.document.body.style.lineHeight = String(newSettings.lineHeight);
-        
+
         // 添加对字间距的支持
         if (newSettings.letterSpacing !== undefined) {
           pipWindow.document.body.style.letterSpacing = `${newSettings.letterSpacing}px`;
@@ -2090,7 +2089,7 @@ const saveSettings = useCallback((newSettings: ReaderSettings) => {
         console.error('更新画中画样式失败:', e);
       }
     }
-    
+
     return true;
   } catch (error) {
     console.error('保存设置失败:', error);
@@ -2104,16 +2103,16 @@ const renderThemesPanel = () => {
   return (
     <div style={{ width: "100%", padding: '8px 0', backgroundColor: '#ffffff' }}>
       {/* 创建新主题按钮，放在最顶部并居中 */}
-      <div style={{ 
-        marginBottom: 16, 
-        display: 'flex', 
+      <div style={{
+        marginBottom: 16,
+        display: 'flex',
         justifyContent: 'center',
         padding: '8px 0'
       }}>
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           icon={<SettingOutlined />}
-          onClick={() => openThemeCreator()} 
+          onClick={() => openThemeCreator()}
           style={{ fontWeight: 'bold', width: '80%' }}
         >
           创建新主题
@@ -2121,19 +2120,19 @@ const renderThemesPanel = () => {
       </div>
 
       <div style={{ marginBottom: 8, fontWeight: 'bold' }}>系统主题</div>
-      
+
       {/* 系统主题列表 */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(3, 1fr)', 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
         gap: 10,
-        maxHeight: '400px', 
+        maxHeight: '400px',
         overflowY: 'auto',
         backgroundColor: '#ffffff',
         marginBottom: 16
       }}>
         {PRESET_THEMES.map(theme => (
-          <div 
+          <div
             key={theme.id}
             onClick={() => applyTheme(theme.id)}
             style={{
@@ -2155,7 +2154,7 @@ const renderThemesPanel = () => {
             <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'center' }}>
               {theme.name}
             </div>
-            <div style={{ 
+            <div style={{
               marginTop: '5px',
               fontSize: '10px',
               lineHeight: '1.4',
@@ -2166,21 +2165,21 @@ const renderThemesPanel = () => {
           </div>
         ))}
       </div>
-      
+
       {/* 用户自定义主题区域 */}
       {userThemes.length > 0 && (
         <>
           <div style={{ marginBottom: 8, marginTop: 16, fontWeight: 'bold' }}>我的主题</div>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(3, 1fr)', 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 10,
             maxHeight: '200px',
             overflowY: 'auto',
             backgroundColor: '#ffffff'
           }}>
             {userThemes.map(theme => (
-              <div 
+              <div
                 key={theme.id}
                 style={{
                   padding: '10px',
@@ -2199,7 +2198,7 @@ const renderThemesPanel = () => {
                 <div style={{ fontSize: '12px', fontWeight: 'bold', textAlign: 'center' }}>
                   {theme.name}
                 </div>
-                <div style={{ 
+                <div style={{
                   marginTop: '5px',
                   fontSize: '10px',
                   lineHeight: '1.4',
@@ -2207,9 +2206,9 @@ const renderThemesPanel = () => {
                 }}>
                   Aa
                 </div>
-                
+
                 {/* 删除按钮 - 始终显示在右下角 */}
-                <div 
+                <div
                   style={{
                     position: 'absolute',
                     bottom: '2px',
@@ -2253,11 +2252,11 @@ const renderSettingsPanel = () => {
   return (
     <div style={{ width: 300, padding: '8px 0', backgroundColor: '#ffffff', borderRadius: '4px' }}>
       <div style={{ display: 'flex', marginBottom: 16, backgroundColor: '#f5f5f5' }}>
-        <div 
-          onClick={() => setSettingsTab('reading')} 
-          style={{ 
-            padding: '8px 16px', 
-            cursor: 'pointer', 
+        <div
+          onClick={() => setSettingsTab('reading')}
+          style={{
+            padding: '8px 16px',
+            cursor: 'pointer',
             fontWeight: settingsTab === 'reading' ? 'bold' : 'normal',
             borderBottom: settingsTab === 'reading' ? '2px solid #1890ff' : '2px solid transparent',
             backgroundColor: settingsTab === 'reading' ? '#ffffff' : 'transparent',
@@ -2268,11 +2267,11 @@ const renderSettingsPanel = () => {
         >
           阅读设置
         </div>
-        <div 
-          onClick={() => setSettingsTab('theme')} 
-          style={{ 
-            padding: '8px 16px', 
-            cursor: 'pointer', 
+        <div
+          onClick={() => setSettingsTab('theme')}
+          style={{
+            padding: '8px 16px',
+            cursor: 'pointer',
             fontWeight: settingsTab === 'theme' ? 'bold' : 'normal',
             borderBottom: settingsTab === 'theme' ? '2px solid #1890ff' : '2px solid transparent',
             backgroundColor: settingsTab === 'theme' ? '#ffffff' : 'transparent',
@@ -2283,11 +2282,11 @@ const renderSettingsPanel = () => {
         >
           主题设置
         </div>
-        <div 
-          onClick={() => setSettingsTab('tts')} 
-          style={{ 
-            padding: '8px 16px', 
-            cursor: 'pointer', 
+        <div
+          onClick={() => setSettingsTab('tts')}
+          style={{
+            padding: '8px 16px',
+            cursor: 'pointer',
             fontWeight: settingsTab === 'tts' ? 'bold' : 'normal',
             borderBottom: settingsTab === 'tts' ? '2px solid #1890ff' : '2px solid transparent',
             backgroundColor: settingsTab === 'tts' ? '#ffffff' : 'transparent',
@@ -2324,7 +2323,7 @@ const renderSettingsPanel = () => {
                 onChange={(value) => saveSettings({ ...settings, paragraphIndent: value })}
               />
             </div>
-            
+
             <div style={{ marginBottom: 16 }}>
               <div style={{ marginBottom: 8, fontWeight: 'bold' }}>字体大小: {settings.fontSize}px</div>
               <Slider
@@ -2334,7 +2333,7 @@ const renderSettingsPanel = () => {
                 onChange={(value) => saveSettings({ ...settings, fontSize: value })}
               />
             </div>
-            
+
             <div style={{ marginBottom: 16 }}>
               <div style={{ marginBottom: 8, fontWeight: 'bold' }}>行高: {settings.lineHeight}</div>
               <Slider
@@ -2345,7 +2344,7 @@ const renderSettingsPanel = () => {
                 onChange={(value) => saveSettings({ ...settings, lineHeight: value })}
               />
             </div>
-            
+
             <div style={{ marginBottom: 16 }}>
               <div style={{ marginBottom: 8, fontWeight: 'bold' }}>字间距: {settings.letterSpacing !== undefined ? settings.letterSpacing : 0}px</div>
               <Slider
@@ -2356,7 +2355,7 @@ const renderSettingsPanel = () => {
                 onChange={(value) => saveSettings({ ...settings, letterSpacing: value })}
               />
             </div>
-            
+
             <div style={{ marginBottom: 16 }}>
               <div style={{ marginBottom: 8, fontWeight: 'bold' }}>不透明度: {Math.round(settings.opacity * 100)}%</div>
               <Slider
@@ -2367,7 +2366,7 @@ const renderSettingsPanel = () => {
                 onChange={(value) => saveSettings({ ...settings, opacity: value })}
               />
             </div>
-            
+
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ marginBottom: 8, fontWeight: 'bold' }}>字体颜色</div>
@@ -2385,7 +2384,7 @@ const renderSettingsPanel = () => {
                   ]}
                 />
               </div>
-              
+
               <div>
                 <div style={{ marginBottom: 8, fontWeight: 'bold' }}>背景颜色</div>
                 <ColorPicker
@@ -2407,8 +2406,8 @@ const renderSettingsPanel = () => {
 
             {/* 添加恢复默认样式的按钮 */}
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 onClick={() => saveSettings(DEFAULT_SETTINGS)}
               >
                 恢复默认样式
@@ -2421,10 +2420,10 @@ const renderSettingsPanel = () => {
             {/* 朗读功能开关 */}
             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontWeight: 'bold' }}>启用朗读功能</div>
-              <div 
-                style={{ 
-                  width: '44px', 
-                  height: '22px', 
+              <div
+                style={{
+                  width: '44px',
+                  height: '22px',
                   backgroundColor: settings.ttsEnabled ? '#1890ff' : '#ccc',
                   borderRadius: '11px',
                   cursor: 'pointer',
@@ -2433,8 +2432,8 @@ const renderSettingsPanel = () => {
                 }}
                 onClick={() => saveSettings({ ...settings, ttsEnabled: !settings.ttsEnabled })}
               >
-                <div 
-                  style={{ 
+                <div
+                  style={{
                     position: 'absolute',
                     width: '18px',
                     height: '18px',
@@ -2443,14 +2442,14 @@ const renderSettingsPanel = () => {
                     top: '2px',
                     left: settings.ttsEnabled ? '24px' : '2px',
                     transition: 'left 0.3s'
-                  }} 
+                  }}
                 />
               </div>
             </div>
 
-            <div style={{ 
-              padding: '10px', 
-              backgroundColor: '#fffbe6', 
+            <div style={{
+              padding: '10px',
+              backgroundColor: '#fffbe6',
               borderRadius: '4px',
               marginBottom: '16px',
               fontSize: '12px',
@@ -2475,7 +2474,7 @@ const renderSettingsPanel = () => {
                 }))}
               />
             </div>
-            
+
             <div style={{ marginBottom: 16, opacity: settings.ttsEnabled ? 1 : 0.5, pointerEvents: settings.ttsEnabled ? 'auto' : 'none' }}>
               <div style={{ marginBottom: 8, fontWeight: 'bold' }}>语速: {settings.speechRate}</div>
               <Slider
@@ -2487,7 +2486,7 @@ const renderSettingsPanel = () => {
                 disabled={!settings.ttsEnabled}
               />
             </div>
-            
+
             <div style={{ marginBottom: 16, opacity: settings.ttsEnabled ? 1 : 0.5, pointerEvents: settings.ttsEnabled ? 'auto' : 'none' }}>
               <div style={{ marginBottom: 8, fontWeight: 'bold' }}>音调: {settings.speechPitch}</div>
               <Slider
@@ -2499,7 +2498,7 @@ const renderSettingsPanel = () => {
                 disabled={!settings.ttsEnabled}
               />
             </div>
-            
+
             <div style={{ marginBottom: 16, opacity: settings.ttsEnabled ? 1 : 0.5, pointerEvents: settings.ttsEnabled ? 'auto' : 'none' }}>
               <div style={{ marginBottom: 8, fontWeight: 'bold' }}>音量: {Math.round((settings.speechVolume || 1) * 100)}%</div>
               <Slider
@@ -2522,7 +2521,7 @@ const renderSettingsPanel = () => {
 const renderThemeCreator = () => {
   // 只在编辑主题时渲染
   if (!editingTheme) return null;
-  
+
   return (
     <Modal
       title="创建新主题"
@@ -2532,9 +2531,9 @@ const renderThemeCreator = () => {
         <Button key="cancel" onClick={() => setShowThemeCreator(false)}>
           取消
         </Button>,
-        <Button 
-          key="submit" 
-          type="primary" 
+        <Button
+          key="submit"
+          type="primary"
           onClick={() => {
             if (editingTheme) {
               saveUserTheme(editingTheme);
@@ -2550,16 +2549,16 @@ const renderThemeCreator = () => {
     >
       <div style={{ maxHeight: '70vh', overflowY: 'auto', padding: '0 10px' }}>
         {/* 主题预览 */}
-        <div style={{ 
-          marginBottom: 16, 
-          padding: '15px', 
+        <div style={{
+          marginBottom: 16,
+          padding: '15px',
           backgroundColor: editingTheme.backgroundColor,
           color: editingTheme.color,
           borderRadius: '6px',
           textAlign: 'center'
         }}>
-          <div style={{ 
-            fontSize: `${editingTheme.fontSize}px`, 
+          <div style={{
+            fontSize: `${editingTheme.fontSize}px`,
             lineHeight: String(editingTheme.lineHeight),
             letterSpacing: `${editingTheme.letterSpacing}px`,
             fontFamily: editingTheme.fontFamily || 'Arial, sans-serif'
@@ -2567,24 +2566,24 @@ const renderThemeCreator = () => {
             阅读预览效果
           </div>
         </div>
-        
+
         {/* 主题名称 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 8, fontWeight: 'bold' }}>主题名称</div>
-          <input 
-            type="text" 
-            value={editingTheme.name} 
+          <input
+            type="text"
+            value={editingTheme.name}
             onChange={(e) => setEditingTheme({...editingTheme, name: e.target.value})}
-            style={{ 
-              width: '100%', 
-              padding: '8px', 
+            style={{
+              width: '100%',
+              padding: '8px',
               border: '1px solid #d9d9d9',
               borderRadius: '4px'
             }}
             placeholder="请输入主题名称"
           />
         </div>
-        
+
         {/* 字体选择 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 8, fontWeight: 'bold' }}>字体</div>
@@ -2595,7 +2594,7 @@ const renderThemeCreator = () => {
             options={FONT_FAMILIES}
           />
         </div>
-        
+
         {/* 字体大小 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 8, fontWeight: 'bold' }}>字体大小: {editingTheme.fontSize}px</div>
@@ -2606,7 +2605,7 @@ const renderThemeCreator = () => {
             onChange={(value) => setEditingTheme({...editingTheme, fontSize: value})}
           />
         </div>
-        
+
         {/* 行高 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 8, fontWeight: 'bold' }}>行高: {editingTheme.lineHeight}</div>
@@ -2618,7 +2617,7 @@ const renderThemeCreator = () => {
             onChange={(value) => setEditingTheme({...editingTheme, lineHeight: value})}
           />
         </div>
-        
+
         {/* 字间距 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ marginBottom: 8, fontWeight: 'bold' }}>字间距: {editingTheme.letterSpacing}px</div>
@@ -2630,7 +2629,7 @@ const renderThemeCreator = () => {
             onChange={(value) => setEditingTheme({...editingTheme, letterSpacing: value})}
           />
         </div>
-        
+
         {/* 颜色选择器 */}
         <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
           <div>
@@ -2649,7 +2648,7 @@ const renderThemeCreator = () => {
               ]}
             />
           </div>
-          
+
           <div>
             <div style={{ marginBottom: 8, fontWeight: 'bold' }}>背景颜色</div>
             <ColorPicker
@@ -2677,17 +2676,17 @@ const renderThemeCreator = () => {
 useEffect(() => {
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     speechSynthesisRef.current = window.speechSynthesis;
-    
+
     // 初始化获取可用的声音
     const loadVoices = () => {
       const voices = speechSynthesisRef.current?.getVoices() || [];
       setAvailableVoices(voices);
-      
+
       // 尝试找到中文声音或默认声音
-      const chineseVoice = voices.find(voice => 
+      const chineseVoice = voices.find(voice =>
         voice.lang.includes('zh') || voice.lang.includes('cmn')
       );
-      
+
       if (chineseVoice) {
         setSelectedVoice(chineseVoice.voiceURI);
       } else if (voices.length > 0) {
@@ -2699,7 +2698,7 @@ useEffect(() => {
     if (speechSynthesisRef.current.onvoiceschanged !== undefined) {
       speechSynthesisRef.current.onvoiceschanged = loadVoices;
     }
-    
+
     // 立即尝试加载一次
     loadVoices();
   }
@@ -2717,7 +2716,7 @@ useEffect(() => {
   if (chapterContent) {
     const newParagraphs = chapterContent.split('\n').filter(p => p.trim() !== '');
     setParagraphs(newParagraphs);
-    
+
     // 章节内容变更时停止朗读
     if (speechSynthesisRef.current && speechSynthesisRef.current.speaking) {
       speechSynthesisRef.current.cancel();
@@ -2744,15 +2743,15 @@ const startSpeaking = useCallback((startIndex: number) => {
 
   // 从指定段落开始
   const contentToSpeak = paragraphs.slice(startIndex).join("\n");
-  
+
   const utterance = new SpeechSynthesisUtterance(contentToSpeak);
   utteranceRef.current = utterance;
-  
+
   // 设置语音参数
   utterance.rate = settings.speechRate || 1;
   utterance.pitch = settings.speechPitch || 1;
   utterance.volume = settings.speechVolume || 1;
-  
+
   // 设置选择的声音
   if (selectedVoice) {
     const voice = availableVoices.find(v => v.voiceURI === selectedVoice);
@@ -2771,7 +2770,7 @@ const startSpeaking = useCallback((startIndex: number) => {
     const charIndex = event.charIndex;
     let totalChars = 0;
     let paragraphIndex = startIndex;
-    
+
     // 计算当前正在朗读的段落
     for (let i = startIndex; i < paragraphs.length; i++) {
       const paragraphLength = paragraphs[i].length + 1; // +1 for the newline
@@ -2781,12 +2780,12 @@ const startSpeaking = useCallback((startIndex: number) => {
       }
       totalChars += paragraphLength;
     }
-    
+
     // 更新高亮段落
     if (paragraphIndex !== currentIndex) {
       currentIndex = paragraphIndex;
       setCurrentHighlightedIndex(currentIndex);
-      
+
       // 滚动到可视区域
       const highlightedElement = document.getElementById(`paragraph-${currentIndex}`);
       if (highlightedElement) {
@@ -2869,7 +2868,7 @@ useEffect(() => {
 const enhancedForceUpdateReadingProgress = () => {
   // 原有的进度保存逻辑
   forceUpdateReadingProgress();
-  
+
   // 停止朗读
   if (speechSynthesisRef.current && speechSynthesisRef.current.speaking) {
     speechSynthesisRef.current.cancel();
@@ -2890,7 +2889,7 @@ const renderContent = () => {
       </div>
     );
   }
-  
+
   if (!book) {
     return (
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -2901,7 +2900,7 @@ const renderContent = () => {
       </div>
     );
   }
-  
+
   if (!book.chapters || book.chapters.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -2976,7 +2975,7 @@ if (isMoyuMode) {
         <div id="__layout">
           <div className="default" data-v-31a8d428="">
             <div id="bookRead" className="book-read main read-theme-word" style={{backgroundColor:'#e6e6e6'}} data-v-0cc19a20="" data-v-31a8d428="">
-              
+
               {/* Word Header - 完全按照 index.html 结构 */}
               <div className="word-header" data-v-3fda83c4="" data-v-0cc19a20="">
                 <div className="word-header-title" data-v-3fda83c4=""></div>
@@ -2988,8 +2987,8 @@ if (isMoyuMode) {
                   <div className="word-header-bottom-l" data-v-3fda83c4=""></div>
                   <div className="word-header-bottom-m" data-v-3fda83c4=""></div>
                   <div className="word-header-bottom-r" data-v-3fda83c4="">
-                    <div 
-                      className="exit" 
+                    <div
+                      className="exit"
                       data-v-3fda83c4=""
                       onClick={() => setIsMoyuMode(false)}
                       style={{ cursor: 'pointer' }}
@@ -3011,8 +3010,8 @@ if (isMoyuMode) {
                   gap: '30px',
                   height: '100%'
                 }}>
-                  <div 
-                    style={{ 
+                  <div
+                    style={{
                       cursor: 'pointer',
                       color: '#acacac',
                       fontSize: '14px'
@@ -3034,8 +3033,8 @@ if (isMoyuMode) {
                   >
                     <span data-v-53a0721a="">上一章</span>
                   </div>
-                  <div 
-                    style={{ 
+                  <div
+                    style={{
                       cursor: 'pointer',
                       color: '#acacac',
                       fontSize: '14px'
@@ -3161,7 +3160,7 @@ return createPortal(
             <Button
               type={isMoyuMode ? "primary" : "text"}
               size="small"
-              style={{ 
+              style={{
                 backgroundColor: isMoyuMode ? '#ff7875' : 'transparent',
                 borderColor: isMoyuMode ? '#ff7875' : 'transparent',
                 color: isMoyuMode ? '#fff' : 'inherit'

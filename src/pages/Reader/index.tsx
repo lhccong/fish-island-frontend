@@ -29,6 +29,7 @@ import {
   PushpinOutlined,
 } from "@ant-design/icons";
 import { useModel } from 'umi';
+import { ACCESS_TOKEN } from '@/constants';
 import ReaderSettingsPanel from "./components/ReaderSettings";
 import BookReader from "./components/BookReader";
 import BookImport from "./components/BookImport";
@@ -130,7 +131,6 @@ const getDefaultReaderSettings = (): ReaderSettings => {
     nextPageKey: 'ArrowRight',
     quickHide: 'none',
     panicKey: 'Escape',
-    accessToken: 'congg:7e0efee65786976202e4fc20c6a98d89',
     apiBaseUrl: 'https://reader.yucoder.cn/reader3'
   };
 };

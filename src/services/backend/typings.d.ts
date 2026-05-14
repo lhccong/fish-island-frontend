@@ -565,6 +565,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponsePetAutoFeedConfigVO_ = {
+    code?: number;
+    data?: PetAutoFeedConfigVO;
+    message?: string;
+  };
+
   type BaseResponsePetBattleInfoVO_ = {
     code?: number;
     data?: PetBattleInfoVO;
@@ -1429,6 +1435,11 @@ declare namespace API {
     limit?: number;
   };
 
+  type getConfigUsingGETParams = {
+    /** petId */
+    petId: number;
+  };
+
   type getCosCredentialUsingGETParams = {
     /** fileName */
     fileName?: string;
@@ -1986,6 +1997,8 @@ declare namespace API {
     levelReq?: number;
     mainAttr?: Record<string, any>;
     name?: string;
+    purchasable?: number;
+    purchasePoint?: number;
     rarity?: number;
     removePoint?: number;
     stackable?: number;
@@ -3024,6 +3037,26 @@ declare namespace API {
     urlQrcode?: string;
   };
 
+  type PetAutoFeedConfigRequest = {
+    enabled?: number;
+    foodCode?: string;
+    petId?: number;
+    triggerThreshold?: number;
+  };
+
+  type PetAutoFeedConfigVO = {
+    createTime?: string;
+    enabled?: number;
+    foodCode?: string;
+    foodIcon?: string;
+    foodName?: string;
+    id?: number;
+    petId?: number;
+    remainingQuantity?: number;
+    triggerThreshold?: number;
+    updateTime?: string;
+  };
+
   type PetBattleInfoVO = {
     myPet?: PetInfo1;
     opponentPet?: PetInfo1;
@@ -3297,6 +3330,13 @@ declare namespace API {
     name?: string;
     points?: number;
     type?: string;
+  };
+
+  type purchaseItemUsingPOSTParams = {
+    /** quantity */
+    quantity: number;
+    /** templateId */
+    templateId: number;
   };
 
   type queryOrderUsingGETParams = {
@@ -3581,6 +3621,13 @@ declare namespace API {
     sort?: number;
     tagsName?: string;
     type?: number;
+  };
+
+  type toggleAutoFeedUsingPOSTParams = {
+    /** enabled */
+    enabled: number;
+    /** petId */
+    petId: number;
   };
 
   type toggleFollowUsingGETParams = {

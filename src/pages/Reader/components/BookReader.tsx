@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import { ACCESS_TOKEN } from '@/constants';
 import {
   Button,
   Space,
@@ -472,7 +473,7 @@ const BookReader: React.FC<BookReaderProps> = ({
     try {
       const timestamp = new Date().getTime();
       // 从设置中获取accessToken和apiBaseUrl
-      const accessToken = settings.accessToken || 'congg:7e0efee65786976202e4fc20c6a98d89'; // 默认值作为后备
+      const accessToken = ACCESS_TOKEN;
       const apiBaseUrl = settings.apiBaseUrl || 'https://reader.yucoder.cn/reader3'; // 默认值作为后备
       const apiUrl = `${apiBaseUrl}${API_URLS.CHAPTER_LIST}?accessToken=${accessToken}&v=${timestamp}`;
 
@@ -524,7 +525,7 @@ const BookReader: React.FC<BookReaderProps> = ({
 
     try {
       const timestamp = new Date().getTime();
-      const accessToken = settings.accessToken || 'congg:7e0efee65786976202e4fc20c6a98d89';
+      const accessToken = ACCESS_TOKEN;
       const apiBaseUrl = settings.apiBaseUrl || 'https://reader.yucoder.cn/reader3';
       const apiUrl = `${apiBaseUrl}${API_URLS.BOOK_CONTENT}?accessToken=${accessToken}&v=${timestamp}`;
 

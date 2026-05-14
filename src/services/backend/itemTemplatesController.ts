@@ -62,6 +62,21 @@ export async function getItemTemplateVoByIdUsingPost(
   });
 }
 
+/** 分页获取可购买物品列表 只返回 purchasable=1 的物品，支持按 category（大类）和 subType（子类型）筛选 POST /api/itemTemplates/list/page/purchasable */
+export async function listPurchasableItemsByPageUsingPost(
+  body: API.ItemTemplateQueryRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponsePageItemTemplateVO_>('/api/itemTemplates/list/page/purchasable', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
 /** 分页获取物品模板列表 POST /api/itemTemplates/list/page/vo */
 export async function listItemTemplatesVoByPageUsingPost(
   body: API.ItemTemplateQueryRequest,
@@ -73,6 +88,21 @@ export async function listItemTemplatesVoByPageUsingPost(
       'Content-Type': 'application/json',
     },
     data: body,
+    ...(options || {}),
+  });
+}
+
+/** 购买物品 消耗积分购买指定物品（仅限 purchasable=1 的物品），物品进入背包 POST /api/itemTemplates/purchase */
+export async function purchaseItemUsingPost(
+  // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
+  params: API.purchaseItemUsingPOSTParams,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseBoolean_>('/api/itemTemplates/purchase', {
+    method: 'POST',
+    params: {
+      ...params,
+    },
     ...(options || {}),
   });
 }

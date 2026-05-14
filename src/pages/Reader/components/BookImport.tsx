@@ -10,12 +10,12 @@ import {
   Tooltip
 } from 'antd';
 import { BookOutlined, SearchOutlined, LoadingOutlined, GlobalOutlined, DownOutlined } from '@ant-design/icons';
+import { ACCESS_TOKEN } from '@/constants';
 
 const { Search } = Input;
 
 // 全局变量
 const SEARCH_URL = 'https://reader.yucoder.cn/reader3/searchBookMultiSSE';
-const ACCESS_TOKEN = 'congg:7e0efee65786976202e4fc20c6a98d89';
 
 interface BookImportProps {
   onAddLocalBook: (book: any) => void;

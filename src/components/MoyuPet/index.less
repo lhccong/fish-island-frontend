@@ -555,7 +555,10 @@
   }
 
   .itemCount {
-    display: none;
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+    text-align: center;
   }
 
   .itemDesc {
@@ -1599,12 +1602,31 @@
             }
           }
           
-          &:last-child {
+          &:nth-child(2) {
             background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
             
             &:hover {
               background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%);
               transform: translateY(-2px);
+              box-shadow: 0 4px 10px rgba(82, 196, 26, 0.4);
+            }
+          }
+
+          &:last-child {
+            background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+
+            &:hover {
+              background: linear-gradient(135deg, #ffc53d 0%, #faad14 100%);
+              transform: translateY(-2px);
+              box-shadow: 0 4px 10px rgba(250, 173, 20, 0.4);
+            }
+          }
+
+          &.autoFeedActive {
+            background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%) !important;
+
+            &:hover {
+              background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%) !important;
               box-shadow: 0 4px 10px rgba(82, 196, 26, 0.4);
             }
           }

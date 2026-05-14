@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Modal, Tabs, Button, Progress, Card, Avatar, Row, Col, Input, Form, message, Tooltip, Popover, Spin, Radio, Pagination, Divider, Tag, Badge } from 'antd';
+import { Modal, Tabs, Button, Progress, Card, Avatar, Row, Col, Input, Form, message, Tooltip, Popover, Spin, Radio, Pagination, Divider, Tag, Badge, Switch, InputNumber, Select } from 'antd';
 import {
   HeartOutlined,
   ThunderboltOutlined,
@@ -22,9 +22,12 @@ import {
   LockOutlined,
   UnlockOutlined,
   ArrowUpOutlined,
+  SettingOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 import { getPetDetailUsingGet, createPetUsingPost, feedPetUsingPost, patPetUsingPost, updatePetNameUsingPost, getOtherUserPetUsingGet } from '@/services/backend/fishPetController';
+import { getConfigUsingGet, saveOrUpdateConfigUsingPost, toggleAutoFeedUsingPost } from '@/services/backend/petAutoFeedController';
 import { listPetSkinsUsingGet, exchangePetSkinUsingPost, setPetSkinUsingPost } from '@/services/backend/petSkinController';
 import { listMyItemInstancesByPageUsingPost, decomposeItemInstanceUsingPost, equipItemUsingPost, unequipItemUsingPost, batchDecomposeBlueGreenEquipmentsUsingPost } from '@/services/backend/itemInstancesController';
 import { getForgeDetailUsingPost, upgradeEquipUsingPost, refreshEntriesUsingPost, lockEntriesUsingPost } from '@/services/backend/petEquipForgeController';
@@ -633,6 +636,19 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   const [viewForgeSlotName, setViewForgeSlotName] = useState('');
   const [viewForgeLoading, setViewForgeLoading] = useState(false);
 
+  // 自动喂养相关状态
+  const [autoFeedModalVisible, setAutoFeedModalVisible] = useState(false);
+  const [autoFeedConfig, setAutoFeedConfig] = useState<API.PetAutoFeedConfigVO | null>(null);
+  const [autoFeedLoading, setAutoFeedLoading] = useState(false);
+  const [autoFeedSaveLoading, setAutoFeedSaveLoading] = useState(false);
+  const [autoFeedToggleLoading, setAutoFeedToggleLoading] = useState(false);
+  // 表单字段
+  const [autoFeedFoodCode, setAutoFeedFoodCode] = useState<string>('');
+  const [autoFeedThreshold, setAutoFeedThreshold] = useState<number>(30);
+  // 背包中的食物列表（用于下拉选择）
+  const [foodItems, setFoodItems] = useState<API.ItemInstanceVO[]>([]);
+  const [foodItemsLoading, setFoodItemsLoading] = useState(false);
+
   // 获取宠物数据
   const fetchPetData = async () => {
     setLoading(true);
@@ -678,6 +694,16 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
           setPet(res.data);
           setIsOtherUserEmptyPet(false); // 确保重置其他用户空宠物状态
           setIsCreating(false); // 确保不显示创建表单
+          // 静默加载自动喂养配置，用于按钮状态显示
+          if (res.data.petId) {
+            getConfigUsingGet({ petId: res.data.petId })
+              .then(cfgRes => {
+                if (cfgRes.code === 0 && cfgRes.data) {
+                  setAutoFeedConfig(cfgRes.data);
+                }
+              })
+              .catch(() => {});
+          }
         } else if (res.code === 0 && !res.data) {
           // 如果没有宠物，显示创建宠物表单
           setPet(null);
@@ -1246,6 +1272,98 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
     }
   };
 
+  // 打开自动喂养配置弹窗
+  const openAutoFeedModal = async () => {
+    if (!pet?.petId) return;
+    setAutoFeedModalVisible(true);
+    setAutoFeedLoading(true);
+    setFoodItemsLoading(true);
+
+    // 并行加载：自动喂养配置 + 背包食物列表
+    try {
+      const [configRes, foodRes] = await Promise.all([
+        getConfigUsingGet({ petId: pet.petId }),
+        listMyItemInstancesByPageUsingPost({ current: 1, pageSize: 50, category: 'consumable' }),
+      ]);
+
+      if (configRes.code === 0 && configRes.data) {
+        setAutoFeedConfig(configRes.data);
+        setAutoFeedFoodCode(configRes.data.foodCode || '');
+        setAutoFeedThreshold(configRes.data.triggerThreshold ?? 30);
+      } else {
+        setAutoFeedConfig(null);
+        setAutoFeedFoodCode('');
+        setAutoFeedThreshold(30);
+      }
+
+      if (foodRes.code === 0 && foodRes.data?.records) {
+        // 只保留 subType === 'food' 的消耗品
+        const foods = foodRes.data.records.filter(
+          item => item.template?.subType === 'food' && (item.quantity ?? 0) > 0
+        );
+        setFoodItems(foods);
+      } else {
+        setFoodItems([]);
+      }
+    } catch (error) {
+      console.error('加载自动喂养配置失败', error);
+      setAutoFeedConfig(null);
+      setFoodItems([]);
+    } finally {
+      setAutoFeedLoading(false);
+      setFoodItemsLoading(false);
+    }
+  };
+
+  // 保存自动喂养配置
+  const handleSaveAutoFeedConfig = async () => {
+    if (!pet?.petId) return;
+    if (!autoFeedFoodCode.trim()) {
+      message.warning('请选择食物');
+      return;
+    }
+    setAutoFeedSaveLoading(true);
+    try {
+      const res = await saveOrUpdateConfigUsingPost({
+        petId: pet.petId,
+        foodCode: autoFeedFoodCode.trim(),
+        triggerThreshold: autoFeedThreshold,
+        enabled: autoFeedConfig?.enabled ?? 0,
+      });
+      if (res.code === 0 && res.data) {
+        message.success('配置保存成功');
+        setAutoFeedConfig(res.data);
+      } else {
+        message.error(res.message || '保存失败');
+      }
+    } catch (error) {
+      console.error('保存自动喂养配置失败', error);
+      message.error('保存配置失败');
+    } finally {
+      setAutoFeedSaveLoading(false);
+    }
+  };
+
+  // 切换自动喂养开关
+  const handleToggleAutoFeed = async (enabled: boolean) => {
+    if (!pet?.petId) return;
+    setAutoFeedToggleLoading(true);
+    try {
+      const res = await toggleAutoFeedUsingPost({ petId: pet.petId, enabled: enabled ? 1 : 0 });
+      if (res.code === 0 && res.data) {
+        message.success(enabled ? '自动喂养已开启' : '自动喂养已关闭');
+        setAutoFeedConfig(res.data);
+      } else {
+        message.error(res.message || '操作失败');
+      }
+    } catch (error) {
+      console.error('切换自动喂养失败', error);
+      message.error('操作失败');
+    } finally {
+      setAutoFeedToggleLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (isPageComponent || visible) {
       // 重置状态，避免显示上一次的结果
@@ -1781,6 +1899,17 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
                       >
                         抚摸
                       </Button>
+                      <Tooltip title={`自动喂养${autoFeedConfig?.enabled === 1 ? '（已开启）' : '（未开启）'}`}>
+                        <Button
+                          type="primary"
+                          onClick={openAutoFeedModal}
+                          icon={<RobotOutlined />}
+                          className={`${styles.avatarActionBtn}${autoFeedConfig?.enabled === 1 ? ` ${styles.autoFeedActive}` : ''}`}
+                          size="small"
+                        >
+                          自动
+                        </Button>
+                      </Tooltip>
                     </div>
                   )}
                 </div>
@@ -2587,6 +2716,132 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
           loading={viewForgeLoading}
           onClose={() => { setViewForgeModalVisible(false); setViewForgeDetail(null); }}
         />
+        {/* 自动喂养配置弹窗 */}
+        <Modal
+          title={
+            <span>
+              <RobotOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+              自动喂养配置
+            </span>
+          }
+          open={autoFeedModalVisible}
+          onCancel={() => setAutoFeedModalVisible(false)}
+          footer={null}
+          width={420}
+        >
+          <Spin spinning={autoFeedLoading}>
+            <div style={{ padding: '8px 0' }}>
+              {/* 当前状态 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '12px 16px', background: autoFeedConfig?.enabled === 1 ? '#f6ffed' : '#fafafa', borderRadius: 8, border: `1px solid ${autoFeedConfig?.enabled === 1 ? '#b7eb8f' : '#f0f0f0'}` }}>
+                <div>
+                  <div style={{ fontWeight: 'bold', marginBottom: 4 }}>自动喂养</div>
+                  <div style={{ fontSize: 12, color: '#999' }}>
+                    {autoFeedConfig?.enabled === 1 ? '已开启，饥饿度低于阈值时自动喂食' : '已关闭'}
+                  </div>
+                </div>
+                <Switch
+                  checked={autoFeedConfig?.enabled === 1}
+                  loading={autoFeedToggleLoading}
+                  disabled={!autoFeedConfig}
+                  onChange={handleToggleAutoFeed}
+                  checkedChildren="开启"
+                  unCheckedChildren="关闭"
+                />
+              </div>
+
+              {/* 当前食物信息 */}
+              {autoFeedConfig?.foodName && (
+                <div style={{ marginBottom: 16, padding: '10px 14px', background: '#e6f7ff', borderRadius: 8, border: '1px solid #91d5ff', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {autoFeedConfig.foodIcon && (
+                    <img src={autoFeedConfig.foodIcon} alt={autoFeedConfig.foodName} style={{ width: 32, height: 32 }} />
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{autoFeedConfig.foodName}</div>
+                    <div style={{ fontSize: 12, color: '#666' }}>
+                      剩余数量：<strong style={{ color: (autoFeedConfig.remainingQuantity ?? 0) > 0 ? '#52c41a' : '#ff4d4f' }}>{autoFeedConfig.remainingQuantity ?? 0}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Divider style={{ margin: '12px 0' }}>配置参数</Divider>
+
+              {/* 选择食物 */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 6, fontWeight: 500 }}>选择食物</div>
+                <Select
+                  style={{ width: '100%' }}
+                  placeholder="请从背包中选择食物"
+                  value={autoFeedFoodCode || undefined}
+                  onChange={v => setAutoFeedFoodCode(v)}
+                  loading={foodItemsLoading}
+                  allowClear
+                  optionLabelProp="label"
+                  notFoundContent={foodItemsLoading ? <Spin size="small" /> : <span style={{ color: '#999' }}>背包中暂无食物</span>}
+                >
+                  {foodItems.map(item => (
+                    <Select.Option
+                      key={item.template?.code}
+                      value={item.template?.code ?? ''}
+                      label={
+                        <span>
+                          {item.template?.icon && (
+                            <img src={item.template.icon} alt="" style={{ width: 16, height: 16, marginRight: 6, verticalAlign: 'middle' }} />
+                          )}
+                          {item.template?.name}
+                          <span style={{ color: '#999', marginLeft: 6 }}>×{item.quantity}</span>
+                        </span>
+                      }
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {item.template?.icon && (
+                          <img src={item.template.icon} alt="" style={{ width: 24, height: 24, flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 500 }}>{item.template?.name}</div>
+                          <div style={{ fontSize: 11, color: '#999' }}>
+                            剩余 <strong style={{ color: '#52c41a' }}>{item.quantity}</strong> 个
+                          </div>
+                        </div>
+                      </div>
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+
+              {/* 触发阈值 */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ marginBottom: 6, fontWeight: 500 }}>
+                  触发阈值（饥饿度低于此值时自动喂食）
+                </div>
+                <InputNumber
+                  min={1}
+                  max={99}
+                  value={autoFeedThreshold}
+                  onChange={v => setAutoFeedThreshold(v ?? 30)}
+                  style={{ width: '100%' }}
+                  addonAfter="点"
+                />
+              </div>
+
+              <Button
+                type="primary"
+                block
+                loading={autoFeedSaveLoading}
+                onClick={handleSaveAutoFeedConfig}
+                icon={<SettingOutlined />}
+              >
+                保存配置
+              </Button>
+
+              {!autoFeedConfig && (
+                <div style={{ marginTop: 10, fontSize: 12, color: '#999', textAlign: 'center' }}>
+                  保存配置后可开启自动喂养开关
+                </div>
+              )}
+            </div>
+          </Spin>
+        </Modal>
       </div>
     );
   }
@@ -3340,6 +3595,134 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
         loading={viewForgeLoading}
         onClose={() => { setViewForgeModalVisible(false); setViewForgeDetail(null); }}
       />
+      {/* 自动喂养配置弹窗 */}
+      {!isOtherUser && (
+        <Modal
+          title={
+            <span>
+              <RobotOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+              自动喂养配置
+            </span>
+          }
+          open={autoFeedModalVisible}
+          onCancel={() => setAutoFeedModalVisible(false)}
+          footer={null}
+          width={420}
+        >
+          <Spin spinning={autoFeedLoading}>
+            <div style={{ padding: '8px 0' }}>
+              {/* 当前状态 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, padding: '12px 16px', background: autoFeedConfig?.enabled === 1 ? '#f6ffed' : '#fafafa', borderRadius: 8, border: `1px solid ${autoFeedConfig?.enabled === 1 ? '#b7eb8f' : '#f0f0f0'}` }}>
+                <div>
+                  <div style={{ fontWeight: 'bold', marginBottom: 4 }}>自动喂养</div>
+                  <div style={{ fontSize: 12, color: '#999' }}>
+                    {autoFeedConfig?.enabled === 1 ? '已开启，饥饿度低于阈值时自动喂食' : '已关闭'}
+                  </div>
+                </div>
+                <Switch
+                  checked={autoFeedConfig?.enabled === 1}
+                  loading={autoFeedToggleLoading}
+                  disabled={!autoFeedConfig}
+                  onChange={handleToggleAutoFeed}
+                  checkedChildren="开启"
+                  unCheckedChildren="关闭"
+                />
+              </div>
+
+              {/* 当前食物信息 */}
+              {autoFeedConfig?.foodName && (
+                <div style={{ marginBottom: 16, padding: '10px 14px', background: '#e6f7ff', borderRadius: 8, border: '1px solid #91d5ff', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {autoFeedConfig.foodIcon && (
+                    <img src={autoFeedConfig.foodIcon} alt={autoFeedConfig.foodName} style={{ width: 32, height: 32 }} />
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{autoFeedConfig.foodName}</div>
+                    <div style={{ fontSize: 12, color: '#666' }}>
+                      剩余数量：<strong style={{ color: (autoFeedConfig.remainingQuantity ?? 0) > 0 ? '#52c41a' : '#ff4d4f' }}>{autoFeedConfig.remainingQuantity ?? 0}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Divider style={{ margin: '12px 0' }}>配置参数</Divider>
+
+              {/* 选择食物 */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 6, fontWeight: 500 }}>选择食物</div>
+                <Select
+                  style={{ width: '100%' }}
+                  placeholder="请从背包中选择食物"
+                  value={autoFeedFoodCode || undefined}
+                  onChange={v => setAutoFeedFoodCode(v)}
+                  loading={foodItemsLoading}
+                  allowClear
+                  optionLabelProp="label"
+                  notFoundContent={foodItemsLoading ? <Spin size="small" /> : <span style={{ color: '#999' }}>背包中暂无食物</span>}
+                >
+                  {foodItems.map(item => (
+                    <Select.Option
+                      key={item.template?.code}
+                      value={item.template?.code ?? ''}
+                      label={
+                        <span>
+                          {item.template?.icon && (
+                            <img src={item.template.icon} alt="" style={{ width: 16, height: 16, marginRight: 6, verticalAlign: 'middle' }} />
+                          )}
+                          {item.template?.name}
+                          <span style={{ color: '#999', marginLeft: 6 }}>×{item.quantity}</span>
+                        </span>
+                      }
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {item.template?.icon && (
+                          <img src={item.template.icon} alt="" style={{ width: 24, height: 24, flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 500 }}>{item.template?.name}</div>
+                          <div style={{ fontSize: 11, color: '#999' }}>
+                            剩余 <strong style={{ color: '#52c41a' }}>{item.quantity}</strong> 个
+                          </div>
+                        </div>
+                      </div>
+                    </Select.Option>
+                  ))}
+                </Select>
+              </div>
+
+              {/* 触发阈值 */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ marginBottom: 6, fontWeight: 500 }}>
+                  触发阈值（饥饿度低于此值时自动喂食）
+                </div>
+                <InputNumber
+                  min={1}
+                  max={99}
+                  value={autoFeedThreshold}
+                  onChange={v => setAutoFeedThreshold(v ?? 30)}
+                  style={{ width: '100%' }}
+                  addonAfter="点"
+                />
+              </div>
+
+              <Button
+                type="primary"
+                block
+                loading={autoFeedSaveLoading}
+                onClick={handleSaveAutoFeedConfig}
+                icon={<SettingOutlined />}
+              >
+                保存配置
+              </Button>
+
+              {!autoFeedConfig && (
+                <div style={{ marginTop: 10, fontSize: 12, color: '#999', textAlign: 'center' }}>
+                  保存配置后可开启自动喂养开关
+                </div>
+              )}
+            </div>
+          </Spin>
+        </Modal>
+      )}
     </Modal>
   );
 };

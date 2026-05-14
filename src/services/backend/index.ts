@@ -25,6 +25,7 @@ import * as mockInterviewController from './mockInterviewController';
 import * as momentsController from './momentsController';
 import * as oAuth2Controller from './oAuth2Controller';
 import * as payOrderController from './payOrderController';
+import * as petAutoFeedController from './petAutoFeedController';
 import * as petBattleController from './petBattleController';
 import * as petEquipForgeController from './petEquipForgeController';
 import * as petRankController from './petRankController';
@@ -81,6 +82,7 @@ export default {
   restAuthController,
   oAuth2Controller,
   payOrderController,
+  petAutoFeedController,
   petBattleController,
   fishPetController,
   petEquipForgeController,

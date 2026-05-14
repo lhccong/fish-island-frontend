@@ -874,66 +874,78 @@ const ChatRoom: React.FC = () => {
   }, []);
 
   // 获取在线用户列表
-  const fetchOnlineUsers = async () => {
+  // 机器人用户（固定置顶）
+  const BOT_USER: User = {
+    id: '-1',
+    name: '摸鱼助手',
+    avatar:
+      'https://oss.cqbo.com/moyu/user_avatar/1/hYskW0jH-34eaba5c-3809-45ef-a3bd-dd01cf97881b_478ce06b6d869a5a11148cf3ee119bac.gif',
+    level: 1,
+    isAdmin: false,
+    status: '在线',
+    points: 9999,
+    region: '鱼塘',
+    country: '摸鱼岛',
+    avatarFramerUrl: '',
+    titleId: 0,
+    titleIdList: '',
+  };
+
+  const fetchOnlineUsers = async (isIncremental = false) => {
     try {
       const response = await getOnlineUserListUsingGet();
-      if (response.data) {
-        const onlineUsersList = response.data.map((user) => ({
-          id: String(user.id),
-          name: user.name || '未知用户',
-          avatar: user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=visitor',
-          level: user.level || 1,
-          isAdmin: user.isAdmin || false,
-          status: '在线',
-          points: user.points || 0,
-          avatarFramerUrl: user.avatarFramerUrl,
-          titleId: user.titleId,
-          titleIdList: user.titleIdList,
-        }));
+      if (!response.data) return;
 
-        // 添加机器人用户
-        const botUser = {
-          id: '-1',
-          name: '摸鱼助手',
+      const freshList: User[] = response.data.map((user) => ({
+        id: String(user.id),
+        name: user.name || '未知用户',
+        avatar: user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=visitor',
+        level: user.level || 1,
+        isAdmin: user.isAdmin || false,
+        status: '在线',
+        points: user.points || 0,
+        avatarFramerUrl: user.avatarFramerUrl,
+        titleId: user.titleId,
+        titleIdList: user.titleIdList,
+      }));
+
+      // 确保当前用户在列表中
+      if (
+        currentUser?.id &&
+        !freshList.some((u) => u.id === String(currentUser.id))
+      ) {
+        freshList.push({
+          id: String(currentUser.id),
+          name: currentUser.userName || '未知用户',
           avatar:
-            'https://oss.cqbo.com/moyu/user_avatar/1/hYskW0jH-34eaba5c-3809-45ef-a3bd-dd01cf97881b_478ce06b6d869a5a11148cf3ee119bac.gif',
-          level: 1,
-          isAdmin: false,
+            currentUser.userAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=visitor',
+          level: currentUser.level || 1,
+          isAdmin: currentUser.userRole === 'admin',
           status: '在线',
-          points: 9999,
-          region: '鱼塘',
-          country: '摸鱼岛',
-          avatarFramerUrl: '',
-          titleId: 0,
-          titleIdList: '',
-        };
-        onlineUsersList.unshift(botUser);
+          points: currentUser.points || 0,
+          avatarFramerUrl: currentUser.avatarFramerUrl,
+          titleId: currentUser.titleId,
+          titleIdList: currentUser.titleIdList,
+        });
+      }
 
-        // 如果当前用户已登录且不在列表中，将其添加到列表
-        if (
-          currentUser?.id &&
-          !onlineUsersList.some((user) => user.id === String(currentUser.id))
-        ) {
-          onlineUsersList.push({
-            id: String(currentUser.id),
-            name: currentUser.userName || '未知用户',
-            avatar:
-              currentUser.userAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=visitor',
-            level: currentUser.level || 1,
-            isAdmin: currentUser.userRole === 'admin',
-            status: '在线',
-            points: currentUser.points || 0,
-            avatarFramerUrl: currentUser.avatarFramerUrl,
-            titleId: currentUser.titleId,
-            titleIdList: currentUser.titleIdList,
-          });
-        }
-
-        setOnlineUsers(onlineUsersList);
+      if (!isIncremental) {
+        // 首次加载：直接设置完整列表（机器人置顶）
+        setOnlineUsers([BOT_USER, ...freshList]);
+      } else {
+        // 增量更新：与当前列表做 diff，保留机器人，新增/移除真实用户
+        setOnlineUsers((prev) => {
+          const freshIds = new Set(freshList.map((u) => u.id));
+          // 保留机器人 + 仍在线的用户
+          const retained = prev.filter((u) => u.id === '-1' || freshIds.has(u.id));
+          const retainedIds = new Set(retained.map((u) => u.id));
+          // 追加新上线的用户
+          const added = freshList.filter((u) => !retainedIds.has(u.id));
+          return [...retained, ...added];
+        });
       }
     } catch (error) {
       console.error('获取在线用户列表失败:', error);
-      messageApi.error('获取在线用户列表失败');
     }
   };
   // 修改 useEffect 来监听消息变化并自动滚动
@@ -953,11 +965,19 @@ const ChatRoom: React.FC = () => {
   // 初始化时获取在线用户列表（仅在列表可见时）
   useEffect(() => {
     if (isUserListVisible) {
-      fetchOnlineUsers();
+      // 首次加载，全量拉取
+      fetchOnlineUsers(false);
       // 延迟计算高度，确保DOM已经渲染
       setTimeout(() => {
         updateListHeight();
       }, 100);
+
+      // 每 10 秒增量刷新一次在线用户列表
+      const timer = setInterval(() => {
+        fetchOnlineUsers(true);
+      }, 10000);
+
+      return () => clearInterval(timer);
     }
   }, [isUserListVisible, updateListHeight]);
 
@@ -1437,19 +1457,6 @@ const ChatRoom: React.FC = () => {
     setTotal((prev) => Math.max(0, prev - 1));
   };
 
-  const handleUserOnline = (data: any) => {
-    setOnlineUsers((prev) => [
-      ...prev,
-      ...data.data.filter(
-        (newUser: { id: string }) => !prev.some((user) => user.id === newUser.id),
-      ),
-    ]);
-  };
-
-  const handleUserOffline = (data: any) => {
-    setOnlineUsers((prev) => prev.filter((user) => user.id !== data.data));
-  };
-
   // 修改 WebSocket 连接逻辑
   useEffect(() => {
     setIsComponentMounted(true);
@@ -1466,8 +1473,6 @@ const ChatRoom: React.FC = () => {
       // 添加消息处理器
       wsService.addMessageHandler('chat', handleChatMessage);
       wsService.addMessageHandler('userMessageRevoke', handleUserMessageRevoke);
-      wsService.addMessageHandler('userOnline', handleUserOnline);
-      wsService.addMessageHandler('userOffline', handleUserOffline);
 
       // 连接WebSocket
       wsService.connect(token);
@@ -1478,8 +1483,6 @@ const ChatRoom: React.FC = () => {
         // 移除消息处理器
         wsService.removeMessageHandler('chat', handleChatMessage);
         wsService.removeMessageHandler('userMessageRevoke', handleUserMessageRevoke);
-        wsService.removeMessageHandler('userOnline', handleUserOnline);
-        wsService.removeMessageHandler('userOffline', handleUserOffline);
       };
     }
   }, [currentUser?.id]);
@@ -3556,12 +3559,10 @@ const ChatRoom: React.FC = () => {
                   <BugOutlined className={styles.moreOptionsIcon} />
                   <span>摸鱼宠物</span>
                 </div>
-                {(currentUser?.userRole === 'admin' || (currentUser?.level && currentUser.level >= 6) || currentUser?.vip) && (
-                  <div className={styles.moreOptionsItem} onClick={() => setIsRedPacketModalVisible(true)}>
-                    <GiftOutlined className={styles.moreOptionsIcon} />
-                    <span>发红包</span>
-                  </div>
-                )}
+                <div className={styles.moreOptionsItem} onClick={() => setIsRedPacketModalVisible(true)}>
+                  <GiftOutlined className={styles.moreOptionsIcon} />
+                  <span>发红包</span>
+                </div>
                 <div className={styles.moreOptionsItem} onClick={() => fileInputRef.current?.click()}>
                   <PaperClipOutlined className={styles.moreOptionsIcon} />
                   <span>上传图片</span>

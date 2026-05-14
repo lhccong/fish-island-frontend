@@ -310,20 +310,6 @@ const ReaderSettings: React.FC<ReaderSettingsProps> = ({ settings, onSave }) => 
       <Form.Item
         label={
           <Space>
-            <span>摸鱼阅读Token</span>
-            <Tooltip title="用于访问摸鱼阅读API的Token，默认为游客模式">
-              <QuestionCircleOutlined />
-            </Tooltip>
-          </Space>
-        }
-        name="accessToken"
-      >
-        <Input placeholder="congg:7e0efee65786976202e4fc20c6a98d89" />
-      </Form.Item>
-
-      <Form.Item
-        label={
-          <Space>
             <span>API服务地址</span>
             <Tooltip title="摸鱼阅读API服务器地址，默认为官方服务器">
               <QuestionCircleOutlined />
