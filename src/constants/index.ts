@@ -21,6 +21,11 @@ export const SYSTEM_LOGO =
   'https://oss.cqbo.com/moyu/moyu.png';
 
 /**
+ * 摸鱼阅读 Access Token
+ */
+export const ACCESS_TOKEN = 'congg:8e2d5baf23a6db101eabe8376142d653';
+
+/**
  * 谁是卧底房间状态常量
  */
 export const UNDERCOVER_ROOM_STATUS = {
@@ -36,3 +41,8 @@ export const UNDERCOVER_NOTIFICATION = {
   NONE: 'NONE',        // 无通知
   NEW_ROOM: 'NEW_ROOM' // 新房间通知
 };
+
+/**
+ * 热榜页广告开关
+ */
+export const HOT_RANK_AD_ENABLED = false;
