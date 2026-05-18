@@ -7,7 +7,8 @@ import {
   Spin,
   Empty,
   message,
-  Space
+  Space,
+  theme
 } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
@@ -78,6 +79,7 @@ interface ChapterListProps {
 const loadedBooksCache = new Set<number>();
 
 const ChapterList: React.FC<ChapterListProps> = ({ book, onChapterSelect, settings }) => {
+  const { token } = theme.useToken();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [filteredChapters, setFilteredChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -494,8 +496,8 @@ const ChapterList: React.FC<ChapterListProps> = ({ book, onChapterSelect, settin
                 cursor: 'pointer',
                 padding: '8px 12px',
                 transition: 'all 0.3s',
-                backgroundColor: book.lastReadChapter === chapter.index ? '#f0f5ff' : 'transparent',
-                borderLeft: book.lastReadChapter === chapter.index ? '3px solid #1890ff' : '3px solid transparent'
+                backgroundColor: book.lastReadChapter === chapter.index ? token.colorPrimaryBg : 'transparent',
+                borderLeft: book.lastReadChapter === chapter.index ? `3px solid ${token.colorPrimary}` : '3px solid transparent'
               }}
               className="chapter-item"
               ref={book.lastReadChapter === chapter.index ? currentChapterRef : null}
@@ -525,7 +527,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ book, onChapterSelect, settin
           style={{
             maxHeight: '60vh',
             overflowY: 'auto',
-            border: '1px solid #f0f0f0',
+            border: `1px solid ${token.colorBorderSecondary}`,
             borderRadius: '4px'
           }}
           ref={listContainerRef}
@@ -540,7 +542,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ book, onChapterSelect, settin
       <style>
         {`
           .chapter-item:hover {
-            background-color: #f5f5f5 !important;
+            background-color: ${token.colorFillSecondary} !important;
           }
         `}
       </style>

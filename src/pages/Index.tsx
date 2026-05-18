@@ -29,6 +29,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { TouchEvent, useEffect, useRef, useState } from 'react';
 import './Index.less';
 import eventBus from '@/utils/eventBus';
+import { HOT_RANK_AD_ENABLED } from '@/constants';
 import { useModel } from '@umijs/max';
 
 const STORAGE_KEY = 'selected_source_ids';
@@ -354,7 +355,7 @@ const Index: React.FC = () => {
                 </div>
                 <List
                   dataSource={(() => {
-                    if (adClosed) return [...(currentSource.data ?? [])];
+                    if (!HOT_RANK_AD_ENABLED || adClosed) return [...(currentSource.data ?? [])];
                     const data = [...(currentSource.data ?? [])];
                     data.splice(5, 0, { isAd: true } as any);
                     return data;
@@ -741,7 +742,7 @@ const Index: React.FC = () => {
                         </Badge.Ribbon>
                         </Col>
                       ));
-                      if (!adClosed) cols.splice(2, 0, adCol);
+                      if (HOT_RANK_AD_ENABLED && !adClosed) cols.splice(2, 0, adCol);
                       return cols;                    })()}
               </Row>
             </div>

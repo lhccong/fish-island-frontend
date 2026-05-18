@@ -795,6 +795,33 @@ body.dark-mode {
     background: #1e1e1e !important;
   }
 
+  [class*="shopTabs"] {
+    .ant-tabs-nav {
+      background: #252535 !important;
+      border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+
+      &::before {
+        border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+      }
+    }
+
+    .ant-tabs-tab {
+      color: rgba(255, 255, 255, 0.55) !important;
+
+      &:hover {
+        color: rgba(255, 255, 255, 0.75) !important;
+      }
+
+      &.ant-tabs-tab-active .ant-tabs-tab-btn {
+        color: #1890ff !important;
+      }
+    }
+
+    .ant-tabs-ink-bar {
+      background: #1890ff !important;
+    }
+  }
+
   [class*="frameItem"] {
     background: #252535 !important;
 
@@ -823,6 +850,85 @@ body.dark-mode {
 
   [class*="propsDescription"] {
     color: rgba(255, 255, 255, 0.45) !important;
+  }
+
+  [class*="monthlyCardContainer"] {
+    background: transparent !important;
+  }
+
+  [class*="monthlyCard"] {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+    background: #252535 !important;
+
+    .ant-card-head {
+      background: rgba(24, 144, 255, 0.12) !important;
+      border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+
+      .ant-card-head-title {
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+    }
+
+    .ant-card-body {
+      background: #252535 !important;
+    }
+  }
+
+  [class*="cardSubtitle"] {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+
+  [class*="privilegeList"] {
+    .ant-list-item {
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+
+    .ant-list-item-meta-title {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+
+    .ant-list-item-meta-description {
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+  }
+
+  [class*="featureTag"] {
+    background: rgba(255, 193, 7, 0.12) !important;
+    border-color: rgba(255, 193, 7, 0.25) !important;
+    color: #ffc53d !important;
+  }
+
+  [class*="supportButtonContainer"] {
+    border-top-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  [class*="pointsDateGroup"] {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+
+  [class*="pointsRecordItem"] {
+    border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  [class*="pointsRecordTitle"] {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  [class*="pointsRecordMeta"] {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  [class*="pointsEmpty"] {
+    color: rgba(255, 255, 255, 0.4) !important;
+
+    [class*="emptyIcon"] {
+      color: rgba(255, 255, 255, 0.15) !important;
+    }
+  }
+
+  [class*="pointsEndMessage"] {
+    color: rgba(255, 255, 255, 0.25) !important;
   }
 
   // 宠物页面容器（Pet/index.less CSS Modules）

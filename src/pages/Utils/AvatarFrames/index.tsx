@@ -1,17 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { Avatar, Button, message, Spin, Tabs, Modal, Card, List, Typography, Tag } from 'antd';
-import { ShopOutlined, CrownOutlined, GiftOutlined, ExclamationCircleOutlined, CreditCardOutlined, CheckCircleOutlined, HistoryOutlined } from '@ant-design/icons';
+import { ShopOutlined, CrownOutlined, GiftOutlined, ExclamationCircleOutlined, CreditCardOutlined, CheckCircleOutlined, HistoryOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
 import { getLoginUserUsingGet } from '@/services/backend/userController';
 import { listAvatarFrameVoByPageUsingPost, exchangeFrameUsingPost, setCurrentFrameUsingPost } from '@/services/backend/avatarFrameController';
 import { listPropsPageUsingGet, purchasePropsUsingPost } from '@/services/backend/propsController';
 import { listMyPointsRecordsUsingGet } from '@/services/backend/userPointsRecordController';
 import styles from './index.module.less';
-import './index.less';
 import { useModel } from '@umijs/max';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import {history} from "@@/core/history";
 
 const { confirm } = Modal;
+
+dayjs.locale('zh-cn');
+
+const formatRecordTime = (timeStr?: string) => {
+  if (!timeStr) return '';
+  const d = dayjs(timeStr);
+  const now = dayjs();
+  if (now.diff(d, 'minute') < 1) return '刚刚';
+  if (now.diff(d, 'hour') < 1) return `${now.diff(d, 'minute')} 分钟前`;
+  if (now.diff(d, 'day') < 1) return d.format('HH:mm');
+  if (now.diff(d, 'day') < 7) return d.format('ddd HH:mm');
+  return d.format('YYYY-MM-DD HH:mm');
+};
+
+const getDateGroupLabel = (timeStr?: string) => {
+  if (!timeStr) return '更早';
+  const d = dayjs(timeStr).startOf('day');
+  const today = dayjs().startOf('day');
+  const diff = today.diff(d, 'day');
+  if (diff === 0) return '今天';
+  if (diff === 1) return '昨天';
+  if (diff < 7) return d.format('dddd');
+  return d.format('M月D日');
+};
 
 const AvatarFrames: React.FC = () => {
   const { setInitialState } = useModel('@@initialState');
@@ -435,27 +460,27 @@ const AvatarFrames: React.FC = () => {
     ];
 
     return (
-      <div className="monthlyCardContainer">
+      <div className={styles.monthlyCardContainer}>
         <Card
-          className="monthlyCard"
+          className={styles.monthlyCard}
           title={
             <>
               <div>摸鱼月卡</div>
-              <div className="cardSubtitle">支持网站，享受更多特权</div>
+              <div className={styles.cardSubtitle}>支持网站，享受更多特权</div>
             </>
           }
         >
           <List
-            className="privilegeList"
+            className={styles.privilegeList}
             itemLayout="horizontal"
             dataSource={features}
             renderItem={(item) => (
               <List.Item>
                 <List.Item.Meta
-                  avatar={<CheckCircleOutlined className="privilegeIcon" />}
+                  avatar={<CheckCircleOutlined className={styles.privilegeIcon} />}
                   title={
                     <>
-                      {item.title} <Tag className="priceTag">{item.tag}</Tag>
+                      {item.title} <Tag className={styles.featureTag}>{item.tag}</Tag>
                     </>
                   }
                   description={item.description}
@@ -463,7 +488,7 @@ const AvatarFrames: React.FC = () => {
               </List.Item>
             )}
           />
-          <div className="supportButtonContainer">
+          <div className={styles.supportButtonContainer}>
             <Button type="primary" size="large" onClick={() => history.push('/rank/reward')}>
               前往支持
             </Button>
@@ -474,66 +499,76 @@ const AvatarFrames: React.FC = () => {
   };
 
   // 积分记录标签页内容
-  const renderPointsRecords = () => (
+  const renderPointsRecords = () => {
+    let lastDateLabel = '';
+    const recordElements: React.ReactNode[] = [];
+
+    pointsRecords.forEach((record) => {
+      const dateLabel = getDateGroupLabel(record.createTime);
+      if (dateLabel !== lastDateLabel) {
+        recordElements.push(
+          <div key={`date-${dateLabel}-${record.id}`} className={styles.pointsDateGroup}>
+            {dateLabel}
+          </div>,
+        );
+        lastDateLabel = dateLabel;
+      }
+
+      const isGain = record.changeType === 1;
+      const available = (record.afterPoints ?? 0) - (record.afterUsedPoints ?? 0);
+
+      recordElements.push(
+        <div key={record.id} className={styles.pointsRecordItem}>
+          <div className={`${styles.pointsRecordIcon} ${isGain ? styles.iconGain : styles.iconLoss}`}>
+            {isGain ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+          </div>
+          <div className={styles.pointsRecordMain}>
+            <div className={styles.pointsRecordTitle}>
+              {record.description || record.sourceTypeText || '积分变动'}
+            </div>
+            <div className={styles.pointsRecordMeta}>
+              {formatRecordTime(record.createTime)}
+              <span className={styles.pointsRecordMetaDot}>·</span>
+              可用 {available}
+            </div>
+          </div>
+          <div className={styles.pointsRecordAmount}>
+            <span className={`${styles.change} ${isGain ? styles.amountGain : styles.amountLoss}`}>
+              {isGain ? '+' : '-'}{record.changePoints}
+            </span>
+          </div>
+        </div>,
+      );
+    });
+
+    return (
     <InfiniteScroll
       dataLength={pointsRecords.length}
       next={loadMorePointsRecords}
       hasMore={hasMorePoints}
       loader={
-        <div style={{ textAlign: 'center', padding: '20px' }}>
+        <div className={styles.pointsLoader}>
           <Spin />
         </div>
       }
       endMessage={
-        <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-          没有更多记录了
-        </div>
+        pointsRecords.length > 0 ? (
+          <div className={styles.pointsEndMessage}>没有更多记录了</div>
+        ) : null
       }
     >
-      <div className="pointsRecordsList" style={{ padding: '0 20px' }}>
-        {pointsRecords.map((record) => (
-          <Card
-            key={record.id}
-            size="small"
-            style={{
-              marginBottom: '12px',
-              borderRadius: '8px',
-              border: '1px solid #f0f0f0',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 500, fontSize: '15px', marginBottom: '4px' }}>
-                  {record.description || record.sourceTypeText || '积分变动'}
-                </div>
-                <div style={{ fontSize: '13px', color: '#888' }}>
-                  {record.createTime}
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{
-                  fontWeight: 600,
-                  fontSize: '16px',
-                  color: record.changeType === 1 ? '#52c41a' : '#ff4d4f'
-                }}>
-                  {record.changeType === 1 ? '+' : '-'}{record.changePoints}
-                </div>
-                <div style={{ fontSize: '12px', color: '#888' }}>
-                  可用: {(record.afterPoints ?? 0) - (record.afterUsedPoints ?? 0)}
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
+      <div className={styles.pointsRecordsList}>
+        {recordElements}
         {pointsRecords.length === 0 && !pointsLoading && (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-            <HistoryOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+          <div className={styles.pointsEmpty}>
+            <HistoryOutlined className={styles.emptyIcon} />
             <div>暂无积分记录</div>
           </div>
         )}
       </div>
     </InfiniteScroll>
-  );
+    );
+  };
 
   const tabItems = [
     {

@@ -5,7 +5,8 @@ import {
   Typography,
   Empty,
   Spin,
-  Divider
+  Divider,
+  theme
 } from 'antd';
 
 const { Text, Paragraph } = Typography;
@@ -39,6 +40,7 @@ const BookSearch: React.FC<BookSearchProps> = ({
   onSearchResultSelect,
   results
 }) => {
+  const { token } = theme.useToken();
   const [keyword, setKeyword] = useState('');
   const [searching, setSearching] = useState(false);
   const [localResults, setLocalResults] = useState<SearchResult[]>([]);
@@ -137,7 +139,7 @@ const BookSearch: React.FC<BookSearchProps> = ({
                   borderRadius: '4px',
                   transition: 'all 0.3s',
                   marginBottom: '8px',
-                  background: '#fafafa'
+                  background: token.colorFillAlter
                 }}
                 onClick={() => onSearchResultSelect(result.position)}
                 className="search-result-item"
@@ -178,8 +180,8 @@ const BookSearch: React.FC<BookSearchProps> = ({
       <style>
         {`
           .search-result-item:hover {
-            background-color: #f0f0f0 !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+            background-color: ${token.colorFillSecondary} !important;
+            box-shadow: ${token.boxShadowTertiary};
           }
         `}
       </style>

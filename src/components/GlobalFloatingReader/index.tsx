@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Button, message, Tooltip, Spin, Modal, Slider, Popover, Radio, Select, ColorPicker } from 'antd';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Button, message, Tooltip, Spin, Modal, Slider, Popover, Radio, Select, ColorPicker, theme } from 'antd';
+import { useModel } from 'umi';
 import {
   BarsOutlined,
   DeleteOutlined,
@@ -144,14 +145,49 @@ const FONT_FAMILIES = [
 // 使用缓存记录已经加载过的书籍ID，避免重复请求章节列表
 const loadedBooksCache = new Set<number>();
 
+const LIGHT_PRESET_THEME_IDS = new Set([
+  'default', 'paper', 'ivory', 'green-soft', 'gray-minimal', 'japan-soft',
+  'pink-milk', 'mint-choco', 'sky-sugar', 'lemon-cream',
+]);
+
+const NIGHT_THEME = PRESET_THEMES.find((t) => t.id === 'night')!;
+
+/** 站点深色模式下，浅色阅读主题自动映射为夜间主题 */
+function getDisplaySettings(settings: ReaderSettings, isDarkMode: boolean): ReaderSettings {
+  if (!isDarkMode) return settings;
+  const themeId = settings.themeId || 'default';
+  if (!LIGHT_PRESET_THEME_IDS.has(themeId)) return settings;
+  return {
+    ...settings,
+    backgroundColor: NIGHT_THEME.backgroundColor,
+    fontColor: NIGHT_THEME.color,
+    themeId: 'night',
+  };
+}
+
 // 使用ColorPicker时需要的类型
 import type { ColorPickerProps } from 'antd';
 
+/** 虚拟列表内层滚动容器，用于应用深色滚动条 */
+const ReaderListInnerElement = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ style, ...rest }, ref) => (
+    <div ref={ref} className="floating-reader-scroll" style={style} {...rest} />
+  ),
+);
+ReaderListInnerElement.displayName = 'ReaderListInnerElement';
+
 const GlobalReader: React.FC<ReaderProps> = ({ visible, onClose }): React.ReactNode => {
+  const { isDarkMode } = useModel('theme');
+  const { token } = theme.useToken();
+
   // 核心状态 - 触发渲染的状态
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<ReaderSettings>(DEFAULT_SETTINGS);
+  const displaySettings = useMemo(
+    () => getDisplaySettings(settings, isDarkMode),
+    [settings, isDarkMode],
+  );
   const [size, setSize] = useState(DEFAULT_SIZE);
   const [position, setPosition] = useState(DEFAULT_POSITION);
   const [chapterIndex, setChapterIndex] = useState(0);
@@ -1249,8 +1285,8 @@ const handleContextMenu = (e: React.MouseEvent) => {
   menuDiv.style.position = 'fixed';
   menuDiv.style.top = `${e.clientY}px`;
   menuDiv.style.left = `${e.clientX}px`;
-  menuDiv.style.backgroundColor = '#fff';
-  menuDiv.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+  menuDiv.style.backgroundColor = token.colorBgElevated;
+  menuDiv.style.boxShadow = token.boxShadowSecondary;
   menuDiv.style.borderRadius = '4px';
   menuDiv.style.padding = '4px 0';
   menuDiv.style.zIndex = '1100';
@@ -1272,7 +1308,7 @@ const handleContextMenu = (e: React.MouseEvent) => {
     menuItem.style.padding = '8px 16px';
     menuItem.style.cursor = item.disabled ? 'not-allowed' : 'pointer';
     menuItem.style.fontSize = '14px';
-    menuItem.style.color = item.disabled ? '#ccc' : '#333';
+    menuItem.style.color = item.disabled ? token.colorTextDisabled : token.colorText;
     menuItem.innerText = item.text;
 
     if (!item.disabled) {
@@ -1282,7 +1318,7 @@ const handleContextMenu = (e: React.MouseEvent) => {
       });
 
       menuItem.addEventListener('mouseover', () => {
-        menuItem.style.backgroundColor = '#f5f5f5';
+        menuItem.style.backgroundColor = token.colorFillSecondary;
       });
 
       menuItem.addEventListener('mouseout', () => {
@@ -1375,8 +1411,8 @@ const renderChapterItem = useCallback(({ index, style }: { index: number; style:
         ...style,
         padding: '8px 16px',
         cursor: isLoading || chapterLoadingState.isLoading ? 'wait' : 'pointer',
-        backgroundColor: isCurrentChapter ? '#e6f7ff' : 'transparent',
-        borderLeft: isCurrentChapter ? '3px solid #1890ff' : '3px solid transparent',
+        backgroundColor: isCurrentChapter ? token.colorPrimaryBg : 'transparent',
+        borderLeft: isCurrentChapter ? `3px solid ${token.colorPrimary}` : '3px solid transparent',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -1435,7 +1471,7 @@ const renderChapterList = () => (
     </div>
 
     {/* 章节列表主体 */}
-    <div style={{ flex: 1 }}>
+    <div className="floating-reader-chapter-panel" style={{ flex: 1 }}>
       {loading ? (
         <div style={{
           display: 'flex',
@@ -1477,6 +1513,7 @@ const renderChapterList = () => (
               itemCount={filteredChapters.length}
               itemSize={40}
               overscanCount={20}
+              innerElementType={ReaderListInnerElement}
             >
               {renderChapterItem}
             </List>
@@ -2101,7 +2138,7 @@ const saveSettings = useCallback((newSettings: ReaderSettings) => {
 // 渲染主题设置面板
 const renderThemesPanel = () => {
   return (
-    <div style={{ width: "100%", padding: '8px 0', backgroundColor: '#ffffff' }}>
+    <div style={{ width: "100%", padding: '8px 0', backgroundColor: token.colorBgContainer }}>
       {/* 创建新主题按钮，放在最顶部并居中 */}
       <div style={{
         marginBottom: 16,
@@ -2128,7 +2165,7 @@ const renderThemesPanel = () => {
         gap: 10,
         maxHeight: '400px',
         overflowY: 'auto',
-        backgroundColor: '#ffffff',
+        backgroundColor: token.colorBgContainer,
         marginBottom: 16
       }}>
         {PRESET_THEMES.map(theme => (
@@ -2176,7 +2213,7 @@ const renderThemesPanel = () => {
             gap: 10,
             maxHeight: '200px',
             overflowY: 'auto',
-            backgroundColor: '#ffffff'
+            backgroundColor: token.colorBgContainer
           }}>
             {userThemes.map(theme => (
               <div
@@ -2250,17 +2287,17 @@ const renderSettingsPanel = () => {
   const [settingsTab, setSettingsTab] = useState<'reading' | 'theme' | 'tts'>('reading');
 
   return (
-    <div style={{ width: 300, padding: '8px 0', backgroundColor: '#ffffff', borderRadius: '4px' }}>
-      <div style={{ display: 'flex', marginBottom: 16, backgroundColor: '#f5f5f5' }}>
+    <div style={{ width: 300, padding: '8px 0', backgroundColor: token.colorBgContainer, borderRadius: '4px' }}>
+      <div style={{ display: 'flex', marginBottom: 16, backgroundColor: token.colorFillTertiary }}>
         <div
           onClick={() => setSettingsTab('reading')}
           style={{
             padding: '8px 16px',
             cursor: 'pointer',
             fontWeight: settingsTab === 'reading' ? 'bold' : 'normal',
-            borderBottom: settingsTab === 'reading' ? '2px solid #1890ff' : '2px solid transparent',
-            backgroundColor: settingsTab === 'reading' ? '#ffffff' : 'transparent',
-            color: '#333333',
+            borderBottom: settingsTab === 'reading' ? `2px solid ${token.colorPrimary}` : '2px solid transparent',
+            backgroundColor: settingsTab === 'reading' ? token.colorBgContainer : 'transparent',
+            color: token.colorText,
             flex: 1,
             textAlign: 'center'
           }}
@@ -2273,9 +2310,9 @@ const renderSettingsPanel = () => {
             padding: '8px 16px',
             cursor: 'pointer',
             fontWeight: settingsTab === 'theme' ? 'bold' : 'normal',
-            borderBottom: settingsTab === 'theme' ? '2px solid #1890ff' : '2px solid transparent',
-            backgroundColor: settingsTab === 'theme' ? '#ffffff' : 'transparent',
-            color: '#333333',
+            borderBottom: settingsTab === 'theme' ? `2px solid ${token.colorPrimary}` : '2px solid transparent',
+            backgroundColor: settingsTab === 'theme' ? token.colorBgContainer : 'transparent',
+            color: token.colorText,
             flex: 1,
             textAlign: 'center'
           }}
@@ -2288,9 +2325,9 @@ const renderSettingsPanel = () => {
             padding: '8px 16px',
             cursor: 'pointer',
             fontWeight: settingsTab === 'tts' ? 'bold' : 'normal',
-            borderBottom: settingsTab === 'tts' ? '2px solid #1890ff' : '2px solid transparent',
-            backgroundColor: settingsTab === 'tts' ? '#ffffff' : 'transparent',
-            color: '#333333',
+            borderBottom: settingsTab === 'tts' ? `2px solid ${token.colorPrimary}` : '2px solid transparent',
+            backgroundColor: settingsTab === 'tts' ? token.colorBgContainer : 'transparent',
+            color: token.colorText,
             flex: 1,
             textAlign: 'center'
           }}
@@ -2299,7 +2336,7 @@ const renderSettingsPanel = () => {
         </div>
       </div>
 
-      <div style={{ padding: '0 16px', backgroundColor: '#ffffff', color: '#333333' }}>
+      <div style={{ padding: '0 16px', backgroundColor: token.colorBgContainer, color: token.colorText }}>
         {settingsTab === 'theme' && renderThemesPanel()}
         {settingsTab === 'reading' && (
           <>
@@ -2954,10 +2991,38 @@ if (!visible) return null;
 
 // 摸鱼模式：显示伪装界面覆盖整个页面
 if (isMoyuMode) {
+  // 仿 Office：灰底工作区 + 白纸黑字（不跟随站点深色，避免与 word.css 正文色冲突）
+  const wordOuterBg = 'rgb(224, 224, 224)';
+  const wordSheetBg = '#e6e6e6';
+  const wordPageBg = '#ffffff';
+  const wordTextColor = '#333333';
+  const wordMutedColor = '#acacac';
+
   return createPortal(
     <>
       {/* 引用 word.css 样式文件 */}
       <link rel="stylesheet" href="/word.css" />
+      <style>{`
+        .read-theme-word .page-content,
+        .read-theme-word #article,
+        .read-theme-word .chapter-content,
+        .read-theme-word .read-header,
+        .read-theme-word .chapter-title,
+        .read-theme-word .chapter-content p,
+        .read-theme-word .chapter-content.isTxt p {
+          background-color: ${wordPageBg} !important;
+          color: ${wordTextColor} !important;
+        }
+        .read-theme-word .page-breadcrumb,
+        .read-theme-word .page-breadcrumb-item,
+        .read-theme-word .page-breadcrumb span {
+          color: #666666 !important;
+        }
+        .read-theme-word .page-content {
+          box-sizing: border-box;
+          padding: 24px 48px 48px;
+        }
+      `}</style>
       <div
         style={{
           position: 'fixed',
@@ -2965,7 +3030,7 @@ if (isMoyuMode) {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgb(224, 224, 224)',
+          backgroundColor: wordOuterBg,
           zIndex: 9999,
           overflow: 'auto'
         }}
@@ -2974,7 +3039,13 @@ if (isMoyuMode) {
       <div id="__nuxt">
         <div id="__layout">
           <div className="default" data-v-31a8d428="">
-            <div id="bookRead" className="book-read main read-theme-word" style={{backgroundColor:'#e6e6e6'}} data-v-0cc19a20="" data-v-31a8d428="">
+            <div
+              id="bookRead"
+              className="book-read main read-theme-word"
+              style={{ backgroundColor: wordSheetBg }}
+              data-v-0cc19a20=""
+              data-v-31a8d428=""
+            >
 
               {/* Word Header - 完全按照 index.html 结构 */}
               <div className="word-header" data-v-3fda83c4="" data-v-0cc19a20="">
@@ -3013,7 +3084,7 @@ if (isMoyuMode) {
                   <div
                     style={{
                       cursor: 'pointer',
-                      color: '#acacac',
+                      color: wordMutedColor,
                       fontSize: '14px'
                     }}
                     onClick={() => {
@@ -3036,7 +3107,7 @@ if (isMoyuMode) {
                   <div
                     style={{
                       cursor: 'pointer',
-                      color: '#acacac',
+                      color: wordMutedColor,
                       fontSize: '14px'
                     }}
                     onClick={() => {
@@ -3061,7 +3132,18 @@ if (isMoyuMode) {
               </div>
 
               {/* Page Content - 完全按照 index.html 结构 */}
-              <div className="page-content" style={{width:'1000px'}} data-v-0cc19a20="">
+              <div
+                className="page-content"
+                style={{
+                  width: '100%',
+                  maxWidth: 900,
+                  margin: '0 auto',
+                  backgroundColor: wordPageBg,
+                  color: wordTextColor,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                }}
+                data-v-0cc19a20=""
+              >
                 <div className="page-breadcrumb" data-v-0cc19a20="">
                   <a title="QQ阅读小说网" target="_blank" href="//book.qq.com" className="page-breadcrumb-item ypc-link" data-v-0cc19a20="">
                     首页
@@ -3073,12 +3155,17 @@ if (isMoyuMode) {
                     {book?.chapters?.[chapterIndex]?.title || `第${chapterIndex + 1}章`}
                   </h1>
                 </div>
-                <div id="article" className="chapter-content isTxt" style={{fontSize:'16px'}} data-v-0cc19a20="">
+                <div
+                  id="article"
+                  className="chapter-content isTxt"
+                  style={{ fontSize: '16px', color: wordTextColor, backgroundColor: wordPageBg }}
+                  data-v-0cc19a20=""
+                >
                   {chapterContent.split('\n').map((paragraph, index) => {
                     if (paragraph.trim()) {
                       const cleanText = paragraph.replace(/^[\s\u3000]+/, '');
                       return (
-                        <p key={index}>
+                        <p key={index} style={{ color: wordTextColor, lineHeight: 1.8, margin: '0 0 1em' }}>
                           {cleanText}
                         </p>
                       );
@@ -3098,8 +3185,42 @@ if (isMoyuMode) {
 }
 
 // 返回渲染结果
+const scrollTrack = token.colorBgContainer;
+const scrollThumb = token.colorFillSecondary;
+const scrollThumbHover = token.colorTextQuaternary;
+
 return createPortal(
   <>
+    <style>{`
+      .floating-reader-scroll,
+      .floating-reader-chapter-panel {
+        scrollbar-width: thin;
+        scrollbar-color: ${scrollThumb} ${scrollTrack};
+      }
+      .floating-reader-scroll::-webkit-scrollbar,
+      .floating-reader-chapter-panel::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      .floating-reader-scroll::-webkit-scrollbar-track,
+      .floating-reader-chapter-panel::-webkit-scrollbar-track {
+        background: ${scrollTrack};
+      }
+      .floating-reader-scroll::-webkit-scrollbar-thumb,
+      .floating-reader-chapter-panel::-webkit-scrollbar-thumb {
+        background-color: ${scrollThumb};
+        border-radius: 5px;
+        border: 2px solid ${scrollTrack};
+      }
+      .floating-reader-scroll::-webkit-scrollbar-thumb:hover,
+      .floating-reader-chapter-panel::-webkit-scrollbar-thumb:hover {
+        background-color: ${scrollThumbHover};
+      }
+      .floating-reader-scroll::-webkit-scrollbar-corner,
+      .floating-reader-chapter-panel::-webkit-scrollbar-corner {
+        background: ${scrollTrack};
+      }
+    `}</style>
     {/* 背景遮罩 */}
     <div
       style={{
@@ -3125,10 +3246,10 @@ return createPortal(
         width: size.width,
         height: size.height,
         transform: `translate(${position.x}px, ${position.y}px)`,
-        backgroundColor: settings.backgroundColor,
+        backgroundColor: displaySettings.backgroundColor,
         opacity: settings.opacity,
         borderRadius: 8,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+        boxShadow: token.boxShadowSecondary,
         zIndex: 1001,
         overflow: 'hidden',
         display: 'flex',
@@ -3144,13 +3265,14 @@ return createPortal(
         className="handle"
         style={{
           padding: '8px 12px',
-          backgroundColor: '#f0f0f0',
-          borderBottom: '1px solid #ddd',
+          backgroundColor: token.colorFillSecondary,
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
           cursor: 'move',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          userSelect: 'none'
+          userSelect: 'none',
+          color: token.colorText,
         }}
       >
         <div>{book?.title || '阅读器'}</div>
@@ -3221,12 +3343,11 @@ return createPortal(
 
           <Popover
             content={renderSettingsPanel}
-            title={<div style={{ color: '#333333' }}>阅读设置</div>}
+            title={<div style={{ color: token.colorText }}>阅读设置</div>}
             trigger="click"
             open={showSettings}
             onOpenChange={setShowSettings}
             placement="bottomRight"
-            overlayStyle={{ backgroundColor: '#ffffff' }}
           >
             <Tooltip title="阅读设置">
               <Button
@@ -3265,11 +3386,12 @@ return createPortal(
       <div
         style={{
           padding: '8px 12px',
-          backgroundColor: '#f8f8f8',
-          borderBottom: '1px solid #ddd',
+          backgroundColor: token.colorFillTertiary,
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          color: token.colorText,
         }}
       >
         <Button
@@ -3300,16 +3422,17 @@ return createPortal(
       {/* 内容区域 */}
       <div
         ref={contentRef}
+        className="floating-reader-scroll"
         style={{
           flex: 1,
           padding: '16px',
           overflowY: 'auto',
           position: 'relative',
-          color: settings.fontColor,
-          lineHeight: settings.lineHeight,
-          fontSize: settings.fontSize,
-          fontFamily: settings.fontFamily,
-          letterSpacing: settings.letterSpacing !== undefined ? `${settings.letterSpacing}px` : 'normal',
+          color: displaySettings.fontColor,
+          lineHeight: displaySettings.lineHeight,
+          fontSize: displaySettings.fontSize,
+          fontFamily: displaySettings.fontFamily,
+          letterSpacing: displaySettings.letterSpacing !== undefined ? `${displaySettings.letterSpacing}px` : 'normal',
           userSelect: 'text'
         }}
         onScroll={handleScroll}
@@ -3330,7 +3453,7 @@ return createPortal(
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          color: '#999',
+          color: token.colorTextQuaternary,
           opacity: isResizing ? 1 : 0.5
         }}
         onMouseDown={handleResizeStart}
@@ -3356,8 +3479,8 @@ return createPortal(
           width: '80%',
           maxWidth: '400px',
           height: '80%',
-          backgroundColor: '#fff',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          backgroundColor: token.colorBgElevated,
+          boxShadow: token.boxShadowSecondary,
           borderRadius: '8px',
           zIndex: 1050,
           padding: '16px',
@@ -3371,10 +3494,10 @@ return createPortal(
           justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '16px',
-          borderBottom: '1px solid #f0f0f0',
+          borderBottom: `1px solid ${token.colorBorderSecondary}`,
           paddingBottom: '8px'
         }}>
-          <h3 style={{ margin: 0 }}>章节列表</h3>
+          <h3 style={{ margin: 0, color: token.colorText }}>章节列表</h3>
           <Button
             type="text"
             icon={<DeleteOutlined />}

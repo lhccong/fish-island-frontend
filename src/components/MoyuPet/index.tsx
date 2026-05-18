@@ -30,6 +30,7 @@ import { getPetDetailUsingGet, createPetUsingPost, feedPetUsingPost, patPetUsing
 import { getConfigUsingGet, saveOrUpdateConfigUsingPost, toggleAutoFeedUsingPost } from '@/services/backend/petAutoFeedController';
 import { listPetSkinsUsingGet, exchangePetSkinUsingPost, setPetSkinUsingPost } from '@/services/backend/petSkinController';
 import { listMyItemInstancesByPageUsingPost, decomposeItemInstanceUsingPost, equipItemUsingPost, unequipItemUsingPost, batchDecomposeBlueGreenEquipmentsUsingPost } from '@/services/backend/itemInstancesController';
+import { listPurchasableItemsByPageUsingPost, purchaseItemUsingPost } from '@/services/backend/itemTemplatesController';
 import { getForgeDetailUsingPost, upgradeEquipUsingPost, refreshEntriesUsingPost, lockEntriesUsingPost } from '@/services/backend/petEquipForgeController';
 import { useModel, history } from '@umijs/max';
 import PetSprite, { PetAction } from '@/components/PetSprite';
@@ -375,64 +376,69 @@ const ShopTabs: React.FC<ShopTabsProps> = ({ renderSkinsList }) => {
           <Spin spinning={foodShopLoading}>
             {foodShopItems.length > 0 ? (
               <Row gutter={[12, 12]}>
-                {foodShopItems.map(item => (
-                  <Col span={8} key={item.id}>
-                    <Card
-                      size="small"
-                      style={{ borderColor: rarityColors[item.rarity || 1], borderRadius: 10 }}
-                      bodyStyle={{ padding: '10px 8px', textAlign: 'center' }}
-                    >
-                      {/* 稀有度角标 */}
-                      <div style={{
-                        position: 'absolute', top: 4, right: 4,
-                        background: rarityColors[item.rarity || 1],
-                        color: '#fff', fontSize: 10, padding: '1px 5px',
-                        borderRadius: 6, fontWeight: 600,
-                      }}>
-                        {rarityNames[item.rarity || 1]}
-                      </div>
-                      {/* 图标 */}
-                      <div style={{ marginBottom: 6 }}>
-                        {item.icon ? (
-                          <img src={item.icon} alt={item.name} style={{ width: 44, height: 44 }} />
-                        ) : (
-                          <span style={{ fontSize: 36 }}>🍖</span>
-                        )}
-                      </div>
-                      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {item.name}
-                      </div>
-                      {item.description && (
-                        <div style={{ fontSize: 11, color: '#999', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item.description}
-                        </div>
-                      )}
-                      <div style={{ color: '#fa8c16', fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
-                        💰 {item.purchasePoint} 积分/个
-                      </div>
-                      {/* 数量选择 + 购买 */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <InputNumber
-                          min={1}
-                          max={99}
-                          size="small"
-                          value={buyQuantity[item.id!] ?? 1}
-                          onChange={v => setBuyQuantity(prev => ({ ...prev, [item.id!]: v ?? 1 }))}
-                          style={{ width: 52 }}
-                        />
-                        <Button
-                          type="primary"
-                          size="small"
-                          loading={buyLoadingId === item.id}
-                          onClick={() => handleBuy(item)}
-                          style={{ flex: 1 }}
+                {foodShopItems.map(item => {
+                  const rarity = item.rarity || 1;
+                  const qty = buyQuantity[item.id!] ?? 1;
+                  return (
+                    <Col span={8} key={item.id}>
+                      <div className={styles.foodShopCard}>
+                        {/* 稀有度角标 */}
+                        <div
+                          className={styles.foodShopRarity}
+                          style={{ background: rarityColors[rarity] }}
                         >
-                          购买
-                        </Button>
+                          {rarityNames[rarity]}
+                        </div>
+                        {/* 图标区 */}
+                        <div className={styles.foodShopIconWrap}>
+                          {item.icon ? (
+                            <img src={item.icon} alt={item.name} className={styles.foodShopIcon} />
+                          ) : (
+                            <span style={{ fontSize: 40 }}>🍖</span>
+                          )}
+                        </div>
+                        {/* 名称 */}
+                        <div className={styles.foodShopName}>{item.name}</div>
+                        {/* 描述 */}
+                        {item.description && (
+                          <Tooltip title={item.description}>
+                            <div className={styles.foodShopDesc}>{item.description}</div>
+                          </Tooltip>
+                        )}
+                        {/* 价格 */}
+                        <div className={styles.foodShopPrice}>
+                          <span className={styles.foodShopPriceIcon}>💰</span>
+                          <span>{item.purchasePoint}</span>
+                          <span className={styles.foodShopPriceUnit}>积分/个</span>
+                        </div>
+                        {/* 数量 + 购买 */}
+                        <div className={styles.foodShopActions}>
+                          <div className={styles.foodShopQty}>
+                            <button
+                              className={styles.foodShopQtyBtn}
+                              onClick={() => setBuyQuantity(prev => ({ ...prev, [item.id!]: Math.max(1, (prev[item.id!] ?? 1) - 1) }))}
+                            >−</button>
+                            <span className={styles.foodShopQtyNum}>{qty}</span>
+                            <button
+                              className={styles.foodShopQtyBtn}
+                              onClick={() => setBuyQuantity(prev => ({ ...prev, [item.id!]: Math.min(99, (prev[item.id!] ?? 1) + 1) }))}
+                            >+</button>
+                          </div>
+                          <Button
+                            type="primary"
+                            size="small"
+                            loading={buyLoadingId === item.id}
+                            onClick={() => handleBuy(item)}
+                            className={styles.foodShopBuyBtn}
+                            block
+                          >
+                            购买
+                          </Button>
+                        </div>
                       </div>
-                    </Card>
-                  </Col>
-                ))}
+                    </Col>
+                  );
+                })}
               </Row>
             ) : (
               !foodShopLoading && (

@@ -2484,3 +2484,156 @@
     color: #e8a87c;
   }
 }
+
+// ── 道具商店食物卡片 ──────────────────────────────────────────────────────────
+.foodShopCard {
+  position: relative;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #fffdf7 0%, #fff8ee 100%);
+  border: 1.5px solid #ffe7ba;
+  padding: 12px 10px 10px;
+  text-align: center;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(250, 173, 20, 0.08);
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(250, 173, 20, 0.18);
+    border-color: #ffc53d;
+  }
+
+  .foodShopRarity {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 8px;
+    line-height: 1.4;
+  }
+
+  .foodShopIconWrap {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 8px;
+    background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #ffe7ba;
+
+    .foodShopIcon {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+  }
+
+  .foodShopName {
+    font-weight: 700;
+    font-size: 13px;
+    color: #5c3d11;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .foodShopDesc {
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+  }
+
+  .foodShopPrice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fa8c16;
+
+    .foodShopPriceIcon {
+      font-size: 15px;
+    }
+
+    .foodShopPriceUnit {
+      font-size: 11px;
+      font-weight: 500;
+      color: #bbb;
+      margin-left: 1px;
+    }
+  }
+
+  .foodShopActions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    .foodShopQty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      border: 1.5px solid #ffe7ba;
+      border-radius: 8px;
+      overflow: hidden;
+
+      .foodShopQtyBtn {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 700;
+        color: #fa8c16;
+        line-height: 1;
+        padding: 0;
+        transition: background 0.15s;
+
+        &:hover {
+          background: #fff3e0;
+        }
+
+        &:active {
+          background: #ffe7ba;
+        }
+      }
+
+      .foodShopQtyNum {
+        flex: 1;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 700;
+        color: #5c3d11;
+        user-select: none;
+      }
+    }
+
+    .foodShopBuyBtn {
+      width: 100%;
+      height: 30px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      background: linear-gradient(135deg, #ffa940 0%, #fa8c16 100%);
+      border: none;
+      box-shadow: 0 2px 6px rgba(250, 140, 22, 0.3);
+
+      &:hover {
+        background: linear-gradient(135deg, #ffbb6b 0%, #ffa940 100%);
+        box-shadow: 0 4px 10px rgba(250, 140, 22, 0.4);
+      }
+    }
+  }
+}

@@ -3546,7 +3546,7 @@ const ChatRoom: React.FC = () => {
             placement="topLeft"
             overlayClassName={styles.emojiPopover}
           >
-            <Button icon={<SmileOutlined />} className={styles.emojiButton} />
+            <Button icon={<SmileOutlined />} className={`${styles.emojiButton} ${styles.hideOnMobile}`} />
           </Popover>
           <Popover
             content={<EmoticonPicker onSelect={handleEmoticonSelect} />}
@@ -3617,7 +3617,7 @@ const ChatRoom: React.FC = () => {
             placement="top"
             overlayClassName={styles.moreOptionsPopover}
           >
-            <Button icon={<EllipsisOutlined />} className={`${styles.moreOptionsButton} ${styles.hideOnMobile}`} />
+            <Button icon={<EllipsisOutlined />} className={styles.moreOptionsButton} />
           </Popover>
           <textarea
             ref={inputRef}

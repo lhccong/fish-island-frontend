@@ -484,8 +484,8 @@ export default function ReaderList() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#eaeaea',
-          color: '#999',
+          backgroundColor: token.colorFillSecondary,
+          color: token.colorTextQuaternary,
           fontSize: '32px'
         }}
       >
@@ -507,7 +507,7 @@ export default function ReaderList() {
           e.currentTarget.parentElement!.appendChild(
             document.createTextNode('')
           );
-          e.currentTarget.parentElement!.style.backgroundColor = '#eaeaea';
+          e.currentTarget.parentElement!.style.backgroundColor = token.colorFillSecondary;
           e.currentTarget.parentElement!.style.display = 'flex';
           e.currentTarget.parentElement!.style.alignItems = 'center';
           e.currentTarget.parentElement!.style.justifyContent = 'center';
@@ -581,8 +581,11 @@ export default function ReaderList() {
     };
   }, [readerSettings.panicKey, isReaderVisible, isStudyMode]);
 
+  const bookCardShadow = token.boxShadowTertiary;
+  const bookCardShadowHover = token.boxShadowSecondary;
+
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', background: token.colorBgLayout }}>
       <Header style={{
         display: 'flex',
         alignItems: 'center',
@@ -685,24 +688,24 @@ export default function ReaderList() {
                     cursor: 'pointer',
                     transition: 'all 0.3s',
                     transform: 'translateY(0)',
-                    backgroundColor: '#fff',
+                    backgroundColor: token.colorBgContainer,
                     borderRadius: '8px',
                     overflow: 'hidden',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    boxShadow: bookCardShadow,
                     height: '100%',
-                    border: '2px dashed #d9d9d9',
+                    border: `2px dashed ${token.colorBorder}`,
                     minHeight: '120px'
                   }}
                   onClick={showImportModal}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-5px)';
-                    e.currentTarget.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+                    e.currentTarget.style.boxShadow = bookCardShadowHover;
                     e.currentTarget.style.borderColor = token.colorPrimary;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                    e.currentTarget.style.borderColor = '#d9d9d9';
+                    e.currentTarget.style.boxShadow = bookCardShadow;
+                    e.currentTarget.style.borderColor = token.colorBorder;
                   }}
                 >
                   <PlusOutlined style={{ fontSize: '32px', color: token.colorPrimary, marginBottom: '8px' }} />
@@ -718,10 +721,10 @@ export default function ReaderList() {
                       cursor: 'pointer',
                       transition: 'all 0.3s',
                       transform: 'translateY(0)',
-                      backgroundColor: '#fff',
+                      backgroundColor: token.colorBgContainer,
                       borderRadius: '8px',
                       overflow: 'hidden',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      boxShadow: bookCardShadow,
                       height: '100%',
                       position: 'relative',
                       padding: '16px'
@@ -729,7 +732,7 @@ export default function ReaderList() {
                     onClick={() => openReader(book)}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-5px)';
-                      e.currentTarget.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+                      e.currentTarget.style.boxShadow = bookCardShadowHover;
                       // 显示操作按钮
                       const actionButtons = e.currentTarget.querySelector('.book-action-buttons');
                       if (actionButtons) {
@@ -738,7 +741,7 @@ export default function ReaderList() {
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                      e.currentTarget.style.boxShadow = bookCardShadow;
                       // 隐藏操作按钮
                       const actionButtons = e.currentTarget.querySelector('.book-action-buttons');
                       if (actionButtons) {
@@ -791,6 +794,7 @@ export default function ReaderList() {
                         fontSize: '16px',
                         fontWeight: 'bold',
                         marginBottom: '8px',
+                        color: token.colorText,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         display: '-webkit-box',
@@ -803,7 +807,7 @@ export default function ReaderList() {
                       {book.author && (
                         <div style={{
                           fontSize: '12px',
-                          color: '#888',
+                          color: token.colorTextSecondary,
                           marginBottom: '8px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -815,7 +819,7 @@ export default function ReaderList() {
                       {book.lastReadTime && (
                         <div style={{
                           fontSize: '12px',
-                          color: '#aaa'
+                          color: token.colorTextDescription
                         }}>
                           上次阅读: {formatTime(book.lastReadTime)}
                         </div>
@@ -828,7 +832,7 @@ export default function ReaderList() {
               <Empty
                 description={
                   <div style={{ textAlign: 'center' }}>
-                    <p style={{ marginBottom: '8px', color: '#8c8c8c' }}>你的书架空空如也～</p>
+                    <p style={{ marginBottom: '8px', color: token.colorTextSecondary }}>你的书架空空如也～</p>
                     <Button type="primary" onClick={showImportModal}>
                       <PlusOutlined /> 搜索书籍
                     </Button>

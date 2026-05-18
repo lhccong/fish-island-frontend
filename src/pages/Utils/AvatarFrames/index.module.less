@@ -345,7 +345,218 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-} 
+}
+
+// 月卡介绍
+.monthlyCardContainer {
+  padding: 24px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.monthlyCard {
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+
+  :global {
+    .ant-card-head {
+      background: linear-gradient(135deg, #e6f4ff 0%, #f6fffe 100%);
+      border-bottom: 1px solid #f0f0f0;
+      padding: 20px 24px;
+      min-height: auto;
+
+      .ant-card-head-title {
+        color: #1a1a1a;
+        text-align: center;
+        font-size: 22px;
+        font-weight: 600;
+        padding: 0;
+      }
+    }
+
+    .ant-card-body {
+      padding: 8px 24px 24px;
+      background: #fff;
+    }
+  }
+}
+
+.cardSubtitle {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.45);
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.privilegeList {
+  :global {
+    .ant-list-item {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 14px 0;
+      align-items: flex-start;
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .ant-list-item-meta-title {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #333;
+    }
+
+    .ant-list-item-meta-description {
+      color: #666;
+    }
+  }
+}
+
+.privilegeIcon {
+  font-size: 18px;
+  color: #1890ff;
+  margin-top: 2px;
+}
+
+.featureTag {
+  margin-left: 6px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  color: #d48806;
+  font-size: 12px;
+}
+
+.supportButtonContainer {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+// 积分记录
+.pointsRecordsList {
+  padding: 8px 24px 32px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pointsDateGroup {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.45);
+  padding: 20px 0 8px;
+
+  &:first-child {
+    padding-top: 12px;
+  }
+}
+
+.pointsRecordItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.pointsRecordIcon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+
+}
+
+.iconGain {
+  background: rgba(82, 196, 26, 0.12);
+  color: #52c41a;
+}
+
+.iconLoss {
+  background: rgba(255, 77, 79, 0.12);
+  color: #ff4d4f;
+}
+
+.pointsRecordMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.pointsRecordTitle {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pointsRecordMeta {
+  font-size: 12px;
+  color: #999;
+}
+
+.pointsRecordMetaDot {
+  margin: 0 6px;
+  opacity: 0.5;
+}
+
+.pointsRecordAmount {
+  flex-shrink: 0;
+
+  .change {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.2;
+
+  }
+}
+
+.amountGain {
+  color: #52c41a;
+}
+
+.amountLoss {
+  color: #ff4d4f;
+}
+
+.pointsEmpty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+
+  .emptyIcon {
+    font-size: 48px;
+    color: #d9d9d9;
+    margin-bottom: 16px;
+    display: block;
+  }
+}
+
+.pointsLoader {
+  text-align: center;
+  padding: 16px;
+}
+
+.pointsEndMessage {
+  text-align: center;
+  padding: 16px;
+  font-size: 13px;
+  color: #bbb;
+}
 
 // ── 深色模式覆盖 ──────────────────────────────────────────
 :global(body.dark-mode) {
@@ -379,6 +590,35 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
   }
 
+  :local(.shopTabs) {
+    :global {
+      .ant-tabs-nav {
+        background: #252535 !important;
+        border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+
+        &::before {
+          border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+        }
+      }
+
+      .ant-tabs-tab {
+        color: rgba(255, 255, 255, 0.55) !important;
+
+        &:hover {
+          color: rgba(255, 255, 255, 0.75) !important;
+        }
+
+        &.ant-tabs-tab-active .ant-tabs-tab-btn {
+          color: #1890ff !important;
+        }
+      }
+
+      .ant-tabs-ink-bar {
+        background: #1890ff !important;
+      }
+    }
+  }
+
   :local(.frameItem) {
     background: #252535 !important;
   }
@@ -409,5 +649,88 @@
 
   :local(.propsDescription) {
     color: rgba(255, 255, 255, 0.45) !important;
+  }
+
+  :local(.monthlyCardContainer) {
+    background: transparent !important;
+  }
+
+  :local(.monthlyCard) {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: none !important;
+    background: #252535 !important;
+
+    :global {
+      .ant-card-head {
+        background: rgba(24, 144, 255, 0.12) !important;
+        border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+
+        .ant-card-head-title {
+          color: rgba(255, 255, 255, 0.9) !important;
+        }
+      }
+
+      .ant-card-body {
+        background: #252535 !important;
+      }
+    }
+  }
+
+  :local(.cardSubtitle) {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+
+  :local(.privilegeList) {
+    :global {
+      .ant-list-item {
+        border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      }
+
+      .ant-list-item-meta-title {
+        color: rgba(255, 255, 255, 0.85) !important;
+      }
+
+      .ant-list-item-meta-description {
+        color: rgba(255, 255, 255, 0.45) !important;
+      }
+    }
+  }
+
+  :local(.featureTag) {
+    background: rgba(255, 193, 7, 0.12) !important;
+    border-color: rgba(255, 193, 7, 0.25) !important;
+    color: #ffc53d !important;
+  }
+
+  :local(.supportButtonContainer) {
+    border-top-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  :local(.pointsDateGroup) {
+    color: rgba(255, 255, 255, 0.45) !important;
+  }
+
+  :local(.pointsRecordItem) {
+    border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  :local(.pointsRecordTitle) {
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  :local(.pointsRecordMeta) {
+    color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  :local(.pointsEmpty) {
+    color: rgba(255, 255, 255, 0.4) !important;
+
+    :local(.emptyIcon) {
+      color: rgba(255, 255, 255, 0.15) !important;
+    }
+  }
+
+  :local(.pointsEndMessage) {
+    color: rgba(255, 255, 255, 0.25) !important;
   }
 }

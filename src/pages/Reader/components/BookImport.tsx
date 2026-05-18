@@ -7,7 +7,8 @@ import {
   Spin,
   Empty,
   Typography,
-  Tooltip
+  Tooltip,
+  theme
 } from 'antd';
 import { BookOutlined, SearchOutlined, LoadingOutlined, GlobalOutlined, DownOutlined } from '@ant-design/icons';
 import { ACCESS_TOKEN } from '@/constants';
@@ -42,6 +43,7 @@ interface SearchResult {
 }
 
 const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
+  const { token } = theme.useToken();
   // 搜索相关状态
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searching, setSearching] = useState(false);
@@ -331,9 +333,9 @@ const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
           position: 'sticky',
           top: 0,
           zIndex: 10,
-          background: '#fff',
+          background: token.colorBgContainer,
           padding: '12px 0',
-          borderBottom: '1px solid #f0f0f0'
+          borderBottom: `1px solid ${token.colorBorderSecondary}`
         }}
       >
         <Search
@@ -387,7 +389,7 @@ const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
                               const div = document.createElement('div');
                               div.style.width = '70px';
                               div.style.height = '100px';
-                              div.style.backgroundColor = '#eee';
+                              div.style.backgroundColor = token.colorFillSecondary;
                               div.style.display = 'flex';
                               div.style.alignItems = 'center';
                               div.style.justifyContent = 'center';
@@ -395,7 +397,7 @@ const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
                               const icon = document.createElement('span');
                               icon.className = 'anticon anticon-book';
                               icon.style.fontSize = '24px';
-                              icon.style.color = '#999';
+                              icon.style.color = token.colorTextQuaternary;
 
                               div.appendChild(icon);
                               return div;
@@ -407,12 +409,12 @@ const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
                       <div style={{
                         width: 70,
                         height: 100,
-                        background: '#eee',
+                        background: token.colorFillSecondary,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}>
-                        <BookOutlined style={{ fontSize: 24, color: '#999' }} />
+                        <BookOutlined style={{ fontSize: 24, color: token.colorTextQuaternary }} />
                       </div>
                     )
                   }
@@ -427,7 +429,7 @@ const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
                     description={
                       <>
                         <div style={{ fontSize: '13px' }}>作者: {result.author || '未知'}</div>
-                        <div style={{ fontSize: '12px', color: '#666', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ fontSize: '12px', color: token.colorTextSecondary, display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                           {result.kind && (
                             <span>分类/时间: {result.kind.split(',')[0]}</span>
                           )}
@@ -437,7 +439,7 @@ const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
                         </div>
                         <div style={{
                           fontSize: 12,
-                          color: '#1890ff',
+                          color: token.colorPrimary,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
@@ -464,9 +466,7 @@ const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
                         </div>
                       }
                       placement="bottomLeft"
-                      color="#fff"
                       overlayInnerStyle={{
-                        color: '#333',
                         minWidth: '400px',
                         maxWidth: '600px',
                         maxHeight: '400px',
@@ -475,7 +475,7 @@ const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
                     >
                       <div style={{
                         fontSize: 13,
-                        color: '#666',
+                        color: token.colorTextSecondary,
                         margin: '4px 0 0',
                         display: '-webkit-box',
                         WebkitBoxOrient: 'vertical',
@@ -497,7 +497,7 @@ const BookImport: React.FC<BookImportProps> = ({ onAddOnlineBook }) => {
                       textAlign: 'center',
                       padding: '12px 0',
                       cursor: 'pointer',
-                      color: '#1890ff'
+                      color: token.colorPrimary
                     }}
                     onClick={loadMore}
                   >
