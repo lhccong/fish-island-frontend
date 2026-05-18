@@ -36,6 +36,7 @@ const LazyMarkdown: React.FC<React.ComponentProps<typeof ReactMarkdown>> = (prop
     <ReactMarkdown {...props} />
   </Suspense>
 );
+import RedPacketMessage, { extractRedPacketId } from '@/components/RedPacketMessage';
 import styles from './index.less';
 
 // 定义事件名称常量
@@ -48,6 +49,8 @@ const STORAGE_KEY = 'favorite_emoticons';
 interface MessageContentProps {
   content: string;
   onImageLoad?: () => void;
+  /** 默认收起图片（悬浮窗/独立小窗配置） */
+  collapseImages?: boolean;
 }
 
 interface WebPageInfo {
@@ -63,7 +66,11 @@ interface Emoticon {
   isError?: boolean;
 }
 
-const MessageContent: React.FC<MessageContentProps> = ({ content, onImageLoad }) => {
+const MessageContent: React.FC<MessageContentProps> = ({
+  content,
+  onImageLoad,
+  collapseImages = false,
+}) => {
   const { initialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
   const [webPages, setWebPages] = useState<Record<any, WebPageInfo>>({});
@@ -81,6 +88,7 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, onImageLoad })
   const undercoverRegex = new RegExp('<undercover>(.*?)</undercover>', 'g');
   // 添加折叠状态管理
   const [collapsedImages, setCollapsedImages] = useState<Set<string>>(new Set());
+  const [expandedImages, setExpandedImages] = useState<Set<string>>(new Set());
   // 添加状态来判断是否为特殊消息类型
   const [isSpecialMessage, setIsSpecialMessage] = useState(false);
 
@@ -261,6 +269,12 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, onImageLoad })
     }
   }, []);
 
+  useEffect(() => {
+    if (!collapseImages) {
+      setExpandedImages(new Set());
+    }
+  }, [collapseImages]);
+
   // 修改renderImage函数
   const renderImage = (url: string, key: string) => {
     const isHidden = imageDisplayMode === 'hide' && !shownImages.has(url);
@@ -276,6 +290,20 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, onImageLoad })
           }}
         >
           图片（点击显示）
+        </div>
+      );
+    }
+
+    if (collapseImages && !expandedImages.has(url)) {
+      return (
+        <div
+          key={key}
+          className={styles.imageText}
+          onClick={() => {
+            setExpandedImages((prev) => new Set([...prev, url]));
+          }}
+        >
+          图片已折叠（点击展开）
         </div>
       );
     }
@@ -847,6 +875,11 @@ const MessageContent: React.FC<MessageContentProps> = ({ content, onImageLoad })
     // 检查是否包含 iframe 语法
     if (checkIframeSyntax(content)) {
       return <div className={styles.messageContent}>消息包含不安全的 iframe 标签，已被过滤</div>;
+    }
+
+    const redPacketId = extractRedPacketId(content);
+    if (redPacketId) {
+      return <RedPacketMessage redPacketId={redPacketId} />;
     }
 
     let parts: React.ReactNode[] = [];

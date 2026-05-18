@@ -1,0 +1,172 @@
+.redPacketMessage {
+  .redPacketContent {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    background: #fff1f0;
+    border-radius: 8px;
+    border: 1px solid #ffccc7;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .redPacketInfo {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .redPacketTitle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .redPacketText {
+    color: #ff4d4f;
+    font-weight: 500;
+    font-size: 14px;
+    word-break: break-word;
+  }
+
+  .redPacketStatus {
+    color: #ff7875;
+    font-size: 12px;
+  }
+
+  .grabTip {
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 6px 8px;
+    border-radius: 6px;
+    word-break: break-word;
+  }
+
+  .grabTip_success {
+    color: #389e0d;
+    background: #f6ffed;
+    border: 1px solid #b7eb8f;
+  }
+
+  .grabTip_error {
+    color: #cf1322;
+    background: #fff2f0;
+    border: 1px solid #ffccc7;
+  }
+
+  .redPacketActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .redPacketIcon {
+    color: #ff4d4f;
+    font-size: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  :global {
+    .grabRedPacketButton {
+      background: #ff4d4f;
+      border-color: #ff4d4f;
+
+      &:hover:not(:disabled) {
+        background: #ff7875;
+        border-color: #ff7875;
+      }
+
+      &:disabled {
+        background: #ffccc7;
+        border-color: #ffccc7;
+        color: #fff;
+      }
+    }
+
+    .viewRecordsButton {
+      color: #ff4d4f;
+      padding: 0 4px;
+      height: auto;
+
+      &:hover {
+        color: #ff7875;
+      }
+    }
+  }
+}
+
+.redPacketRecords {
+  .recordsList {
+    max-height: 360px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .recordItem {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .userInfo {
+    flex: 1;
+    min-width: 0;
+    margin-left: 10px;
+  }
+
+  .userName {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .luckyKing {
+    font-size: 11px;
+    color: #ff4d4f;
+    background: #fff1f0;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid #ffccc7;
+  }
+
+  .grabTime {
+    font-size: 11px;
+    color: #999;
+  }
+
+  .amount {
+    font-size: 14px;
+    color: #ff4d4f;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .emptyRecords {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 160px;
+    color: #999;
+
+    .emptyIcon {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+  }
+}

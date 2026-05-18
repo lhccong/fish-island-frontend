@@ -9,6 +9,7 @@ export default [
   {path: '/index', icon: 'BarsOutlined', component: './Index', name: '最新', requireAuth: false},
   {path: '/home', layout: false, icon: 'smile', component: './Home', name: '浏览器页面', requireAuth: false},
   {path: '/chat', icon: 'MessageOutlined', component: './Chat', name: '鱼窝', requireAuth: true},
+  {path: '/chat/mini', layout: false, component: './Chat/Mini', requireAuth: true},
   {
     path: '/moments',
     icon: 'TeamOutlined',

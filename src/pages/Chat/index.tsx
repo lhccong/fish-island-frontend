@@ -82,6 +82,7 @@ import { UNDERCOVER_NOTIFICATION } from '@/constants';
 import eventBus from '@/utils/eventBus';
 import { joinRoomUsingPost } from '@/services/backend/drawGameController';
 import { getLevelEmoji, generateUniqueShortId, getTitleTagProperties } from '@/utils/titleUtils';
+import { activateFloatingChat } from '@/components/FloatingChat';
 
 // 添加样式定义
 const additionalStyles = {};
@@ -3610,6 +3611,16 @@ const ChatRoom: React.FC = () => {
                 <div className={styles.moreOptionsItem} onClick={handleClearMessages}>
                   <DeleteOutlined className={styles.moreOptionsIcon} />
                   <span>清空聊天记录</span>
+                </div>
+                <div
+                  className={styles.moreOptionsItem}
+                  onClick={() => {
+                    activateFloatingChat('small');
+                    history.push('/index');
+                  }}
+                >
+                  <MenuUnfoldOutlined className={styles.moreOptionsIcon} />
+                  <span>小屏悬浮聊天</span>
                 </div>
               </div>
             }

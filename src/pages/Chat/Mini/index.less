@@ -1,0 +1,23 @@
+.miniRoot {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+:global(body.floating-chat-body-dark) {
+  .miniRoot {
+    background: #121212;
+  }
+}
+
+:global(body.chat-mini-popup-only) {
+  overflow: hidden;
+
+  #root {
+    height: 100vh;
+    overflow: hidden;
+  }
+}

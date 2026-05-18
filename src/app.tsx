@@ -10,6 +10,7 @@ import {ConfigProvider, theme as antdTheme} from 'antd';
 import BossKeySettings from '@/components/BossKeySettings';
 import SideAnnouncement from '@/components/SideAnnouncement';
 import GlobalReader from '@/components/GlobalFloatingReader';
+import FloatingChat from '@/components/FloatingChat';
 import routes from '../config/routes';
 import GlobalTitle from '@/components/GlobalTitle';
 import {Board, Player, Position, Move, WinningLine} from '@/game';
@@ -40,7 +41,7 @@ const listenRouteChange = () => {
     if (pathname.startsWith('/game')) {
       description = '摸鱼岛游戏中心 - 提供五子棋、2048、模拟赛车等多种休闲游戏';
     } else if (pathname === '/chat') {
-      description = '摸鱼室 - 与好友聊天、分享生活趣事的社交空间';
+      description = '鱼窝 - 与好友聊天、分享生活趣事的社交空间';
     }
 
     // 更新 meta 描述
@@ -454,6 +455,7 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
             visible={isReaderVisible}
             onClose={hideReader}
           />
+          <FloatingChat />
         </ConfigProvider>
       );
     },
