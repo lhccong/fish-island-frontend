@@ -42,6 +42,23 @@ import './index.less';
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
+/** 安全解析数值（接口可能返回字符串或带 % 的文本） */
+const parseFundNumber = (value: string | number | null | undefined): number | null => {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  const parsed = parseFloat(String(value).replace(/%/g, ''));
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const formatDecimal = (
+  value: string | number | null | undefined,
+  digits: number,
+  fallback = '-',
+): string => {
+  const n = parseFundNumber(value);
+  return n === null ? fallback : n.toFixed(digits);
+};
+
 const FundHub: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [fundList, setFundList] = useState<API.FundItemVO[]>([]);
@@ -200,7 +217,7 @@ const FundHub: React.FC = () => {
       key: 'shares',
       width: 120,
       align: 'right' as const,
-      render: (shares: number) => hideAmount ? '••••' : (shares?.toFixed(2) || '-'),
+      render: (shares: number) => hideAmount ? '••••' : formatDecimal(shares, 2),
     },
     {
       title: '成本价',
@@ -208,7 +225,7 @@ const FundHub: React.FC = () => {
       key: 'cost',
       width: 100,
       align: 'right' as const,
-      render: (cost: number) => hideAmount ? '¥••••' : `¥${cost?.toFixed(4) || '-'}`,
+      render: (cost: number) => hideAmount ? '¥••••' : `¥${formatDecimal(cost, 4)}`,
     },
     {
       title: '当前净值',
@@ -216,7 +233,7 @@ const FundHub: React.FC = () => {
       key: 'currentPrice',
       width: 100,
       align: 'right' as const,
-      render: (price: number) => hideAmount ? '¥••••' : `¥${price?.toFixed(4) || '-'}`,
+      render: (price: number) => hideAmount ? '¥••••' : `¥${formatDecimal(price, 4)}`,
     },
     {
       title: '涨跌幅',
@@ -225,12 +242,13 @@ const FundHub: React.FC = () => {
       width: 100,
       align: 'right' as const,
       render: (percent: number) => {
-        if (percent === undefined || percent === null) return '-';
-        const color = percent >= 0 ? '#cf1322' : '#3f8600';
-        const icon = percent >= 0 ? <RiseOutlined /> : <FallOutlined />;
+        const n = parseFundNumber(percent);
+        if (n === null) return '-';
+        const color = n >= 0 ? '#cf1322' : '#3f8600';
+        const icon = n >= 0 ? <RiseOutlined /> : <FallOutlined />;
         return (
           <Text style={{ color }}>
-            {icon} {percent.toFixed(2)}%
+            {icon} {n.toFixed(2)}%
           </Text>
         );
       },
@@ -241,7 +259,7 @@ const FundHub: React.FC = () => {
       key: 'marketValue',
       width: 120,
       align: 'right' as const,
-      render: (value: number) => hideAmount ? '¥••••' : `¥${value?.toFixed(2) || '-'}`,
+      render: (value: number) => hideAmount ? '¥••••' : `¥${formatDecimal(value, 2)}`,
     },
     {
       title: '今日盈亏',
@@ -251,11 +269,12 @@ const FundHub: React.FC = () => {
       align: 'right' as const,
       render: (profit: number) => {
         if (hideAmount) return '¥••••';
-        if (profit === undefined || profit === null) return '-';
-        const color = profit >= 0 ? '#cf1322' : '#3f8600';
+        const n = parseFundNumber(profit);
+        if (n === null) return '-';
+        const color = n >= 0 ? '#cf1322' : '#3f8600';
         return (
           <Text style={{ color, fontWeight: 'bold' }}>
-            {profit >= 0 ? '+' : ''}¥{profit.toFixed(2)}
+            {n >= 0 ? '+' : ''}¥{n.toFixed(2)}
           </Text>
         );
       },
@@ -268,11 +287,12 @@ const FundHub: React.FC = () => {
       align: 'right' as const,
       render: (profit: number) => {
         if (hideAmount) return '¥••••';
-        if (profit === undefined || profit === null) return '-';
-        const color = profit >= 0 ? '#cf1322' : '#3f8600';
+        const n = parseFundNumber(profit);
+        if (n === null) return '-';
+        const color = n >= 0 ? '#cf1322' : '#3f8600';
         return (
           <Text style={{ color, fontWeight: 'bold' }}>
-            {profit >= 0 ? '+' : ''}¥{profit.toFixed(2)}
+            {n >= 0 ? '+' : ''}¥{n.toFixed(2)}
           </Text>
         );
       },
@@ -361,7 +381,7 @@ const FundHub: React.FC = () => {
             <Card>
               <Statistic
                 title="总市值"
-                value={hideAmount ? 0 : (statistics.totalMarketValue || 0)}
+                value={hideAmount ? 0 : (parseFundNumber(statistics.totalMarketValue) ?? 0)}
                 precision={2}
                 prefix="¥"
                 valueStyle={{ color: '#1890ff' }}
@@ -374,18 +394,18 @@ const FundHub: React.FC = () => {
             <Card>
               <Statistic
                 title="今日盈亏"
-                value={hideAmount ? 0 : (statistics.totalDayProfit || 0)}
+                value={hideAmount ? 0 : (parseFundNumber(statistics.totalDayProfit) ?? 0)}
                 precision={2}
-                prefix={hideAmount ? '' : (statistics.totalDayProfit && statistics.totalDayProfit >= 0 ? '+¥' : '¥')}
+                prefix={hideAmount ? '' : ((parseFundNumber(statistics.totalDayProfit) ?? 0) >= 0 ? '+¥' : '¥')}
                 valueStyle={{
                   color:
-                    statistics.totalDayProfit && statistics.totalDayProfit >= 0
+                    (parseFundNumber(statistics.totalDayProfit) ?? 0) >= 0
                       ? '#cf1322'
                       : '#3f8600',
                 }}
                 suffix={
                   hideAmount ? null : (
-                    statistics.totalDayProfit && statistics.totalDayProfit >= 0 ? (
+                    (parseFundNumber(statistics.totalDayProfit) ?? 0) >= 0 ? (
                       <RiseOutlined />
                     ) : (
                       <FallOutlined />
