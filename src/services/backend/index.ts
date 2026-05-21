@@ -5,7 +5,6 @@
 import * as avatarFrameController from './avatarFrameController';
 import * as bossController from './bossController';
 import * as chatController from './chatController';
-import * as collectionController from './collectionController';
 import * as commentController from './commentController';
 import * as commentThumbController from './commentThumbController';
 import * as cropController from './cropController';
@@ -15,7 +14,6 @@ import * as donationRecordsController from './donationRecordsController';
 import * as drawGameController from './drawGameController';
 import * as emoticonFavourController from './emoticonFavourController';
 import * as eventRemindController from './eventRemindController';
-import * as farmFriendController from './farmFriendController';
 import * as farmUserController from './farmUserController';
 import * as fileController from './fileController';
 import * as fishAuthController from './fishAuthController';
@@ -42,7 +40,6 @@ import * as postController from './postController';
 import * as postFavourController from './postFavourController';
 import * as postThumbController from './postThumbController';
 import * as propsController from './propsController';
-import * as rankingController from './rankingController';
 import * as redeemCodeController from './redeemCodeController';
 import * as redPacketController from './redPacketController';
 import * as restAuthController from './restAuthController';
@@ -72,7 +69,6 @@ export default {
   fishAuthController,
   bossController,
   chatController,
-  collectionController,
   commentController,
   commentThumbController,
   cropController,
@@ -82,7 +78,6 @@ export default {
   drawGameController,
   emoticonFavourController,
   eventRemindController,
-  farmFriendController,
   farmUserController,
   fileController,
   userFollowController,
@@ -108,7 +103,6 @@ export default {
   postFavourController,
   postThumbController,
   propsController,
-  rankingController,
   redeemCodeController,
   redPacketController,
   userSignInController,

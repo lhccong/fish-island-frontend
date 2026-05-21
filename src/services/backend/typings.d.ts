@@ -67,12 +67,6 @@ declare namespace API {
     message?: string;
   };
 
-  type BaseResponseCollectionStatsVO_ = {
-    code?: number;
-    data?: CollectionStatsVO;
-    message?: string;
-  };
-
   type BaseResponseCosCredentialVo_ = {
     code?: number;
     data?: CosCredentialVo;
@@ -112,18 +106,6 @@ declare namespace API {
   type BaseResponseDrawRoomVO_ = {
     code?: number;
     data?: DrawRoomVO;
-    message?: string;
-  };
-
-  type BaseResponseFarmFriendFarmVO_ = {
-    code?: number;
-    data?: FarmFriendFarmVO;
-    message?: string;
-  };
-
-  type BaseResponseFarmFriendVisitVO_ = {
-    code?: number;
-    data?: FarmFriendVisitVO;
     message?: string;
   };
 
@@ -235,12 +217,6 @@ declare namespace API {
     message?: string;
   };
 
-  type BaseResponseListCollectionDTO_ = {
-    code?: number;
-    data?: CollectionDTO[];
-    message?: string;
-  };
-
   type BaseResponseListCropCategoryVO_ = {
     code?: number;
     data?: CropCategoryVO[];
@@ -271,21 +247,9 @@ declare namespace API {
     message?: string;
   };
 
-  type BaseResponseListFarmFriendListVO_ = {
-    code?: number;
-    data?: FarmFriendListVO[];
-    message?: string;
-  };
-
   type BaseResponseListFarmStealRecordVO_ = {
     code?: number;
     data?: FarmStealRecordVO[];
-    message?: string;
-  };
-
-  type BaseResponseListFarmUserVO_ = {
-    code?: number;
-    data?: FarmUserVO[];
     message?: string;
   };
 
@@ -340,12 +304,6 @@ declare namespace API {
   type BaseResponseListPetRankVO_ = {
     code?: number;
     data?: PetRankVO[];
-    message?: string;
-  };
-
-  type BaseResponseListRankingDTO_ = {
-    code?: number;
-    data?: RankingDTO[];
     message?: string;
   };
 
@@ -1015,11 +973,6 @@ declare namespace API {
     source: string;
   };
 
-  type canStealUsingGETParams = {
-    /** friendId */
-    friendId: number;
-  };
-
   type challengeUsingPOSTParams = {
     /** targetRank */
     targetRank: number;
@@ -1035,33 +988,7 @@ declare namespace API {
 
   type claimRewardUsingPOSTParams = {
     /** taskId */
-    taskId: number;
-  };
-
-  type CollectionDTO = {
-    /** 作物分类 */
-    category?: string;
-    /** 收集次数 */
-    count?: number;
-    /** 作物ID */
-    cropId?: number;
-    /** 作物名称 */
-    cropName?: string;
-    /** 收集记录ID */
-    id?: number;
-    /** 是否已获得（0-未获得，1-已获得） */
-    obtained?: number;
-    /** 首次获得时间 */
-    obtainedTime?: string;
-  };
-
-  type CollectionStatsVO = {
-    /** 已获得作物数量 */
-    obtained?: number;
-    /** 收集进度（百分比，0-100） */
-    progress?: number;
-    /** 作物总数 */
-    total?: number;
+    taskId?: number;
   };
 
   type CommentAddRequest = {
@@ -1484,49 +1411,6 @@ declare namespace API {
   type exchangeFrameUsingPOSTParams = {
     /** frameId */
     frameId: number;
-  };
-
-  type FarmFriendFarmVO = {
-    /** 是否可以偷菜 */
-    canSteal?: boolean;
-    /** 好友头像 */
-    friendAvatar?: string;
-    /** 好友ID */
-    friendId?: number;
-    /** 好友昵称 */
-    friendName?: string;
-    /** 地块列表 */
-    lands?: LandDTO[];
-    /** 最后访问时间 */
-    lastVisitTime?: string;
-    /** 偷菜冷却剩余时间（分钟） */
-    stealCooldownMinutes?: number;
-  };
-
-  type FarmFriendListVO = {
-    /** 好友头像 */
-    avatar?: string;
-    /** 是否可以偷菜 */
-    canSteal?: boolean;
-    /** 好友系统用户ID */
-    friendId?: number;
-    /** 好友等级 */
-    level?: number;
-    /** 好友昵称 */
-    nickname?: string;
-    /** 偷菜冷却结束时间（对该好友最近一次偷菜后10分钟内） */
-    stealCooldown?: string;
-    /** 好友系统用户ID */
-    systemUserId?: number;
-  };
-
-  type FarmFriendVisitVO = {
-    /** 是否可以偷菜 */
-    canSteal?: boolean;
-    /** 好友ID */
-    friendId?: number;
-    /** 最后访问时间 */
-    lastVisitTime?: string;
   };
 
   type FarmStealRecord = {
@@ -3805,19 +3689,6 @@ declare namespace API {
     roomId: string;
   };
 
-  type RankingDTO = {
-    /** 排名 */
-    rank?: number;
-    /** 今日数值 */
-    todayValue?: number;
-    /** 总数值 */
-    totalValue?: number;
-    /** 用户ID */
-    userId?: number;
-    /** 用户名 */
-    username?: string;
-  };
-
   type recordGuessSuccessUsingPOSTParams = {
     /** heroId */
     heroId?: number;
@@ -4689,16 +4560,6 @@ declare namespace API {
 
   type View = {
     contentType?: string;
-  };
-
-  type visitFriendFarmUsingPOSTParams = {
-    /** friendId */
-    friendId: number;
-  };
-
-  type visitFriendUsingGETParams = {
-    /** friendId */
-    friendId: number;
   };
 
   type VO = {

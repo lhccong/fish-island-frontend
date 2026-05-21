@@ -1,3 +1,82 @@
+/* 农场页：锁定整页滚动（:has + farm-route-lock 双保险） */
+:global(html.farm-route-lock),
+:global(html.farm-route-lock body),
+:global(html:has(.farm-page)),
+:global(body:has(.farm-page)),
+:global(#root:has(.farm-page)) {
+  overflow: hidden !important;
+  height: 100% !important;
+  max-height: 100vh !important;
+  max-height: 100svh !important;
+  overscroll-behavior: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+:global(html.farm-route-lock .ant-layout) {
+  min-height: 0 !important;
+}
+
+:global(html.farm-route-lock .ant-pro-layout),
+:global(.ant-pro-layout:has(.farm-page)) {
+  height: 100svh !important;
+  max-height: 100svh !important;
+  overflow: hidden !important;
+
+  .ant-layout,
+  .ant-pro-layout-container {
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  /* fixedHeader：保留顶栏占位，border-box 避免 padding 把总高度顶出视口 */
+  .ant-pro-layout-content {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    padding: 52px 0 0 !important;
+    padding-block-start: 52px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box !important;
+    background: linear-gradient(180deg, #b8e0f5 0%, #d4edba 45%, #9ccc65 100%);
+
+    > div {
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+  }
+
+  .ant-pro-page-container,
+  .ant-pro-page-container-children-container,
+  .ant-pro-page-container-children-content {
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box;
+  }
+}
+
 @land-color: #bf8967;
 @land-light: #d4a882;
 @land-dark: #a67555;
@@ -34,10 +113,30 @@
 }
 
 .farm-page {
+  --layout-header-h: 52px;
+  --farm-header-h: 56px;
+  /* 扣除顶栏、农场头与田地区上下留白，避免等轴网格撑出视口 */
+  --farm-scene-pad: clamp(88px, 14vh, 200px);
+  --farm-available-h: calc(
+    100vh - var(--layout-header-h) - var(--farm-header-h) - var(--farm-scene-pad)
+  );
+
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
   background: linear-gradient(180deg, #b8e0f5 0%, #d4edba 45%, #9ccc65 100%);
+
+  @supports (height: 100dvh) {
+    --farm-available-h: calc(
+      100dvh - var(--layout-header-h) - var(--farm-header-h) - var(--farm-scene-pad)
+    );
+  }
 }
 
 .farm-header-bar {
@@ -45,8 +144,10 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 20px;
-  padding: 12px 24px;
+  gap: 6px 12px;
+  padding: 6px 16px;
+  min-height: var(--farm-header-h);
+  box-sizing: border-box;
   background: rgba(255, 252, 240, 0.96);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   z-index: 20;
@@ -102,12 +203,13 @@
 
 .farm-header-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
   margin-left: auto;
 }
 
-.harvest-all-btn {
-  background: linear-gradient(135deg, #fa8c16, #ffc53d) !important;
+.plant-all-btn {
+  background: linear-gradient(135deg, #52c41a, #95de64) !important;
   border: none !important;
   font-weight: 600;
 }
@@ -117,7 +219,8 @@
   display: flex;
   flex-direction: column;
   padding: 0 !important;
-  min-height: 0;
+  min-height: 0 !important;
+  height: 0;
   overflow: hidden;
 }
 
@@ -126,12 +229,14 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 
   .ant-spin-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
   }
 }
 
@@ -140,15 +245,207 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  width: 100%;
   min-height: 0;
+  overflow: hidden;
+}
+
+/* 田地居中；左栏固定左上角，右栏固定右下角 */
+.farm-world {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(6px, 1vw, 12px);
+  min-height: 0;
+  max-height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.farm-world-side {
+  position: absolute;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+
+  &--left {
+    top: clamp(6px, 1.2vh, 14px);
+    left: clamp(8px, 1.5vw, 20px);
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: auto;
+    max-width: none;
+  }
+
+  &--right {
+    right: clamp(6px, 1.2vw, 18px);
+    bottom: clamp(6px, 1vh, 14px);
+    align-items: flex-end;
+    justify-content: flex-end;
+    width: clamp(220px, 28vw, 440px);
+    max-width: 46vw;
+    z-index: 5;
+  }
+}
+
+.farm-field-stack {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  max-height: 100%;
+  min-height: 0;
+  gap: 8px;
+  padding: clamp(20px, 4vh, 48px) 0 clamp(8px, 1.5vh, 20px);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.farm-harvest-dock {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  z-index: 1;
+}
+
+.farm-quick-harvest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+
+  &:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.35) brightness(0.92);
+  }
+
+  &:not(:disabled):hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+  }
+
+  &:not(:disabled):active {
+    transform: translateY(1px);
+  }
+
+  &.is-ready:not(.is-loading) .farm-quick-harvest-icon img {
+    animation: farm-harvest-pulse 2s ease-in-out infinite;
+  }
+
+  &.is-loading .farm-quick-harvest-icon {
+    opacity: 0.75;
+  }
+}
+
+.farm-quick-harvest-icon {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  overflow: visible;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 6px rgba(60, 40, 20, 0.2));
+  }
+}
+
+.farm-quick-harvest-label {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-shadow:
+    -1px -1px 0 #6b4423,
+    1px -1px 0 #6b4423,
+    -1px 1px 0 #6b4423,
+    1px 1px 0 #6b4423,
+    0 2px 4px rgba(60, 40, 20, 0.35);
+}
+
+@keyframes farm-harvest-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.farm-friends-fab {
+  flex-shrink: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-width: 52px;
+  height: 52px;
+  padding: 6px 10px 4px;
+  border: 2px solid #f5e6a8;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #d4b896 0%, #a67c52 55%, #8b5e3c 100%);
+  color: #fff8e8;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow:
+    0 3px 10px rgba(60, 40, 20, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.15s ease, filter 0.15s ease;
+
+  .anticon {
+    font-size: 20px;
+    color: #ffd54f;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
 }
 
 .farm-deco-sign {
-  position: absolute;
-  top: 12px;
-  left: 16px;
+  position: relative;
   z-index: 5;
-  padding: 6px 12px;
+  flex-shrink: 0;
+  // padding: 6px 12px;
   background: linear-gradient(135deg, #ff7a45, #ff9c6e);
   border: 2px solid #d4380d;
   border-radius: 10px;
@@ -160,30 +457,95 @@
   pointer-events: none;
 }
 
-.farm-land-field {
-  flex: 1;
+.farm-deco-mail {
+  position: relative;
+  z-index: 6;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px) scale(1.04);
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .ant-badge-count {
+    box-shadow: 0 2px 6px rgba(200, 30, 20, 0.45);
+    font-weight: 700;
+  }
+}
+
+.farm-deco-mail-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff8e8 0%, #f5e6a8 55%, #e8c872 100%);
+  border: 2px solid #d4a84a;
+  color: #c62828;
+  font-size: 24px;
+  box-shadow:
+    0 4px 12px rgba(60, 40, 20, 0.2),
+    inset 0 1px 3px rgba(255, 255, 255, 0.75);
+}
+
+.farm-land-field {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
-  padding: 16px 12px 24px;
+  max-height: 100%;
+  padding: clamp(12px, 2.5vh, 32px) clamp(200px, 22vw, 320px)
+    clamp(24px, 4vh, 56px);
+  padding-left: clamp(64px, 7vw, 96px);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .farm-iso-stage {
   position: relative;
   width: 100%;
-  max-width: 1100px;
-  min-height: min(72vh, 580px);
+  max-width: 100%;
+  flex: 0 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.farm-stage-cluster {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 /* 外圈绿色草地包边（宽度贴合网格） */
 .farm-field-board {
   position: relative;
   width: fit-content;
-  max-width: calc(100% - 16px);
   margin: 0 auto;
   padding: clamp(12px, 2vw, 18px);
   background: linear-gradient(160deg, #8bc34a 0%, #7cb342 40%, #689f38 100%);
@@ -223,11 +585,19 @@
   box-shadow:
     inset 0 3px 16px rgba(255, 255, 255, 0.6),
     inset 0 -6px 14px rgba(140, 100, 50, 0.12);
-  overflow: visible;
+  overflow: hidden;
 }
 
 .farm-iso-grid {
-  --tile-size: clamp(56px, 7.8vw, 82px);
+  --tile-size: clamp(
+    38px,
+    min(
+      10vw,
+      calc((100vw - 420px) / 12.5),
+      calc((var(--farm-available-h) - 64px) / 4.35)
+    ),
+    108px
+  );
   --iso-half-w: calc(var(--tile-size) * 0.72);
   --iso-half-h: calc(var(--tile-size) * 0.42);
   --iso-center-y: 4; /* (col+row) 中心，6×4 时为 4 */
@@ -508,6 +878,30 @@
 
 /* 种植弹窗 */
 .farm-plant-modal {
+  .plant-batch-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f6ffed;
+    border: 1px solid #b7eb8f;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.5;
+
+    input {
+      margin-top: 3px;
+      flex-shrink: 0;
+      accent-color: #52c41a;
+    }
+  }
+
+  .plant-batch-hint {
+    font-size: 12px;
+  }
+
   .crop-category-tabs {
     display: flex;
     flex-wrap: wrap;
@@ -604,14 +998,41 @@
 }
 
 @media (max-width: 768px) {
-  .farm-iso-grid {
-    --tile-size: clamp(48px, 10vw, 64px);
-    --iso-half-w: calc(var(--tile-size) * 0.7);
-    --iso-half-h: calc(var(--tile-size) * 0.4);
+  .farm-page {
+    --farm-header-h: 80px;
+    --farm-scene-pad: clamp(56px, 10vh, 120px);
   }
 
-  .farm-iso-stage {
-    min-height: 400px;
+  .farm-world-side--left {
+    top: 4px;
+    left: 4px;
+    width: clamp(112px, 30vw, 160px);
+  }
+
+  .farm-world-side--right {
+    right: 4px;
+    bottom: 4px;
+    width: clamp(160px, 38vw, 280px);
+  }
+
+  .farm-land-field {
+    padding: clamp(8px, 2vh, 24px) clamp(100px, 26vw, 160px)
+      clamp(16px, 3vh, 40px);
+    padding-left: clamp(56px, 12vw, 80px);
+  }
+
+  .farm-field-stack {
+    padding-top: clamp(12px, 3vh, 28px);
+  }
+
+  .farm-iso-grid {
+    --tile-size: clamp(
+      32px,
+      min(10vw, calc((var(--farm-available-h) - 48px) / 4.6)),
+      72px
+    );
+    --iso-half-w: calc(var(--tile-size) * 0.7);
+    --iso-half-h: calc(var(--tile-size) * 0.4);
   }
 
   .farm-field-board {
@@ -626,13 +1047,34 @@
 
 @media (min-width: 1200px) {
   .farm-iso-grid {
-    --tile-size: 84px;
-    --iso-half-w: calc(var(--tile-size) * 0.72);
-    --iso-half-h: calc(var(--tile-size) * 0.42);
+    --tile-size: clamp(
+      44px,
+      min(
+        8.5vw,
+        calc((100vw - 380px) / 11.5),
+        calc((var(--farm-available-h) - 72px) / 4.2)
+      ),
+      112px
+    );
+  }
+}
+
+@media (min-width: 1200px) {
+  .farm-page {
+    --farm-scene-pad: clamp(88px, 13vh, 180px);
   }
 
-  .farm-iso-stage {
-    max-width: 1150px;
-    min-height: 620px;
+  .farm-world-side--right {
+    width: clamp(280px, 30vw, 480px);
+  }
+
+  .farm-land-field {
+    padding-top: clamp(16px, 3vh, 40px);
+    padding-right: clamp(260px, 28vw, 420px);
+    padding-bottom: clamp(32px, 5vh, 72px);
+  }
+
+  .farm-field-stack {
+    padding-top: clamp(24px, 4vh, 48px);
   }
 }
