@@ -108,6 +108,13 @@ export default [
     routes: [
       {path: '/utils', redirect: '/utils/json', requireAuth: false},
       {
+        icon: 'SmileOutlined',
+        path: '/utils/meme-generator',
+        component: './Utils/MemeGenerator',
+        name: '表情包生成器',
+        requireAuth: false
+      },
+      {
         icon: 'DesktopOutlined',
         path: '/utils/json',
         component: './Utils/JsonFormat',
