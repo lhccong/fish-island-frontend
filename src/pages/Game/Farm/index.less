@@ -517,7 +517,7 @@
   overflow: hidden;
 }
 
-.farm-iso-stage {
+.farm-grid-stage {
   position: relative;
   width: 100%;
   max-width: 100%;
@@ -588,39 +588,31 @@
   overflow: hidden;
 }
 
-.farm-iso-grid {
+.farm-plots-grid {
   --tile-size: clamp(
-    38px,
+    36px,
     min(
       10vw,
-      calc((100vw - 420px) / 12.5),
-      calc((var(--farm-available-h) - 64px) / 4.35)
+      calc((100vw - 420px) / 7.8),
+      calc((var(--farm-available-h) - 72px) / 5)
     ),
-    108px
+    96px
   );
-  --iso-half-w: calc(var(--tile-size) * 0.72);
-  --iso-half-h: calc(var(--tile-size) * 0.42);
-  --iso-center-y: 4; /* (col+row) 中心，6×4 时为 4 */
-  --iso-offset-x: 1; /* (row-col) 中心补偿，使网格水平居中 */
+  --plot-gap: clamp(5px, 0.8vw, 10px);
 
-  position: relative;
-  width: calc(var(--iso-half-w) * 8 + var(--tile-size));
-  height: calc(var(--iso-half-h) * 8 + var(--tile-size) * 1.2);
+  display: grid;
+  grid-template-columns: repeat(6, var(--tile-size));
+  grid-template-rows: repeat(4, calc(var(--tile-size) * 1.05));
+  gap: var(--plot-gap);
+  width: fit-content;
   margin: 0 auto;
   flex-shrink: 0;
 }
 
 .farm-plot-slot {
-  position: absolute;
   width: var(--tile-size);
-  height: calc(var(--tile-size) * 1.15);
-  left: calc(
-    50% + (var(--iso-row) - var(--iso-col) + var(--iso-offset-x)) * var(--iso-half-w)
-  );
-  top: calc(
-    50% + ((var(--iso-col) + var(--iso-row)) - var(--iso-center-y)) * var(--iso-half-h)
-  );
-  transform: translate(-50%, -50%);
+  height: calc(var(--tile-size) * 1.05);
+  position: relative;
 
   .ant-tooltip-disabled-compatible-wrapper {
     display: block;
@@ -629,11 +621,11 @@
   }
 
   &:hover {
-    z-index: 40 !important;
+    z-index: 40;
   }
 
   &:hover .farm-plot:not(:disabled) {
-    transform: translateY(-6px);
+    transform: translateY(-4px);
   }
 }
 
@@ -653,28 +645,22 @@
   }
 }
 
-/* ===== 单块土地：圆角菱形台面 + 土垄 ===== */
+/* ===== 单块土地：圆角方台面 + 土垄 ===== */
 .plot-soil {
   position: absolute;
-  left: 50%;
-  bottom: 4%;
-  width: 100%;
-  height: 92%;
-  transform: translateX(-50%);
+  inset: 0;
   pointer-events: none;
 }
 
-/* 菱形田块（旋转圆角方）— 统一土色 #BF8967 */
 .plot-tile-surface {
   position: absolute;
-  left: 50%;
-  top: 8%;
-  width: 76%;
-  aspect-ratio: 1;
-  transform: translateX(-50%) rotate(45deg);
-  border-radius: 20%;
+  left: 4%;
+  right: 4%;
+  top: 6%;
+  bottom: 22%;
+  border-radius: 14%;
   background: linear-gradient(
-    145deg,
+    160deg,
     @land-light 0%,
     @land-color 45%,
     @land-dark 100%
@@ -682,20 +668,18 @@
   box-shadow:
     inset 0 3px 0 rgba(255, 255, 255, 0.35),
     inset 0 -5px 0 rgba(80, 50, 30, 0.2),
-    0 7px 0 @land-shadow,
-    0 10px 18px rgba(70, 45, 25, 0.22);
+    0 6px 0 @land-shadow,
+    0 8px 14px rgba(70, 45, 25, 0.2);
   transition: box-shadow 0.2s, filter 0.2s;
 }
 
-/* 土垄（同色系略深） */
 .plot-mound {
   position: absolute;
-  left: 50%;
-  top: 42%;
-  width: 54%;
-  height: 34%;
-  transform: translate(-50%, -50%);
-  border-radius: 50% 50% 46% 46%;
+  left: 18%;
+  right: 18%;
+  bottom: 6%;
+  height: 22%;
+  border-radius: 40% 40% 35% 35%;
   background: radial-gradient(
     ellipse 90% 80% at 50% 25%,
     @land-light 0%,
@@ -704,9 +688,9 @@
     @land-shadow 100%
   );
   box-shadow:
-    inset 0 6px 10px rgba(255, 255, 255, 0.28),
-    inset 0 -8px 12px rgba(60, 35, 15, 0.25),
-    0 3px 6px rgba(60, 40, 15, 0.18);
+    inset 0 4px 8px rgba(255, 255, 255, 0.28),
+    inset 0 -6px 10px rgba(60, 35, 15, 0.25),
+    0 2px 5px rgba(60, 40, 15, 0.18);
   z-index: 1;
   transition: filter 0.2s;
 }
@@ -756,7 +740,7 @@
 .plot-overlay {
   position: absolute;
   left: 50%;
-  top: 42%;
+  top: 50%;
   transform: translate(-50%, -50%);
   z-index: 3;
   display: flex;
@@ -768,7 +752,7 @@
 }
 
 .plot-overlay-locked {
-  top: 40%;
+  top: 48%;
   gap: 2px;
 }
 
@@ -1025,14 +1009,13 @@
     padding-top: clamp(12px, 3vh, 28px);
   }
 
-  .farm-iso-grid {
+  .farm-plots-grid {
     --tile-size: clamp(
-      32px,
-      min(10vw, calc((var(--farm-available-h) - 48px) / 4.6)),
-      72px
+      30px,
+      min(10vw, calc((var(--farm-available-h) - 48px) / 5.2)),
+      64px
     );
-    --iso-half-w: calc(var(--tile-size) * 0.7);
-    --iso-half-h: calc(var(--tile-size) * 0.4);
+    --plot-gap: 5px;
   }
 
   .farm-field-board {
@@ -1046,15 +1029,15 @@
 }
 
 @media (min-width: 1200px) {
-  .farm-iso-grid {
+  .farm-plots-grid {
     --tile-size: clamp(
-      44px,
+      40px,
       min(
         8.5vw,
-        calc((100vw - 380px) / 11.5),
-        calc((var(--farm-available-h) - 72px) / 4.2)
+        calc((100vw - 380px) / 7.5),
+        calc((var(--farm-available-h) - 80px) / 5)
       ),
-      112px
+      100px
     );
   }
 }

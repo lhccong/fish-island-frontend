@@ -47,14 +47,11 @@ const FARM_HARVEST_ICON =
 
 type GridSlot = { row: number; col: number };
 
-/**
- * 等轴 landIndex 顺序（从 1 开始）：
- * 先走最右上一列向下 (1→4)，再向左下一列 (5…)，即按列遍历、列内自上而下
- */
+/** landIndex 顺序（从 1 开始）：自上而下、每行从左到右，一行六块 */
 const buildSlotOrder = (): GridSlot[] => {
   const slots: GridSlot[] = [];
-  for (let col = 0; col < GRID_COLS; col += 1) {
-    for (let row = 0; row < GRID_ROWS; row += 1) {
+  for (let row = 0; row < GRID_ROWS; row += 1) {
+    for (let col = 0; col < GRID_COLS; col += 1) {
       slots.push({ row, col });
     }
   }
@@ -89,7 +86,7 @@ const formatCountdown = (ms: number): string => {
   return `${s}秒`;
 };
 
-/** landIndex 从 1 开始，按等轴显示顺序填入网格 */
+/** landIndex 从 1 开始，按网格显示顺序填入 */
 const buildLandGrid = (lands: API.LandDTO[]): (API.LandDTO | null)[] => {
   const grid: (API.LandDTO | null)[] = Array(TOTAL_LANDS).fill(null);
   const landByIndex = new Map<number, API.LandDTO>();
@@ -679,25 +676,18 @@ const Farm: React.FC = () => {
 
               <div className="farm-land-field">
               <div className="farm-field-stack">
-              <div className="farm-iso-stage">
+              <div className="farm-grid-stage">
                 <div className="farm-stage-cluster">
                 <div className="farm-field-board">
                   <div className="farm-field-inner">
-                    <div className="farm-iso-grid">
-                  {SLOT_ORDER.map((slot, arrayIndex) => {
+                    <div className="farm-plots-grid">
+                  {SLOT_ORDER.map((_, arrayIndex) => {
                     const land = landGrid[arrayIndex];
                     const landIndex = toLandIndex(arrayIndex);
                     return (
                       <div
                         key={land?.id ?? `slot-${landIndex}`}
                         className="farm-plot-slot"
-                        style={
-                          {
-                            '--iso-col': slot.col,
-                            '--iso-row': slot.row,
-                            zIndex: slot.col + slot.row + 1,
-                          } as React.CSSProperties
-                        }
                       >
                         <Tooltip title={getPlotTooltip(land, arrayIndex)}>
                           <button
