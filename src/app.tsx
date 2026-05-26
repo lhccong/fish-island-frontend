@@ -417,7 +417,14 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
     waterMarkProps: {
       content: initialState?.currentUser?.userName,
     },
-    footerRender: () => <Footer/>,
+    footerRender: () => {
+      const path =
+        typeof window !== 'undefined' ? window.location.pathname : '';
+      if (path.startsWith('/point/farm')) {
+        return null;
+      }
+      return <Footer />;
+    },
     menuHeaderRender: undefined,
     // 自定义 403 页面
     // unAccessible: <div>unAccessible</div>,

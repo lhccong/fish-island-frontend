@@ -7,11 +7,14 @@ import * as bossController from './bossController';
 import * as chatController from './chatController';
 import * as commentController from './commentController';
 import * as commentThumbController from './commentThumbController';
+import * as cropController from './cropController';
+import * as dataSourceCookieController from './dataSourceCookieController';
 import * as donationDetailRecordsController from './donationDetailRecordsController';
 import * as donationRecordsController from './donationRecordsController';
 import * as drawGameController from './drawGameController';
 import * as emoticonFavourController from './emoticonFavourController';
 import * as eventRemindController from './eventRemindController';
+import * as farmUserController from './farmUserController';
 import * as fileController from './fileController';
 import * as fishAuthController from './fishAuthController';
 import * as fishPetController from './fishPetController';
@@ -19,8 +22,10 @@ import * as fundController from './fundController';
 import * as heroController from './heroController';
 import * as hotPostController from './hotPostController';
 import * as indexTradeController from './indexTradeController';
+import * as ipLocationController from './ipLocationController';
 import * as itemInstancesController from './itemInstancesController';
 import * as itemTemplatesController from './itemTemplatesController';
+import * as landController from './landController';
 import * as mockInterviewController from './mockInterviewController';
 import * as momentsController from './momentsController';
 import * as oAuth2Controller from './oAuth2Controller';
@@ -38,7 +43,9 @@ import * as propsController from './propsController';
 import * as redeemCodeController from './redeemCodeController';
 import * as redPacketController from './redPacketController';
 import * as restAuthController from './restAuthController';
+import * as stealController from './stealController';
 import * as tagsController from './tagsController';
+import * as taskController from './taskController';
 import * as todoController from './todoController';
 import * as towerClimbController from './towerClimbController';
 import * as turntableController from './turntableController';
@@ -64,19 +71,24 @@ export default {
   chatController,
   commentController,
   commentThumbController,
+  cropController,
+  dataSourceCookieController,
   donationRecordsController,
   donationDetailRecordsController,
   drawGameController,
   emoticonFavourController,
   eventRemindController,
+  farmUserController,
   fileController,
   userFollowController,
   fundController,
   heroController,
   hotPostController,
   indexTradeController,
+  ipLocationController,
   itemInstancesController,
   itemTemplatesController,
+  landController,
   mockInterviewController,
   momentsController,
   restAuthController,
@@ -94,7 +106,9 @@ export default {
   redeemCodeController,
   redPacketController,
   userSignInController,
+  stealController,
   tagsController,
+  taskController,
   todoController,
   towerClimbController,
   turntableController,

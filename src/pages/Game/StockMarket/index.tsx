@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Layout,
   Typography,
@@ -49,6 +49,9 @@ const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
+/** 买卖按钮点击间隔（毫秒），防止重复触发 */
+const TRADE_CLICK_DEBOUNCE_MS = 500;
+
 // 辅助函数：安全解析数值（处理可能包含%符号的字符串）
 const parseNumericValue = (value: string | number | undefined): number => {
   if (value === undefined || value === null) return 0;
@@ -79,6 +82,8 @@ const StockMarket: React.FC = () => {
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState('market');
   const [refreshing, setRefreshing] = useState(false);
+  const [tradeSubmitting, setTradeSubmitting] = useState(false);
+  const lastTradeClickRef = useRef(0);
 
   // 加载市场指数
   const loadMarketIndices = async () => {
@@ -148,7 +153,11 @@ const StockMarket: React.FC = () => {
   }, []);
 
   // 打开交易弹窗
-  const handleOpenTradeModal = (type: 'buy' | 'sell', index?: API.MarketIndexVO, position?: API.IndexPositionVO) => {
+  const handleOpenTradeModal = useCallback((
+    type: 'buy' | 'sell',
+    index?: API.MarketIndexVO,
+    position?: API.IndexPositionVO,
+  ) => {
     setTradeType(type);
     setSelectedIndex(index || null);
     setSelectedPosition(position || null);
@@ -167,7 +176,21 @@ const StockMarket: React.FC = () => {
     }
 
     setTradeModalVisible(true);
-  };
+  }, [form]);
+
+  /** 买卖入口按钮防抖：500ms 内忽略重复点击 */
+  const handleOpenTradeModalDebounced = useCallback((
+    type: 'buy' | 'sell',
+    index?: API.MarketIndexVO,
+    position?: API.IndexPositionVO,
+  ) => {
+    const now = Date.now();
+    if (now - lastTradeClickRef.current < TRADE_CLICK_DEBOUNCE_MS) {
+      return;
+    }
+    lastTradeClickRef.current = now;
+    handleOpenTradeModal(type, index, position);
+  }, [handleOpenTradeModal]);
 
   // 关闭交易弹窗
   const handleCloseTradeModal = () => {
@@ -179,8 +202,12 @@ const StockMarket: React.FC = () => {
 
   // 提交交易
   const handleTradeSubmit = async () => {
+    if (tradeSubmitting) {
+      return;
+    }
     try {
       const values = await form.validateFields();
+      setTradeSubmitting(true);
 
       if (tradeType === 'buy') {
         const response = await buyIndexUsingPost({
@@ -211,6 +238,8 @@ const StockMarket: React.FC = () => {
       }
     } catch (error) {
       console.error('交易失败:', error);
+    } finally {
+      setTradeSubmitting(false);
     }
   };
 
@@ -395,7 +424,7 @@ const StockMarket: React.FC = () => {
                         type="primary"
                         icon={<ShoppingCartOutlined />}
                         disabled={index.indexCode !== 'sh000001'}
-                        onClick={() => handleOpenTradeModal('buy', index)}
+                        onClick={() => handleOpenTradeModalDebounced('buy', index)}
                       >
                         买入
                       </Button>,
@@ -489,14 +518,14 @@ const StockMarket: React.FC = () => {
                         <Space>
                           <Button
                             type="primary"
-                            onClick={() => handleOpenTradeModal('buy', undefined, position)}
+                            onClick={() => handleOpenTradeModalDebounced('buy', undefined, position)}
                           >
                             加仓
                           </Button>
                           <Button
                             danger
                             disabled={!position.availableShares}
-                            onClick={() => handleOpenTradeModal('sell', undefined, position)}
+                            onClick={() => handleOpenTradeModalDebounced('sell', undefined, position)}
                           >
                             卖出
                           </Button>
@@ -543,6 +572,9 @@ const StockMarket: React.FC = () => {
         open={tradeModalVisible}
         onOk={handleTradeSubmit}
         onCancel={handleCloseTradeModal}
+        confirmLoading={tradeSubmitting}
+        okButtonProps={{ disabled: tradeSubmitting }}
+        cancelButtonProps={{ disabled: tradeSubmitting }}
         okText={tradeType === 'buy' ? '确认买入' : '确认卖出'}
         cancelText="取消"
         width={500}

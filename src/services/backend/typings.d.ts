@@ -73,6 +73,18 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseCropDTO_ = {
+    code?: number;
+    data?: CropDTO;
+    message?: string;
+  };
+
+  type BaseResponseDataSourceCookieVO_ = {
+    code?: number;
+    data?: DataSourceCookieVO;
+    message?: string;
+  };
+
   type BaseResponseDonationRecordsVO_ = {
     code?: number;
     data?: DonationRecordsVO;
@@ -94,6 +106,18 @@ declare namespace API {
   type BaseResponseDrawRoomVO_ = {
     code?: number;
     data?: DrawRoomVO;
+    message?: string;
+  };
+
+  type BaseResponseFarmStealRecord_ = {
+    code?: number;
+    data?: FarmStealRecord;
+    message?: string;
+  };
+
+  type BaseResponseFarmUserVO_ = {
+    code?: number;
+    data?: FarmUserVO;
     message?: string;
   };
 
@@ -145,6 +169,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseIP_ = {
+    code?: number;
+    data?: IP_;
+    message?: string;
+  };
+
   type BaseResponseItemInstances_ = {
     code?: number;
     data?: ItemInstances;
@@ -187,6 +217,24 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListCropCategoryVO_ = {
+    code?: number;
+    data?: CropCategoryVO[];
+    message?: string;
+  };
+
+  type BaseResponseListCropDTO_ = {
+    code?: number;
+    data?: CropDTO[];
+    message?: string;
+  };
+
+  type BaseResponseListDataSourceKeyOptionVO_ = {
+    code?: number;
+    data?: DataSourceKeyOptionVO[];
+    message?: string;
+  };
+
   type BaseResponseListDrawGuessVO_ = {
     code?: number;
     data?: DrawGuessVO[];
@@ -196,6 +244,12 @@ declare namespace API {
   type BaseResponseListDrawRoomVO_ = {
     code?: number;
     data?: DrawRoomVO[];
+    message?: string;
+  };
+
+  type BaseResponseListFarmStealRecordVO_ = {
+    code?: number;
+    data?: FarmStealRecordVO[];
     message?: string;
   };
 
@@ -214,6 +268,12 @@ declare namespace API {
   type BaseResponseListHotPostVO_ = {
     code?: number;
     data?: HotPostVO[];
+    message?: string;
+  };
+
+  type BaseResponseListLandDTO_ = {
+    code?: number;
+    data?: LandDTO[];
     message?: string;
   };
 
@@ -256,6 +316,12 @@ declare namespace API {
   type BaseResponseListString_ = {
     code?: number;
     data?: string[];
+    message?: string;
+  };
+
+  type BaseResponseListTaskDTO_ = {
+    code?: number;
+    data?: TaskDTO[];
     message?: string;
   };
 
@@ -325,6 +391,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseMapStringString_ = {
+    code?: number;
+    data?: Record<string, any>;
+    message?: string;
+  };
+
   type BaseResponseMockInterview_ = {
     code?: number;
     data?: MockInterview;
@@ -382,6 +454,12 @@ declare namespace API {
   type BaseResponsePageCommentVO_ = {
     code?: number;
     data?: PageCommentVO_;
+    message?: string;
+  };
+
+  type BaseResponsePageDataSourceCookieVO_ = {
+    code?: number;
+    data?: PageDataSourceCookieVO_;
     message?: string;
   };
 
@@ -908,6 +986,11 @@ declare namespace API {
     sortOrder?: string;
   };
 
+  type claimRewardUsingPOSTParams = {
+    /** taskId */
+    taskId?: number;
+  };
+
   type CommentAddRequest = {
     content?: string;
     parentId?: number;
@@ -982,6 +1065,79 @@ declare namespace API {
     tmpSecretId?: string;
     tmpSecretKey?: string;
     token?: string;
+  };
+
+  type CropCategoryVO = {
+    /** 分类名称 */
+    label?: string;
+    /** 分类编码（grain/vegetable/fruit/flower） */
+    value?: string;
+  };
+
+  type CropDTO = {
+    /** 作物分类（粮食/蔬菜/水果/花卉/特产） */
+    category?: string;
+    /** 收获积分 */
+    coin?: number;
+    /** 作物描述 */
+    description?: string;
+    /** 收获经验 */
+    experience?: number;
+    /** 生长时间（分钟） */
+    growthTime?: number;
+    /** 作物图标 */
+    icon?: string;
+    /** 作物ID */
+    id?: number;
+    /** 是否未解锁（农场等级不足时为 true） */
+    locked?: boolean;
+    /** 作物名称 */
+    name?: string;
+    /** 稀有度 */
+    rarity?: number;
+    /** 解锁所需农场等级 */
+    unlockLevel?: number;
+  };
+
+  type DataSourceCookieAddRequest = {
+    cookieValue?: string;
+    dataSourceKey?: string;
+    remark?: string;
+    status?: number;
+  };
+
+  type DataSourceCookieQueryRequest = {
+    current?: number;
+    dataSourceKey?: string;
+    id?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+    status?: number;
+  };
+
+  type DataSourceCookieUpdateRequest = {
+    cookieValue?: string;
+    dataSourceKey?: string;
+    id?: number;
+    remark?: string;
+    status?: number;
+  };
+
+  type DataSourceCookieVO = {
+    cookieValue?: string;
+    createTime?: string;
+    dataSourceKey?: string;
+    dataSourceName?: string;
+    id?: number;
+    remark?: string;
+    status?: number;
+    updateTime?: string;
+  };
+
+  type DataSourceKeyOptionVO = {
+    text?: string;
+    value?: string;
   };
 
   type DaySignInVO = {
@@ -1257,6 +1413,75 @@ declare namespace API {
     frameId: number;
   };
 
+  type FarmStealRecord = {
+    /** 获得的积分 */
+    coinGained?: number;
+    /** 作物ID */
+    cropId?: number;
+    /** 偷菜记录ID */
+    id?: number;
+    /** 农场主人系统用户ID */
+    ownerId?: number;
+    /** 种植记录ID */
+    plantRecordId?: number;
+    /** 偷菜者系统用户ID */
+    stealerId?: number;
+    /** 偷菜时间 */
+    stolenTime?: string;
+  };
+
+  type FarmStealRecordVO = {
+    /** 获得的积分 */
+    coinGained?: number;
+    /** 作物ID */
+    cropId?: number;
+    /** 作物名称 */
+    cropName?: string;
+    /** 偷菜记录ID */
+    id?: number;
+    /** 农场主人农场用户ID */
+    ownerId?: number;
+    /** 种植记录ID */
+    plantRecordId?: number;
+    /** 偷菜者头像 */
+    stealerAvatar?: string;
+    /** 偷菜者农场用户ID */
+    stealerId?: number;
+    /** 偷菜者昵称 */
+    stealerNickname?: string;
+    /** 偷菜时间 */
+    stolenTime?: string;
+  };
+
+  type FarmUserVO = {
+    /** 创建时间 */
+    createTime?: string;
+    /** 经验值 */
+    experience?: number;
+    /** 好友数量 */
+    friendCount?: number;
+    /** 农场等级 */
+    level?: number;
+    /** 状态（0-禁用，1-正常） */
+    status?: number;
+    /** 总防御次数 */
+    totalDefense?: number;
+    /** 总收获次数 */
+    totalHarvest?: number;
+    /** 总偷菜次数 */
+    totalSteal?: number;
+    /** 更新时间 */
+    updateTime?: string;
+    /** 用户头像（来自用户表） */
+    userAvatar?: string;
+    /** 系统用户ID（与 user 表 id 一致） */
+    userId?: number;
+    /** 用户昵称（来自用户表） */
+    userName?: string;
+    /** 被访问次数 */
+    visitedCount?: number;
+  };
+
   type feedPetUsingPOSTParams = {
     /** petId */
     petId: number;
@@ -1435,6 +1660,11 @@ declare namespace API {
     limit?: number;
   };
 
+  type getByIdUsingGETParams = {
+    /** id */
+    id?: number;
+  };
+
   type getConfigUsingGETParams = {
     /** petId */
     petId: number;
@@ -1443,6 +1673,16 @@ declare namespace API {
   type getCosCredentialUsingGETParams = {
     /** fileName */
     fileName?: string;
+  };
+
+  type getCropByIdUsingGETParams = {
+    /** id */
+    id: number;
+  };
+
+  type getCropsByCategoryUsingGETParams = {
+    /** category */
+    category: string;
   };
 
   type getCurrentPlayerInfoUsingGETParams = {
@@ -1631,6 +1871,13 @@ declare namespace API {
     redPacketId: string;
   };
 
+  type HarvestRequest = {
+    /** 地块ID列表 */
+    landIds: number[];
+    /** 农场用户ID（可不传，以当前登录用户为准） */
+    userId?: number;
+  };
+
   type HeroRankingVO = {
     rank?: number;
     score?: number;
@@ -1776,6 +2023,49 @@ declare namespace API {
     tradeType?: number;
     /** 交易类型名称 */
     tradeTypeName?: string;
+  };
+
+  type IP_ = {
+    /** AS 编号 */
+    asNumber?: string;
+    /** AS 名称 */
+    asname?: string;
+    /** 城市 */
+    city?: string;
+    /** 大陆名称 */
+    continent?: string;
+    /** 大陆代号 */
+    continentCode?: string;
+    /** 国家名称 */
+    country?: string;
+    /** 国家代号 */
+    countryCode?: string;
+    /** 本国货币 */
+    currency?: string;
+    /** 区县 */
+    district?: string;
+    /** 互联网服务提供商 */
+    isp?: string;
+    /** 纬度 */
+    lat?: number;
+    /** 经度 */
+    lon?: number;
+    /** 失败时的错误信息 */
+    message?: string;
+    /** 组织名称 */
+    org?: string;
+    /** 查询的 IP 地址 */
+    query?: string;
+    /** 区域 */
+    region?: string;
+    /** 地区/省份 */
+    regionName?: string;
+    /** 返回状态：success 成功，fail 失败 */
+    status?: string;
+    /** 时区 */
+    timezone?: string;
+    /** 邮编 */
+    zip?: string;
   };
 
   type isFollowingUsingGETParams = {
@@ -2014,6 +2304,29 @@ declare namespace API {
     roomId: string;
   };
 
+  type LandDTO = {
+    /** 是否可以偷菜 */
+    canSteal?: boolean;
+    /** 作物名称 */
+    cropName?: string;
+    /** 收获时间 */
+    harvestTime?: string;
+    /** 地块ID */
+    id?: number;
+    /** 地块索引 */
+    landIndex?: number;
+    /** 是否锁定（0-未锁定，1-已锁定） */
+    locked?: number;
+    /** 种植记录ID（用于偷菜接口） */
+    plantRecordId?: number;
+    /** 种植的作物ID */
+    plantedCropId?: number;
+    /** 种植时间 */
+    plantedTime?: string;
+    /** 地块状态（0-空闲，1-种植中，2-已成熟） */
+    status?: number;
+  };
+
   type linuxDoCallbackUsingGETParams = {
     /** code */
     code?: string;
@@ -2150,6 +2463,8 @@ declare namespace API {
     /** 补签日期，格式 yyyy-MM-dd */
     signDate: string;
   };
+
+  type MapStringString_ = true;
 
   type MarketIndexVO = {
     changePercent?: string;
@@ -2583,6 +2898,19 @@ declare namespace API {
     orders?: OrderItem[];
     pages?: number;
     records?: CommentVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
+  type PageDataSourceCookieVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: DataSourceCookieVO[];
     searchCount?: boolean;
     size?: number;
     total?: number;
@@ -3207,6 +3535,18 @@ declare namespace API {
     userId?: number;
   };
 
+  type PlantItem = {
+    /** 作物ID */
+    cropId: number;
+    /** 地块ID */
+    landId: number;
+  };
+
+  type PlantRequest = {
+    /** 种植项列表（地块ID + 作物ID） */
+    items: PlantItem[];
+  };
+
   type PlatformBindVO = {
     avatar?: string;
     nickname?: string;
@@ -3443,6 +3783,11 @@ declare namespace API {
     id: number;
   };
 
+  type resolveUsingGETParams = {
+    /** dataSourceKey */
+    dataSourceKey?: string;
+  };
+
   type Response = {
     credentials?: Credentials;
     expiration?: string;
@@ -3570,6 +3915,11 @@ declare namespace API {
     roomId: string;
   };
 
+  type StealRequest = {
+    /** 种植记录ID */
+    plantRecordId: number;
+  };
+
   type streamChatDemoUsingGETParams = {
     /** prompt */
     prompt: string;
@@ -3621,6 +3971,27 @@ declare namespace API {
     sort?: number;
     tagsName?: string;
     type?: number;
+  };
+
+  type TaskDTO = {
+    /** 是否已领取奖励（0-未领取，1-已领取） */
+    claimed?: number;
+    /** 是否已完成（0-未完成，1-已完成） */
+    completed?: number;
+    /** 当前进度次数 */
+    currentCount?: number;
+    /** 任务描述 */
+    description?: string;
+    /** 任务ID */
+    id?: number;
+    /** 任务名称 */
+    name?: string;
+    /** 奖励经验 */
+    rewardExp?: number;
+    /** 目标次数 */
+    targetCount?: number;
+    /** 任务类型 */
+    type?: string;
   };
 
   type toggleAutoFeedUsingPOSTParams = {

@@ -1,0 +1,56 @@
+/* 右下角大農舍 + 屋內寵物 */
+.farm-cottage-deco-wrap {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.farm-cottage-stage {
+  position: relative;
+  display: block;
+  width: 100%;
+  line-height: 0;
+}
+
+.farm-cottage-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 200px;
+  max-height: min(calc(var(--farm-available-h) * 0.88), 620px);
+  object-fit: contain;
+  object-position: bottom right;
+  filter: drop-shadow(0 12px 28px rgba(50, 70, 30, 0.32));
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+@media (min-width: 1200px) {
+  .farm-cottage-img {
+    max-height: min(calc(var(--farm-available-h) * 0.92), 680px);
+  }
+}
+
+@media (max-width: 992px) {
+  .farm-cottage-img {
+    max-height: min(calc(var(--farm-available-h) * 0.82), 480px);
+  }
+}
+
+@media (max-width: 768px) {
+  .farm-cottage-img {
+    min-width: 140px;
+    max-height: min(calc(var(--farm-available-h) * 0.75), 360px);
+  }
+}
+
+@media (max-width: 520px) {
+  .farm-cottage-img {
+    max-height: min(calc(var(--farm-available-h) * 0.7), 260px);
+  }
+}

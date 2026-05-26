@@ -38,6 +38,7 @@ export default [
     routes: [
       {path: '/point', redirect: '/point/stock', requireAuth: true},
       {icon: 'LineChartOutlined', path: '/point/stock', component: './Game/StockMarket', name: '摸鱼股市', requireAuth: true},
+      // {icon: 'EnvironmentOutlined', path: '/point/farm', component: './Game/Farm', name: '摸鱼农场', requireAuth: true},
       {icon: 'TrophyOutlined', path: '/point/tournament', component: './Game/Tournament', name: '武道大会', requireAuth: true},
       {icon: 'RocketOutlined', path: '/point/tower', component: './Game/TowerClimb', name: '无尽爬塔', requireAuth: true}
     ]

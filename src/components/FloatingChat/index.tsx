@@ -2,6 +2,7 @@ import MessageContent from '@/components/MessageContent';
 import { listMessageVoByPageUsingPost } from '@/services/backend/chatController';
 import { wsService } from '@/services/websocket';
 import { history, useLocation, useModel } from '@umijs/max';
+import { Image } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -498,8 +499,14 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
             }}
           >
             {loading && <div className={styles.loadingHint}>加载中...</div>}
-            {!loading &&
-              messages.map((msg) => {
+            <Image.PreviewGroup
+              preview={{
+                getContainer: () => document.body,
+                zIndex: 1000002,
+              }}
+            >
+              {!loading &&
+                messages.map((msg) => {
                 const isMe = msg.sender.id === String(currentUser?.id);
                 return (
                   <div
@@ -523,6 +530,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
                   </div>
                 );
               })}
+            </Image.PreviewGroup>
           </div>
 
           {unreadCount > 0 && (
