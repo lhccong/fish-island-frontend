@@ -797,10 +797,7 @@ const Farm: React.FC = () => {
           message.warning('地块信息异常，请刷新好友农场后重试');
           return;
         }
-        if (land!.canSteal !== true) {
-          message.info('这块地的菜暂时不能偷');
-          return;
-        }
+
         handleSteal(land!);
         return;
       }
