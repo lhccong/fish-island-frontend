@@ -277,6 +277,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListIndexPositionVO_ = {
+    code?: number;
+    data?: IndexPositionVO[];
+    message?: string;
+  };
+
   type BaseResponseListLandDTO_ = {
     code?: number;
     data?: LandDTO[];
@@ -1848,6 +1854,11 @@ declare namespace API {
     userId: number;
   };
 
+  type getPositionUsingGETParams = {
+    /** 指数代码，默认 sh000001 */
+    indexCode?: string;
+  };
+
   type getPostRewardTokenUsingGETParams = {
     /** postId */
     postId?: number;
@@ -2004,7 +2015,9 @@ declare namespace API {
   };
 
   type IndexBuyRequest = {
-    amount?: number;
+    /** 买入金额（积分） */
+    amount: number;
+    /** 指数代码 */
     indexCode?: string;
   };
 
@@ -2038,6 +2051,7 @@ declare namespace API {
   };
 
   type IndexSellRequest = {
+    /** 指数代码 */
     indexCode?: string;
     shares?: number;
   };
