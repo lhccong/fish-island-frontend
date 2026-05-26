@@ -75,6 +75,13 @@
       gap: 12px;
       z-index: 10;
 
+      .user-info-text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+
       .user-name {
         font-size: 20px;
         font-weight: 600;
@@ -82,7 +89,57 @@
         text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
         letter-spacing: 0.5px;
         line-height: 1.2;
-        padding-bottom: 4px;
+      }
+
+      .user-follow-stats {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.92);
+        text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+
+        .follow-stat {
+          strong {
+            font-size: 15px;
+            font-weight: 700;
+            margin-right: 3px;
+          }
+        }
+
+        .follow-stat-divider {
+          width: 1px;
+          height: 12px;
+          background: rgba(255, 255, 255, 0.45);
+        }
+      }
+
+      .cover-follow-btn-default {
+        border-radius: 16px !important;
+        font-weight: 500 !important;
+        background: linear-gradient(135deg, #ff8c00, #ff6b00) !important;
+        border: none !important;
+        color: #fff !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+        &:hover {
+          opacity: 0.9;
+          color: #fff !important;
+        }
+      }
+
+      .cover-follow-btn-active {
+        border-radius: 16px !important;
+        font-weight: 500 !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        border: 1px solid #e0e0e0 !important;
+        color: #666 !important;
+
+        &:hover {
+          background: #fff0f0 !important;
+          border-color: #ffb3b3 !important;
+          color: #ff4d4f !important;
+        }
       }
 
       .user-avatar {

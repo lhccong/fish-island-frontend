@@ -275,17 +275,39 @@
 }
 
 .farm-friend-status {
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
   line-height: 1;
+  white-space: nowrap;
+
+  .anticon {
+    font-size: 12px;
+  }
 
   &.can-steal {
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+    color: #389e0d;
+    font-weight: 600;
+
+    .anticon {
+      color: #52c41a;
+    }
   }
 
   &.cooldown {
-    font-size: 11px;
     color: #8c8c8c;
+    font-weight: 500;
   }
+
+  &.unavailable {
+    color: #bfbfbf;
+    font-weight: 500;
+  }
+}
+
+.farm-friend-status-text {
+  font-size: 11px;
 }
 
 .farm-friend-visit-btn {

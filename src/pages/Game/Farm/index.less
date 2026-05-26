@@ -112,11 +112,22 @@
   }
 }
 
+@keyframes farm-cloud-drift {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(24px);
+  }
+}
+
 .farm-page {
   --layout-header-h: 52px;
   --farm-header-h: 56px;
-  /* 扣除顶栏、农场头与田地区上下留白，避免等轴网格撑出视口 */
+  --farm-side-rail-w: clamp(72px, 5.5vw, 88px);
+  /* 扣除顶栏、农场头、右侧栏与田地区上下留白，避免等轴网格撑出视口 */
   --farm-scene-pad: clamp(88px, 14vh, 200px);
+  position: relative;
   --farm-available-h: calc(
     100vh - var(--layout-header-h) - var(--farm-header-h) - var(--farm-scene-pad)
   );
@@ -139,6 +150,74 @@
   }
 }
 
+/* 天空与远山装饰 */
+.farm-sky-deco {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.farm-cloud {
+  position: absolute;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    24px 8px 0 -4px rgba(255, 255, 255, 0.9),
+    48px 0 0 -8px rgba(255, 255, 255, 0.85);
+  animation: farm-cloud-drift 18s ease-in-out infinite alternate;
+
+  &--1 {
+    width: 72px;
+    height: 28px;
+    top: 8%;
+    left: 12%;
+    opacity: 0.9;
+  }
+
+  &--2 {
+    width: 96px;
+    height: 32px;
+    top: 14%;
+    right: 18%;
+    animation-duration: 22s;
+    animation-delay: -4s;
+  }
+
+  &--3 {
+    width: 56px;
+    height: 22px;
+    top: 6%;
+    left: 48%;
+    opacity: 0.75;
+    animation-duration: 16s;
+    animation-delay: -8s;
+  }
+}
+
+.farm-hill {
+  position: absolute;
+  bottom: 0;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+
+  &--back {
+    left: -8%;
+    width: 55%;
+    height: 28%;
+    background: linear-gradient(180deg, #a8d86a 0%, #8bc34a 100%);
+    opacity: 0.55;
+  }
+
+  &--front {
+    right: -5%;
+    width: 48%;
+    height: 22%;
+    background: linear-gradient(180deg, #9ccc65 0%, #7cb342 100%);
+    opacity: 0.7;
+  }
+}
+
 .farm-header-bar {
   flex-shrink: 0;
   display: flex;
@@ -148,9 +227,13 @@
   padding: 6px 16px;
   min-height: var(--farm-header-h);
   box-sizing: border-box;
-  background: rgba(255, 252, 240, 0.96);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 252, 240, 0.94);
+  border-bottom: 2px solid rgba(183, 235, 143, 0.5);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   z-index: 20;
+  position: relative;
 }
 
 .farm-header-left {
@@ -186,19 +269,80 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fff 0%, #f6ffed 100%);
+  border: 1.5px solid #b7eb8f;
   color: #389e0d;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow:
+    0 2px 6px rgba(56, 120, 20, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
   &.points {
-    background: #fff7e6;
+    background: linear-gradient(180deg, #fff 0%, #fff7e6 100%);
     border-color: #ffd591;
     color: #d46b08;
   }
+
+  &--level {
+    align-items: flex-start;
+    padding: 6px 14px 6px 12px;
+    min-width: 128px;
+  }
+}
+
+.farm-stat-level-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.farm-stat-level-text {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.farm-exp-bar {
+  width: 100%;
+  min-width: 88px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e8e0d0 0%, #d4c4a8 100%);
+  border: 1px solid rgba(56, 120, 20, 0.2);
+  box-shadow: inset 0 1px 3px rgba(80, 50, 20, 0.12);
+  overflow: hidden;
+}
+
+.farm-exp-bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #69c0ff 0%,
+    #95de64 42%,
+    #ffd666 78%,
+    #ffc53d 100%
+  );
+  box-shadow:
+    0 0 6px rgba(255, 193, 7, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: width 0.35s ease;
+}
+
+.farm-exp-bar-text {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #237804;
+  opacity: 0.9;
+  line-height: 1.2;
 }
 
 .farm-header-actions {
@@ -222,6 +366,8 @@
   min-height: 0 !important;
   height: 0;
   overflow: hidden;
+  position: relative;
+  z-index: 2;
 }
 
 .farm-spin-wrap {
@@ -250,6 +396,127 @@
   width: 100%;
   min-height: 0;
   overflow: hidden;
+  z-index: 1;
+}
+
+/* 右侧竖向功能栏（参考设计图） */
+.farm-side-rail {
+  position: absolute;
+  right: clamp(4px, 0.6vw, 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-height: min(90%, calc(var(--farm-available-h) + 48px));
+  pointer-events: auto;
+}
+
+.farm-side-rail-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 8px;
+  width: fit-content;
+  max-height: min(72vh, 520px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 20px;
+  background: rgba(255, 249, 227, 0.96);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 8px 24px rgba(50, 70, 30, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.farm-side-btn {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: var(--farm-side-rail-w);
+  padding: 6px 4px 4px;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff 0%, #fff9e3 100%);
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow:
+    0 3px 8px rgba(60, 40, 20, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: transform 0.15s ease, filter 0.15s ease;
+
+  .ant-badge {
+    display: flex;
+    justify-content: center;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateX(-2px);
+    filter: brightness(1.04);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateX(1px);
+  }
+
+  &.is-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.25);
+  }
+
+  &--green .farm-side-btn-icon {
+    color: #52a934;
+    background: linear-gradient(180deg, #e8f8e0, #d9f7be);
+  }
+
+  &--brown .farm-side-btn-icon {
+    color: #8b5e3c;
+    background: linear-gradient(180deg, #f5e6d0, #e8d4b8);
+  }
+
+  &--blue .farm-side-btn-icon {
+    color: #1677ff;
+    background: linear-gradient(180deg, #e6f4ff, #bae0ff);
+  }
+
+  &--pink .farm-side-btn-icon {
+    color: #eb2f96;
+    background: linear-gradient(180deg, #fff0f6, #ffd6e7);
+  }
+
+  &--cream .farm-side-btn-icon {
+    color: #ad6800;
+    background: linear-gradient(180deg, #fffbe6, #fff1b8);
+  }
+}
+
+.farm-side-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 20px;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.farm-side-btn-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #5c4a32;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 /* 田地居中；左栏固定左上角，右栏固定右下角 */
@@ -292,12 +559,13 @@
   }
 
   &--right {
-    right: clamp(6px, 1.2vw, 18px);
+    /* 向左靠拢田地，落在田地与右侧功能栏之间 */
+    right: calc(var(--farm-side-rail-w) + clamp(56px, 7vw, 108px));
     bottom: clamp(6px, 1vh, 14px);
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: flex-end;
-    width: clamp(220px, 28vw, 440px);
-    max-width: 46vw;
+    width: clamp(160px, 20vw, 340px);
+    max-width: 36vw;
     z-index: 5;
   }
 }
@@ -510,7 +778,8 @@
   min-width: 0;
   min-height: 0;
   max-height: 100%;
-  padding: clamp(12px, 2.5vh, 32px) clamp(200px, 22vw, 320px)
+  padding: clamp(12px, 2.5vh, 32px)
+    calc(var(--farm-side-rail-w) + clamp(100px, 12vw, 180px))
     clamp(24px, 4vh, 56px);
   padding-left: clamp(64px, 7vw, 96px);
   box-sizing: border-box;
@@ -540,6 +809,51 @@
   max-width: 100%;
   max-height: 100%;
   overflow: hidden;
+}
+
+.farm-field-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.farm-field-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 252, 240, 0.95);
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(50, 80, 20, 0.1);
+  color: #5c4a32;
+
+  .anticon {
+    font-size: 13px;
+    color: #52a934;
+  }
+
+  &--timer .anticon {
+    color: #d48806;
+  }
+}
+
+.farm-field-tab-label {
+  opacity: 0.85;
+}
+
+.farm-field-tab-value {
+  color: #389e0d;
+  font-variant-numeric: tabular-nums;
+
+  .farm-field-tab--timer & {
+    color: #d46b08;
+  }
 }
 
 /* 外圈绿色草地包边（宽度贴合网格） */
@@ -602,7 +916,7 @@
 
   display: grid;
   grid-template-columns: repeat(6, var(--tile-size));
-  grid-template-rows: repeat(4, calc(var(--tile-size) * 1.05));
+  grid-template-rows: repeat(4, calc(var(--tile-size) * 1.22));
   gap: var(--plot-gap);
   width: fit-content;
   margin: 0 auto;
@@ -611,7 +925,7 @@
 
 .farm-plot-slot {
   width: var(--tile-size);
-  height: calc(var(--tile-size) * 1.05);
+  height: calc(var(--tile-size) * 1.22);
   position: relative;
 
   .ant-tooltip-disabled-compatible-wrapper {
@@ -631,12 +945,16 @@
 
 .farm-plot {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
   height: 100%;
   border: none;
   background: transparent;
   cursor: pointer;
   padding: 0;
+  gap: 3px;
   font-family: inherit;
   transition: transform 0.18s ease;
 
@@ -645,7 +963,14 @@
   }
 }
 
-/* ===== 单块土地：圆角方台面 + 土垄 ===== */
+.plot-land-body {
+  position: relative;
+  width: 100%;
+  height: var(--tile-size);
+  flex-shrink: 0;
+}
+
+/* ===== 单块土地：圆角方台面 ===== */
 .plot-soil {
   position: absolute;
   inset: 0;
@@ -656,8 +981,8 @@
   position: absolute;
   left: 4%;
   right: 4%;
-  top: 6%;
-  bottom: 22%;
+  top: 4%;
+  bottom: 4%;
   border-radius: 14%;
   background: linear-gradient(
     160deg,
@@ -673,31 +998,8 @@
   transition: box-shadow 0.2s, filter 0.2s;
 }
 
-.plot-mound {
-  position: absolute;
-  left: 18%;
-  right: 18%;
-  bottom: 6%;
-  height: 22%;
-  border-radius: 40% 40% 35% 35%;
-  background: radial-gradient(
-    ellipse 90% 80% at 50% 25%,
-    @land-light 0%,
-    @land-color 40%,
-    @land-dark 75%,
-    @land-shadow 100%
-  );
-  box-shadow:
-    inset 0 4px 8px rgba(255, 255, 255, 0.28),
-    inset 0 -6px 10px rgba(60, 35, 15, 0.25),
-    0 2px 5px rgba(60, 40, 15, 0.18);
-  z-index: 1;
-  transition: filter 0.2s;
-}
-
 /* 未解锁：同色土地 + 变暗 */
-.farm-plot.is-locked .plot-tile-surface,
-.farm-plot.is-locked .plot-mound {
+.farm-plot.is-locked .plot-tile-surface {
   filter: brightness(0.82) saturate(0.85);
 }
 
@@ -708,17 +1010,16 @@
     0 8px 14px rgba(70, 45, 25, 0.15);
 }
 
-.farm-plot.is-next-unlock .plot-tile-surface,
-.farm-plot.is-next-unlock .plot-mound {
+.farm-plot.is-next-unlock .plot-tile-surface {
   filter: brightness(1.05);
 }
 
-/* 生长中：土垄略偏绿（作物感） */
-.farm-plot.is-growing .plot-mound {
-  background: radial-gradient(
-    ellipse 90% 80% at 50% 25%,
-    #c5d4a0 0%,
-    @land-color 35%,
+/* 生长中：土地略偏绿 */
+.farm-plot.is-growing .plot-tile-surface {
+  background: linear-gradient(
+    160deg,
+    #d4e4b8 0%,
+    @land-color 45%,
     @land-dark 100%
   );
 }
@@ -732,11 +1033,20 @@
     0 10px 18px rgba(70, 45, 25, 0.25);
 }
 
-.farm-plot.is-mature .plot-mound {
-  filter: brightness(1.08) saturate(1.1);
+.farm-plot.is-mature.can-steal .plot-tile-surface {
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.35),
+    0 7px 0 @land-shadow,
+    0 0 22px rgba(255, 87, 34, 0.55),
+    0 10px 18px rgba(70, 45, 25, 0.25);
+  cursor: pointer;
 }
 
-/* ===== 交互层：贴在土垄上 ===== */
+.farm-leave-friend-btn {
+  border-radius: 20px;
+}
+
+/* ===== 交互层 ===== */
 .plot-overlay {
   position: absolute;
   left: 50%;
@@ -749,6 +1059,13 @@
   justify-content: center;
   pointer-events: none;
   min-width: 48%;
+}
+
+.plot-overlay-growing,
+.plot-overlay-mature {
+  top: 56%;
+  justify-content: center;
+  min-width: 80%;
 }
 
 .plot-overlay-locked {
@@ -793,11 +1110,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: clamp(32px, 5vw, 44px);
-  height: clamp(32px, 5vw, 44px);
-  font-size: clamp(26px, 4.5vw, 40px);
+  width: calc(var(--tile-size) * 0.58);
+  height: calc(var(--tile-size) * 0.58);
+  font-size: calc(var(--tile-size) * 0.48);
   line-height: 1;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.28));
 
   img {
     width: 100%;
@@ -806,32 +1123,66 @@
   }
 
   &.growing {
-    width: clamp(28px, 4vw, 38px);
-    height: clamp(28px, 4vw, 38px);
-    font-size: clamp(22px, 3.8vw, 34px);
+    --crop-scale: 1;
+    width: calc(var(--tile-size) * 0.78 * var(--crop-scale));
+    height: calc(var(--tile-size) * 0.78 * var(--crop-scale));
+    font-size: calc(var(--tile-size) * 0.66 * var(--crop-scale));
+    filter: drop-shadow(0 3px 8px rgba(40, 80, 20, 0.35));
+    transition:
+      width 0.6s ease,
+      height 0.6s ease,
+      font-size 0.6s ease,
+      filter 0.6s ease;
   }
 
   &.mature {
+    width: calc(var(--tile-size) * 0.8);
+    height: calc(var(--tile-size) * 0.8);
+    font-size: calc(var(--tile-size) * 0.68);
     animation: farm-float 2s ease-in-out infinite;
   }
 }
 
 .plot-timer {
-  margin-top: 4px;
-  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: clamp(9px, calc(var(--tile-size) * 0.14), 12px);
   font-weight: 700;
-  color: #5d4037;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 2px 8px;
-  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  color: #fff8e1;
   white-space: nowrap;
+  background: linear-gradient(
+    180deg,
+    rgba(76, 118, 48, 0.95) 0%,
+    rgba(56, 92, 36, 0.98) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 2px 6px rgba(30, 60, 15, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+  .plot-timer-icon {
+    font-size: 1em;
+    opacity: 0.92;
+    flex-shrink: 0;
+  }
+
+  &--below {
+    flex-shrink: 0;
+    max-width: 100%;
+    padding: 2px 7px;
+    transform: scale(0.96);
+    transform-origin: center top;
+  }
 }
 
 .plot-harvest-hint {
-  position: absolute;
-  left: 50%;
-  bottom: -4px;
-  transform: translateX(-50%);
   font-size: 11px;
   font-weight: 700;
   color: #fff;
@@ -841,6 +1192,16 @@
   white-space: nowrap;
   animation: farm-pulse-hint 1.2s ease-in-out infinite;
   box-shadow: 0 2px 6px rgba(200, 100, 0, 0.4);
+
+  &--below {
+    flex-shrink: 0;
+    transform: scale(0.96);
+    transform-origin: center top;
+  }
+}
+
+.plot-steal-hint {
+  background: linear-gradient(90deg, #ff5722, #ff9800);
 }
 
 .plot-sparkle {
@@ -964,15 +1325,114 @@
 
   .crop-card-info {
     flex: 1;
+    min-width: 0;
   }
 
   .crop-card-name {
+    display: block;
     font-weight: 600;
+    font-size: 15px;
+    line-height: 1.35;
+    color: #262626;
   }
 
-  .crop-card-meta {
+  .crop-card-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .crop-card-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 12px;
     color: #8c8c8c;
+    line-height: 1.4;
+
+    .anticon {
+      font-size: 12px;
+      color: #bfbfbf;
+    }
+  }
+
+  .crop-card-points {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .crop-point-tag {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    line-height: 1.35;
+    white-space: nowrap;
+
+    .crop-point-label {
+      font-weight: 500;
+    }
+
+    .crop-point-value {
+      font-size: 13px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .crop-point-unit {
+      font-size: 10px;
+      font-weight: 500;
+      opacity: 0.85;
+    }
+  }
+
+  .crop-point-tag--cost {
+    background: linear-gradient(135deg, #fff7e6 0%, #fff1d6 100%);
+    border: 1px solid #ffd591;
+    color: #ad4e00;
+
+    .crop-point-label {
+      color: #d48806;
+    }
+
+    .crop-point-value {
+      color: #d46b08;
+    }
+  }
+
+  .crop-point-tag--reward {
+    background: linear-gradient(135deg, #f6ffed 0%, #e8f8e0 100%);
+    border: 1px solid #b7eb8f;
+    color: #237804;
+
+    .crop-point-label {
+      color: #52c41a;
+    }
+
+    .crop-point-value {
+      color: #389e0d;
+    }
+  }
+
+  .crop-point-tag--exp {
+    background: linear-gradient(135deg, #e6f4ff 0%, #d6ebff 100%);
+    border: 1px solid #91caff;
+    color: #0958d9;
+
+    .crop-point-label {
+      color: #1677ff;
+    }
+
+    .crop-point-value {
+      color: #0958d9;
+    }
   }
 
   .crop-selected-mark {
@@ -984,7 +1444,42 @@
 @media (max-width: 768px) {
   .farm-page {
     --farm-header-h: 80px;
+    --farm-side-rail-w: 64px;
     --farm-scene-pad: clamp(56px, 10vh, 120px);
+  }
+
+  .farm-side-rail {
+    right: 2px;
+    max-height: 88%;
+  }
+
+  .farm-side-rail-panel {
+    padding: 8px 6px;
+    gap: 5px;
+    max-height: min(68vh, 440px);
+  }
+
+  .farm-side-btn-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 17px;
+  }
+
+  .farm-side-btn-label {
+    font-size: 9px;
+  }
+
+  .farm-stat-chip--level {
+    min-width: 112px;
+  }
+
+  .farm-exp-bar {
+    min-width: 72px;
+  }
+
+  .farm-field-tab {
+    font-size: 11px;
+    padding: 4px 10px;
   }
 
   .farm-world-side--left {
@@ -1000,9 +1495,15 @@
   }
 
   .farm-land-field {
-    padding: clamp(8px, 2vh, 24px) clamp(100px, 26vw, 160px)
+    padding: clamp(8px, 2vh, 24px)
+      calc(var(--farm-side-rail-w) + clamp(88px, 24vw, 140px))
       clamp(16px, 3vh, 40px);
     padding-left: clamp(56px, 12vw, 80px);
+  }
+
+  .farm-world-side--right {
+    right: calc(var(--farm-side-rail-w) + clamp(40px, 8vw, 64px));
+    width: clamp(130px, 32vw, 220px);
   }
 
   .farm-field-stack {
@@ -1053,8 +1554,12 @@
 
   .farm-land-field {
     padding-top: clamp(16px, 3vh, 40px);
-    padding-right: clamp(260px, 28vw, 420px);
+    padding-right: calc(var(--farm-side-rail-w) + clamp(140px, 14vw, 240px));
     padding-bottom: clamp(32px, 5vh, 72px);
+  }
+
+  .farm-world-side--right {
+    right: calc(var(--farm-side-rail-w) + clamp(64px, 6vw, 120px));
   }
 
   .farm-field-stack {

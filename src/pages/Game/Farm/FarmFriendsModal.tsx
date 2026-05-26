@@ -1,10 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Avatar, Empty, Spin, message } from 'antd';
-import { CloseOutlined, MailOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  CloseOutlined,
+  MailOutlined,
+  PlusOutlined,
+  SearchOutlined,
+  CaretDownOutlined,
+  GiftOutlined,
+  ClockCircleOutlined,
+} from '@ant-design/icons';
 import moment from 'moment';
+import { listFriendsUsingGet } from '@/services/backend/farmFriendController';
+import { toUserIdString } from '@/utils/farmNavigate';
 import './FarmFriendsModal.less';
 
 export type FriendTab = 'play' | 'wechat' | 'invite' | 'visitor';
+
+type SortOrder = 'levelDesc' | 'levelAsc';
 
 const TABS: { key: FriendTab; label: string }[] = [
   { key: 'play', label: '同玩好友' },
@@ -13,11 +25,24 @@ const TABS: { key: FriendTab; label: string }[] = [
   { key: 'visitor', label: '访客' },
 ];
 
+const PLACEHOLDER_TABS: FriendTab[] = ['wechat', 'invite'];
+
 const DEFAULT_AVATAR =
   'https://api.dicebear.com/7.x/avataaars/svg?seed=farm-friend';
 
 const STEALER_AVATAR =
   'https://api.dicebear.com/7.x/avataaars/svg?seed=farm-stealer';
+
+const formatStealCooldown = (cooldown?: string): string | null => {
+  if (!cooldown) return null;
+  const remain = new Date(cooldown).getTime() - Date.now();
+  if (remain <= 0) return null;
+  const min = Math.ceil(remain / 60000);
+  return min >= 60 ? `${Math.ceil(min / 60)}小时` : `${min}分钟`;
+};
+
+export const getFriendUserId = (friend: API.FarmFriendListVO): string | undefined =>
+  toUserIdString(friend.friendId ?? friend.systemUserId);
 
 export interface FarmFriendsModalProps {
   open: boolean;
@@ -29,6 +54,8 @@ export interface FarmFriendsModalProps {
   stolenRecords?: API.FarmStealRecordVO[];
   stolenLoading?: boolean;
   onRefreshStolen?: () => void;
+  onVisitFriend?: (friend: API.FarmFriendListVO) => void;
+  visitLoadingId?: string | null;
 }
 
 const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
@@ -41,25 +68,84 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
   stolenRecords = [],
   stolenLoading = false,
   onRefreshStolen,
+  onVisitFriend,
+  visitLoadingId = null,
 }) => {
   const [activeTab, setActiveTab] = useState<FriendTab>(initialTab);
+  const [friends, setFriends] = useState<API.FarmFriendListVO[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('levelDesc');
+  const [sortOpen, setSortOpen] = useState(false);
 
   const stolenCount = stolenRecords.length;
+
+  const loadFriends = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await listFriendsUsingGet();
+      if (res.code === 0 && res.data) {
+        setFriends(res.data);
+      } else {
+        message.error(res.message || '加载好友列表失败');
+      }
+    } catch (e) {
+      message.error('加载好友列表失败');
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (open) {
       setActiveTab(initialTab);
       onRefreshStolen?.();
+      if (initialTab === 'play') {
+        loadFriends();
+      }
     } else {
       setActiveTab('play');
+      setSearchText('');
+      setSortOpen(false);
     }
-  }, [open, initialTab, onRefreshStolen]);
+  }, [open, initialTab, onRefreshStolen, loadFriends]);
 
   useEffect(() => {
     if (open && activeTab === 'visitor') {
       onRefreshStolen?.();
     }
-  }, [open, activeTab, onRefreshStolen]);
+    if (open && activeTab === 'play') {
+      loadFriends();
+    }
+  }, [open, activeTab, onRefreshStolen, loadFriends]);
+
+  const filteredFriends = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+    let list = [...friends];
+    if (keyword) {
+      list = list.filter((f) =>
+        (f.nickname ?? '').toLowerCase().includes(keyword),
+      );
+    }
+    list.sort((a, b) => {
+      const la = a.level ?? 0;
+      const lb = b.level ?? 0;
+      return sortOrder === 'levelDesc' ? lb - la : la - lb;
+    });
+    return list;
+  }, [friends, searchText, sortOrder]);
+
+  const sortLabel = sortOrder === 'levelDesc' ? '等级 ↓' : '等级 ↑';
+
+  const handleVisit = (friend: API.FarmFriendListVO) => {
+    const friendUserId = getFriendUserId(friend);
+    if (friendUserId == null) {
+      message.warning('好友信息异常');
+      return;
+    }
+    onVisitFriend?.(friend);
+  };
 
   if (!open) return null;
 
@@ -120,16 +206,144 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
     </div>
   );
 
-  const renderMainContent = () => {
-    if (activeTab === 'visitor') {
-      return renderVisitorContent();
-    }
-
-    return (
-      <div className="farm-friends-placeholder">
-        <Empty description="功能开发中，敬请期待" />
+  const renderPlayContent = () => (
+    <>
+      <div className="farm-friends-toolbar">
+        <div className="farm-friends-sort-wrap">
+          <button
+            type="button"
+            className="farm-friends-sort"
+            onClick={() => setSortOpen((v) => !v)}
+          >
+            {sortLabel}
+            <CaretDownOutlined />
+          </button>
+          {sortOpen && (
+            <div className="farm-friends-sort-menu">
+              <button
+                type="button"
+                onClick={() => {
+                  setSortOrder('levelDesc');
+                  setSortOpen(false);
+                }}
+              >
+                等级从高到低
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSortOrder('levelAsc');
+                  setSortOpen(false);
+                }}
+              >
+                等级从低到高
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="farm-friends-search">
+          <SearchOutlined />
+          <input
+            type="search"
+            placeholder="昵称"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+        </div>
       </div>
-    );
+
+      <div className="farm-friends-list-wrap">
+        <Spin spinning={loading}>
+          {filteredFriends.length === 0 && !loading ? (
+            <Empty
+              className="farm-friends-empty"
+              description={
+                searchText ? '没有匹配的好友' : '暂无互关好友，去鱼窝互关吧～'
+              }
+            />
+          ) : (
+            <ul className="farm-friends-list">
+              {filteredFriends.map((friend) => {
+                const friendUserId = getFriendUserId(friend) ?? '';
+                const cooldownText = formatStealCooldown(friend.stealCooldown);
+                const visiting = visitLoadingId === friendUserId;
+                return (
+                  <li key={friendUserId} className="farm-friend-item">
+                    <span className="farm-friend-rank">
+                      {friend.level ?? '-'}
+                    </span>
+                    <Avatar
+                      className="farm-friend-avatar"
+                      src={friend.avatar || DEFAULT_AVATAR}
+                      size={44}
+                    />
+                    <div className="farm-friend-info">
+                      <span className="farm-friend-name">
+                        {friend.nickname || '农场好友'}
+                      </span>
+                      <div className="farm-friend-meta">
+                        <span className="farm-friend-level-tag">
+                          Lv.{friend.level ?? 1}
+                        </span>
+                        {friend.canSteal === true && !cooldownText && (
+                          <span
+                            className="farm-friend-status can-steal"
+                            title="可偷菜"
+                          >
+                            <GiftOutlined aria-hidden />
+                            <span className="farm-friend-status-text">可偷</span>
+                          </span>
+                        )}
+                        {cooldownText && (
+                          <span
+                            className="farm-friend-status cooldown"
+                            title={`偷菜冷却 ${cooldownText}`}
+                          >
+                            <ClockCircleOutlined aria-hidden />
+                            <span className="farm-friend-status-text">
+                              {cooldownText}
+                            </span>
+                          </span>
+                        )}
+                        {friend.canSteal !== true && !cooldownText && (
+                          <span
+                            className="farm-friend-status unavailable"
+                            title="暂不可偷"
+                          >
+                            不可偷
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="farm-friend-visit-btn"
+                      disabled={visiting || !onVisitFriend}
+                      onClick={() => handleVisit(friend)}
+                    >
+                      {visiting ? '...' : '拜访'}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Spin>
+      </div>
+    </>
+  );
+
+  const renderMainContent = () => {
+    if (activeTab === 'visitor') return renderVisitorContent();
+    if (activeTab === 'play') return renderPlayContent();
+    if (PLACEHOLDER_TABS.includes(activeTab)) {
+      return (
+        <div className="farm-friends-placeholder">
+          <Empty description="功能开发中，敬请期待" />
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
