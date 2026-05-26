@@ -287,30 +287,53 @@
   }
 
   &--level {
-    align-items: flex-start;
-    padding: 6px 14px 6px 12px;
-    min-width: 128px;
+    align-items: center;
+    padding: 5px 10px;
+    min-width: 108px;
+    max-width: 148px;
   }
 }
 
 .farm-stat-level-body {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  width: 100%;
   min-width: 0;
-  flex: 1;
+}
+
+.farm-stat-level-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  line-height: 1;
+}
+
+.farm-stat-level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+
+  .anticon {
+    font-size: 12px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
 }
 
 .farm-stat-level-text {
   font-size: 13px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .farm-exp-bar {
   width: 100%;
-  min-width: 88px;
-  height: 8px;
+  min-width: 0;
+  height: 7px;
   border-radius: 999px;
   background: linear-gradient(180deg, #e8e0d0 0%, #d4c4a8 100%);
   border: 1px solid rgba(56, 120, 20, 0.2);
@@ -337,12 +360,12 @@
 }
 
 .farm-exp-bar-text {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #237804;
-  opacity: 0.9;
-  line-height: 1.2;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .farm-header-actions {
@@ -1470,11 +1493,21 @@
   }
 
   .farm-stat-chip--level {
-    min-width: 112px;
+    min-width: 96px;
+    max-width: 132px;
+    padding: 4px 8px;
+  }
+
+  .farm-stat-level-text {
+    font-size: 12px;
+  }
+
+  .farm-exp-bar-text {
+    font-size: 10px;
   }
 
   .farm-exp-bar {
-    min-width: 72px;
+    height: 6px;
   }
 
   .farm-field-tab {

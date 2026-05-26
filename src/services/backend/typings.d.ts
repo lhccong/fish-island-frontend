@@ -109,12 +109,6 @@ declare namespace API {
     message?: string;
   };
 
-  type BaseResponseFarmStealRecord_ = {
-    code?: number;
-    data?: FarmStealRecord;
-    message?: string;
-  };
-
   type BaseResponseFarmUserVO_ = {
     code?: number;
     data?: FarmUserVO;
@@ -250,6 +244,12 @@ declare namespace API {
   type BaseResponseListFarmFriendListVO_ = {
     code?: number;
     data?: FarmFriendListVO[];
+    message?: string;
+  };
+
+  type BaseResponseListFarmStealRecord_ = {
+    code?: number;
+    data?: FarmStealRecord[];
     message?: string;
   };
 
@@ -1461,18 +1461,16 @@ declare namespace API {
   type FarmFriendListVO = {
     /** 好友头像 */
     avatar?: string;
-    /** 是否可以偷菜 */
+    /** 是否可以偷菜（存在至少一块您尚未偷过的可偷土地） */
     canSteal?: boolean;
-    /** 好友系统用户ID（雪花 ID 建议后端返回字符串） */
-    friendId?: string | number;
+    /** 好友系统用户ID */
+    friendId?: number;
     /** 好友等级 */
     level?: number;
     /** 好友昵称 */
     nickname?: string;
-    /** 偷菜冷却结束时间（对该好友最近一次偷菜后10分钟内） */
-    stealCooldown?: string;
-    /** 好友系统用户ID（雪花 ID 建议后端返回字符串） */
-    systemUserId?: string | number;
+    /** 好友系统用户ID */
+    systemUserId?: number;
   };
 
   type FarmStealRecord = {
@@ -1482,6 +1480,8 @@ declare namespace API {
     cropId?: number;
     /** 偷菜记录ID */
     id?: number;
+    /** 地块ID */
+    landId?: number;
     /** 农场主人系统用户ID */
     ownerId?: number;
     /** 种植记录ID */
@@ -1768,8 +1768,8 @@ declare namespace API {
   };
 
   type getFriendLandsUsingGETParams = {
-    /** friendUserId（雪花 ID 请传字符串，避免精度丢失） */
-    friendUserId: string | number;
+    /** friendUserId */
+    friendUserId: number;
   };
 
   type getHeroByIdUsingGETParams = {
@@ -2391,7 +2391,7 @@ declare namespace API {
   };
 
   type LandDTO = {
-    /** 是否可以偷菜 */
+    /** 是否可以偷菜（false 表示已偷过、未成熟或无可偷积分） */
     canSteal?: boolean;
     /** 作物名称 */
     cropName?: string;
@@ -4016,8 +4016,10 @@ declare namespace API {
   };
 
   type StealRequest = {
-    /** 地块ID */
-    landId: number;
+    /** 地块ID（与 landIds 二选一） */
+    landId?: number;
+    /** 地块ID列表（批量偷菜，与 landId 二选一） */
+    landIds?: number[];
   };
 
   type streamChatDemoUsingGETParams = {

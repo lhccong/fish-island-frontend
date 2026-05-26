@@ -104,16 +104,10 @@ const CATEGORY_LABEL: Record<string, string> = {
   specialty: '特产',
 };
 
-/** 农场每级升级所需经验（接口未返回 maxExp 时的默认约定） */
-const FARM_EXP_PER_LEVEL = 100;
-
 const getFarmExpProgress = (farmUser: API.FarmUserVO | null) => {
   const level = farmUser?.level ?? 1;
   const exp = Math.max(0, Math.floor(farmUser?.experience ?? 0));
-  const maxExp = FARM_EXP_PER_LEVEL;
-  const percent =
-    maxExp > 0 ? Math.min(100, Math.round((exp / maxExp) * 100)) : 0;
-  return { level, exp, maxExp, percent };
+  return { level, exp };
 };
 
 const formatCountdown = (ms: number): string => {
@@ -197,6 +191,10 @@ const isFriendLandPlot = (land: API.LandDTO | null): boolean => {
 
 /** 偷菜接口所需的地块 ID */
 const resolveStealLandId = (land: API.LandDTO): number | undefined => land.id;
+
+/** 汇总批量偷菜返回的积分 */
+const sumStealCoinGained = (records?: API.FarmStealRecord[]): number =>
+  (records ?? []).reduce((sum, record) => sum + (record.coinGained ?? 0), 0);
 
 /** 好友农场：成熟、有地块 ID 且后端标记 canSteal=true 才可偷 */
 const canStealOnFriendLand = (
@@ -612,11 +610,9 @@ const Farm: React.FC = () => {
       try {
         const res = await stealUsingPost({ landId });
         if (res.code === 0) {
-          const coin = res.data?.coinGained;
+          const coin = sumStealCoinGained(res.data);
           message.success(
-            coin != null && coin > 0
-              ? `偷菜成功，获得 ${coin} 积分～`
-              : '偷菜成功～',
+            coin > 0 ? `偷菜成功，获得 ${coin} 积分～` : '偷菜成功～',
           );
           if (visitingFriendUserId) {
             await loadFriendLands(visitingFriendUserId);
@@ -647,24 +643,31 @@ const Farm: React.FC = () => {
       message.info('暂无可偷的成熟作物');
       return;
     }
+    const landIds = stealableLands
+      .map((land) => resolveStealLandId(land))
+      .filter((id): id is number => id != null);
+    if (landIds.length === 0) {
+      message.info('暂无可偷的成熟作物');
+      return;
+    }
     setActionLoading(true);
-    let successCount = 0;
     try {
-      for (const land of stealableLands) {
-        const landId = resolveStealLandId(land);
-        if (landId == null) continue;
-        const res = await stealUsingPost({ landId });
-        if (res.code === 0) successCount += 1;
-      }
-      if (successCount > 0) {
-        message.success(`成功偷取 ${successCount} 块地的作物～`);
+      const res = await stealUsingPost({ landIds });
+      if (res.code === 0 && (res.data?.length ?? 0) > 0) {
+        const count = res.data!.length;
+        const coin = sumStealCoinGained(res.data);
+        message.success(
+          coin > 0
+            ? `成功偷取 ${count} 块地，获得 ${coin} 积分～`
+            : `成功偷取 ${count} 块地的作物～`,
+        );
         if (visitingFriendUserId) {
           await loadFriendLands(visitingFriendUserId);
         }
         await loadStolenRecords();
         await refreshCurrentUser();
       } else {
-        message.error('偷菜失败');
+        message.error(res.message || '偷菜失败');
       }
     } catch (e) {
       message.error('偷菜失败');
@@ -1121,20 +1124,19 @@ const Farm: React.FC = () => {
         <div className="farm-header-stats">
           <div
             className="farm-stat-chip farm-stat-chip--level"
-            title={`农场经验 ${farmExp.exp}/${farmExp.maxExp}`}
+            title={`农场经验 ${farmExp.exp}`}
           >
-            <StarOutlined />
             <div className="farm-stat-level-body">
-              <span className="farm-stat-level-text">Lv.{farmExp.level}</span>
-              <div className="farm-exp-bar" aria-label="农场经验进度">
-                <div
-                  className="farm-exp-bar-fill"
-                  style={{ width: `${farmExp.percent}%` }}
-                />
+              <div className="farm-stat-level-head">
+                <span className="farm-stat-level-badge">
+                  <StarOutlined />
+                  <span className="farm-stat-level-text">Lv.{farmExp.level}</span>
+                </span>
+                <span className="farm-exp-bar-text">{farmExp.exp}</span>
               </div>
-              <span className="farm-exp-bar-text">
-                {farmExp.exp}/{farmExp.maxExp}
-              </span>
+              <div className="farm-exp-bar" aria-hidden>
+                <div className="farm-exp-bar-fill" style={{ width: '100%' }} />
+              </div>
             </div>
           </div>
           <div className="farm-stat-chip">
@@ -1331,7 +1333,10 @@ const Farm: React.FC = () => {
             </div>
 
               <aside className="farm-world-side farm-world-side--right">
-                <FarmCottageDeco />
+                <FarmCottageDeco
+                  ownerUserId={visitingFriendUserId ?? undefined}
+                  ownerName={visitingFriend?.nickname}
+                />
               </aside>
             </div>
           </div>

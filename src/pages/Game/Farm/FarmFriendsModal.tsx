@@ -161,8 +161,8 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
         )}
       </div>
 
-      <Spin spinning={stolenLoading}>
-        <div className="farm-visitor-stolen-list-wrap">
+      <div className="farm-visitor-stolen-list-wrap">
+        <Spin spinning={stolenLoading}>
           {stolenRecords.length === 0 && !stolenLoading ? (
             <Empty
               className="farm-visitor-stolen-empty"
@@ -201,8 +201,8 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
               ))}
             </ul>
           )}
-        </div>
-      </Spin>
+        </Spin>
+      </div>
     </div>
   );
 
@@ -384,7 +384,7 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
           ))}
         </div>
 
-        {renderMainContent()}
+        <div className="farm-friends-body">{renderMainContent()}</div>
 
         <div className="farm-friends-footer">
           <div className="farm-friends-self">
