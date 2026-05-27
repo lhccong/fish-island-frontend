@@ -21,3 +21,11 @@ export async function getMyStolenRecordsUsingGet(options?: { [key: string]: any 
     ...(options || {}),
   });
 }
+
+/** 偷菜记录一键已读 POST /api/steal/my-stolen/read-all */
+export async function markAllStolenRecordsAsReadUsingPost(options?: { [key: string]: any }) {
+  return request<API.BaseResponseBoolean_>('/api/steal/my-stolen/read-all', {
+    method: 'POST',
+    ...(options || {}),
+  });
+}

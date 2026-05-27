@@ -1486,6 +1486,8 @@ declare namespace API {
     cropId?: number;
     /** 偷菜记录ID */
     id?: number;
+    /** 是否已读(0-未读、1-已读) */
+    isRead?: number;
     /** 地块ID */
     landId?: number;
     /** 农场主人系统用户ID */
@@ -1507,6 +1509,8 @@ declare namespace API {
     cropName?: string;
     /** 偷菜记录ID */
     id?: number;
+    /** 是否已读(0-未读、1-已读) */
+    isRead?: number;
     /** 农场主人农场用户ID */
     ownerId?: number;
     /** 种植记录ID */

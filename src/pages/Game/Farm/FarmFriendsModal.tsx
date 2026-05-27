@@ -41,6 +41,10 @@ const formatStealCooldown = (cooldown?: string): string | null => {
   return min >= 60 ? `${Math.ceil(min / 60)}小时` : `${min}分钟`;
 };
 
+/** 偷菜记录是否未读（0-未读、1-已读） */
+export const isFarmStealRecordUnread = (record: API.FarmStealRecordVO): boolean =>
+  record.isRead !== 1;
+
 export const getFriendUserId = (friend: API.FarmFriendListVO): string | undefined =>
   toUserIdString(friend.friendId ?? friend.systemUserId);
 
@@ -54,6 +58,8 @@ export interface FarmFriendsModalProps {
   stolenRecords?: API.FarmStealRecordVO[];
   stolenLoading?: boolean;
   onRefreshStolen?: () => void;
+  onMarkAllStolenRead?: () => void | Promise<void>;
+  markAllStolenReadLoading?: boolean;
   onVisitFriend?: (friend: API.FarmFriendListVO) => void;
   visitLoadingId?: string | null;
 }
@@ -68,6 +74,8 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
   stolenRecords = [],
   stolenLoading = false,
   onRefreshStolen,
+  onMarkAllStolenRead,
+  markAllStolenReadLoading = false,
   onVisitFriend,
   visitLoadingId = null,
 }) => {
@@ -78,7 +86,10 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
   const [sortOrder, setSortOrder] = useState<SortOrder>('levelDesc');
   const [sortOpen, setSortOpen] = useState(false);
 
-  const stolenCount = stolenRecords.length;
+  const unreadStolenCount = useMemo(
+    () => stolenRecords.filter(isFarmStealRecordUnread).length,
+    [stolenRecords],
+  );
 
   const loadFriends = useCallback(async () => {
     setLoading(true);
@@ -156,8 +167,18 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
           <MailOutlined />
         </span>
         <span className="farm-visitor-stolen-title">谁偷了我的菜</span>
-        {stolenCount > 0 && (
-          <span className="farm-visitor-stolen-count">{stolenCount}</span>
+        {unreadStolenCount > 0 && (
+          <span className="farm-visitor-stolen-count">{unreadStolenCount}</span>
+        )}
+        {unreadStolenCount > 0 && onMarkAllStolenRead && (
+          <button
+            type="button"
+            className="farm-visitor-stolen-read-all"
+            disabled={markAllStolenReadLoading}
+            onClick={() => onMarkAllStolenRead()}
+          >
+            {markAllStolenReadLoading ? '处理中...' : '全部已读'}
+          </button>
         )}
       </div>
 
@@ -173,7 +194,9 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
               {stolenRecords.map((record) => (
                 <li
                   key={record.id ?? `${record.stealerId}-${record.stolenTime}`}
-                  className="farm-visitor-stolen-item"
+                  className={`farm-visitor-stolen-item${
+                    isFarmStealRecordUnread(record) ? ' is-unread' : ''
+                  }`}
                 >
                   <Avatar
                     className="farm-friend-avatar"
@@ -377,8 +400,8 @@ const FarmFriendsModal: React.FC<FarmFriendsModalProps> = ({
               onClick={() => setActiveTab(tab.key)}
             >
               {tab.label}
-              {tab.key === 'visitor' && stolenCount > 0 && (
-                <span className="farm-friends-tab-badge">{stolenCount}</span>
+              {tab.key === 'visitor' && unreadStolenCount > 0 && (
+                <span className="farm-friends-tab-badge">{unreadStolenCount}</span>
               )}
             </button>
           ))}

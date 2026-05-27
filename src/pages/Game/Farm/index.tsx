@@ -44,11 +44,13 @@ import { getLoginUserUsingGet } from '@/services/backend/userController';
 import { getFriendLandsUsingGet } from '@/services/backend/farmFriendController';
 import {
   getMyStolenRecordsUsingGet,
+  markAllStolenRecordsAsReadUsingPost,
   stealUsingPost,
 } from '@/services/backend/stealController';
 import FarmFriendsModal, {
   type FriendTab,
   getFriendUserId,
+  isFarmStealRecordUnread,
 } from './FarmFriendsModal';
 import FarmCottageDeco from './FarmCottageDeco';
 import { isValidUserIdString } from '@/utils/farmNavigate';
@@ -326,6 +328,7 @@ const Farm: React.FC = () => {
   const [friendsInitialTab, setFriendsInitialTab] = useState<FriendTab>('play');
   const [stolenRecords, setStolenRecords] = useState<API.FarmStealRecordVO[]>([]);
   const [stolenLoading, setStolenLoading] = useState(false);
+  const [markAllStolenReadLoading, setMarkAllStolenReadLoading] = useState(false);
   const [visitingFriend, setVisitingFriend] =
     useState<API.FarmFriendListVO | null>(null);
   const [visitLoadingId, setVisitLoadingId] = useState<string | null>(null);
@@ -363,6 +366,32 @@ const Farm: React.FC = () => {
       setStolenLoading(false);
     }
   }, []);
+
+  const unreadStolenCount = useMemo(
+    () => stolenRecords.filter(isFarmStealRecordUnread).length,
+    [stolenRecords],
+  );
+
+  const handleMarkAllStolenRead = useCallback(async () => {
+    if (unreadStolenCount === 0) {
+      message.info('没有未读记录');
+      return;
+    }
+    setMarkAllStolenReadLoading(true);
+    try {
+      const res = await markAllStolenRecordsAsReadUsingPost();
+      if (res.code === 0) {
+        message.success('已全部标记为已读');
+        await loadStolenRecords();
+      } else {
+        message.error(res.message || '标记已读失败');
+      }
+    } catch {
+      message.error('标记已读失败');
+    } finally {
+      setMarkAllStolenReadLoading(false);
+    }
+  }, [unreadStolenCount, loadStolenRecords]);
 
   const refreshLandsAndFarmUser = useCallback(async (): Promise<boolean> => {
     try {
@@ -1208,13 +1237,13 @@ const Farm: React.FC = () => {
                   <button
                     type="button"
                     className="farm-deco farm-deco-mail"
-                    aria-label={`谁偷了我的菜，${stolenRecords.length} 条记录`}
+                    aria-label={`谁偷了我的菜，${unreadStolenCount} 条未读`}
                     onClick={() => {
                       loadStolenRecords();
                       openFriendsModal('visitor');
                     }}
                   >
-                    <Badge count={stolenRecords.length} size="small" offset={[-2, 2]}>
+                    <Badge count={unreadStolenCount} size="small" offset={[-2, 2]}>
                       <span className="farm-deco-mail-icon">
                         <MailOutlined />
                       </span>
@@ -1350,6 +1379,8 @@ const Farm: React.FC = () => {
         stolenRecords={stolenRecords}
         stolenLoading={stolenLoading}
         onRefreshStolen={loadStolenRecords}
+        onMarkAllStolenRead={handleMarkAllStolenRead}
+        markAllStolenReadLoading={markAllStolenReadLoading}
         onVisitFriend={handleVisitFriend}
         visitLoadingId={visitLoadingId}
         myLevel={farmUser?.level ?? 1}
