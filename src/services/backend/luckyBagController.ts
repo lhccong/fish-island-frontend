@@ -15,7 +15,7 @@ export async function createLuckyBagUsingPost(
   body: API.CreateLuckyBagRequest,
   options?: { [key: string]: any },
 ) {
-  return request<API.BaseResponseString_>('/api/luckybag/create', {
+  return request<API.BaseResponseLuckyBag_>('/api/luckybag/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

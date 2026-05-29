@@ -36,6 +36,7 @@ const LazyMarkdown: React.FC<React.ComponentProps<typeof ReactMarkdown>> = (prop
     <ReactMarkdown {...props} />
   </Suspense>
 );
+import LuckyBagMessage, { parseLuckyBagInline } from '@/components/LuckyBagMessage';
 import RedPacketMessage, { extractRedPacketId } from '@/components/RedPacketMessage';
 import styles from './index.less';
 
@@ -880,6 +881,13 @@ const MessageContent: React.FC<MessageContentProps> = ({
     const redPacketId = extractRedPacketId(content);
     if (redPacketId) {
       return <RedPacketMessage redPacketId={redPacketId} />;
+    }
+
+    const luckyBagInline = parseLuckyBagInline(content);
+    if (luckyBagInline) {
+      return (
+        <LuckyBagMessage luckyBagId={luckyBagInline.luckyBagId} prefix={luckyBagInline.prefix || undefined} />
+      );
     }
 
     let parts: React.ReactNode[] = [];

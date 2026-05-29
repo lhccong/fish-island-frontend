@@ -55,7 +55,7 @@ export async function sellIndexUsingPost(
   });
 }
 
-/** 获取交易记录列表 POST /api/index/trade/transactions */
+/** 获取交易记录列表 无需传 indexCode，默认返回当前用户全部指数的交易记录；可按 tradeType、status 筛选 POST /api/index/trade/transactions */
 export async function getTransactionsUsingPost(
   body: API.IndexTransactionQueryRequest,
   options?: { [key: string]: any },

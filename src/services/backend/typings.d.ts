@@ -2566,9 +2566,13 @@ declare namespace API {
     creatorAvatar?: string;
     creatorId?: number;
     creatorName?: string;
+    /** 开奖时间 */
+    drawTime?: string;
     durationSeconds?: number;
     expireTime?: string;
     id?: string;
+    /** 当前用户是否已参与 */
+    joined?: boolean;
     name?: string;
     participantCount?: number;
     status?: number;
