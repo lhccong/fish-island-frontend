@@ -372,6 +372,86 @@ body.dark-mode {
     .header-title { color: rgba(255, 255, 255, 0.85) !important; }
   }
 
+  // 摸鱼股市交易弹窗（Modal 挂载在 body，需在 container 外单独覆盖）
+  .stock-trade-modal {
+    .ant-modal-header {
+      background: #1e1e1e !important;
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+    }
+    .ant-modal-title {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+    .ant-modal-content {
+      background: #1e1e1e !important;
+    }
+    .ant-modal-body {
+      background: #1e1e1e !important;
+    }
+    .ant-modal-footer {
+      background: #1e1e1e !important;
+      border-top-color: rgba(255, 255, 255, 0.06) !important;
+    }
+    .ant-modal-close {
+      color: rgba(255, 255, 255, 0.45) !important;
+      &:hover {
+        color: rgba(255, 255, 255, 0.85) !important;
+      }
+    }
+
+    .trade-index-title {
+      border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+      .ant-typography {
+        color: rgba(255, 255, 255, 0.85) !important;
+      }
+    }
+
+    .trade-index-code {
+      background: #2a2a2a !important;
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+
+    .trade-info {
+      background: rgba(24, 144, 255, 0.1) !important;
+      border-color: rgba(24, 144, 255, 0.25) !important;
+
+      .trade-info-text {
+        color: rgba(255, 255, 255, 0.55) !important;
+      }
+    }
+
+    .ant-form-item-label > label {
+      color: rgba(255, 255, 255, 0.65) !important;
+    }
+
+    .ant-form-item-extra {
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+
+    .ant-input-number {
+      background: #2a2a2a !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+
+      .ant-input-number-input {
+        background: transparent !important;
+        color: rgba(255, 255, 255, 0.85) !important;
+      }
+
+      .ant-input-number-prefix {
+        color: rgba(255, 255, 255, 0.45) !important;
+      }
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.25) !important;
+      }
+
+      &-focused,
+      &:focus-within {
+        border-color: #1890ff !important;
+        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+      }
+    }
+  }
+
   // 摸鱼股市
   .stock-market-container {
     background: #121212 !important;
@@ -379,6 +459,10 @@ body.dark-mode {
     .stock-market-header {
       background: #1e1e1e !important;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+
+      .header-title {
+        color: rgba(255, 255, 255, 0.85) !important;
+      }
     }
 
     .ant-card {
@@ -397,10 +481,19 @@ body.dark-mode {
 
     // 指数卡片
     .index-name { color: rgba(255, 255, 255, 0.85) !important; }
-    .index-code {
+    .index-code,
+    .trade-index-code {
       background: #2a2a2a !important;
       color: rgba(255, 255, 255, 0.45) !important;
     }
+    .index-card--holding {
+      border-color: rgba(24, 144, 255, 0.45) !important;
+    }
+    .index-holding-brief {
+      background: rgba(24, 144, 255, 0.12) !important;
+      .ant-typography { color: rgba(255, 255, 255, 0.55) !important; }
+    }
+    .trade-index-title { border-bottom-color: rgba(255, 255, 255, 0.06) !important; }
 
     // 持仓卡片
     .position-name { color: rgba(255, 255, 255, 0.85) !important; }
@@ -427,10 +520,29 @@ body.dark-mode {
       background: transparent !important;
     }
 
-    // 交易信息框
+    // 交易信息框（页面内，若存在）
     .trade-info {
-      background: rgba(82, 196, 26, 0.08) !important;
-      border-color: rgba(82, 196, 26, 0.2) !important;
+      background: rgba(24, 144, 255, 0.1) !important;
+      border-color: rgba(24, 144, 255, 0.25) !important;
+
+      .trade-info-text {
+        color: rgba(255, 255, 255, 0.55) !important;
+      }
+    }
+
+    .ant-empty-description {
+      color: rgba(255, 255, 255, 0.45) !important;
+    }
+
+    .ant-pagination {
+      .ant-pagination-item a,
+      .ant-pagination-total-text {
+        color: rgba(255, 255, 255, 0.65) !important;
+      }
+      .ant-pagination-item-active {
+        background: #2a2a2a !important;
+        border-color: #1890ff !important;
+      }
     }
 
     // 表格

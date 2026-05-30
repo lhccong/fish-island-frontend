@@ -2,9 +2,9 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
-/** 偷菜 POST /api/steal */
+/** 偷菜（支持批量） POST /api/steal */
 export async function stealUsingPost(body: API.StealRequest, options?: { [key: string]: any }) {
-  return request<API.BaseResponseFarmStealRecord_>('/api/steal', {
+  return request<API.BaseResponseListFarmStealRecord_>('/api/steal', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

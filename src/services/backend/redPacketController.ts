@@ -53,7 +53,7 @@ export async function getRedPacketRecordsUsingGet(
   params: API.getRedPacketRecordsUsingGETParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.BaseResponseListVO_>('/api/redpacket/records', {
+  return request<API.BaseResponseListVO2>('/api/redpacket/records', {
     method: 'GET',
     params: {
       ...params,

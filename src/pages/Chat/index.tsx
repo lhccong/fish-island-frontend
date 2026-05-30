@@ -33,6 +33,7 @@ import html2canvas from 'html2canvas';
 // ... 其他 imports ...
 import {
   BugOutlined,
+  EnvironmentOutlined,
   CloseOutlined,
   CopyOutlined,
   CustomerServiceOutlined,
@@ -82,6 +83,7 @@ import { UNDERCOVER_NOTIFICATION } from '@/constants';
 import eventBus from '@/utils/eventBus';
 import { joinRoomUsingPost } from '@/services/backend/drawGameController';
 import { getLevelEmoji, generateUniqueShortId, getTitleTagProperties } from '@/utils/titleUtils';
+import { navigateToUserFarm } from '@/utils/farmNavigate';
 import { activateFloatingChat } from '@/components/FloatingChat';
 
 // 添加样式定义
@@ -531,6 +533,8 @@ const ChatRoom: React.FC = () => {
   const [followListType, setFollowListType] = useState<'following' | 'followers'>('following');
   const [followListData, setFollowListData] = useState<API.UserFollowVO[]>([]);
   const [followListLoading, setFollowListLoading] = useState<boolean>(false);
+  const [followListToggleLoadingId, setFollowListToggleLoadingId] = useState<string | null>(null);
+  const [followListHoverId, setFollowListHoverId] = useState<string | null>(null);
 
   const [isRoomInfoVisible, setIsRoomInfoVisible] = useState<boolean>(false);
   const [undercoverNotification, setUndercoverNotification] = useState<string>(UNDERCOVER_NOTIFICATION.NONE);
@@ -1390,79 +1394,101 @@ const ChatRoom: React.FC = () => {
 
   // 修改 handleChatMessage 函数
   const handleChatMessage = (data: any) => {
-    const otherUserMessage = data.data.message;
-    const messageTimestamp = new Date(otherUserMessage.timestamp).getTime();
+    const incomingMessage = data.data.message;
+    const messageTimestamp = new Date(incomingMessage.timestamp).getTime();
+    const isSelf = incomingMessage.sender.id === String(currentUser?.id);
+    // 判断是否是真正的新消息（时间戳大于当前最新消息的时间戳）
+    const isNewMessage = messageTimestamp > lastMessageTimestamp;
 
-    // 只处理其他用户的消息
-    if (otherUserMessage.sender.id !== String(currentUser?.id)) {
-      // 判断是否是真正的新消息（时间戳大于当前最新消息的时间戳）
-      const isNewMessage = messageTimestamp > lastMessageTimestamp;
+    setMessages((prev) => {
+      // 添加新消息，确保 vip 和 isVip 字段都存在
+      const processedMessage = {
+        ...incomingMessage,
+        sender: {
+          ...incomingMessage.sender,
+          vip: incomingMessage.sender.vip || incomingMessage.sender.isVip || false,
+          isVip: incomingMessage.sender.isVip || incomingMessage.sender.vip || false
+        }
+      };
 
-      setMessages((prev) => {
-        // 添加新消息，确保 vip 和 isVip 字段都存在
-        const processedMessage = {
-          ...otherUserMessage,
-          sender: {
-            ...otherUserMessage.sender,
-            vip: otherUserMessage.sender.vip || otherUserMessage.sender.isVip || false,
-            isVip: otherUserMessage.sender.isVip || otherUserMessage.sender.vip || false
-          }
-        };
-        const newMessages = [...prev, processedMessage];
+      if (prev.some((m) => m.id === processedMessage.id)) return prev;
 
-        // 检查是否在底部
-        const container = messageContainerRef.current;
-        if (container) {
-          const threshold = 30; // 30px的阈值
-          const distanceFromBottom =
-            container.scrollHeight - container.scrollTop - container.clientHeight;
-          const isNearBottom = distanceFromBottom <= threshold;
-
-          // 只有在不在底部且是真正的新消息时，才累计新消息数量
-          if (!isNearBottom && isNewMessage) {
-            setNewMessageCount((prev) => prev + 1);
-
-            // 清除之前的定时器
-            if (newMessageTimerRef.current) {
-              clearTimeout(newMessageTimerRef.current);
-            }
-
-            // 设置新的定时器，1秒后显示合并的提示
-            newMessageTimerRef.current = setTimeout(() => {
-              showNewMessageNotification(newMessageCount + 1);
-              setNewMessageCount(0);
-            }, 1000);
-          }
-
-          // 只有在底部时才限制消息数量
-          if (isNearBottom && newMessages.length > 25) {
-            return newMessages.slice(-25);
+      let newMessages: Message[];
+      if (isSelf) {
+        let optimisticIndex = -1;
+        for (let i = prev.length - 1; i >= 0; i--) {
+          if (
+            String(prev[i].sender.id) === String(currentUser?.id) &&
+            prev[i].content === processedMessage.content
+          ) {
+            optimisticIndex = i;
+            break;
           }
         }
-        return newMessages;
-      });
-
-      // 如果是新消息，更新最新消息时间戳
-      if (isNewMessage) {
-        setLastMessageTimestamp(messageTimestamp);
-        handleMentionNotification(otherUserMessage);
+        if (optimisticIndex !== -1) {
+          newMessages = [...prev];
+          newMessages[optimisticIndex] = processedMessage;
+        } else {
+          newMessages = [...prev, processedMessage];
+        }
+      } else {
+        newMessages = [...prev, processedMessage];
       }
 
-      // 实时检查是否在底部
+      // 检查是否在底部
       const container = messageContainerRef.current;
       if (container) {
-        const threshold = 30;
+        const threshold = 30; // 30px的阈值
         const distanceFromBottom =
           container.scrollHeight - container.scrollTop - container.clientHeight;
-        if (distanceFromBottom <= threshold && !isAutoScrollingRef.current) {
-          // 避免重复滚动，添加防抖
-          setTimeout(scrollToBottom, 100);
-          // 如果滚动到底部，清除新消息计数和定时器
-          setNewMessageCount(0);
+        const isNearBottom = distanceFromBottom <= threshold;
+
+        // 只有在不在底部且是真正的新消息时，才累计新消息数量
+        if (!isSelf && !isNearBottom && isNewMessage) {
+          setNewMessageCount((prev) => prev + 1);
+
+          // 清除之前的定时器
           if (newMessageTimerRef.current) {
             clearTimeout(newMessageTimerRef.current);
-            newMessageTimerRef.current = null;
           }
+
+          // 设置新的定时器，1秒后显示合并的提示
+          newMessageTimerRef.current = setTimeout(() => {
+            showNewMessageNotification(newMessageCount + 1);
+            setNewMessageCount(0);
+          }, 1000);
+        }
+
+        // 只有在底部时才限制消息数量
+        if (isNearBottom && newMessages.length > 25) {
+          return newMessages.slice(-25);
+        }
+      }
+      return newMessages;
+    });
+
+    // 如果是新消息，更新最新消息时间戳
+    if (isNewMessage) {
+      setLastMessageTimestamp(messageTimestamp);
+      if (!isSelf) {
+        handleMentionNotification(incomingMessage);
+      }
+    }
+
+    // 实时检查是否在底部
+    const container = messageContainerRef.current;
+    if (container) {
+      const threshold = 30;
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      if (distanceFromBottom <= threshold && !isAutoScrollingRef.current) {
+        // 避免重复滚动，添加防抖
+        setTimeout(scrollToBottom, 100);
+        // 如果滚动到底部，清除新消息计数和定时器
+        setNewMessageCount(0);
+        if (newMessageTimerRef.current) {
+          clearTimeout(newMessageTimerRef.current);
+          newMessageTimerRef.current = null;
         }
       }
     }
@@ -2562,6 +2588,43 @@ const ChatRoom: React.FC = () => {
     }
   };
 
+  const isFollowListItemFollowing = (item: API.UserFollowVO) =>
+    followListType === 'following' ? true : !!item.isMutual;
+
+  const handleFollowListToggle = async (item: API.UserFollowVO) => {
+    if (!item.userId || followListToggleLoadingId) return;
+    setFollowListToggleLoadingId(item.userId);
+    try {
+      const res = await toggleFollowUsingGet({ followUserId: item.userId });
+      if (res.code === 0) {
+        const nowFollowing = !!res.data;
+        messageApi.success(nowFollowing ? '关注成功' : '已取消关注');
+        setFollowListData((prev) => {
+          if (followListType === 'following') {
+            return nowFollowing ? prev : prev.filter((u) => u.userId !== item.userId);
+          }
+          return prev.map((u) =>
+            u.userId === item.userId ? { ...u, isMutual: nowFollowing } : u,
+          );
+        });
+        if (selectedUser && String(currentUser?.id) === selectedUser.id) {
+          setSelectedUser((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              followingCount: Math.max(0, (prev.followingCount ?? 0) + (nowFollowing ? 1 : -1)),
+            };
+          });
+        }
+      }
+    } catch (e) {
+      messageApi.error('操作失败，请稍后重试');
+    } finally {
+      setFollowListToggleLoadingId(null);
+      setFollowListHoverId(null);
+    }
+  };
+
   // 添加禁言用户的函数
   const handleMuteUser = () => {
     // 确保当前用户是管理员
@@ -2784,6 +2847,15 @@ const ChatRoom: React.FC = () => {
   // 添加摸鱼宠物相关状态
   const [isPetModalVisible, setIsPetModalVisible] = useState<boolean>(false);
   const [currentPetUserId, setCurrentPetUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const petUserId = sessionStorage.getItem('openPetUserId');
+    if (petUserId) {
+      sessionStorage.removeItem('openPetUserId');
+      setCurrentPetUserId(petUserId);
+      setIsPetModalVisible(true);
+    }
+  }, []);
 
   // 处理谁是卧底按钮点击
   const handleRoomInfoClick = () => {
@@ -4189,6 +4261,35 @@ const ChatRoom: React.FC = () => {
                           }}
                         />
                       </Tooltip>
+                      <Tooltip
+                        title={
+                          currentUser && String(currentUser.id) === selectedUser.id
+                            ? '我的农场'
+                            : '查看农场'
+                        }
+                      >
+                        <Button
+                          size="small"
+                          shape="circle"
+                          icon={<EnvironmentOutlined />}
+                          style={{
+                            background: 'linear-gradient(135deg, #73d13d, #389e0d)',
+                            border: 'none',
+                            color: '#fff',
+                          }}
+                          onClick={() => {
+                            if (!selectedUser) return;
+                            const isSelfUser =
+                              currentUser && String(currentUser.id) === selectedUser.id;
+                            navigateToUserFarm(selectedUser.id, {
+                              isSelf: !!isSelfUser,
+                              nickname: getUserDisplayName(selectedUser),
+                              avatar: selectedUser.avatar,
+                              onBeforeNavigate: () => setIsUserDetailModalVisible(false),
+                            });
+                          }}
+                        />
+                      </Tooltip>
                       <Tooltip title="查看鱼小圈">
                         <Button
                           size="small"
@@ -4243,27 +4344,48 @@ const ChatRoom: React.FC = () => {
           <Empty description={followListType === 'following' ? '还没有关注任何人' : '还没有粉丝'} />
         ) : (
           <div className={styles.followListContainer}>
-            {followListData.map((item) => (
-              <div key={item.userId} className={styles.followListItem}>
-                <div className={styles.followListAvatar}>
-                  <Avatar src={item.userAvatar} size={42} />
-                  {item.avatarFramerUrl && (
-                    <img src={item.avatarFramerUrl} className={styles.followListAvatarFrame} alt="" />
-                  )}
-                </div>
-                <div className={styles.followListInfo}>
-                  <div className={styles.followListName}>
-                    {item.userName}
-                    {item.isMutual && (
-                      <span className={styles.mutualBadge}>互相关注</span>
+            {followListData.map((item) => {
+              const isFollowingItem = isFollowListItemFollowing(item);
+              const isHoveringItem = followListHoverId === item.userId;
+              return (
+                <div key={item.userId} className={styles.followListItem}>
+                  <div className={styles.followListAvatar}>
+                    <Avatar src={item.userAvatar} size={42} />
+                    {item.avatarFramerUrl && (
+                      <img src={item.avatarFramerUrl} className={styles.followListAvatarFrame} alt="" />
                     )}
                   </div>
-                  {item.userProfile && (
-                    <div className={styles.followListProfile}>{item.userProfile}</div>
-                  )}
+                  <div className={styles.followListInfo}>
+                    <div className={styles.followListName}>
+                      {item.userName}
+                      {item.isMutual && (
+                        <span className={styles.mutualBadge}>互相关注</span>
+                      )}
+                    </div>
+                    {item.userProfile && (
+                      <div className={styles.followListProfile}>{item.userProfile}</div>
+                    )}
+                  </div>
+                  <Button
+                    size="small"
+                    loading={followListToggleLoadingId === item.userId}
+                    disabled={!!followListToggleLoadingId && followListToggleLoadingId !== item.userId}
+                    onClick={() => handleFollowListToggle(item)}
+                    onMouseEnter={() => isFollowingItem && setFollowListHoverId(item.userId ?? null)}
+                    onMouseLeave={() => setFollowListHoverId(null)}
+                    className={
+                      isFollowingItem ? styles.followListBtnActive : styles.followListBtnDefault
+                    }
+                  >
+                    {isFollowingItem
+                      ? isHoveringItem
+                        ? '取消关注'
+                        : '✓ 已关注'
+                      : '+ 关注'}
+                  </Button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Modal>
@@ -4367,7 +4489,7 @@ const ChatRoom: React.FC = () => {
         title={
           <div>
             {currentVote?.title || '投票'}
-            <span style={{ fontSize: '14px', color: '#999', marginLeft: '12px' }}>
+            <span className={styles.voteModalType}>
               ({currentVote?.singleChoice ? '单选' : '多选'})
             </span>
           </div>
@@ -4404,7 +4526,7 @@ const ChatRoom: React.FC = () => {
       >
         <div className={styles.voteModalContent}>
           {currentVote?.hasVoted ? (
-            <div style={{ marginBottom: '16px', color: '#52c41a' }}>
+            <div className={styles.voteStatus}>
               ✅ 你已经投过票了
             </div>
           ) : null}
@@ -4412,23 +4534,12 @@ const ChatRoom: React.FC = () => {
             {currentVote?.options?.map((option, index) => (
               <div
                 key={index}
-                className={styles.voteOption}
-                style={{
-                  marginBottom: '12px',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  backgroundColor: currentVote?.userVotedOptions?.includes(index)
-                    ? '#e6f7ff'
-                    : selectedVoteOptions.includes(index)
-                    ? '#fff7e6'
-                    : '#f5f5f5',
-                  border: currentVote?.userVotedOptions?.includes(index)
-                    ? '1px solid #1890ff'
-                    : selectedVoteOptions.includes(index)
-                    ? '1px solid #ffa940'
-                    : '1px solid #d9d9d9',
-                  cursor: !currentVote?.hasVoted ? 'pointer' : 'default',
-                }}
+                className={[
+                  styles.voteOption,
+                  currentVote?.userVotedOptions?.includes(index) ? styles.voteOptionVoted : '',
+                  selectedVoteOptions.includes(index) ? styles.voteOptionSelected : '',
+                  !currentVote?.hasVoted ? styles.voteOptionClickable : '',
+                ].filter(Boolean).join(' ')}
                 onClick={() => {
                   if (!currentVote?.hasVoted) {
                     toggleVoteOption(index);
@@ -4449,33 +4560,24 @@ const ChatRoom: React.FC = () => {
                         />
                       </span>
                     )}
-                    <span style={{ fontWeight: currentVote?.userVotedOptions?.includes(index) || selectedVoteOptions.includes(index) ? 'bold' : 'normal' }}>
+                    <span className={currentVote?.userVotedOptions?.includes(index) || selectedVoteOptions.includes(index) ? styles.voteOptionTextActive : styles.voteOptionText}>
                       {option.text}
                     </span>
                     {currentVote?.userVotedOptions?.includes(index) && (
-                      <span style={{ marginLeft: '8px', color: '#1890ff' }}>（你的选择）</span>
+                      <span className={styles.voteChoiceTag}>（你的选择）</span>
                     )}
                   </div>
                 </div>
-                <div style={{ marginTop: '8px', paddingLeft: !currentVote?.hasVoted ? '24px' : '0' }}>
-                  <div
-                    style={{
-                      height: '8px',
-                      backgroundColor: '#e8e8e8',
-                      borderRadius: '4px',
-                      overflow: 'hidden',
-                    }}
-                  >
+                <div className={styles.voteOptionResult} style={{ paddingLeft: !currentVote?.hasVoted ? '24px' : '0' }}>
+                  <div className={styles.voteProgressTrack}>
                     <div
+                      className={currentVote?.userVotedOptions?.includes(index) ? styles.voteProgressBarVoted : styles.voteProgressBar}
                       style={{
-                        height: '100%',
                         width: `${option.percentage || 0}%`,
-                        backgroundColor: currentVote?.userVotedOptions?.includes(index) ? '#1890ff' : '#91d5ff',
-                        transition: 'width 0.3s ease',
                       }}
                     />
                   </div>
-                  <div style={{ marginTop: '4px', fontSize: '12px', color: '#666' }}>
+                  <div className={styles.voteOptionMeta}>
                     {option.count || 0} 票 ({option.percentage?.toFixed(1) || 0}%)
                   </div>
                 </div>
@@ -4483,12 +4585,12 @@ const ChatRoom: React.FC = () => {
             ))}
           </div>
           {!currentVote?.hasVoted && (
-            <div style={{ marginTop: '12px', color: '#999', fontSize: '12px', textAlign: 'center' }}>
+            <div className={styles.voteSelectedTip}>
               已选择 {selectedVoteOptions.length} 个选项
               {currentVote?.singleChoice ? '（单选）' : '（可多选）'}
             </div>
           )}
-          <div style={{ marginTop: '16px', textAlign: 'center', color: '#999', fontSize: '12px' }}>
+          <div className={styles.voteSummary}>
             总票数：{currentVote?.totalCount || 0}
             {currentVote?.remainingSeconds && currentVote?.remainingSeconds > 0 && (
               <span style={{ marginLeft: '16px' }}>
@@ -4530,7 +4632,7 @@ const ChatRoom: React.FC = () => {
         ]}
         width={500}
       >
-        <div style={{ padding: '16px 0' }}>
+        <div className={styles.voteCreateContent}>
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
               投票标题：
@@ -4602,7 +4704,7 @@ const ChatRoom: React.FC = () => {
         footer={null}
         width={500}
       >
-        <div style={{ padding: '16px 0' }}>
+        <div className={styles.voteListContent}>
           {activeVoteDetails.length === 0 ? (
             <Empty description="暂无活跃投票" />
           ) : (
@@ -4610,14 +4712,7 @@ const ChatRoom: React.FC = () => {
               {activeVoteDetails.map((vote, index) => (
                 <div
                   key={vote.voteId}
-                  style={{
-                    marginBottom: '12px',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid #e8e8e8',
-                    backgroundColor: '#fafafa',
-                    cursor: 'pointer',
-                  }}
+                  className={styles.voteListItem}
                   onClick={() => {
                     setCurrentVote(vote);
                     setIsVoteListModalVisible(false);
@@ -4629,7 +4724,7 @@ const ChatRoom: React.FC = () => {
                       <span style={{ fontWeight: 'bold', fontSize: '14px' }}>
                         {index + 1}. {vote.title}
                       </span>
-                      <span style={{ marginLeft: '8px', fontSize: '12px', color: '#666' }}>
+                      <span className={styles.voteListType}>
                         ({vote.singleChoice ? '单选' : '多选'})
                       </span>
                     </div>
@@ -4659,7 +4754,7 @@ const ChatRoom: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
+                  <div className={styles.voteListMeta}>
                     总票数：{vote.totalCount || 0}
                     {vote.remainingSeconds && vote.remainingSeconds > 0 && (
                       <span style={{ marginLeft: '16px' }}>
@@ -4667,7 +4762,7 @@ const ChatRoom: React.FC = () => {
                       </span>
                     )}
                     {vote.hasVoted && (
-                      <span style={{ marginLeft: '16px', color: '#52c41a' }}>
+                      <span className={styles.voteListVoted}>
                         ✅ 已投票
                       </span>
                     )}

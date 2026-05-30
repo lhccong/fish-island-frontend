@@ -21,7 +21,9 @@
 .farm-friends-panel {
   position: relative;
   width: min(420px, 100%);
+  height: min(88vh, 720px);
   max-height: min(88vh, 720px);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   border-radius: 20px;
@@ -98,6 +100,14 @@
   &:not(.active):hover {
     filter: brightness(1.1);
   }
+}
+
+.farm-friends-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .farm-friends-toolbar {
@@ -188,15 +198,24 @@
 
 .farm-friends-list-wrap {
   flex: 1;
-  min-height: 200px;
-  max-height: min(52vh, 420px);
+  min-height: 0;
   overflow: hidden;
   padding: 0 12px;
   margin-bottom: 8px;
 
-  .ant-spin-nested-loading,
+  .ant-spin-nested-loading {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
   .ant-spin-container {
     height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 }
 
@@ -204,8 +223,11 @@
   list-style: none;
   margin: 0;
   padding: 0 0 8px;
-  max-height: min(52vh, 420px);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -275,17 +297,39 @@
 }
 
 .farm-friend-status {
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
   line-height: 1;
+  white-space: nowrap;
+
+  .anticon {
+    font-size: 12px;
+  }
 
   &.can-steal {
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+    color: #389e0d;
+    font-weight: 600;
+
+    .anticon {
+      color: #52c41a;
+    }
   }
 
   &.cooldown {
-    font-size: 11px;
     color: #8c8c8c;
+    font-weight: 500;
   }
+
+  &.unavailable {
+    color: #bfbfbf;
+    font-weight: 500;
+  }
+}
+
+.farm-friend-status-text {
+  font-size: 11px;
 }
 
 .farm-friend-visit-btn {
@@ -338,8 +382,7 @@
 
 .farm-friends-visitor {
   flex: 1;
-  min-height: 200px;
-  max-height: min(52vh, 420px);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   padding: 8px 12px 10px;
@@ -393,7 +436,38 @@
 .farm-visitor-stolen-list-wrap {
   flex: 1;
   min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .ant-spin-nested-loading {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ant-spin-container {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
+
+.farm-visitor-stolen-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 8px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -403,11 +477,6 @@
     background: rgba(90, 60, 30, 0.35);
     border-radius: 3px;
   }
-
-  .ant-spin-nested-loading,
-  .ant-spin-container {
-    min-height: 120px;
-  }
 }
 
 .farm-visitor-stolen-empty {
@@ -416,15 +485,6 @@
   .ant-empty-description {
     color: rgba(255, 248, 232, 0.85);
   }
-}
-
-.farm-visitor-stolen-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .farm-visitor-stolen-item {
@@ -486,6 +546,7 @@
 }
 
 .farm-friends-footer {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -549,6 +610,7 @@
 @media (max-width: 480px) {
   .farm-friends-panel {
     width: 100%;
+    height: 92vh;
     max-height: 92vh;
     border-radius: 16px;
   }

@@ -14,6 +14,7 @@ import * as donationRecordsController from './donationRecordsController';
 import * as drawGameController from './drawGameController';
 import * as emoticonFavourController from './emoticonFavourController';
 import * as eventRemindController from './eventRemindController';
+import * as farmFriendController from './farmFriendController';
 import * as farmUserController from './farmUserController';
 import * as fileController from './fileController';
 import * as fishAuthController from './fishAuthController';
@@ -26,6 +27,7 @@ import * as ipLocationController from './ipLocationController';
 import * as itemInstancesController from './itemInstancesController';
 import * as itemTemplatesController from './itemTemplatesController';
 import * as landController from './landController';
+import * as luckyBagController from './luckyBagController';
 import * as mockInterviewController from './mockInterviewController';
 import * as momentsController from './momentsController';
 import * as oAuth2Controller from './oAuth2Controller';
@@ -50,6 +52,7 @@ import * as todoController from './todoController';
 import * as towerClimbController from './towerClimbController';
 import * as turntableController from './turntableController';
 import * as undercoverGameController from './undercoverGameController';
+import * as userAiAvatarController from './userAiAvatarController';
 import * as userController from './userController';
 import * as userFollowController from './userFollowController';
 import * as userMuteController from './userMuteController';
@@ -78,6 +81,7 @@ export default {
   drawGameController,
   emoticonFavourController,
   eventRemindController,
+  farmFriendController,
   farmUserController,
   fileController,
   userFollowController,
@@ -89,6 +93,7 @@ export default {
   itemInstancesController,
   itemTemplatesController,
   landController,
+  luckyBagController,
   mockInterviewController,
   momentsController,
   restAuthController,
@@ -118,6 +123,7 @@ export default {
   userPointsRecordController,
   userTitleController,
   userVipController,
+  userAiAvatarController,
   userRemarkController,
   voteController,
   wordLibraryController,

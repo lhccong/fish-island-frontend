@@ -34,6 +34,7 @@ import {
   topCommentUsingPost,
 } from '@/services/backend/momentsController';
 import { getLoginUserUsingGet, getUserVoByIdUsingGet } from '@/services/backend/userController';
+import { isFollowingUsingGet, toggleFollowUsingGet } from '@/services/backend/userFollowController';
 import { uploadFileByMinioUsingPost } from '@/services/backend/fileController';
 import EmoticonPicker from '@/components/EmoticonPicker';
 import PublishMomentModal from '@/components/PublishMomentModal';
@@ -110,6 +111,9 @@ const FishCirclePage: React.FC = () => {
   const [viewingUser, setViewingUser] = useState<API.UserVO | null>(null);
   // 查看自己的鱼小圈
   const [viewingSelf, setViewingSelf] = useState<boolean>(false);
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
+  const [followLoading, setFollowLoading] = useState<boolean>(false);
+  const [isHoveringFollow, setIsHoveringFollow] = useState<boolean>(false);
 
   // 获取当前用户信息
   const fetchCurrentUser = async () => {
@@ -139,14 +143,55 @@ const FishCirclePage: React.FC = () => {
     await fetchMoments(false, currentUser.id);
   };
 
+  const fetchIsFollowing = async (userId: number | string) => {
+    if (!currentUser || String(currentUser.id) === String(userId)) {
+      setIsFollowing(false);
+      return;
+    }
+    try {
+      const res = await isFollowingUsingGet({ followUserId: String(userId) });
+      if (res.code === 0) setIsFollowing(!!res.data);
+    } catch {
+      setIsFollowing(false);
+    }
+  };
+
+  const handleToggleFollow = async () => {
+    if (!viewingUser?.id || !currentUser) return;
+    setFollowLoading(true);
+    try {
+      const res = await toggleFollowUsingGet({ followUserId: String(viewingUser.id) });
+      if (res.code === 0) {
+        const nowFollowing = !!res.data;
+        setIsFollowing(nowFollowing);
+        setViewingUser((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            followerCount: Math.max(0, (prev.followerCount ?? 0) + (nowFollowing ? 1 : -1)),
+          };
+        });
+        message.success(nowFollowing ? '关注成功' : '已取消关注');
+      }
+    } catch {
+      message.error('操作失败，请稍后重试');
+    } finally {
+      setFollowLoading(false);
+      setIsHoveringFollow(false);
+    }
+  };
+
   // 查看他人鱼小圈
   const handleViewUserCircle = async (userId: number, userAvatar?: string, userName?: string) => {
     if (userId === currentUser?.id) return; // 自己的不跳转
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setViewingSelf(false);
+    setIsFollowing(false);
     try {
       const res = await getUserVoByIdUsingGet({ id: userId });
       const userVO = res.data || { id: userId, userAvatar, userName };
       setViewingUser(userVO);
+      await fetchIsFollowing(userId);
       setMoments([]);
       setCommentsMap({});
       currentPageRef.current = 1;
@@ -166,6 +211,8 @@ const FishCirclePage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setViewingUser(null);
     setViewingSelf(false);
+    setIsFollowing(false);
+    setIsHoveringFollow(false);
     setMoments([]);
     setCommentsMap({});
     currentPageRef.current = 1;
@@ -632,6 +679,16 @@ const FishCirclePage: React.FC = () => {
     setPublishLocation('');
   };
 
+  // 他人主页：登录用户加载完成后补查关注状态
+  useEffect(() => {
+    if (!viewingUser?.id || !currentUser) return;
+    if (String(viewingUser.id) === String(currentUser.id)) {
+      setIsFollowing(false);
+      return;
+    }
+    fetchIsFollowing(viewingUser.id);
+  }, [viewingUser?.id, currentUser?.id]);
+
   // 初始化
   useEffect(() => {
     fetchCurrentUser();
@@ -645,8 +702,11 @@ const FishCirclePage: React.FC = () => {
       fetchMoments(false, idStr);
       // 异步加载用户信息
       import('@/services/backend/userController').then(({ getUserVoByIdUsingGet }) => {
-        getUserVoByIdUsingGet({ id: idStr }).then((res) => {
-          if (res.data) setViewingUser(res.data);
+        getUserVoByIdUsingGet({ id: idStr }).then(async (res) => {
+          if (res.data) {
+            setViewingUser(res.data);
+            await fetchIsFollowing(idStr);
+          }
         });
       });
       return;
@@ -795,7 +855,32 @@ const FishCirclePage: React.FC = () => {
           </div>
         )}
         <div className="user-info">
-          <span className="user-name">{viewingUser ? viewingUser.userName : (currentUser?.userName || '摸鱼用户')}</span>
+          <div className="user-info-text">
+            <span className="user-name">{viewingUser ? viewingUser.userName : (currentUser?.userName || '摸鱼用户')}</span>
+            {(viewingUser || viewingSelf) && (
+              <div className="user-follow-stats">
+                <span className="follow-stat">
+                  <strong>{(viewingUser ?? currentUser)?.followingCount ?? '-'}</strong> 关注
+                </span>
+                <span className="follow-stat-divider" />
+                <span className="follow-stat">
+                  <strong>{(viewingUser ?? currentUser)?.followerCount ?? '-'}</strong> 粉丝
+                </span>
+              </div>
+            )}
+            {viewingUser && currentUser && String(viewingUser.id) !== String(currentUser.id) && (
+              <Button
+                size="small"
+                loading={followLoading}
+                onClick={handleToggleFollow}
+                onMouseEnter={() => isFollowing && setIsHoveringFollow(true)}
+                onMouseLeave={() => setIsHoveringFollow(false)}
+                className={isFollowing ? 'cover-follow-btn-active' : 'cover-follow-btn-default'}
+              >
+                {isFollowing ? (isHoveringFollow ? '取消关注' : '✓ 已关注') : '+ 关注'}
+              </Button>
+            )}
+          </div>
           <Avatar
             size={80}
             src={viewingUser ? viewingUser.userAvatar : currentUser?.userAvatar}

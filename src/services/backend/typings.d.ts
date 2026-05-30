@@ -109,12 +109,6 @@ declare namespace API {
     message?: string;
   };
 
-  type BaseResponseFarmStealRecord_ = {
-    code?: number;
-    data?: FarmStealRecord;
-    message?: string;
-  };
-
   type BaseResponseFarmUserVO_ = {
     code?: number;
     data?: FarmUserVO;
@@ -247,6 +241,18 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListFarmFriendListVO_ = {
+    code?: number;
+    data?: FarmFriendListVO[];
+    message?: string;
+  };
+
+  type BaseResponseListFarmStealRecord_ = {
+    code?: number;
+    data?: FarmStealRecord[];
+    message?: string;
+  };
+
   type BaseResponseListFarmStealRecordVO_ = {
     code?: number;
     data?: FarmStealRecordVO[];
@@ -271,9 +277,21 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListIndexPositionVO_ = {
+    code?: number;
+    data?: IndexPositionVO[];
+    message?: string;
+  };
+
   type BaseResponseListLandDTO_ = {
     code?: number;
     data?: LandDTO[];
+    message?: string;
+  };
+
+  type BaseResponseListLuckyBag_ = {
+    code?: number;
+    data?: LuckyBag[];
     message?: string;
   };
 
@@ -379,6 +397,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListVO2 = {
+    code?: number;
+    data?: VO3[];
+    message?: string;
+  };
+
   type BaseResponseLoginUserVO_ = {
     code?: number;
     data?: LoginUserVO;
@@ -388,6 +412,12 @@ declare namespace API {
   type BaseResponseLong_ = {
     code?: number;
     data?: number;
+    message?: string;
+  };
+
+  type BaseResponseLuckyBag_ = {
+    code?: number;
+    data?: LuckyBag;
     message?: string;
   };
 
@@ -781,6 +811,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseUserAiAvatar_ = {
+    code?: number;
+    data?: UserAiAvatar;
+    message?: string;
+  };
+
   type BaseResponseUserDataWebVO_ = {
     code?: number;
     data?: UserDataWebVO;
@@ -1046,6 +1082,19 @@ declare namespace API {
     response?: Response;
   };
 
+  type CreateLuckyBagRequest = {
+    /** 持续秒数（60-1800，默认180） */
+    durationSeconds?: number;
+    /** 福袋名称 */
+    name?: string;
+    /** 福袋总积分（1-100，且需满足单人最多50积分） */
+    totalAmount: number;
+    /** 分配类型：1-随机，2-平均 */
+    type: number;
+    /** 中奖人数（需满足总积分÷人数向上取整≤50） */
+    winnerCount: number;
+  };
+
   type CreatePetRequest = {
     name?: string;
   };
@@ -1093,6 +1142,8 @@ declare namespace API {
     locked?: boolean;
     /** 作物名称 */
     name?: string;
+    /** 购买价格（积分） */
+    price?: number;
     /** 稀有度 */
     rarity?: number;
     /** 解锁所需农场等级 */
@@ -1413,6 +1464,21 @@ declare namespace API {
     frameId: number;
   };
 
+  type FarmFriendListVO = {
+    /** 好友头像 */
+    avatar?: string;
+    /** 是否可以偷菜（存在至少一块您尚未偷过的可偷土地） */
+    canSteal?: boolean;
+    /** 好友系统用户ID */
+    friendId?: number;
+    /** 好友等级 */
+    level?: number;
+    /** 好友昵称 */
+    nickname?: string;
+    /** 好友系统用户ID */
+    systemUserId?: number;
+  };
+
   type FarmStealRecord = {
     /** 获得的积分 */
     coinGained?: number;
@@ -1420,6 +1486,8 @@ declare namespace API {
     cropId?: number;
     /** 偷菜记录ID */
     id?: number;
+    /** 地块ID */
+    landId?: number;
     /** 农场主人系统用户ID */
     ownerId?: number;
     /** 种植记录ID */
@@ -1705,6 +1773,11 @@ declare namespace API {
     floor: number;
   };
 
+  type getFriendLandsUsingGETParams = {
+    /** friendUserId */
+    friendUserId: number;
+  };
+
   type getHeroByIdUsingGETParams = {
     /** id */
     id?: number;
@@ -1718,6 +1791,16 @@ declare namespace API {
   type getItemTemplateVOByIdUsingPOSTParams = {
     /** id */
     id?: number;
+  };
+
+  type getLuckyBagDetailUsingGETParams = {
+    /** 福袋ID */
+    luckyBagId: string;
+  };
+
+  type getLuckyBagWinRecordsUsingGETParams = {
+    /** 福袋ID */
+    luckyBagId: string;
   };
 
   type getMinioPresignedUsingGETParams = {
@@ -1769,6 +1852,11 @@ declare namespace API {
     roomId: string;
     /** userId */
     userId: number;
+  };
+
+  type getPositionUsingGETParams = {
+    /** 指数代码，默认 sh000001 */
+    indexCode?: string;
   };
 
   type getPostRewardTokenUsingGETParams = {
@@ -1927,7 +2015,9 @@ declare namespace API {
   };
 
   type IndexBuyRequest = {
-    amount?: number;
+    /** 买入金额（积分） */
+    amount: number;
+    /** 指数代码 */
     indexCode?: string;
   };
 
@@ -1961,15 +2051,20 @@ declare namespace API {
   };
 
   type IndexSellRequest = {
+    /** 指数代码 */
     indexCode?: string;
     shares?: number;
   };
 
   type IndexTradeResultVO = {
-    /** 交易金额（积分） */
+    /** 交易金额（积分，买入为支出，卖出为扣费后到账） */
     amount?: number;
     /** 预计结算日期（仅卖出有效） */
     expectedSettleDate?: string;
+    /** 手续费（积分，仅卖出有效） */
+    fee?: number;
+    /** 卖出成交额（扣费前，仅卖出有效） */
+    grossAmount?: number;
     /** 提示信息 */
     message?: string;
     /** 成交净值 */
@@ -2299,13 +2394,18 @@ declare namespace API {
     equipSlot?: string;
   };
 
+  type joinLuckyBagUsingPOSTParams = {
+    /** 福袋ID */
+    luckyBagId: string;
+  };
+
   type joinRoomUsingPOSTParams = {
     /** roomId */
     roomId: string;
   };
 
   type LandDTO = {
-    /** 是否可以偷菜 */
+    /** 是否可以偷菜（false 表示已偷过、未成熟或无可偷积分） */
     canSteal?: boolean;
     /** 作物名称 */
     cropName?: string;
@@ -2317,8 +2417,6 @@ declare namespace API {
     landIndex?: number;
     /** 是否锁定（0-未锁定，1-已锁定） */
     locked?: number;
-    /** 种植记录ID（用于偷菜接口） */
-    plantRecordId?: number;
     /** 种植的作物ID */
     plantedCropId?: number;
     /** 种植时间 */
@@ -2457,6 +2555,22 @@ declare namespace API {
     userId?: number;
     /** 用户昵称 */
     userName?: string;
+  };
+
+  type LuckyBag = {
+    createTime?: string;
+    creatorAvatar?: string;
+    creatorId?: number;
+    creatorName?: string;
+    durationSeconds?: number;
+    expireTime?: string;
+    id?: string;
+    name?: string;
+    participantCount?: number;
+    status?: number;
+    totalAmount?: number;
+    type?: number;
+    winnerCount?: number;
   };
 
   type MakeUpSignInRequest = {
@@ -3916,8 +4030,10 @@ declare namespace API {
   };
 
   type StealRequest = {
-    /** 种植记录ID */
-    plantRecordId: number;
+    /** 地块ID（与 landIds 二选一） */
+    landId?: number;
+    /** 地块ID列表（批量偷菜，与 landId 二选一） */
+    landIds?: number[];
   };
 
   type streamChatDemoUsingGETParams = {
@@ -4302,6 +4418,26 @@ declare namespace API {
     userRole?: string;
   };
 
+  type UserAiAvatar = {
+    avatarName?: string;
+    createTime?: string;
+    enabled?: number;
+    id?: number;
+    isDelete?: number;
+    systemPrompt?: string;
+    updateTime?: string;
+    userId?: number;
+  };
+
+  type UserAiAvatarSaveRequest = {
+    /** 分身名称 */
+    avatarName: string;
+    /** 是否启用分身：0-关闭，1-开启 */
+    enabled: number;
+    /** 分身系统提示词 */
+    systemPrompt?: string;
+  };
+
   type UserBindEmailRequest = {
     code?: string;
     email?: string;
@@ -4594,6 +4730,23 @@ declare namespace API {
   };
 
   type VO2 = {
+    /** 中奖积分 */
+    amount?: number;
+    /** 记录ID */
+    id?: string;
+    /** 福袋ID */
+    luckyBagId?: string;
+    /** 用户头像 */
+    userAvatar?: string;
+    /** 用户ID */
+    userId?: number;
+    /** 用户昵称 */
+    userName?: string;
+    /** 中奖时间 */
+    winTime?: string;
+  };
+
+  type VO3 = {
     /** 抢到的金额 */
     amount?: number;
     /** 抢红包时间 */
