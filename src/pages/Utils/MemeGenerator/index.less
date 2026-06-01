@@ -68,6 +68,94 @@
     gap: 12px;
   }
 
+  .meme-header-dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .meme-header-dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    background: #fff;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    &:hover {
+      color: #4b5563;
+      border-color: rgba(209, 213, 219, 0.9);
+      background: #f3f4f6;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+    }
+  }
+
+  .meme-header-dropdown-arrow {
+    font-size: 10px;
+    color: #9ca3af;
+    transition: transform 0.2s ease;
+  }
+
+  .meme-header-dropdown:hover .meme-header-dropdown-arrow,
+  .meme-header-dropdown:focus-within .meme-header-dropdown-arrow {
+    transform: rotate(180deg);
+    color: @meme-primary-500;
+  }
+
+  .meme-header-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 180px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.14);
+    padding: 8px 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: all 0.18s ease;
+    backdrop-filter: blur(12px);
+    a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      color: #374151;
+      font-size: 13px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      &:hover {
+        background: #f3f4f6;
+        color: #374151;
+        .meme-header-ext {
+          color: #6b7280;
+        }
+      }
+    }
+  }
+
+  .meme-header-dropdown:hover .meme-header-dropdown-menu,
+  .meme-header-dropdown:focus-within .meme-header-dropdown-menu {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .meme-header-ext {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
   .meme-header-icon-btn {
     display: flex;
     align-items: center;
