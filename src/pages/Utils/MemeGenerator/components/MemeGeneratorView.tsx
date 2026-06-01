@@ -301,14 +301,22 @@ const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack, 
   };
 
   // 下载结果
-  const downloadResult = () => {
+  const downloadResult = async () => {
     if (!resultUrl) return;
-    const a = document.createElement('a');
-    a.href = resultUrl;
-    a.download = `meme-${memeInfo?.key || 'result'}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      const resp = await fetch(resultUrl);
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `meme-${memeInfo?.key || 'result'}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(resultUrl, '_blank');
+    }
   };
 
   // 收藏表情包：下载图片 → 压缩 → 上传Minio → 用Minio URL收藏
