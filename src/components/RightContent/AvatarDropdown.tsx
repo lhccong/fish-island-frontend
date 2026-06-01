@@ -40,6 +40,7 @@ import {
   CheckCircleFilled,
   GiftOutlined,
   BulbOutlined,
+  IdcardOutlined,
 } from '@ant-design/icons';
 import {
   getMonthSignInUsingGet,
@@ -83,6 +84,7 @@ import {RcFile} from "antd/lib/upload";
 import LoginRegister from '../LoginRegister';
 import FoodRecommender from '@/components/FoodRecommender';
 import MessageNotification, { MessageNotificationRef } from '@/components/MessageNotification';
+import UserDetailModal from '@/components/UserDetailModal';
 import MoneyButton from '../MoneyButton';
 
 export type GlobalHeaderRightProps = {
@@ -269,6 +271,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
   const { isDarkMode, toggleTheme } = useModel('theme');
 
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isMyCardOpen, setIsMyCardOpen] = useState(false);
   const [editProfileForm] = Form.useForm();
   const [siteConfigForm] = Form.useForm();
   const [selectedAvatar, setSelectedAvatar] = useState<string>('');
@@ -942,6 +945,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       label: '修改信息',
     },
     {
+      key: 'myCard',
+      icon: <IdcardOutlined/>,
+      label: '我的卡片',
+    },
+    {
       key: 'resetPassword',
       icon: <LockOutlined/>,
       label: '找回密码',
@@ -1011,6 +1019,14 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         if (currentUser?.momentsBgUrl) {
           setPreviewBgUrl(currentUser.momentsBgUrl);
         }
+        return;
+      }
+      if (key === 'myCard') {
+        if (!currentUser?.id) {
+          message.warning('请先登录');
+          return;
+        }
+        setIsMyCardOpen(true);
         return;
       }
       if (key === 'resetPassword') {
@@ -3013,6 +3029,30 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
           </div>
         </div>
       </Modal>
+
+      <UserDetailModal
+        user={
+          currentUser?.id
+            ? {
+                id: currentUser.id,
+                userName: currentUser.userName,
+                userAvatar: currentUser.userAvatar,
+                momentsBgUrl: currentUser.momentsBgUrl,
+                followerCount: currentUser.followerCount,
+                followingCount: currentUser.followingCount,
+                level: currentUser.level,
+                points: currentUser.points,
+                isAdmin: currentUser.userRole === 'admin',
+                vip: currentUser.vip,
+                avatarFramerUrl: currentUser.avatarFramerUrl,
+                titleId: currentUser.titleId,
+                titleIdList: currentUser.titleIdList,
+              }
+            : null
+        }
+        open={isMyCardOpen}
+        onClose={() => setIsMyCardOpen(false)}
+      />
     </div>
   )
 };

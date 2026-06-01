@@ -39,7 +39,7 @@ import { useModel } from '@umijs/max';
 import {
   buyIndexUsingPost,
   sellIndexUsingPost,
-  getPositionUsingGet,
+  getPositionsUsingGet,
   getTransactionsUsingPost,
 } from '@/services/backend/indexTradeController';
 import { getMajorIndicesUsingGet } from '@/services/backend/fundController';
@@ -51,6 +51,15 @@ const { TabPane } = Tabs;
 
 /** 买卖按钮点击间隔（毫秒），防止重复触发 */
 const TRADE_CLICK_DEBOUNCE_MS = 500;
+
+/** 可交易指数代码（与后端一致） */
+const TRADABLE_INDEX_CODES = new Set([
+  'sh000001',
+  'sz399001',
+  'sz399006',
+  'sh000300',
+  'sh000016',
+]);
 
 // 辅助函数：安全解析数值（处理可能包含%符号的字符串）
 const parseNumericValue = (value: string | number | undefined): number => {
@@ -97,25 +106,27 @@ const StockMarket: React.FC = () => {
     }
   };
 
-  // 加载持仓
+  // 加载全部指数持仓
   const loadPositions = async () => {
     try {
-      const response = await getPositionUsingGet();
+      const response = await getPositionsUsingGet();
       if (response.code === 0 && response.data) {
-        // API may return single position or array of positions
-        const data = response.data;
-        if (Array.isArray(data)) {
-          setPositions(data);
-        } else if (data.indexCode) {
-          setPositions([data]);
-        } else {
-          setPositions([]);
-        }
+        setPositions(response.data.filter((p) => p.indexCode && (p.totalShares || 0) > 0));
+      } else {
+        setPositions([]);
       }
     } catch (error) {
       console.error('加载持仓失败:', error);
     }
   };
+
+  const getPositionByCode = useCallback(
+    (indexCode?: string) => positions.find((p) => p.indexCode === indexCode),
+    [positions],
+  );
+
+  const isTradableIndex = (indexCode?: string) =>
+    !!indexCode && TRADABLE_INDEX_CODES.has(indexCode);
 
   // 加载交易记录
   const loadTransactions = async (page = 1) => {
@@ -149,7 +160,16 @@ const StockMarket: React.FC = () => {
 
   // 初始加载
   useEffect(() => {
-    refreshData();
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([
+        loadMarketIndices(),
+        loadPositions(),
+        loadTransactions(1),
+      ]);
+      setLoading(false);
+    };
+    init();
   }, []);
 
   // 打开交易弹窗
@@ -166,6 +186,13 @@ const StockMarket: React.FC = () => {
       form.setFieldsValue({
         indexCode: index.indexCode,
         indexName: index.indexName,
+        amount: undefined,
+      });
+    } else if (type === 'buy' && position) {
+      form.setFieldsValue({
+        indexCode: position.indexCode,
+        indexName: position.indexName,
+        amount: undefined,
       });
     } else if (type === 'sell' && position) {
       form.setFieldsValue({
@@ -351,7 +378,7 @@ const StockMarket: React.FC = () => {
           <Title level={4} className="header-title">
             摸鱼股市
           </Title>
-          <Tooltip title="使用积分交易A股主要指数">
+          <Tooltip title="使用积分交易上证、深证成指、创业板指、沪深300、上证50 等主要指数">
             <InfoCircleOutlined style={{ marginLeft: 8, color: '#999' }} />
           </Tooltip>
         </div>
@@ -369,10 +396,22 @@ const StockMarket: React.FC = () => {
       <Content className="stock-market-content">
         {/* 统计卡片 */}
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} sm={12} md={6}>
             <Card>
               <Statistic
-                title="总积分"
+                title="可用积分"
+                value={availablePoints}
+                precision={2}
+                suffix="积分"
+                valueStyle={{ color: '#52c41a' }}
+                formatter={(value) => Number(value || 0).toFixed(2)}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card>
+              <Statistic
+                title="持仓市值"
                 value={stats.totalMarketValue}
                 precision={2}
                 suffix="积分"
@@ -381,7 +420,7 @@ const StockMarket: React.FC = () => {
               />
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} sm={12} md={6}>
             <Card>
               <Statistic
                 title="今日盈亏"
@@ -393,7 +432,7 @@ const StockMarket: React.FC = () => {
               />
             </Card>
           </Col>
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} sm={12} md={6}>
             <Card>
               <Statistic
                 title="累计盈亏"
@@ -414,26 +453,46 @@ const StockMarket: React.FC = () => {
             key="market"
           >
             <Row gutter={[16, 16]}>
-              {marketIndices.map((index) => (
+              {marketIndices.map((index) => {
+                const holding = getPositionByCode(index.indexCode);
+                const tradable = isTradableIndex(index.indexCode);
+                return (
                 <Col xs={24} sm={12} lg={8} key={index.indexCode}>
                   <Card
-                    className="index-card"
+                    className={`index-card${holding ? ' index-card--holding' : ''}`}
                     hoverable
                     actions={[
                       <Button
+                        key="buy"
                         type="primary"
                         icon={<ShoppingCartOutlined />}
-                        disabled={index.indexCode !== 'sh000001'}
+                        disabled={!tradable}
                         onClick={() => handleOpenTradeModalDebounced('buy', index)}
                       >
-                        买入
+                        {holding ? '加仓' : '买入'}
                       </Button>,
                     ]}
                   >
                     <div className="index-header">
-                      <div className="index-name">{index.indexName}</div>
+                      <div className="index-name-wrap">
+                        <div className="index-name">{index.indexName}</div>
+                        {holding && (
+                          <Tag color="blue" className="holding-tag">已持仓</Tag>
+                        )}
+                        {!tradable && (
+                          <Tag color="default" className="holding-tag">暂不可交易</Tag>
+                        )}
+                      </div>
                       <div className="index-code">{index.indexCode}</div>
                     </div>
+                    {holding && (
+                      <div className="index-holding-brief">
+                        <Text type="secondary">
+                          持有 {Number(holding.totalShares || 0).toFixed(2)} 份 ·
+                          市值 ¥{Number(holding.marketValue || 0).toFixed(2)}
+                        </Text>
+                      </div>
+                    )}
                     <div className="index-value">
                       <Text className="current-value" style={{
                         color: parseNumericValue(index.changeValue) >= 0 ? '#cf1322' : '#3f8600'
@@ -451,13 +510,22 @@ const StockMarket: React.FC = () => {
                     </div>
                   </Card>
                 </Col>
-              ))}
+              );
+              })}
             </Row>
           </TabPane>
 
           {/* 我的持仓 */}
           <TabPane
-            tab={<span><WalletOutlined />我的持仓</span>}
+            tab={
+              <span>
+                <WalletOutlined />
+                我的持仓
+                {positions.length > 0 && (
+                  <Badge count={positions.length} style={{ marginLeft: 6 }} />
+                )}
+              </span>
+            }
             key="positions"
           >
             {positions.length > 0 ? (
@@ -518,7 +586,11 @@ const StockMarket: React.FC = () => {
                         <Space>
                           <Button
                             type="primary"
-                            onClick={() => handleOpenTradeModalDebounced('buy', undefined, position)}
+                            onClick={() => handleOpenTradeModalDebounced(
+                              'buy',
+                              marketIndices.find((i) => i.indexCode === position.indexCode),
+                              position,
+                            )}
                           >
                             加仓
                           </Button>
@@ -578,17 +650,26 @@ const StockMarket: React.FC = () => {
         okText={tradeType === 'buy' ? '确认买入' : '确认卖出'}
         cancelText="取消"
         width={500}
+        rootClassName="stock-trade-modal"
       >
         <Form form={form} layout="vertical">
-          {/*<Form.Item*/}
-          {/*  label="指数名称"*/}
-          {/*  name="indexName"*/}
-          {/*>*/}
-          {/*  <Input disabled />*/}
-          {/*</Form.Item>*/}
+          <Form.Item name="indexCode" hidden rules={[{ required: true, message: '请选择指数' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="indexName" hidden>
+            <Input />
+          </Form.Item>
 
           {tradeType === 'buy' ? (
             <>
+              <div className="trade-index-title">
+                <Text strong>
+                  {(selectedIndex?.indexName || selectedPosition?.indexName || form.getFieldValue('indexName')) || '—'}
+                </Text>
+                <span className="trade-index-code">
+                  {selectedIndex?.indexCode || selectedPosition?.indexCode || form.getFieldValue('indexCode')}
+                </span>
+              </div>
               <Form.Item
                 label="买入金额（积分）"
                 name="amount"
@@ -603,21 +684,35 @@ const StockMarket: React.FC = () => {
                   prefix={<DollarOutlined />}
                 />
               </Form.Item>
-              {selectedIndex && (
+              {(selectedIndex || selectedPosition) && (
                 <div className="trade-info">
-                  <Text type="secondary">
-                    当前指数: {selectedIndex.indexName} ({selectedIndex.indexCode})
-                  </Text>
-                  <br />
-                  <Text type="secondary">
-                    最新点位: {parseNumericValue(selectedIndex.currentValue).toFixed(2)}
-                    （{parseNumericValue(selectedIndex.changePercent) >= 0 ? '+' : ''}{parseNumericValue(selectedIndex.changePercent).toFixed(2)}%）
-                  </Text>
+                  {selectedIndex && (
+                    <>
+                      <span className="trade-info-text">
+                        最新点位: {parseNumericValue(selectedIndex.currentValue).toFixed(2)}
+                        （{parseNumericValue(selectedIndex.changePercent) >= 0 ? '+' : ''}
+                        {parseNumericValue(selectedIndex.changePercent).toFixed(2)}%）
+                      </span>
+                      <br />
+                    </>
+                  )}
+                  {selectedPosition && (
+                    <span className="trade-info-text">
+                      当前持仓: {Number(selectedPosition.totalShares || 0).toFixed(2)} 份 ·
+                      可用 {Number(selectedPosition.availableShares || 0).toFixed(2)} 份
+                    </span>
+                  )}
                 </div>
               )}
             </>
           ) : (
             <>
+              <div className="trade-index-title">
+                <Text strong>{selectedPosition?.indexName || '—'}</Text>
+                <span className="trade-index-code">
+                  {selectedPosition?.indexCode}
+                </span>
+              </div>
               <Form.Item
                 label="卖出份额"
                 name="shares"
@@ -634,19 +729,16 @@ const StockMarket: React.FC = () => {
               </Form.Item>
               {selectedPosition && (
                 <div className="trade-info">
-                  <Text type="secondary">
+                  <span className="trade-info-text">
                     当前持仓: {selectedPosition.indexName} ({selectedPosition.indexCode})
-                  </Text>
-                  <br />
-                  <Text type="secondary">
+                  </span>
+                  <span className="trade-info-text">
                     持仓份额: {Number(selectedPosition.totalShares || 0).toFixed(2)}
                     （可用: {Number(selectedPosition.availableShares || 0).toFixed(2)}）
-                  </Text>
-                  <br />
-                  <Text type="secondary">
+                  </span>
+                  <span className="trade-info-text">
                     当前净值: ¥{Number(selectedPosition.currentNav || 0).toFixed(4)}
-                  </Text>
-                  <br />
+                  </span>
                 </div>
               )}
             </>

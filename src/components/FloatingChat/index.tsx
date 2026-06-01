@@ -157,17 +157,31 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
     (data: { data?: { message?: ChatMessage } }) => {
       const incoming = data?.data?.message;
       if (!incoming?.id) return;
-      if (String(incoming.sender?.id) === String(currentUser?.id)) return;
+      const isSelf = String(incoming.sender?.id) === String(currentUser?.id);
 
       setMessages((prev) => {
         if (prev.some((m) => m.id === incoming.id)) return prev;
+
+        if (isSelf) {
+          for (let i = prev.length - 1; i >= 0; i--) {
+            if (
+              String(prev[i].sender.id) === String(currentUser?.id) &&
+              prev[i].content === incoming.content
+            ) {
+              const next = [...prev];
+              next[i] = incoming;
+              return next.length > 50 ? next.slice(-50) : next;
+            }
+          }
+        }
+
         const next = [...prev, incoming];
         return next.length > 50 ? next.slice(-50) : next;
       });
 
       if (isWindowOpen && isAtBottom()) {
         requestAnimationFrame(() => scrollToBottom());
-      } else if (isWindowOpen || mode === 'minimized') {
+      } else if (!isSelf && (isWindowOpen || mode === 'minimized')) {
         setUnreadCount((c) => c + 1);
       }
     },

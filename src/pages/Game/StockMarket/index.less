@@ -66,16 +66,38 @@
 
 // 指数卡片样式
 .index-card {
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &--holding {
+    border: 1px solid #91caff;
+    box-shadow: 0 2px 12px rgba(24, 144, 255, 0.12);
+  }
+
   .index-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+
+    .index-name-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
 
     .index-name {
       font-size: 18px;
       font-weight: 600;
       color: #262626;
+    }
+
+    .holding-tag {
+      margin: 0;
+      font-size: 11px;
+      line-height: 18px;
     }
 
     .index-code {
@@ -84,7 +106,16 @@
       background: #f5f5f5;
       padding: 2px 8px;
       border-radius: 4px;
+      flex-shrink: 0;
     }
+  }
+
+  .index-holding-brief {
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    background: #e6f4ff;
+    border-radius: 6px;
+    font-size: 12px;
   }
 
   .index-value {
@@ -184,26 +215,43 @@
   }
 }
 
+// 交易弹窗 - 指数标题
+.trade-index-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+
+  .trade-index-code {
+    font-size: 12px;
+    line-height: 20px;
+    color: #8c8c8c;
+    background: #f5f5f5;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+}
+
 // 交易弹窗样式
 .trade-info {
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
+  background: #e6f4ff;
+  border: 1px solid #91caff;
   border-radius: 6px;
   padding: 12px 16px;
   margin-top: 16px;
 
-  .ant-typography {
+  .trade-info-text {
     display: block;
     margin-bottom: 4px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.55);
 
     &:last-child {
       margin-bottom: 0;
     }
-  }
-
-  .ant-typography-warning {
-    color: #faad14;
-    font-weight: 500;
   }
 }
 

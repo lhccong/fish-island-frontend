@@ -4,10 +4,19 @@
   z-index: 4;
   display: flex;
   align-items: flex-end;
-  justify-content: flex-end;
+  justify-content: flex-start;
   width: 100%;
+  margin-left: clamp(-12px, -1vw, 0);
   pointer-events: none;
   user-select: none;
+}
+
+.farm-world-side > .farm-cottage-deco-wrap {
+  pointer-events: none;
+}
+
+.farm-cottage-deco-wrap .farm-pet-nest-wrap--cottage {
+  pointer-events: auto;
 }
 
 .farm-cottage-stage {
@@ -24,7 +33,7 @@
   min-width: 200px;
   max-height: min(calc(var(--farm-available-h) * 0.88), 620px);
   object-fit: contain;
-  object-position: bottom right;
+  object-position: bottom left;
   filter: drop-shadow(0 12px 28px rgba(50, 70, 30, 0.32));
   user-select: none;
   -webkit-user-drag: none;

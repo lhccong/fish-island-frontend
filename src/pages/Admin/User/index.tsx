@@ -1,5 +1,6 @@
 import CreateModal from '@/pages/Admin/User/components/CreateModal';
 import UpdateModal from '@/pages/Admin/User/components/UpdateModal';
+import {markScriptUserUsingPost} from '@/services/backend/redPacketController';
 import {deleteUserUsingPost, listUserByPageUsingPost} from '@/services/backend/userController';
 import {PlusOutlined} from '@ant-design/icons';
 import type {ActionType, ProColumns} from '@ant-design/pro-components';
@@ -53,6 +54,31 @@ const UserAdminPage: React.FC = () => {
     }
   }, [location.search]);
 
+
+  /**
+   * 标记/取消标记抢红包脚本用户
+   */
+  const handleMarkScriptUser = async (row: API.User, mark: boolean) => {
+    if (!row.id) return false;
+    const hide = message.loading(mark ? '正在封禁' : '正在解禁');
+    try {
+      const { code, message: msg } = await markScriptUserUsingPost({
+        userId: row.id,
+        mark,
+      });
+      hide();
+      if (code === 0) {
+        message.success(mark ? '已封禁抢红包脚本' : '已解禁抢红包脚本');
+        return true;
+      }
+      message.error((mark ? '封禁失败，' : '解禁失败，') + (msg || '未知错误'));
+      return false;
+    } catch (error: any) {
+      hide();
+      message.error((mark ? '封禁失败，' : '解禁失败，') + error.message);
+      return false;
+    }
+  };
 
   /**
    * 删除节点
@@ -197,6 +223,22 @@ const UserAdminPage: React.FC = () => {
           >
             查看称号
           </Typography.Link>
+          <Popconfirm
+            title={`确定封禁用户「${record.userName || record.userAccount}」的抢红包脚本吗？`}
+            onConfirm={() => handleMarkScriptUser(record, true)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Typography.Link type="danger">封禁脚本</Typography.Link>
+          </Popconfirm>
+          <Popconfirm
+            title={`确定解禁用户「${record.userName || record.userAccount}」的抢红包脚本吗？`}
+            onConfirm={() => handleMarkScriptUser(record, false)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Typography.Link>解禁脚本</Typography.Link>
+          </Popconfirm>
           <Popconfirm
             title="确定要删除该用户吗？"
             onConfirm={() => handleDelete(record)}

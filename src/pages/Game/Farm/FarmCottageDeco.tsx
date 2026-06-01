@@ -4,8 +4,17 @@ import './FarmCottageDeco.less';
 
 const FARM_COTTAGE_IMG = 'https://oss.cqbo.com/moyu/farm/xiaowu.png';
 
-/** 田地右側農舍，寵物住在屋內 */
-const FarmCottageDeco: React.FC = () => (
+type FarmCottageDecoProps = {
+  /** 拜访好友时传入，农舍内展示对方宠物 */
+  ownerUserId?: string;
+  ownerName?: string;
+};
+
+/** 田地右侧农舍，宠物住在屋内 */
+const FarmCottageDeco: React.FC<FarmCottageDecoProps> = ({
+  ownerUserId,
+  ownerName,
+}) => (
   <div className="farm-cottage-deco-wrap">
     <div className="farm-cottage-stage">
       <img
@@ -14,7 +23,11 @@ const FarmCottageDeco: React.FC = () => (
         alt=""
         draggable={false}
       />
-      <FarmPetNest variant="cottage" />
+      <FarmPetNest
+        variant="cottage"
+        ownerUserId={ownerUserId}
+        ownerName={ownerName}
+      />
     </div>
   </div>
 );
