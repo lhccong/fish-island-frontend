@@ -64,6 +64,7 @@ async function urlToFile(url: string, filename: string): Promise<File> {
 interface MemeGeneratorViewProps {
   memeKey: string;
   onBack: () => void;
+  memeInfo?: MemeInfo;
 }
 
 /** 格式化错误信息 */
@@ -103,11 +104,11 @@ function formatError(err: unknown): { msg: string; hint: string } {
   return { msg: '生成失败', hint: '发生未知错误，请重试' };
 }
 
-const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack }) => {
+const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack, memeInfo: cachedMemeInfo }) => {
   const { initialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
-  const [memeInfo, setMemeInfo] = useState<MemeInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [memeInfo, setMemeInfo] = useState<MemeInfo | null>(cachedMemeInfo || null);
+  const [loading, setLoading] = useState(!cachedMemeInfo);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [errorHint, setErrorHint] = useState('');
@@ -217,10 +218,14 @@ const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack }
   useEffect(() => {
     (async () => {
       try {
-        const info = await getMemeInfo(memeKey);
-        setMemeInfo(info);
+        let info: MemeInfo;
+        if (cachedMemeInfo) {
+          info = cachedMemeInfo;
+        } else {
+          info = await getMemeInfo(memeKey);
+          setMemeInfo(info);
+        }
         initFormState(info);
-        // 加载预览
         try {
           const prev = await getMemePreview(memeKey);
           setPreviewUrl(getImageUrl(prev.image_id));

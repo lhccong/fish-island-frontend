@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { Tooltip, Modal, Input, Button, message } from 'antd';
 import { QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { getBackendUrl, setBackendUrl, isCustomBackend } from './api';
+import type { MemeInfo } from './types';
 import MemeList from './components/MemeList';
 import MemeGeneratorView from './components/MemeGeneratorView';
 import './index.less';
 
 const MemeGenerator: React.FC = () => {
   const [currentMemeKey, setCurrentMemeKey] = useState<string | null>(null);
+  const [currentMemeInfo, setCurrentMemeInfo] = useState<MemeInfo | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [backendInput, setBackendInput] = useState('');
   const [backendStatus, setBackendStatus] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle');
@@ -119,9 +121,13 @@ const MemeGenerator: React.FC = () => {
       {/* 主内容区 */}
       <main className="meme-main">
         {currentMemeKey ? (
-          <MemeGeneratorView memeKey={currentMemeKey} onBack={() => setCurrentMemeKey(null)} />
+          <MemeGeneratorView
+            memeKey={currentMemeKey}
+            memeInfo={currentMemeInfo || undefined}
+            onBack={() => { setCurrentMemeKey(null); setCurrentMemeInfo(null); }}
+          />
         ) : (
-          <MemeList onSelectMeme={setCurrentMemeKey} />
+          <MemeList onSelectMeme={(key, info) => { setCurrentMemeKey(key); setCurrentMemeInfo(info || null); }} />
         )}
       </main>
 

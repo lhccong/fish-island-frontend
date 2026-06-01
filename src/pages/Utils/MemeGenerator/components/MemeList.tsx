@@ -32,7 +32,19 @@ const sortLabels: Record<SortBy, string> = {
 };
 
 interface MemeListProps {
-  onSelectMeme: (key: string) => void;
+  onSelectMeme: (key: string, info?: MemeInfo) => void;
+}
+
+const PREVIEW_CACHE_KEY = 'meme_cache_preview_urls';
+
+function loadPreviewCache(): Record<string, string> {
+  try {
+    return JSON.parse(sessionStorage.getItem(PREVIEW_CACHE_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function savePreviewCache(cache: Record<string, string>) {
+  try { sessionStorage.setItem(PREVIEW_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
 const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
@@ -41,7 +53,7 @@ const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
+  const [previewCache, setPreviewCache] = useState<Record<string, string>>(loadPreviewCache);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>('keywords_pinyin');
   const [sortReverse, setSortReverse] = useState(false);
@@ -180,7 +192,11 @@ const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
     if (previewCache[key]) return;
     try {
       const resp = await getMemePreview(key);
-      setPreviewCache((prev) => ({ ...prev, [key]: getImageUrl(resp.image_id) }));
+      setPreviewCache((prev) => {
+        const next = { ...prev, [key]: getImageUrl(resp.image_id) };
+        savePreviewCache(next);
+        return next;
+      });
     } catch {
       // ignore
     }
@@ -211,7 +227,8 @@ const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
   const handleSelectMeme = (key: string) => {
     addRecentKey(key);
     setRecentKeys(getRecentKeys());
-    onSelectMeme(key);
+    const info = allMemes.find((m) => m.key === key);
+    onSelectMeme(key, info);
   };
 
   // 随机表情
