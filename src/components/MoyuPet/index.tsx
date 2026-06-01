@@ -418,7 +418,27 @@ const ShopTabs: React.FC<ShopTabsProps> = ({ renderSkinsList }) => {
                               className={styles.foodShopQtyBtn}
                               onClick={() => setBuyQuantity(prev => ({ ...prev, [item.id!]: Math.max(1, (prev[item.id!] ?? 1) - 1) }))}
                             >−</button>
-                            <span className={styles.foodShopQtyNum}>{qty}</span>
+                            <InputNumber
+                              className={styles.foodShopQtyNum}
+                              min={1}
+                              max={99}
+                              precision={0}
+                              controls={false}
+                              value={qty}
+                              onChange={(v) => {
+                                if (v == null) return;
+                                setBuyQuantity(prev => ({ ...prev, [item.id!]: v }));
+                              }}
+                              onBlur={() => {
+                                setBuyQuantity(prev => {
+                                  const current = prev[item.id!];
+                                  if (!current || current < 1) {
+                                    return { ...prev, [item.id!]: 1 };
+                                  }
+                                  return prev;
+                                });
+                              }}
+                            />
                             <button
                               className={styles.foodShopQtyBtn}
                               onClick={() => setBuyQuantity(prev => ({ ...prev, [item.id!]: Math.min(99, (prev[item.id!] ?? 1) + 1) }))}

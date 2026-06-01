@@ -20,10 +20,20 @@ export interface FloatingChatSettings {
   collapseImages: boolean;
   /** 暗黑模式 */
   darkMode: boolean;
+  /** Excel 表格伪装模式 */
+  excelMode: boolean;
+  /** Excel 占满整个浏览器视口（隐藏站点菜单等背景） */
+  excelViewportFullscreen: boolean;
 }
 
 /** 独立小窗页 body 暗黑模式 class */
 export const FLOATING_CHAT_BODY_DARK_CLASS = 'floating-chat-body-dark';
+
+/** 独立小窗页 Excel 全屏模式 class */
+export const FLOATING_CHAT_EXCEL_FULLSCREEN_CLASS = 'floating-chat-excel-fullscreen';
+
+/** 当前页 Excel 视口铺满 class（隐藏页面滚动与站点布局） */
+export const FLOATING_CHAT_EXCEL_VIEWPORT_CLASS = 'floating-chat-excel-viewport';
 
 function parseBool(value: unknown, fallback: boolean): boolean {
   return typeof value === 'boolean' ? value : fallback;
@@ -59,6 +69,8 @@ const DEFAULT_SETTINGS: FloatingChatSettings = {
   hideAvatar: false,
   collapseImages: false,
   darkMode: false,
+  excelMode: false,
+  excelViewportFullscreen: false,
 };
 
 export function loadFloatingChatSettings(): FloatingChatSettings {
@@ -81,6 +93,11 @@ export function loadFloatingChatSettings(): FloatingChatSettings {
       hideAvatar: parseBool(parsed.hideAvatar, DEFAULT_SETTINGS.hideAvatar),
       collapseImages: parseBool(parsed.collapseImages, DEFAULT_SETTINGS.collapseImages),
       darkMode: parseBool(parsed.darkMode, DEFAULT_SETTINGS.darkMode),
+      excelMode: parseBool(parsed.excelMode, DEFAULT_SETTINGS.excelMode),
+      excelViewportFullscreen: parseBool(
+        parsed.excelViewportFullscreen,
+        DEFAULT_SETTINGS.excelViewportFullscreen,
+      ),
     };
     if (rawTitle !== undefined && rawTitle !== settings.title) {
       saveFloatingChatSettings(settings);

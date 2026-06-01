@@ -11,12 +11,16 @@ import {
   FloatingChatMode,
   FloatingChatSettings,
   FLOATING_CHAT_BODY_DARK_CLASS,
+  FLOATING_CHAT_EXCEL_FULLSCREEN_CLASS,
+  FLOATING_CHAT_EXCEL_VIEWPORT_CLASS,
   FLOATING_CHAT_TITLE_MAX_LENGTH,
   getFloatingChatDisplayTitle,
   loadFloatingChatSettings,
   normalizeFloatingChatTitle,
   saveFloatingChatSettings,
 } from './storage';
+import ExcelLayout from './ExcelLayout';
+import { getExcelWorkbookTitle, getExcelWindowCaption } from './excelUtils';
 import styles from './index.less';
 
 interface ChatMessage {
@@ -35,11 +39,20 @@ interface FloatingChatProps {
   fullscreen?: boolean;
 }
 
+function normalizeChatMessage(msg: ChatMessage): ChatMessage {
+  const ts = msg.timestamp;
+  const timestamp =
+    ts instanceof Date && !Number.isNaN(ts.getTime())
+      ? ts
+      : new Date((ts as unknown as string | number) || Date.now());
+  return Number.isNaN(timestamp.getTime()) ? { ...msg, timestamp: new Date() } : { ...msg, timestamp };
+}
+
 function mapRecordToMessage(record: API.RoomMessageVo): ChatMessage | null {
   const msg = record.messageWrapper?.message;
   if (!msg?.id) return null;
   const sender = msg.sender;
-  return {
+  return normalizeChatMessage({
     id: String(msg.id),
     content: msg.content || '',
     sender: {
@@ -48,7 +61,7 @@ function mapRecordToMessage(record: API.RoomMessageVo): ChatMessage | null {
       avatar: sender?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=visitor',
     },
     timestamp: new Date(msg.timestamp || Date.now()),
-  };
+  });
 }
 
 const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
@@ -114,6 +127,9 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
   );
 
   const displayTitle = getFloatingChatDisplayTitle(settings.title);
+  const workbookTitle = getExcelWorkbookTitle(displayTitle);
+  const excelMode = settings.excelMode;
+  const excelViewportFullscreen = settings.excelViewportFullscreen && excelMode && !fullscreen;
 
   const isAtBottom = useCallback(() => {
     const el = bodyRef.current;
@@ -155,8 +171,9 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
 
   const handleWsMessage = useCallback(
     (data: { data?: { message?: ChatMessage } }) => {
-      const incoming = data?.data?.message;
-      if (!incoming?.id) return;
+      const raw = data?.data?.message;
+      if (!raw?.id) return;
+      const incoming = normalizeChatMessage(raw);
       const isSelf = String(incoming.sender?.id) === String(currentUser?.id);
 
       setMessages((prev) => {
@@ -233,16 +250,41 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
 
   useEffect(() => {
     if (!fullscreen) return;
-    document.title = displayTitle;
-  }, [fullscreen, displayTitle]);
+    document.title = excelMode ? getExcelWindowCaption(workbookTitle) : displayTitle;
+  }, [fullscreen, displayTitle, excelMode, workbookTitle]);
 
   useEffect(() => {
     if (!fullscreen) return;
-    document.body.classList.toggle(FLOATING_CHAT_BODY_DARK_CLASS, settings.darkMode);
+    document.body.classList.toggle(
+      FLOATING_CHAT_BODY_DARK_CLASS,
+      settings.darkMode && !excelMode,
+    );
+    document.body.classList.toggle(FLOATING_CHAT_EXCEL_FULLSCREEN_CLASS, excelMode);
     return () => {
       document.body.classList.remove(FLOATING_CHAT_BODY_DARK_CLASS);
+      document.body.classList.remove(FLOATING_CHAT_EXCEL_FULLSCREEN_CLASS);
     };
-  }, [fullscreen, settings.darkMode]);
+  }, [fullscreen, settings.darkMode, excelMode]);
+
+  useEffect(() => {
+    if (fullscreen) return;
+    document.body.classList.toggle(FLOATING_CHAT_EXCEL_VIEWPORT_CLASS, excelViewportFullscreen);
+    return () => {
+      document.body.classList.remove(FLOATING_CHAT_EXCEL_VIEWPORT_CLASS);
+    };
+  }, [fullscreen, excelViewportFullscreen]);
+
+  useEffect(() => {
+    if (!excelViewportFullscreen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        updateSettings({ excelViewportFullscreen: false });
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [excelViewportFullscreen, updateSettings]);
 
   useEffect(() => {
     if (!isLoggedIn || mode === 'minimized') return;
@@ -329,12 +371,35 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
   };
 
   const openPopupWindow = () => {
+    if (excelMode) {
+      updateSettings({ excelMode: true });
+      window.open('/chat/mini', '_blank');
+      return;
+    }
     window.open('/chat/mini', '_blank', 'width=400,height=560');
   };
 
+  const toggleExcelViewportFullscreen = useCallback(() => {
+    const next = !settings.excelViewportFullscreen;
+    updateSettings({
+      excelViewportFullscreen: next,
+      excelMode: true,
+      ...(next && mode === 'minimized' ? { mode: 'normal' as FloatingChatMode } : {}),
+    });
+  }, [mode, settings.excelViewportFullscreen, updateSettings]);
+
   const goFullChat = () => {
+    if (excelMode) {
+      toggleExcelViewportFullscreen();
+      return;
+    }
     setMode('minimized');
     history.push('/chat');
+  };
+
+  const openExcelDedicatedPage = () => {
+    updateSettings({ excelMode: true, excelViewportFullscreen: false });
+    history.push('/chat/mini');
   };
 
   if (!isLoggedIn && !fullscreen) return null;
@@ -345,9 +410,9 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
   // 在完整聊天室页面且未开启悬浮窗时，不显示（避免重复）
   if (onChatPage && mode === 'minimized' && !fullscreen) return null;
 
-  const showMinBar = mode === 'minimized' && !fullscreen;
-  const showWindow = isWindowOpen || fullscreen;
-  const windowOpacity = settings.opacity / 100;
+  const showMinBar = mode === 'minimized' && !fullscreen && !excelViewportFullscreen;
+  const showWindow = isWindowOpen || fullscreen || excelViewportFullscreen;
+  const windowOpacity = excelViewportFullscreen ? 1 : settings.opacity / 100;
 
   const renderHeaderActions = () => (
     <span className={styles.headerActions} onMouseDown={(e) => e.stopPropagation()}>
@@ -435,26 +500,83 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
                 <span className={styles.switchSlider} />
               </label>
             </div>
+            <div className={styles.settingsItem}>
+              <span className={styles.settingsItemLabel}>Excel 全界面模式</span>
+              <label className={styles.settingSwitch}>
+                <input
+                  type="checkbox"
+                  checked={settings.excelMode}
+                  onChange={(e) => updateSettings({ excelMode: e.target.checked })}
+                />
+                <span className={styles.switchSlider} />
+              </label>
+            </div>
           </div>
         )}
       </div>
+      <button
+        type="button"
+        className={`${styles.popupCrBtn} ${settings.excelMode ? styles.active : ''}`}
+        title={settings.excelMode ? '切换为聊天气泡' : 'Excel 模式'}
+        onClick={() =>
+          updateSettings({
+            excelMode: !settings.excelMode,
+            ...(!settings.excelMode ? {} : { excelViewportFullscreen: false }),
+          })
+        }
+      >
+        ▦
+      </button>
       {!fullscreen && (
         <>
+          {!excelMode && (
+            <button
+              type="button"
+              className={`${styles.popupCrBtn} ${isSmallScreen ? styles.active : ''}`}
+              title="小屏模式"
+              onClick={() => setMode(isSmallScreen ? 'normal' : 'small')}
+            >
+              ⊟
+            </button>
+          )}
+          {excelMode ? (
+            <>
+              <button
+                type="button"
+                className={`${styles.popupCrBtn} ${excelViewportFullscreen ? styles.active : ''}`}
+                title={excelViewportFullscreen ? '退出全屏 (Esc)' : '全屏 Excel（铺满当前页）'}
+                onClick={toggleExcelViewportFullscreen}
+              >
+                ⛶
+              </button>
+              <button type="button" className={styles.popupCrBtn} title="新标签页打开" onClick={openPopupWindow}>
+                ↗
+              </button>
+              <button type="button" className={styles.popupCrBtn} title="独立 Excel 页" onClick={openExcelDedicatedPage}>
+                ⊞
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className={styles.popupCrBtn} title="独立弹窗" onClick={openPopupWindow}>
+                ↗
+              </button>
+              <button type="button" className={styles.popupCrBtn} title="完整聊天室" onClick={goFullChat}>
+                ⛶
+              </button>
+            </>
+          )}
           <button
             type="button"
-            className={`${styles.popupCrBtn} ${isSmallScreen ? styles.active : ''}`}
-            title="小屏模式"
-            onClick={() => setMode(isSmallScreen ? 'normal' : 'small')}
+            className={styles.popupCrBtn}
+            title="最小化"
+            onClick={() => {
+              if (excelViewportFullscreen) {
+                updateSettings({ excelViewportFullscreen: false });
+              }
+              setMode('minimized');
+            }}
           >
-            ⊟
-          </button>
-          <button type="button" className={styles.popupCrBtn} title="独立弹窗" onClick={openPopupWindow}>
-            ↗
-          </button>
-          <button type="button" className={styles.popupCrBtn} title="完整聊天室" onClick={goFullChat}>
-            ⛶
-          </button>
-          <button type="button" className={styles.popupCrBtn} title="最小化" onClick={() => setMode('minimized')}>
             ➖
           </button>
         </>
@@ -465,22 +587,35 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
   const content = (
     <div
       className={`${styles.popupCrWrapper} ${fullscreen ? styles.fullscreenPopup : ''} ${
-        isSmallScreen ? styles.smallScreen : ''
-      } ${settings.darkMode ? styles.darkMode : ''} ${dragging ? styles.dragging : ''}`}
+        excelViewportFullscreen ? styles.excelViewportFullscreen : ''
+      } ${isSmallScreen && !excelViewportFullscreen ? styles.smallScreen : ''} ${
+        settings.darkMode && !excelMode ? styles.darkMode : ''
+      } ${excelMode ? styles.excelMode : ''} ${dragging ? styles.dragging : ''}`}
       style={{
-        ...(dragging ? { transition: 'none' } : {}),
-        ...(!fullscreen ? { transform: `translate(${settings.pos.x}px, ${settings.pos.y}px)` } : {}),
+        ...(dragging && !excelViewportFullscreen ? { transition: 'none' } : {}),
+        ...(!fullscreen && !excelViewportFullscreen
+          ? { transform: `translate(${settings.pos.x}px, ${settings.pos.y}px)` }
+          : {}),
       }}
     >
       {showMinBar && (
         <button
           type="button"
-          className={styles.chatMinBar}
+          className={excelMode ? styles.excelMinBar : styles.chatMinBar}
           onMouseDown={startDrag}
           onClick={handleMinBarClick}
         >
-          <span>💬</span>
-          <span>{displayTitle}</span>
+          {excelMode ? (
+            <>
+              <span className={styles.excelAppIcon} aria-hidden />
+              <span>{workbookTitle}</span>
+            </>
+          ) : (
+            <>
+              <span>💬</span>
+              <span>{displayTitle}</span>
+            </>
+          )}
           {unreadCount > 0 && (
             <span className={styles.unreadBadge}>{unreadCount > 99 ? '99+' : unreadCount}</span>
           )}
@@ -489,88 +624,110 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
 
       {showWindow && (
         <div
-          className={styles.chatWindow}
+          className={`${styles.chatWindow} ${excelMode ? styles.excelWindow : ''}`}
           style={{
             opacity: windowOpacity,
           }}
         >
-          <div
-            className={`${styles.chatHeader} ${fullscreen ? styles.chatHeaderStatic : ''}`}
-            onMouseDown={startDrag}
-          >
-            <span className={styles.chatHeaderTitle}>
-              <span>💬</span>
-              <span>{displayTitle}</span>
-            </span>
-            {renderHeaderActions()}
-          </div>
-
-          <div
-            className={styles.chatBody}
-            ref={bodyRef}
-            onScroll={() => {
-              if (isAtBottom()) setUnreadCount(0);
-            }}
-          >
-            {loading && <div className={styles.loadingHint}>加载中...</div>}
-            <Image.PreviewGroup
-              preview={{
-                getContainer: () => document.body,
-                zIndex: 1000002,
+          {excelMode ? (
+            <ExcelLayout
+              workbookTitle={workbookTitle}
+              messages={messages}
+              loading={loading}
+              inputValue={inputValue}
+              unreadCount={unreadCount}
+              bodyRef={bodyRef}
+              headerActions={renderHeaderActions()}
+              onInputChange={setInputValue}
+              onSend={handleSend}
+              onScroll={() => {
+                if (isAtBottom()) setUnreadCount(0);
               }}
-            >
-              {!loading &&
-                messages.map((msg) => {
-                const isMe = msg.sender.id === String(currentUser?.id);
-                return (
-                  <div
-                    key={msg.id}
-                    className={`${styles.chatMessage} ${isMe ? styles.isMe : ''} ${
-                      settings.hideAvatar ? styles.hideAvatar : ''
-                    }`}
-                  >
-                    {!settings.hideAvatar && (
-                      <img className={styles.avatar} src={msg.sender.avatar} alt="" />
-                    )}
-                    <div className={styles.messageMain}>
-                      <span className={styles.nickname}>{msg.sender.name}</span>
-                      <div className={styles.messageBubble}>
-                        <MessageContent
-                          content={msg.content}
-                          collapseImages={settings.collapseImages}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </Image.PreviewGroup>
-          </div>
-
-          {unreadCount > 0 && (
-            <button type="button" className={styles.newMessageNotice} onClick={() => scrollToBottom()}>
-              {unreadCount} 条新消息 ↓
-            </button>
-          )}
-
-          <div className={styles.chatInputArea}>
-            <input
-              className={styles.chatInput}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="说点什么"
-              maxLength={200}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
+              onScrollToBottom={() => scrollToBottom()}
+              onTitleBarMouseDown={fullscreen || excelViewportFullscreen ? undefined : startDrag}
+              titleBarStatic={fullscreen || excelViewportFullscreen}
             />
-            <button type="button" className={styles.sendBtn} onClick={handleSend}>
-              发送
-            </button>
-          </div>
+          ) : (
+            <>
+              <div
+                className={`${styles.chatHeader} ${fullscreen ? styles.chatHeaderStatic : ''}`}
+                onMouseDown={startDrag}
+              >
+                <span className={styles.chatHeaderTitle}>
+                  <span>💬</span>
+                  <span>{displayTitle}</span>
+                </span>
+                {renderHeaderActions()}
+              </div>
+
+              <div
+                className={styles.chatBody}
+                ref={bodyRef}
+                onScroll={() => {
+                  if (isAtBottom()) setUnreadCount(0);
+                }}
+              >
+                {loading && <div className={styles.loadingHint}>加载中...</div>}
+                <Image.PreviewGroup
+                  preview={{
+                    getContainer: () => document.body,
+                    zIndex: 1000002,
+                  }}
+                >
+                  {!loading &&
+                    messages.map((msg) => {
+                      const isMe = msg.sender.id === String(currentUser?.id);
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`${styles.chatMessage} ${isMe ? styles.isMe : ''} ${
+                            settings.hideAvatar ? styles.hideAvatar : ''
+                          }`}
+                        >
+                          {!settings.hideAvatar && (
+                            <img className={styles.avatar} src={msg.sender.avatar} alt="" />
+                          )}
+                          <div className={styles.messageMain}>
+                            <span className={styles.nickname}>{msg.sender.name}</span>
+                            <div className={styles.messageBubble}>
+                              <MessageContent
+                                content={msg.content}
+                                collapseImages={settings.collapseImages}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </Image.PreviewGroup>
+              </div>
+
+              {unreadCount > 0 && (
+                <button type="button" className={styles.newMessageNotice} onClick={() => scrollToBottom()}>
+                  {unreadCount} 条新消息 ↓
+                </button>
+              )}
+
+              <div className={styles.chatInputArea}>
+                <input
+                  className={styles.chatInput}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="说点什么"
+                  maxLength={200}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                />
+                <button type="button" className={styles.sendBtn} onClick={handleSend}>
+                  发送
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

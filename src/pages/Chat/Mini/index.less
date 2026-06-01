@@ -7,9 +7,15 @@
   background: #fff;
 }
 
-:global(body.floating-chat-body-dark) {
+:global(body.floating-chat-body-dark:not(.floating-chat-excel-fullscreen)) {
   .miniRoot {
     background: #121212;
+  }
+}
+
+:global(body.floating-chat-excel-fullscreen) {
+  .miniRoot {
+    background: #e8e8e8;
   }
 }
 

@@ -690,3 +690,572 @@
     background: #121212;
   }
 }
+
+// ── Excel 全界面伪装模式 ────────────────────────────────────
+.popupCrWrapper.excelMode {
+  font-family: 'Segoe UI', Calibri, 'Microsoft YaHei', Arial, sans-serif;
+
+  .chatWindow,
+  .excelWindow {
+    border-color: #a6a6a6;
+    border-radius: 0;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .popupCrBtn {
+    color: rgba(255, 255, 255, 0.9);
+
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    &.active {
+      color: #217346;
+      background: #fff;
+    }
+  }
+
+  .settingsPanel {
+    border-color: #d4d4d4;
+    color: #24292f;
+  }
+}
+
+.fullscreenPopup.excelMode .excelWindow {
+  border: none;
+}
+
+.excelMinBar {
+  background: #217346;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: grab;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  user-select: none;
+
+  .excelAppIcon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: #1a5c38;
+    transform: translateY(-1px);
+  }
+
+  .unreadBadge {
+    background: #fff;
+    color: #217346;
+  }
+}
+
+.excelWindow {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.excelApp {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  background: #fff;
+}
+
+.excelAppIcon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #33c481 0%, #21a366 45%, #107c41 100%);
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.excelTitleBar {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 8px;
+  background: #217346;
+  color: #fff;
+  font-size: 12px;
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.excelTitleBarStatic {
+  cursor: default;
+}
+
+.excelTitleLeft {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.excelAppName {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.excelTitleCaption {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.95;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.excelTitleRight {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.excelRibbon {
+  flex-shrink: 0;
+  border-bottom: 1px solid #d4d4d4;
+  background: #f3f3f3;
+}
+
+.excelRibbonTabs {
+  display: flex;
+  align-items: flex-end;
+  padding: 0 4px;
+  gap: 2px;
+  background: #217346;
+  min-height: 24px;
+}
+
+.excelRibbonTab {
+  padding: 4px 10px 3px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: default;
+  border-radius: 3px 3px 0 0;
+
+  &.excelRibbonTabActive {
+    background: #f3f3f3;
+    color: #333;
+    font-weight: 600;
+  }
+}
+
+.excelRibbonToolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  min-height: 36px;
+  background: #f3f3f3;
+  flex-wrap: wrap;
+}
+
+.excelToolBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: default;
+}
+
+.excelToolDivider {
+  width: 1px;
+  height: 20px;
+  background: #d4d4d4;
+  margin: 0 4px;
+}
+
+.excelToolGroup {
+  display: flex;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.excelToolLabel {
+  font-size: 11px;
+  color: #444;
+  padding: 2px 8px;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.excelFormulaBar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  background: #fff;
+  border-bottom: 1px solid #d4d4d4;
+  flex-shrink: 0;
+}
+
+.excelNameBox {
+  flex-shrink: 0;
+  width: 52px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  font-size: 11px;
+  color: #333;
+  border: 1px solid #d4d4d4;
+  background: #fff;
+}
+
+.excelFxLabel {
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 600;
+  color: #888;
+}
+
+.excelFormulaInput {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 12px;
+  border: 1px solid #d4d4d4;
+  outline: none;
+  font-family: inherit;
+
+  &:focus {
+    border-color: #217346;
+  }
+}
+
+.excelFormulaEnter {
+  flex-shrink: 0;
+  width: 28px;
+  height: 22px;
+  border: 1px solid #d4d4d4;
+  background: #f3f3f3;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 2px;
+  line-height: 1;
+
+  &:hover {
+    background: #e8e8e8;
+    border-color: #217346;
+  }
+}
+
+.excelGridWrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #e8e8e8;
+  position: relative;
+
+  &::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border: 3px solid #e8e8e8;
+    border-radius: 7px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #e8e8e8;
+  }
+}
+
+.excelLoading {
+  padding: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  background: #fff;
+}
+
+.excelTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 11px;
+  color: #000;
+  background: #fff;
+
+  th,
+  td {
+    border: 1px solid #d4d4d4;
+    padding: 1px 5px;
+    vertical-align: middle;
+    line-height: 1.35;
+    text-align: left;
+    height: 20px;
+  }
+}
+
+.excelCorner {
+  width: 40px;
+  min-width: 40px;
+  background: #f2f2f2;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.excelColHeader {
+  background: #f2f2f2;
+  font-weight: 600;
+  text-align: center;
+  font-size: 11px;
+  color: #333;
+  height: 20px;
+
+  &:nth-child(2) {
+    width: 76px;
+  }
+
+  &:nth-child(3) {
+    width: 80px;
+  }
+
+  &:nth-child(4) {
+    width: auto;
+  }
+}
+
+.excelColHeaderFiller,
+.excelCellFiller {
+  background: #f2f2f2;
+  min-width: 48px;
+}
+
+.excelColKey {
+  font-size: 11px;
+}
+
+.excelRowNum {
+  width: 40px;
+  min-width: 40px;
+  background: #f2f2f2;
+  color: #666;
+  text-align: center;
+  font-size: 11px;
+  user-select: none;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.excelCell {
+  background: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0;
+}
+
+.excelCellContent {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+  min-height: 20px;
+}
+
+.excelRowActive td.excelCell:not(.excelCellFiller) {
+  outline: 2px solid #217346;
+  outline-offset: -2px;
+}
+
+.excelTable tbody tr:hover td.excelCell:not(.excelCellFiller) {
+  background: #e7f4ff;
+}
+
+.excelNewRowsNotice {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  background: #217346;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 11px;
+  cursor: pointer;
+  border: none;
+  z-index: 5;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    background: #1a5c38;
+  }
+}
+
+.excelBottomBar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  min-height: 24px;
+  background: #f3f3f3;
+  border-top: 1px solid #d4d4d4;
+  font-size: 11px;
+}
+
+.excelSheetTabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  padding-left: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.excelSheetTab {
+  padding: 3px 12px;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  background: #e8e8e8;
+  color: #444;
+  cursor: default;
+  margin-right: -1px;
+  border-radius: 0;
+  white-space: nowrap;
+
+  &.excelSheetTabActive {
+    background: #fff;
+    color: #217346;
+    font-weight: 600;
+    border-top: 2px solid #217346;
+    padding-top: 2px;
+  }
+}
+
+.excelSheetAdd {
+  padding: 3px 8px;
+  color: #666;
+  cursor: default;
+  align-self: center;
+}
+
+.excelStatusBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  color: #444;
+  border-left: 1px solid #d4d4d4;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.excelStatusSep {
+  color: #ccc;
+}
+
+.smallScreen.excelMode {
+  .excelRibbonToolbar {
+    min-height: 28px;
+    padding: 2px 6px;
+  }
+
+  .excelRibbonTab {
+    padding: 3px 6px 2px;
+    font-size: 10px;
+  }
+
+  .excelTitleCaption {
+    display: none;
+  }
+
+  .chatWindow,
+  .excelWindow {
+    width: 300px;
+  }
+
+  .excelGridWrap {
+    max-height: 280px;
+  }
+}
+
+.fullscreenPopup.excelMode {
+  background: #e8e8e8;
+
+  .excelWindow {
+    height: 100%;
+  }
+}
+
+// 当前页面内铺满视口，盖住站点菜单与背景
+.excelViewportFullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  transform: none !important;
+  margin: 0 !important;
+  align-items: stretch !important;
+  pointer-events: auto;
+  background: #e8e8e8;
+
+  .chatWindow,
+  .excelWindow {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+  }
+
+  .excelApp {
+    height: 100%;
+  }
+
+  .excelGridWrap {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+:global(body.floating-chat-excel-viewport) {
+  overflow: hidden !important;
+
+  .ant-pro-layout,
+  .ant-layout {
+    pointer-events: none;
+  }
+}

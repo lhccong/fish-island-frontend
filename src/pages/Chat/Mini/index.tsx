@@ -14,9 +14,14 @@ const ChatMiniPage: React.FC = () => {
   useEffect(() => {
     document.body.classList.add(POPUP_BODY_CLASS);
     const prev = loadFloatingChatSettings();
-    const next = { ...prev, mode: 'normal' as const };
+    const next = {
+      ...prev,
+      mode: 'normal' as const,
+      excelMode: true,
+      excelViewportFullscreen: false,
+    };
     saveFloatingChatSettings(next);
-    emitFloatingChatChange({ mode: 'normal' });
+    emitFloatingChatChange(next);
 
     return () => {
       document.body.classList.remove(POPUP_BODY_CLASS);
