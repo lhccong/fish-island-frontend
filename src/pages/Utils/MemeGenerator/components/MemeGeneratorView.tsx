@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { message } from 'antd';
 import { StarOutlined, StarFilled } from '@ant-design/icons';
 import type { MemeInfo, ImageItem } from '../types';
-import { getMemeInfo, getMemePreview, uploadImage, generateMeme, getImageUrl, MemeError } from '../api';
+import { getMemeInfo, getMemePreview, uploadImage, generateMeme, getCachedImageUrl, MemeError } from '../api';
 import { addEmoticonFavourUsingPost } from '@/services/backend/emoticonFavourController';
 import { uploadFileByMinioUsingPost } from '@/services/backend/fileController';
 import eventBus from '@/utils/eventBus';
@@ -194,7 +194,7 @@ const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack, 
     refreshingPreview.current = true;
     try {
       const resp = await getMemePreview(memeInfo.key, buildFinalOptions());
-      setPreviewUrl(getImageUrl(resp.image_id));
+      setPreviewUrl(await getCachedImageUrl(resp.image_id));
     } catch {
       // 静默失败
     } finally {
@@ -228,7 +228,7 @@ const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack, 
         initFormState(info);
         try {
           const prev = await getMemePreview(memeKey);
-          setPreviewUrl(getImageUrl(prev.image_id));
+          setPreviewUrl(await getCachedImageUrl(prev.image_id));
         } catch {
           // 预览可能不可用
         }
@@ -289,7 +289,7 @@ const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack, 
       const finalOptions = buildFinalOptions();
 
       const resp = await generateMeme(memeInfo.key, uploadedImages, finalTexts, finalOptions);
-      setResultUrl(getImageUrl(resp.image_id));
+      setResultUrl(await getCachedImageUrl(resp.image_id));
       setFavorited(false); // 重置收藏状态
     } catch (err: any) {
       const { msg, hint } = formatError(err);

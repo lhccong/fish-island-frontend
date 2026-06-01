@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { MemeInfo } from '../types';
 import type { SortBy } from '../api';
-import { getMemeInfos, searchMemes, getImageUrl, getMemePreview } from '../api';
+import { getMemeInfos, searchMemes, getCachedImageUrl, getMemePreview } from '../api';
 import MemeCard from './MemeCard';
 
 const TAG_DISPLAY_COUNT = 8;
@@ -37,13 +37,13 @@ interface MemeListProps {
 
 const PREVIEW_CACHE_KEY = 'meme_cache_preview_urls';
 
-function loadPreviewCache(): Record<string, string> {
+function loadPreviewImageIds(): Record<string, string> {
   try {
     return JSON.parse(sessionStorage.getItem(PREVIEW_CACHE_KEY) || '{}');
   } catch { return {}; }
 }
 
-function savePreviewCache(cache: Record<string, string>) {
+function savePreviewImageIds(cache: Record<string, string>) {
   try { sessionStorage.setItem(PREVIEW_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
@@ -53,7 +53,7 @@ const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [previewCache, setPreviewCache] = useState<Record<string, string>>(loadPreviewCache);
+  const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>('keywords_pinyin');
   const [sortReverse, setSortReverse] = useState(false);
@@ -192,11 +192,12 @@ const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
     if (previewCache[key]) return;
     try {
       const resp = await getMemePreview(key);
+      const cachedUrl = await getCachedImageUrl(resp.image_id);
       setPreviewCache((prev) => {
-        const next = { ...prev, [key]: getImageUrl(resp.image_id) };
-        savePreviewCache(next);
+        const next = { ...prev, [key]: cachedUrl };
         return next;
       });
+      savePreviewImageIds({ ...loadPreviewImageIds(), [key]: resp.image_id });
     } catch {
       // ignore
     }
@@ -211,6 +212,21 @@ const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
       }
     });
   }, [recentKeys, allMemes.length]);
+
+  // 从 sessionStorage 恢复已缓存的 image_id，通过 Cache API 解析为 blob URL
+  useEffect(() => {
+    if (!allMemes.length) return;
+    const savedIds = loadPreviewImageIds();
+    const keys = Object.keys(savedIds);
+    if (!keys.length) return;
+    keys.forEach(async (key) => {
+      if (previewCache[key] || !allMemes.some((m) => m.key === key)) return;
+      try {
+        const cachedUrl = await getCachedImageUrl(savedIds[key]);
+        setPreviewCache((prev) => ({ ...prev, [key]: cachedUrl }));
+      } catch { /* ignore */ }
+    });
+  }, [allMemes.length]);
 
   // 选择排序
   const selectSort = (key: SortBy) => {

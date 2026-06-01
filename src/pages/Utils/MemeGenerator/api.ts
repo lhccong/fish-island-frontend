@@ -206,6 +206,28 @@ export function getImageUrl(imageId: string): string {
   return `${BASE}/image/${imageId}`;
 }
 
+const IMAGE_CACHE_NAME = `${CACHE_PREFIX}images`;
+
+/** 获取缓存的图片 URL（优先 Cache API，回退到直接 URL） */
+export async function getCachedImageUrl(imageId: string): Promise<string> {
+  const url = getImageUrl(imageId);
+  try {
+    const cache = await caches.open(IMAGE_CACHE_NAME);
+    const cached = await cache.match(url);
+    if (cached) {
+      const blob = await cached.blob();
+      return URL.createObjectURL(blob);
+    }
+    const resp = await fetch(url);
+    if (resp.ok) {
+      cache.put(url, resp.clone());
+      const blob = await resp.blob();
+      return URL.createObjectURL(blob);
+    }
+  } catch { /* fall through */ }
+  return url;
+}
+
 /** 获取后端版本 */
 export async function getVersion(): Promise<string> {
   const BASE = getBackendUrl();
