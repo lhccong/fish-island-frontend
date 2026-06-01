@@ -1,7 +1,7 @@
 // 表情包生成器 - 主入口页面
 import React, { useState } from 'react';
 import { Tooltip, Modal, Input, Button, message } from 'antd';
-import { QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined, SettingOutlined, LinkOutlined, DownOutlined } from '@ant-design/icons';
 import { getBackendUrl, setBackendUrl, isCustomBackend } from './api';
 import type { MemeInfo } from './types';
 import MemeList from './components/MemeList';
@@ -94,6 +94,19 @@ const MemeGenerator: React.FC = () => {
             <h1 className="meme-header-title">表情包生成器</h1>
           </div>
           <div className="meme-header-right">
+            <div className="meme-header-dropdown">
+              <button className="meme-header-dropdown-trigger" type="button">
+                <LinkOutlined />
+                <span>更多工具</span>
+                <DownOutlined className="meme-header-dropdown-arrow" />
+              </button>
+              <div className="meme-header-dropdown-menu">
+                <a href="https://m.dogetu.com/maker.html" target="_blank" rel="noreferrer">
+                  <span>斗了个图</span>
+                  <span className="meme-header-ext">外链</span>
+                </a>
+              </div>
+            </div>
             {/* 使用说明 */}
             <Tooltip
               title={helpContent}
