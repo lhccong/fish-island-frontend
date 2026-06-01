@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { message } from 'antd';
 import { StarOutlined, StarFilled } from '@ant-design/icons';
 import type { MemeInfo, ImageItem } from '../types';
-import { getMemeInfo, getMemePreview, uploadImage, generateMeme, getImageUrl, MemeError } from '../api';
+import { getMemeInfo, getMemePreview, uploadImage, generateMeme, getCachedImageUrl, MemeError } from '../api';
 import { addEmoticonFavourUsingPost } from '@/services/backend/emoticonFavourController';
 import { uploadFileByMinioUsingPost } from '@/services/backend/fileController';
 import eventBus from '@/utils/eventBus';
@@ -64,6 +64,7 @@ async function urlToFile(url: string, filename: string): Promise<File> {
 interface MemeGeneratorViewProps {
   memeKey: string;
   onBack: () => void;
+  memeInfo?: MemeInfo;
 }
 
 /** 格式化错误信息 */
@@ -103,11 +104,11 @@ function formatError(err: unknown): { msg: string; hint: string } {
   return { msg: '生成失败', hint: '发生未知错误，请重试' };
 }
 
-const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack }) => {
+const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack, memeInfo: cachedMemeInfo }) => {
   const { initialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
-  const [memeInfo, setMemeInfo] = useState<MemeInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [memeInfo, setMemeInfo] = useState<MemeInfo | null>(cachedMemeInfo || null);
+  const [loading, setLoading] = useState(!cachedMemeInfo);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [errorHint, setErrorHint] = useState('');
@@ -193,7 +194,7 @@ const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack }
     refreshingPreview.current = true;
     try {
       const resp = await getMemePreview(memeInfo.key, buildFinalOptions());
-      setPreviewUrl(getImageUrl(resp.image_id));
+      setPreviewUrl(await getCachedImageUrl(resp.image_id));
     } catch {
       // 静默失败
     } finally {
@@ -217,13 +218,17 @@ const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack }
   useEffect(() => {
     (async () => {
       try {
-        const info = await getMemeInfo(memeKey);
-        setMemeInfo(info);
+        let info: MemeInfo;
+        if (cachedMemeInfo) {
+          info = cachedMemeInfo;
+        } else {
+          info = await getMemeInfo(memeKey);
+          setMemeInfo(info);
+        }
         initFormState(info);
-        // 加载预览
         try {
           const prev = await getMemePreview(memeKey);
-          setPreviewUrl(getImageUrl(prev.image_id));
+          setPreviewUrl(await getCachedImageUrl(prev.image_id));
         } catch {
           // 预览可能不可用
         }
@@ -284,7 +289,7 @@ const MemeGeneratorView: React.FC<MemeGeneratorViewProps> = ({ memeKey, onBack }
       const finalOptions = buildFinalOptions();
 
       const resp = await generateMeme(memeInfo.key, uploadedImages, finalTexts, finalOptions);
-      setResultUrl(getImageUrl(resp.image_id));
+      setResultUrl(await getCachedImageUrl(resp.image_id));
       setFavorited(false); // 重置收藏状态
     } catch (err: any) {
       const { msg, hint } = formatError(err);

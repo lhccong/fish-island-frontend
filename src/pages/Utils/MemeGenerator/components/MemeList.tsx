@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { MemeInfo } from '../types';
 import type { SortBy } from '../api';
-import { getMemeInfos, searchMemes, getImageUrl, getMemePreview } from '../api';
+import { getMemeInfos, searchMemes, getCachedImageUrl, getMemePreview } from '../api';
 import MemeCard from './MemeCard';
 
 const TAG_DISPLAY_COUNT = 8;
@@ -32,7 +32,19 @@ const sortLabels: Record<SortBy, string> = {
 };
 
 interface MemeListProps {
-  onSelectMeme: (key: string) => void;
+  onSelectMeme: (key: string, info?: MemeInfo) => void;
+}
+
+const PREVIEW_CACHE_KEY = 'meme_cache_preview_urls';
+
+function loadPreviewImageIds(): Record<string, string> {
+  try {
+    return JSON.parse(sessionStorage.getItem(PREVIEW_CACHE_KEY) || '{}');
+  } catch { return {}; }
+}
+
+function savePreviewImageIds(cache: Record<string, string>) {
+  try { sessionStorage.setItem(PREVIEW_CACHE_KEY, JSON.stringify(cache)); } catch {}
 }
 
 const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
@@ -180,7 +192,12 @@ const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
     if (previewCache[key]) return;
     try {
       const resp = await getMemePreview(key);
-      setPreviewCache((prev) => ({ ...prev, [key]: getImageUrl(resp.image_id) }));
+      const cachedUrl = await getCachedImageUrl(resp.image_id);
+      setPreviewCache((prev) => {
+        const next = { ...prev, [key]: cachedUrl };
+        return next;
+      });
+      savePreviewImageIds({ ...loadPreviewImageIds(), [key]: resp.image_id });
     } catch {
       // ignore
     }
@@ -195,6 +212,21 @@ const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
       }
     });
   }, [recentKeys, allMemes.length]);
+
+  // 从 sessionStorage 恢复已缓存的 image_id，通过 Cache API 解析为 blob URL
+  useEffect(() => {
+    if (!allMemes.length) return;
+    const savedIds = loadPreviewImageIds();
+    const keys = Object.keys(savedIds);
+    if (!keys.length) return;
+    keys.forEach(async (key) => {
+      if (previewCache[key] || !allMemes.some((m) => m.key === key)) return;
+      try {
+        const cachedUrl = await getCachedImageUrl(savedIds[key]);
+        setPreviewCache((prev) => ({ ...prev, [key]: cachedUrl }));
+      } catch { /* ignore */ }
+    });
+  }, [allMemes.length]);
 
   // 选择排序
   const selectSort = (key: SortBy) => {
@@ -211,7 +243,8 @@ const MemeList: React.FC<MemeListProps> = ({ onSelectMeme }) => {
   const handleSelectMeme = (key: string) => {
     addRecentKey(key);
     setRecentKeys(getRecentKeys());
-    onSelectMeme(key);
+    const info = allMemes.find((m) => m.key === key);
+    onSelectMeme(key, info);
   };
 
   // 随机表情
