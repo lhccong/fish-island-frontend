@@ -646,6 +646,13 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
               onScrollToBottom={() => scrollToBottom()}
               onTitleBarMouseDown={fullscreen || excelViewportFullscreen ? undefined : startDrag}
               titleBarStatic={fullscreen || excelViewportFullscreen}
+              variant={
+                fullscreen || excelViewportFullscreen
+                  ? 'full'
+                  : isSmallScreen
+                    ? 'mini'
+                    : 'compact'
+              }
             />
           ) : (
             <>

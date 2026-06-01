@@ -51,6 +51,57 @@ export const EXCEL_COLUMNS = [
   { key: 'C', label: '内容' },
 ] as const;
 
+/** 表格行高（含边框） */
+export const EXCEL_ROW_HEIGHT = 21;
+
+export type ExcelLayoutVariant = 'full' | 'compact' | 'mini';
+
+export interface ExcelLayoutMetrics {
+  rowNumWidth: number;
+  colA: number;
+  colB: number;
+  colCMin: number;
+  extraColWidth: number;
+  maxExtraCols: number;
+}
+
+const EXTRA_COL_LETTERS = 'DEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+const LAYOUT_METRICS: Record<ExcelLayoutVariant, ExcelLayoutMetrics> = {
+  full: { rowNumWidth: 40, colA: 76, colB: 80, colCMin: 200, extraColWidth: 64, maxExtraCols: 24 },
+  compact: { rowNumWidth: 36, colA: 56, colB: 60, colCMin: 100, extraColWidth: 48, maxExtraCols: 0 },
+  mini: { rowNumWidth: 28, colA: 46, colB: 50, colCMin: 60, extraColWidth: 40, maxExtraCols: 0 },
+};
+
+export function getExcelLayoutMetrics(variant: ExcelLayoutVariant = 'full'): ExcelLayoutMetrics {
+  return LAYOUT_METRICS[variant];
+}
+
+/** 根据可视区域宽度计算需渲染的扩展列数 */
+export function getExcelExtraColumnCount(
+  viewportWidth: number,
+  variant: ExcelLayoutVariant = 'full',
+): number {
+  const m = getExcelLayoutMetrics(variant);
+  if (m.maxExtraCols <= 0 || viewportWidth <= 0) return 0;
+  const baseWidth = m.rowNumWidth + m.colA + m.colB + m.colCMin;
+  const count = Math.ceil((viewportWidth - baseWidth) / m.extraColWidth);
+  return Math.min(m.maxExtraCols, Math.max(0, count));
+}
+
+export function getExcelExtraColumnKeys(count: number): string[] {
+  return EXTRA_COL_LETTERS.slice(0, Math.min(count, EXTRA_COL_LETTERS.length));
+}
+
+/** 根据可视区域高度计算空白填充行数 */
+export function getExcelFillerRowCount(viewportHeight: number, dataRowCount: number): number {
+  if (viewportHeight <= 0) return 25;
+  const bodyHeight = Math.max(0, viewportHeight - EXCEL_ROW_HEIGHT);
+  const visibleRows = Math.ceil(bodyHeight / EXCEL_ROW_HEIGHT);
+  const dataRows = Math.max(1, dataRowCount);
+  return Math.max(0, visibleRows - dataRows + 2);
+}
+
 export const EXCEL_RIBBON_TABS = ['文件', '开始', '插入', '页面布局', '公式', '数据', '审阅', '视图'] as const;
 
 export const EXCEL_SHEET_TABS = ['消息记录', '汇总', 'Sheet3'] as const;

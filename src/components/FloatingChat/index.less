@@ -20,7 +20,11 @@
 }
 
 .fullscreenPopup {
-  position: static;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
   min-height: 100vh;
@@ -29,6 +33,7 @@
   align-items: stretch;
   display: flex;
   flex-direction: column;
+  z-index: 999999;
 
   .chatMinBar {
     display: none;
@@ -701,6 +706,27 @@
     border-radius: 0;
     background: #fff;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &:not(.excelViewportFullscreen):not(.fullscreenPopup) {
+    .chatWindow,
+    .excelWindow {
+      width: 380px;
+      height: min(480px, calc(100vh - 48px));
+      max-height: calc(100vh - 48px);
+    }
+
+    .excelApp {
+      flex: 1;
+      min-height: 0;
+    }
+
+    .excelGridWrap {
+      flex: 1;
+      min-height: 0;
+    }
   }
 
   .popupCrBtn {
@@ -977,8 +1003,10 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  background: #e8e8e8;
+  background: #fff;
   position: relative;
+  display: flex;
+  flex-direction: column;
 
   &::-webkit-scrollbar {
     width: 14px;
@@ -997,11 +1025,18 @@
 }
 
 .excelLoading {
+  flex: 1;
   padding: 24px;
   text-align: center;
   font-size: 12px;
   color: #666;
   background: #fff;
+}
+
+.excelGridSheet {
+  width: 100%;
+  background: #fff;
+  box-sizing: border-box;
 }
 
 .excelTable {
@@ -1015,12 +1050,42 @@
   th,
   td {
     border: 1px solid #d4d4d4;
-    padding: 1px 5px;
-    vertical-align: middle;
-    line-height: 1.35;
+    padding: 2px 5px;
+    vertical-align: top;
+    line-height: 1.4;
     text-align: left;
-    height: 20px;
+    box-sizing: border-box;
   }
+
+  thead th {
+    height: 20px;
+    vertical-align: middle;
+  }
+
+  tbody td {
+    min-height: 20px;
+  }
+}
+
+.excelColRowNum {
+  width: 40px;
+}
+
+.excelColA {
+  width: 76px;
+}
+
+.excelColB {
+  width: 80px;
+}
+
+.excelColC {
+  width: auto !important;
+  min-width: 0;
+}
+
+.excelColExtra {
+  width: 64px;
 }
 
 .excelCorner {
@@ -1039,24 +1104,16 @@
   font-size: 11px;
   color: #333;
   height: 20px;
-
-  &:nth-child(2) {
-    width: 76px;
-  }
-
-  &:nth-child(3) {
-    width: 80px;
-  }
-
-  &:nth-child(4) {
-    width: auto;
-  }
 }
 
-.excelColHeaderFiller,
-.excelCellFiller {
-  background: #f2f2f2;
-  min-width: 48px;
+.excelCellEmpty {
+  background: #fff;
+}
+
+.excelFillerRow {
+  .excelRowNum {
+    background: #f2f2f2;
+  }
 }
 
 .excelColKey {
@@ -1081,23 +1138,34 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* A/B 列窄宽省略；C 列占满剩余空间并完整换行显示 */
+.excelTable tbody td.excelCell:nth-child(2),
+.excelTable tbody td.excelCell:nth-child(3) {
   max-width: 0;
 }
 
 .excelCellContent {
-  white-space: normal;
+  max-width: none !important;
+  width: auto;
+  white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
+  overflow: visible;
+  text-overflow: clip;
   vertical-align: top;
   min-height: 20px;
+  height: auto;
+  line-height: 1.4;
 }
 
-.excelRowActive td.excelCell:not(.excelCellFiller) {
+.excelRowActive td.excelCell:not(.excelCellEmpty) {
   outline: 2px solid #217346;
   outline-offset: -2px;
 }
 
-.excelTable tbody tr:hover td.excelCell:not(.excelCellFiller) {
+.excelTable tbody tr:hover td.excelCell:not(.excelCellEmpty) {
   background: #e7f4ff;
 }
 
@@ -1183,13 +1251,42 @@
 }
 
 .smallScreen.excelMode {
+  &:not(.excelViewportFullscreen) {
+    .chatWindow,
+    .excelWindow {
+      width: min(340px, calc(100vw - 32px));
+      height: min(420px, calc(100vh - 64px));
+      max-height: calc(100vh - 64px);
+    }
+  }
+
+  .excelTitleCaption {
+    display: none;
+  }
+
+  .excelGridWrap {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .excelGridSheet,
+  .excelTable {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.excelAppCompact {
   .excelRibbonToolbar {
-    min-height: 28px;
-    padding: 2px 6px;
+    min-height: 30px;
+    padding: 3px 6px;
   }
 
   .excelRibbonTab {
-    padding: 3px 6px 2px;
+    padding: 3px 8px 2px;
     font-size: 10px;
   }
 
@@ -1197,20 +1294,119 @@
     display: none;
   }
 
-  .chatWindow,
-  .excelWindow {
-    width: 300px;
+  .excelStatusBar span:not(:first-child):not(:last-child) {
+    display: none;
   }
 
-  .excelGridWrap {
-    max-height: 280px;
+  .excelStatusBar .excelStatusSep {
+    display: none;
+  }
+}
+
+.excelAppMini {
+  .excelRibbon {
+    border-bottom: none;
+  }
+
+  .excelRibbonTabs {
+    min-height: 22px;
+  }
+
+  .excelRibbonTab {
+    padding: 2px 6px 1px;
+    font-size: 10px;
+  }
+
+  .excelTitleBar {
+    height: 28px;
+    padding: 0 6px;
+  }
+
+  .excelTitleCaption {
+    display: none;
+  }
+
+  .excelFormulaBar {
+    padding: 2px 4px;
+  }
+
+  .excelNameBox {
+    width: 44px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 10px;
+  }
+
+  .excelFormulaInput {
+    height: 20px;
+    font-size: 11px;
+  }
+
+  .excelFormulaEnter {
+    width: 24px;
+    height: 20px;
+  }
+
+  .excelTable {
+    font-size: 10px;
+
+    th,
+    td {
+      padding: 1px 4px;
+      height: 18px;
+    }
+  }
+
+  .excelCellContent {
+    white-space: pre-wrap;
+    overflow: visible;
+    max-height: none;
+  }
+
+  .excelTable tbody td {
+    height: auto;
+  }
+
+  .excelBottomBar {
+    min-height: 22px;
+    font-size: 10px;
+  }
+
+  .excelSheetTab {
+    padding: 2px 8px;
+  }
+
+  .excelStatusBar {
+    padding: 0 6px;
+    font-size: 10px;
+
+    span:not(:first-child) {
+      display: none;
+    }
+
+    .excelStatusSep {
+      display: none;
+    }
+  }
+
+  .popupCrBtn {
+    padding: 2px 4px;
+    font-size: 12px;
   }
 }
 
 .fullscreenPopup.excelMode {
-  background: #e8e8e8;
+  background: #fff;
+  height: 100vh;
+  min-height: 100vh;
 
   .excelWindow {
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .excelApp {
     height: 100%;
   }
 }
@@ -1229,7 +1425,7 @@
   margin: 0 !important;
   align-items: stretch !important;
   pointer-events: auto;
-  background: #e8e8e8;
+  background: #fff;
 
   .chatWindow,
   .excelWindow {
@@ -1239,15 +1435,23 @@
     border-radius: 0 !important;
     box-shadow: none !important;
     opacity: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   .excelApp {
     height: 100%;
+    flex: 1;
+    min-height: 0;
   }
 
   .excelGridWrap {
     flex: 1;
     min-height: 0;
+  }
+
+  .excelGridSheet {
+    min-height: 100%;
   }
 }
 
