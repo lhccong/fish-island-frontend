@@ -1,6 +1,6 @@
 import React, { RefObject, ReactNode, useEffect, useState } from 'react';
+import ExcelCellContent from './ExcelCellContent';
 import {
-  contentToExcelCell,
   EXCEL_COLUMNS,
   EXCEL_RIBBON_TABS,
   EXCEL_SHEET_TABS,
@@ -42,6 +42,8 @@ export interface ExcelLayoutProps {
   titleBarStatic?: boolean;
   /** full=全屏/铺满；compact=普通悬浮窗；mini=小屏悬浮窗 */
   variant?: ExcelLayoutVariant;
+  /** 是否在 C 列展示图片 */
+  showImages?: boolean;
 }
 
 const ExcelLayout: React.FC<ExcelLayoutProps> = ({
@@ -59,6 +61,7 @@ const ExcelLayout: React.FC<ExcelLayoutProps> = ({
   onTitleBarMouseDown,
   titleBarStatic,
   variant = 'full',
+  showImages = false,
 }) => {
   const activeCell = getExcelActiveCell(messages.length);
   const windowCaption = getExcelWindowCaption(workbookTitle);
@@ -211,7 +214,7 @@ const ExcelLayout: React.FC<ExcelLayoutProps> = ({
                           <td className={styles.excelCell}>{formatExcelTime(msg.timestamp)}</td>
                           <td className={styles.excelCell}>{msg.sender.name}</td>
                           <td className={`${styles.excelCell} ${styles.excelCellContent}`}>
-                            {contentToExcelCell(msg.content)}
+                            <ExcelCellContent content={msg.content} showImages={showImages} />
                           </td>
                           {renderExtraCells()}
                         </tr>

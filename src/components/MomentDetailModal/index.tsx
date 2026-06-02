@@ -187,6 +187,7 @@ const MomentDetailModal: React.FC<MomentDetailModalProps> = ({
       width={600}
       centered
       destroyOnClose
+      wrapClassName="moment-detail-modal"
       title={
         detailMoment ? (
           <div className="detail-modal-title">
@@ -207,117 +208,119 @@ const MomentDetailModal: React.FC<MomentDetailModalProps> = ({
         </div>
       ) : detailMoment ? (
         <div className="detail-modal-body">
-          {/* 正文 */}
-          {detailMoment.content && (
-            <div className="detail-content">{detailMoment.content}</div>
-          )}
+          <div className="detail-modal-scroll">
+            {/* 正文 */}
+            {detailMoment.content && (
+              <div className="detail-content">{detailMoment.content}</div>
+            )}
 
-          {/* 图片九宫格 */}
-          {images.length > 0 && (
-            <Image.PreviewGroup>
-              <div
-                className="detail-images"
-                style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, maxWidth: cols === 1 ? 300 : 400 }}
+            {/* 图片九宫格 */}
+            {images.length > 0 && (
+              <Image.PreviewGroup>
+                <div
+                  className="detail-images"
+                  style={{ gridTemplateColumns: `repeat(${cols}, 1fr)`, maxWidth: cols === 1 ? 300 : 400 }}
+                >
+                  {images.slice(0, 9).map((url, i) => (
+                    <Image
+                      key={i}
+                      src={url}
+                      className="detail-image-item"
+                      preview={{ src: url }}
+                    />
+                  ))}
+                </div>
+              </Image.PreviewGroup>
+            )}
+
+            {/* 位置 */}
+            {detailMoment.location && (
+              <div className="detail-location">
+                <EnvironmentOutlined />
+                <span>{detailMoment.location}</span>
+              </div>
+            )}
+
+            {/* 点赞 */}
+            <div className="detail-actions">
+              <span
+                className={`detail-action-btn ${detailMoment.liked ? 'liked' : ''}`}
+                onClick={handleLike}
               >
-                {images.slice(0, 9).map((url, i) => (
-                  <Image
-                    key={i}
-                    src={url}
-                    className="detail-image-item"
-                    preview={{ src: url }}
-                  />
+                {detailMoment.liked ? <HeartFilled /> : <HeartOutlined />}
+                <span>{detailMoment.likeNum || 0}</span>
+              </span>
+              <span className="detail-action-btn">
+                <MessageOutlined />
+                <span>{comments.reduce((acc, c) => acc + 1 + (c.children?.length || 0), 0)}</span>
+              </span>
+              {currentUser && currentUser.id !== detailMoment.userId && (
+                <Tooltip title="打赏">
+                  <span
+                    className="detail-action-btn reward-btn"
+                    onClick={() => { setRewardPoints(10); setRewardModalVisible(true); }}
+                  >
+                    <GiftOutlined />
+                  </span>
+                </Tooltip>
+              )}
+            </div>
+
+            {/* 评论列表 */}
+            {comments.length > 0 && (
+              <div className="detail-comments">
+                {comments.map((comment) => (
+                  <div key={comment.id} className="detail-comment-item">
+                    <Avatar size={28} src={comment.userAvatar} className="detail-comment-avatar">
+                      {comment.userName?.charAt(0)}
+                    </Avatar>
+                    <div className="detail-comment-body">
+                      <span className="detail-comment-name">{comment.userName}</span>
+                      <div className="detail-comment-content">{renderCommentContent(comment.content)}</div>
+                      <div className="detail-comment-meta">
+                        <span>{moment(comment.createTime).fromNow()}</span>
+                        <span
+                          className="detail-reply-btn"
+                          onClick={() => setReplyTarget({ commentId: comment.id!, userName: comment.userName! })}
+                        >
+                          回复
+                        </span>
+                      </div>
+
+                      {/* 子评论 */}
+                      {(comment.children || []).map((child) => (
+                        <div key={child.id} className="detail-child-comment">
+                          <Avatar size={22} src={child.userAvatar}>
+                            {child.userName?.charAt(0)}
+                          </Avatar>
+                          <div className="detail-comment-body">
+                            <span className="detail-comment-name">{child.userName}</span>
+                            {child.replyUserName && (
+                              <span className="detail-reply-to">
+                                回复 <span>{child.replyUserName}</span>
+                              </span>
+                            )}
+                            <div className="detail-comment-content">{renderCommentContent(child.content)}</div>
+                            <div className="detail-comment-meta">
+                              <span>{moment(child.createTime).fromNow()}</span>
+                              <span
+                                className="detail-reply-btn"
+                                onClick={() => setReplyTarget({ commentId: comment.id!, userName: child.userName! })}
+                              >
+                                回复
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-            </Image.PreviewGroup>
-          )}
-
-          {/* 位置 */}
-          {detailMoment.location && (
-            <div className="detail-location">
-              <EnvironmentOutlined />
-              <span>{detailMoment.location}</span>
-            </div>
-          )}
-
-          {/* 点赞 */}
-          <div className="detail-actions">
-            <span
-              className={`detail-action-btn ${detailMoment.liked ? 'liked' : ''}`}
-              onClick={handleLike}
-            >
-              {detailMoment.liked ? <HeartFilled /> : <HeartOutlined />}
-              <span>{detailMoment.likeNum || 0}</span>
-            </span>
-            <span className="detail-action-btn">
-              <MessageOutlined />
-              <span>{comments.reduce((acc, c) => acc + 1 + (c.children?.length || 0), 0)}</span>
-            </span>
-            {currentUser && currentUser.id !== detailMoment.userId && (
-              <Tooltip title="打赏">
-                <span
-                  className="detail-action-btn reward-btn"
-                  onClick={() => { setRewardPoints(10); setRewardModalVisible(true); }}
-                >
-                  <GiftOutlined />
-                </span>
-              </Tooltip>
             )}
           </div>
 
-          {/* 评论列表 */}
-          {comments.length > 0 && (
-            <div className="detail-comments">
-              {comments.map((comment) => (
-                <div key={comment.id} className="detail-comment-item">
-                  <Avatar size={28} src={comment.userAvatar} className="detail-comment-avatar">
-                    {comment.userName?.charAt(0)}
-                  </Avatar>
-                  <div className="detail-comment-body">
-                    <span className="detail-comment-name">{comment.userName}</span>
-                    <div className="detail-comment-content">{renderCommentContent(comment.content)}</div>
-                    <div className="detail-comment-meta">
-                      <span>{moment(comment.createTime).fromNow()}</span>
-                      <span
-                        className="detail-reply-btn"
-                        onClick={() => setReplyTarget({ commentId: comment.id!, userName: comment.userName! })}
-                      >
-                        回复
-                      </span>
-                    </div>
-
-                    {/* 子评论 */}
-                    {(comment.children || []).map((child) => (
-                      <div key={child.id} className="detail-child-comment">
-                        <Avatar size={22} src={child.userAvatar}>
-                          {child.userName?.charAt(0)}
-                        </Avatar>
-                        <div className="detail-comment-body">
-                          <span className="detail-comment-name">{child.userName}</span>
-                          {child.replyUserName && (
-                            <span className="detail-reply-to">
-                              回复 <span>{child.replyUserName}</span>
-                            </span>
-                          )}
-                          <div className="detail-comment-content">{renderCommentContent(child.content)}</div>
-                          <div className="detail-comment-meta">
-                            <span>{moment(child.createTime).fromNow()}</span>
-                            <span
-                              className="detail-reply-btn"
-                              onClick={() => setReplyTarget({ commentId: comment.id!, userName: child.userName! })}
-                            >
-                              回复
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* 评论输入区 */}
+          {/* 评论输入区固定在底部 */}
           <div className="detail-input-area">
             {replyTarget && (
               <div className="detail-reply-hint">

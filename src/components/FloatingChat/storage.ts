@@ -24,6 +24,8 @@ export interface FloatingChatSettings {
   excelMode: boolean;
   /** Excel 占满整个浏览器视口（隐藏站点菜单等背景） */
   excelViewportFullscreen: boolean;
+  /** Excel 模式是否在单元格内展示图片，默认不展示 */
+  excelShowImages: boolean;
 }
 
 /** 独立小窗页 body 暗黑模式 class */
@@ -47,6 +49,28 @@ export function clampFloatingChatOpacity(value: unknown): number {
   return Math.min(MAX_OPACITY, Math.max(MIN_OPACITY, Math.round(n)));
 }
 
+/** 悬浮窗锚点距视口右下角的偏移（与 .popupCrWrapper 的 bottom/right 一致） */
+export const FLOATING_CHAT_ANCHOR_OFFSET = 24;
+
+/** 将悬浮窗 translate 偏移限制在视口内，避免拖出屏幕后无法操作 */
+export function clampFloatingChatPos(
+  pos: { x: number; y: number },
+  size: { width: number; height: number },
+  viewport: { width: number; height: number },
+  anchor = FLOATING_CHAT_ANCHOR_OFFSET,
+  inset = 8,
+): { x: number; y: number } {
+  const minX = inset - viewport.width + anchor + size.width;
+  const maxX = anchor - inset;
+  const minY = inset - viewport.height + anchor + size.height;
+  const maxY = anchor - inset;
+
+  return {
+    x: Math.min(maxX, Math.max(minX, pos.x)),
+    y: Math.min(maxY, Math.max(minY, pos.y)),
+  };
+}
+
 const STORAGE_KEY = 'floatingChatSetting';
 
 export function normalizeFloatingChatTitle(value: unknown): string {
@@ -61,16 +85,21 @@ export function getFloatingChatDisplayTitle(title: string): string {
   return normalizeFloatingChatTitle(title);
 }
 
+export const FLOATING_CHAT_DEFAULT_POS = { x: 0, y: 0 };
+
+export const FLOATING_CHAT_RESET_POSITION_EVENT = 'resetFloatingChatPosition';
+
 const DEFAULT_SETTINGS: FloatingChatSettings = {
   mode: 'minimized',
   title: FLOATING_CHAT_DEFAULT_TITLE,
-  pos: { x: 0, y: 0 },
+  pos: { ...FLOATING_CHAT_DEFAULT_POS },
   opacity: MAX_OPACITY,
   hideAvatar: false,
   collapseImages: false,
   darkMode: false,
   excelMode: false,
   excelViewportFullscreen: false,
+  excelShowImages: false,
 };
 
 export function loadFloatingChatSettings(): FloatingChatSettings {
@@ -98,6 +127,7 @@ export function loadFloatingChatSettings(): FloatingChatSettings {
         parsed.excelViewportFullscreen,
         DEFAULT_SETTINGS.excelViewportFullscreen,
       ),
+      excelShowImages: parseBool(parsed.excelShowImages, DEFAULT_SETTINGS.excelShowImages),
     };
     if (rawTitle !== undefined && rawTitle !== settings.title) {
       saveFloatingChatSettings(settings);
@@ -116,4 +146,13 @@ export const FLOATING_CHAT_EVENT = 'floatingChatChange';
 
 export function emitFloatingChatChange(detail?: Partial<FloatingChatSettings>) {
   window.dispatchEvent(new CustomEvent(FLOATING_CHAT_EVENT, { detail }));
+}
+
+/** 重置悬浮窗位置为默认右下角，并通知各实例应用边界校正 */
+export function resetFloatingChatPosition() {
+  const current = loadFloatingChatSettings();
+  const next = { ...current, pos: { ...FLOATING_CHAT_DEFAULT_POS } };
+  saveFloatingChatSettings(next);
+  emitFloatingChatChange({ pos: next.pos });
+  window.dispatchEvent(new CustomEvent(FLOATING_CHAT_RESET_POSITION_EVENT));
 }

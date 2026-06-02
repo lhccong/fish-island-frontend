@@ -1,17 +1,37 @@
 import { parseLuckyBagInline } from '@/components/LuckyBagMessage';
-import { extractRedPacketId } from '@/components/RedPacketMessage';
+import { parseRedPacketInline } from '@/components/RedPacketMessage';
 
 const UNDERCOVER_REGEX = /<undercover>[\s\S]*?<\/undercover>/gi;
+const IMG_TAG_REGEX = /\[img\][\s\S]*?\[\/img\]/gi;
 const IMAGE_REGEX = /!\[[^\]]*\]\([^)]+\)/g;
 const LINK_REGEX = /\[([^\]]+)\]\([^)]+\)/g;
 const HTML_TAG_REGEX = /<[^>]+>/g;
 const MARKDOWN_NOISE_REGEX = /[#*_~`>|]/g;
 
-/** 将聊天内容转为 Excel 单元格中的纯文本 */
+export type ExcelCellPart = { type: 'text'; value: string } | { type: 'image'; url: string };
+
+function isSpecialExcelMessage(content: string): boolean {
+  return Boolean(parseRedPacketInline(content) || parseLuckyBagInline(content));
+}
+
+function stripExcelTextSegment(segment: string): string {
+  let text = segment
+    .replace(UNDERCOVER_REGEX, '[游戏邀请]')
+    .replace(IMG_TAG_REGEX, '')
+    .replace(IMAGE_REGEX, '')
+    .replace(LINK_REGEX, '$1')
+    .replace(HTML_TAG_REGEX, '')
+    .replace(MARKDOWN_NOISE_REGEX, '')
+    .replace(/\n+/g, ' ')
+    .trim();
+  return text.length > 300 ? `${text.slice(0, 300)}…` : text;
+}
+
+/** 将聊天内容转为 Excel 单元格中的纯文本（不展示图片） */
 export function contentToExcelCell(content: string): string {
-  if (extractRedPacketId(content)) {
-    const prefix = content.replace(/\[redpacket\][^\[\]]*\[\/redpacket\]/gi, '').trim();
-    return prefix ? `${prefix} [红包]` : '[红包]';
+  const redPacket = parseRedPacketInline(content);
+  if (redPacket) {
+    return redPacket.prefix ? `${redPacket.prefix} [红包]` : '[红包]';
   }
 
   const luckyBag = parseLuckyBagInline(content);
@@ -19,16 +39,47 @@ export function contentToExcelCell(content: string): string {
     return luckyBag.prefix ? `${luckyBag.prefix} [福袋]` : '[福袋]';
   }
 
-  let text = content
-    .replace(UNDERCOVER_REGEX, '[游戏邀请]')
-    .replace(IMAGE_REGEX, '[图片]')
-    .replace(LINK_REGEX, '$1')
-    .replace(HTML_TAG_REGEX, '')
-    .replace(MARKDOWN_NOISE_REGEX, '')
-    .replace(/\n+/g, ' ')
-    .trim();
+  const text = stripExcelTextSegment(content);
+  if (!text && (/\[img\][\s\S]*?\[\/img\]/i.test(content) || /!\[[^\]]*\]\([^)]+\)/.test(content))) {
+    return '[图片]';
+  }
 
-  return text.length > 300 ? `${text.slice(0, 300)}…` : text;
+  return text;
+}
+
+/** 解析 Excel 单元格内容（可含图片） */
+export function parseExcelCellParts(content: string): ExcelCellPart[] {
+  if (isSpecialExcelMessage(content)) {
+    const text = contentToExcelCell(content);
+    return text ? [{ type: 'text', value: text }] : [];
+  }
+
+  const combined = /\[img\]([\s\S]*?)\[\/img\]|!\[[^\]]*\]\(([^)]+)\)/gi;
+  const parts: ExcelCellPart[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = combined.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      const text = stripExcelTextSegment(content.slice(lastIndex, match.index));
+      if (text) parts.push({ type: 'text', value: text });
+    }
+    const url = (match[1] || match[2] || '').trim();
+    if (url) parts.push({ type: 'image', url });
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < content.length) {
+    const text = stripExcelTextSegment(content.slice(lastIndex));
+    if (text) parts.push({ type: 'text', value: text });
+  }
+
+  if (parts.length === 0) {
+    const text = contentToExcelCell(content);
+    return text ? [{ type: 'text', value: text }] : [];
+  }
+
+  return parts;
 }
 
 export function toMessageDate(value: unknown): Date {

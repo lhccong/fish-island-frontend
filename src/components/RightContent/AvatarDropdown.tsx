@@ -1,3 +1,4 @@
+import { resetFloatingChatPosition } from '@/components/FloatingChat/storage';
 import {
   getLoginUserUsingGet,
   signInUsingPost,
@@ -1068,6 +1069,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       if (key === 'resetMoneyPosition') {
         localStorage.removeItem('moneyButtonPosition');
         localStorage.removeItem('miniPetPosition');
+        resetFloatingChatPosition();
         window.dispatchEvent(new CustomEvent('resetMoneyButtonPosition'));
         window.dispatchEvent(new CustomEvent('resetMiniPetPosition'));
         return;

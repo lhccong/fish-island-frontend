@@ -21,8 +21,60 @@
   padding: 40px 0;
 }
 
+// 弹窗整体高度限制（鱼小圈侧边栏、消息通知等共用）
+:global(.moment-detail-modal) {
+  .ant-modal {
+    max-width: calc(100vw - 32px);
+    padding-bottom: 0;
+  }
+
+  .ant-modal-content {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 80px);
+  }
+
+  .ant-modal-header {
+    flex-shrink: 0;
+  }
+
+  .ant-modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 .detail-modal-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  max-height: calc(100vh - 200px);
   padding: 4px 0;
+}
+
+.detail-modal-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #d9d9d9;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
 // 正文
@@ -236,10 +288,12 @@
   border-left: 2px solid #f0f0f0;
 }
 
-// 评论输入区
+// 评论输入区（固定在弹窗底部）
 .detail-input-area {
+  flex-shrink: 0;
   border-top: 1px solid #f0f0f0;
   padding-top: 12px;
+  background: #fff;
 }
 
 .detail-reply-hint {
@@ -438,6 +492,17 @@ body.dark-mode {
 
   .detail-input-area {
     border-top-color: rgba(255, 255, 255, 0.06) !important;
+    background: #1e1e1e !important;
+  }
+
+  :global(.moment-detail-modal) {
+    .ant-modal-content {
+      background: #1e1e1e;
+    }
+
+    .ant-modal-body {
+      background: #1e1e1e;
+    }
   }
 
   .detail-reply-hint {

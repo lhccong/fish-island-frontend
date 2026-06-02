@@ -14,6 +14,8 @@ import {
   FLOATING_CHAT_EXCEL_FULLSCREEN_CLASS,
   FLOATING_CHAT_EXCEL_VIEWPORT_CLASS,
   FLOATING_CHAT_TITLE_MAX_LENGTH,
+  clampFloatingChatPos,
+  FLOATING_CHAT_RESET_POSITION_EVENT,
   getFloatingChatDisplayTitle,
   loadFloatingChatSettings,
   normalizeFloatingChatTitle,
@@ -78,6 +80,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
   const [titleDraft, setTitleDraft] = useState(() => settings.title);
   const bodyRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(true);
   const lastSendRef = useRef(0);
   const dragMovedRef = useRef(false);
@@ -286,6 +289,57 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [excelViewportFullscreen, updateSettings]);
 
+  const clampPos = useCallback(
+    (pos: { x: number; y: number }) => {
+      const el = wrapperRef.current;
+      if (!el || fullscreen || excelViewportFullscreen) return pos;
+      return clampFloatingChatPos(
+        pos,
+        { width: el.offsetWidth, height: el.offsetHeight },
+        { width: window.innerWidth, height: window.innerHeight },
+      );
+    },
+    [excelViewportFullscreen, fullscreen],
+  );
+
+  const ensurePosInBounds = useCallback(() => {
+    if (fullscreen || excelViewportFullscreen) return;
+    const el = wrapperRef.current;
+    if (!el) return;
+    setSettings((prev) => {
+      const clamped = clampFloatingChatPos(
+        prev.pos,
+        { width: el.offsetWidth, height: el.offsetHeight },
+        { width: window.innerWidth, height: window.innerHeight },
+      );
+      if (clamped.x === prev.pos.x && clamped.y === prev.pos.y) return prev;
+      const next = { ...prev, pos: clamped };
+      saveFloatingChatSettings(next);
+      return next;
+    });
+  }, [excelViewportFullscreen, fullscreen]);
+
+  useEffect(() => {
+    if (fullscreen || excelViewportFullscreen) return;
+    const raf = requestAnimationFrame(() => ensurePosInBounds());
+    return () => cancelAnimationFrame(raf);
+  }, [mode, excelMode, ensurePosInBounds, excelViewportFullscreen, fullscreen]);
+
+  useEffect(() => {
+    if (fullscreen || excelViewportFullscreen) return;
+    window.addEventListener('resize', ensurePosInBounds);
+    return () => window.removeEventListener('resize', ensurePosInBounds);
+  }, [ensurePosInBounds, excelViewportFullscreen, fullscreen]);
+
+  useEffect(() => {
+    if (fullscreen || excelViewportFullscreen) return;
+    const handleResetPosition = () => {
+      requestAnimationFrame(() => ensurePosInBounds());
+    };
+    window.addEventListener(FLOATING_CHAT_RESET_POSITION_EVENT, handleResetPosition);
+    return () => window.removeEventListener(FLOATING_CHAT_RESET_POSITION_EVENT, handleResetPosition);
+  }, [ensurePosInBounds, excelViewportFullscreen, fullscreen]);
+
   useEffect(() => {
     if (!isLoggedIn || mode === 'minimized') return;
 
@@ -350,7 +404,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
         dragMovedRef.current = true;
       }
       persist({
-        pos: { x: ev.clientX - startX, y: ev.clientY - startY },
+        pos: clampPos({ x: ev.clientX - startX, y: ev.clientY - startY }),
       });
     };
     const onUp = () => {
@@ -511,6 +565,17 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
                 <span className={styles.switchSlider} />
               </label>
             </div>
+            <div className={styles.settingsItem}>
+              <span className={styles.settingsItemLabel}>Excel 展示图片</span>
+              <label className={styles.settingSwitch}>
+                <input
+                  type="checkbox"
+                  checked={settings.excelShowImages}
+                  onChange={(e) => updateSettings({ excelShowImages: e.target.checked })}
+                />
+                <span className={styles.switchSlider} />
+              </label>
+            </div>
           </div>
         )}
       </div>
@@ -586,6 +651,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
 
   const content = (
     <div
+      ref={wrapperRef}
       className={`${styles.popupCrWrapper} ${fullscreen ? styles.fullscreenPopup : ''} ${
         excelViewportFullscreen ? styles.excelViewportFullscreen : ''
       } ${isSmallScreen && !excelViewportFullscreen ? styles.smallScreen : ''} ${
@@ -653,6 +719,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
                     ? 'mini'
                     : 'compact'
               }
+              showImages={settings.excelShowImages}
             />
           ) : (
             <>
