@@ -3,6 +3,7 @@ import AnnouncementModal from '@/components/AnnouncementModal';
 import EmoticonPicker from '@/components/EmoticonPicker';
 import LuckyBagMessage, { LUCKY_BAG_IMAGE, LuckyBagModal, parseLuckyBagInline } from '@/components/LuckyBagMessage';
 import MessageContent from '@/components/MessageContent';
+import RedPacketMessage, { isQuizRedPacket, RED_PACKET_TYPE } from '@/components/RedPacketMessage';
 import RoomInfoCard from '@/components/RoomInfoCard';
 import MoyuPet, { MiniPet } from '@/components/MoyuPet';
 import MomentsSidebar from '@/components/MomentsSidebar';
@@ -17,9 +18,6 @@ import {
 import { uploadFileByMinioUsingPost } from '@/services/backend/fileController';
 import {
   createRedPacketUsingPost,
-  getRedPacketDetailUsingGet,
-  getRedPacketRecordsUsingGet,
-  grabRedPacketUsingPost,
 } from '@/services/backend/redPacketController';
 import { muteUserUsingPost, getUserMuteInfoUsingGet, unmuteUserUsingPost } from '@/services/backend/userMuteController';
 import { getRemarkUsingGet, saveRemarkUsingPost } from '@/services/backend/userRemarkController';
@@ -498,22 +496,11 @@ const ChatRoom: React.FC = () => {
   const [redPacketAmount, setRedPacketAmount] = useState<number>(100);
   const [redPacketCount, setRedPacketCount] = useState<number>(10);
   const [redPacketMessage, setRedPacketMessage] = useState<string>('恭喜发财，大吉大利！');
-  const [redPacketType, setRedPacketType] = useState<number>(1); // 1-随机红包 2-平均红包
+  const [redPacketType, setRedPacketType] = useState<number>(RED_PACKET_TYPE.RANDOM);
+  const [redPacketAnswer, setRedPacketAnswer] = useState<string>('');
   // 添加发红包防抖相关的状态
   const [isRedPacketSending, setIsRedPacketSending] = useState(false);
   const redPacketDebounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  // 抢红包防抖：记录正在处理中的红包 ID，防止重复点击
-  const grabbingRedPacketIds = useRef<Set<string>>(new Set());
-
-  // 添加红包记录相关状态
-  const [isRedPacketRecordsVisible, setIsRedPacketRecordsVisible] = useState(false);
-  const [redPacketRecords, setRedPacketRecords] = useState<API.VO[]>([]);
-  const [currentRedPacketId, setCurrentRedPacketId] = useState<string>('');
-  const [redPacketDetail, setRedPacketDetail] = useState<API.RedPacket | null>(null);
-  const [redPacketDetailsMap, setRedPacketDetailsMap] = useState<Map<string, API.RedPacket | null>>(
-    new Map(),
-  );
 
   const [isLuckyBagModalVisible, setIsLuckyBagModalVisible] = useState(false);
   const [luckyBagAmount, setLuckyBagAmount] = useState<number>(50);
@@ -2137,6 +2124,17 @@ const ChatRoom: React.FC = () => {
       return;
     }
 
+    if (isQuizRedPacket(redPacketType)) {
+      if (!redPacketMessage.trim()) {
+        messageApi.error('请输入题目！');
+        return;
+      }
+      if (!redPacketAnswer.trim()) {
+        messageApi.error('请输入正确答案！');
+        return;
+      }
+    }
+
     // 清除之前的防抖计时器
     if (redPacketDebounceRef.current) {
       clearTimeout(redPacketDebounceRef.current);
@@ -2152,8 +2150,9 @@ const ChatRoom: React.FC = () => {
           const response = await createRedPacketUsingPost({
             totalAmount: redPacketAmount,
             count: redPacketCount,
-            type: redPacketType, // 使用选择的红包类型
+            type: redPacketType,
             name: redPacketMessage,
+            ...(isQuizRedPacket(redPacketType) ? { answer: redPacketAnswer.trim() } : {}),
           });
 
           if (response.data) {
@@ -2181,6 +2180,8 @@ const ChatRoom: React.FC = () => {
             setRedPacketAmount(0);
             setRedPacketCount(1);
             setRedPacketMessage('恭喜发财，大吉大利！');
+            setRedPacketType(RED_PACKET_TYPE.RANDOM);
+            setRedPacketAnswer('');
           }
         } catch (error) {
           messageApi.error('红包发送失败！');
@@ -2264,59 +2265,6 @@ const ChatRoom: React.FC = () => {
     } catch {
       setIsLuckyBagSending(false);
       messageApi.error('福袋发送失败！');
-    }
-  };
-
-  // 修改获取红包详情的函数
-  const fetchRedPacketDetail = async (redPacketId: string) => {
-    // 如果已经有缓存，直接返回
-    const cachedDetail = redPacketDetailsMap.get(redPacketId);
-    if (cachedDetail !== undefined) {
-      return cachedDetail;
-    }
-
-    try {
-      const response = await getRedPacketDetailUsingGet({ redPacketId });
-      if (response.data) {
-        // 更新缓存
-        const detail = response.data as API.RedPacket;
-        setRedPacketDetailsMap((prev) => new Map(prev).set(redPacketId, detail));
-        return detail;
-      }
-    } catch (error) {
-      console.error('获取红包详情失败:', error);
-    }
-    return null;
-  };
-  // 添加查看红包记录的处理函数
-  const handleViewRedPacketRecords = async (redPacketId: string) => {
-    setCurrentRedPacketId(redPacketId);
-    setIsRedPacketRecordsVisible(true);
-    await fetchRedPacketRecords(redPacketId);
-  };
-
-  // 抢红包处理函数（带防抖：同一红包 500ms 内只允许触发一次）
-  const handleGrabRedPacket = async (redPacketId: string) => {
-    if (grabbingRedPacketIds.current.has(redPacketId)) {
-      return;
-    }
-    grabbingRedPacketIds.current.add(redPacketId);
-    try {
-      const response = await grabRedPacketUsingPost({ redPacketId });
-      if (response.data) {
-        messageApi.success(`恭喜你抢到 ${response.data} 积分！`);
-        await Promise.all([
-          fetchRedPacketRecords(redPacketId),
-          fetchRedPacketDetail(redPacketId),
-        ]);
-      }
-    } catch (error) {
-      messageApi.error('红包已被抢完或已过期！');
-    } finally {
-      // 500ms 后解除锁定，防止手抖连点
-      setTimeout(() => {
-        grabbingRedPacketIds.current.delete(redPacketId);
-      }, 500);
     }
   };
 
@@ -2409,52 +2357,7 @@ const ChatRoom: React.FC = () => {
     // const redPacketMatch = content.match(/\[redpacket\](.*?)\[\/redpacket\]/);
     const redPacketMatch = /\[redpacket\]([^\[\]]*)\[\/redpacket\]/i.exec(content);
     if (redPacketMatch) {
-      const redPacketId = redPacketMatch[1];
-      const detail = redPacketDetailsMap.get(redPacketId);
-
-      // 如果没有缓存，则获取详情
-      if (!detail) {
-        fetchRedPacketDetail(redPacketId);
-      }
-
-      return (
-        <div className={styles.redPacketMessage}>
-          <div className={styles.redPacketContent}>
-            <GiftOutlined className={styles.redPacketIcon} />
-            <div className={styles.redPacketInfo}>
-              <div className={styles.redPacketTitle}>
-                <span className={styles.redPacketText}>{detail?.name || '红包'}</span>
-                <span className={styles.redPacketStatus}>
-                  {detail?.remainingCount === 0
-                    ? '（已抢完）'
-                    : detail?.status === 2
-                    ? '（已过期）'
-                    : `（剩余${detail?.remainingCount || 0}个）`}
-                </span>
-              </div>
-              <div className={styles.redPacketActions}>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => handleGrabRedPacket(redPacketId)}
-                  className={styles.grabRedPacketButton}
-                  disabled={detail?.remainingCount === 0 || detail?.status === 2}
-                >
-                  抢红包
-                </Button>
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={() => handleViewRedPacketRecords(redPacketId)}
-                  className={styles.viewRecordsButton}
-                >
-                  查看记录
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+      return <RedPacketMessage redPacketId={redPacketMatch[1]} />;
     }
 
     const luckyBagInline = parseLuckyBagInline(content);
@@ -2546,23 +2449,8 @@ const ChatRoom: React.FC = () => {
       }
     }
     return <MessageContent content={content} />;
-  }, [redPacketDetailsMap, fetchRedPacketDetail, handleGrabRedPacket, handleViewRedPacketRecords,
-      handleInviteClick, isSpeedMode, expandedImages, messages, isNearBottom, currentUser,
+  }, [handleInviteClick, isSpeedMode, expandedImages, messages, isNearBottom, currentUser,
       isAutoScrollingRef, scrollToBottom]);
-
-  // 修改获取红包记录的函数
-  const fetchRedPacketRecords = async (redPacketId: string) => {
-    try {
-      const response = await getRedPacketRecordsUsingGet({ redPacketId });
-      if (response.data) {
-        // 按金额降序排序
-        const sortedRecords = [...response.data].sort((a, b) => (b.amount || 0) - (a.amount || 0));
-        setRedPacketRecords(sortedRecords);
-      }
-    } catch (error) {
-      messageApi.error('获取红包记录失败！');
-    }
-  };
 
   // 在组件卸载时清理定时器
   useEffect(() => {
@@ -4007,14 +3895,9 @@ const ChatRoom: React.FC = () => {
               onChange={(e) => setRedPacketType(e.target.value)}
               className={styles.redPacketTypeGroup}
             >
-              <Radio.Button value={1}>
-                <span className={styles.typeIcon}>🎲</span>
-                <span>随机红包</span>
-              </Radio.Button>
-              <Radio.Button value={2}>
-                <span className={styles.typeIcon}>📊</span>
-                <span>平均红包</span>
-              </Radio.Button>
+              <Radio.Button value={RED_PACKET_TYPE.RANDOM}>随机</Radio.Button>
+              <Radio.Button value={RED_PACKET_TYPE.AVERAGE}>平均</Radio.Button>
+              <Radio.Button value={RED_PACKET_TYPE.QUIZ}>答题</Radio.Button>
             </Radio.Group>
           </div>
           <div className={styles.formItem}>
@@ -4041,16 +3924,28 @@ const ChatRoom: React.FC = () => {
             />
           </div>
           <div className={styles.formItem}>
-            <span className={styles.label}>祝福语：</span>
+            <span className={styles.label}>{isQuizRedPacket(redPacketType) ? '题目：' : '祝福语：'}</span>
             <Input.TextArea
               value={redPacketMessage}
               onChange={(e) => setRedPacketMessage(e.target.value)}
-              placeholder="恭喜发财，大吉大利！"
+              placeholder={isQuizRedPacket(redPacketType) ? '请输入题目内容' : '恭喜发财，大吉大利！'}
               maxLength={50}
               showCount
               className={styles.messageInput}
             />
           </div>
+          {isQuizRedPacket(redPacketType) && (
+            <div className={styles.formItem}>
+              <span className={styles.label}>正确答案：</span>
+              <Input
+                value={redPacketAnswer}
+                onChange={(e) => setRedPacketAnswer(e.target.value)}
+                placeholder="请输入正确答案"
+                maxLength={100}
+                className={styles.messageInput}
+              />
+            </div>
+          )}
         </div>
       </Modal>
 
@@ -4142,40 +4037,6 @@ const ChatRoom: React.FC = () => {
         {previewImage && <img alt="预览" style={{ width: '100%' }} src={previewImage} />}
       </Modal>
 
-      <Modal
-        title="红包记录"
-        open={isRedPacketRecordsVisible}
-        onCancel={() => setIsRedPacketRecordsVisible(false)}
-        footer={null}
-        width={400}
-      >
-        <div className={styles.redPacketRecords}>
-          <div className={styles.recordsList}>
-            {redPacketRecords.length > 0 ? (
-              redPacketRecords.map((record, index) => (
-                <div key={record.id} className={styles.recordItem}>
-                  <Avatar src={record.userAvatar} size={32} />
-                  <div className={styles.userInfo}>
-                    <div className={styles.userName}>
-                      {record.userName}
-                      {index === 0 && <span className={styles.luckyKing}>👑 手气王</span>}
-                    </div>
-                    <div className={styles.grabTime}>
-                      {new Date(record.grabTime || '').toLocaleString()}
-                    </div>
-                  </div>
-                  <div className={styles.amount}>{record.amount} 积分</div>
-                </div>
-              ))
-            ) : (
-              <div className={styles.emptyRecords}>
-                <GiftOutlined className={styles.emptyIcon} />
-                <span>暂无人抢到红包</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </Modal>
       <Modal
         title="点歌"
         open={isMusicSearchVisible}

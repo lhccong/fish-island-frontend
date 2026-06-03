@@ -1383,6 +1383,66 @@
   font-size: 13px;
 }
 
+.excelQuizRedPacketCard {
+  background: #e6f4ff;
+  border-color: #91caff;
+}
+
+.excelQuizRedPacketIcon {
+  flex-shrink: 0;
+  color: #1677ff;
+  font-size: 16px;
+  margin-top: 1px;
+}
+
+.excelQuizRedPacketBadge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 9px;
+  color: #1677ff;
+  background: #bae0ff;
+  padding: 0 4px;
+  border-radius: 2px;
+  line-height: 1.6;
+}
+
+.excelQuizRedPacketName {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0958d9;
+  word-break: break-word;
+}
+
+.excelQuizRedPacketStatus {
+  font-size: 10px;
+  color: #4096ff;
+  white-space: nowrap;
+}
+
+.excelQuizAnswerInput {
+  font-size: 10px;
+  height: 22px;
+}
+
+.excelQuizRedPacketGrabBtn {
+  font-size: 10px;
+  height: 22px;
+  padding: 0 8px;
+  background: #1677ff;
+  border-color: #1677ff;
+
+  &:hover:not(:disabled) {
+    background: #4096ff;
+    border-color: #4096ff;
+  }
+
+  &:disabled {
+    background: #91caff;
+    border-color: #91caff;
+    color: #fff;
+  }
+}
+
 .excelRowActive td.excelCell:not(.excelCellEmpty) {
   outline: 2px solid #217346;
   outline-offset: -2px;

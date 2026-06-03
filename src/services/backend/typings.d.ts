@@ -1100,12 +1100,15 @@ declare namespace API {
   };
 
   type CreateRedPacketRequest = {
+    /** 正确答案（答题红包必填） */
+    answer?: string;
     /** 红包个数 */
     count: number;
+    /** 红包名称（答题红包时作为题目） */
     name?: string;
     /** 红包总金额（积分） */
     totalAmount: number;
-    /** 红包类型：1-随机红包，2-平均红包 */
+    /** 红包类型：1-随机红包，2-平均红包，3-答题红包 */
     type: number;
   };
 
@@ -1959,6 +1962,8 @@ declare namespace API {
   };
 
   type grabRedPacketUsingPOSTParams = {
+    /** 用户答案（答题红包必填） */
+    answer?: string;
     /** 红包ID */
     redPacketId: string;
   };

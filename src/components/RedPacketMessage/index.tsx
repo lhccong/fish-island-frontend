@@ -3,12 +3,22 @@ import {
   getRedPacketRecordsUsingGet,
   grabRedPacketUsingPost,
 } from '@/services/backend/redPacketController';
-import { GiftOutlined } from '@ant-design/icons';
-import { Avatar, Button, message, Modal } from 'antd';
+import { GiftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { Avatar, Button, Input, message, Modal } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './index.less';
 
 export const RED_PACKET_TAG_REGEX = /\[redpacket\]([^\[\]]*)\[\/redpacket\]/i;
+
+export const RED_PACKET_TYPE = {
+  RANDOM: 1,
+  AVERAGE: 2,
+  QUIZ: 3,
+} as const;
+
+export function isQuizRedPacket(type?: number): boolean {
+  return type === RED_PACKET_TYPE.QUIZ;
+}
 
 /** 纯红包消息时解析红包 ID */
 export function extractRedPacketId(content: string): string | null {
@@ -37,8 +47,11 @@ const RedPacketMessage: React.FC<RedPacketMessageProps> = ({ redPacketId }) => {
   const [recordsVisible, setRecordsVisible] = useState(false);
   const [records, setRecords] = useState<API.VO[]>([]);
   const [grabTip, setGrabTip] = useState<GrabTip | null>(null);
+  const [userAnswer, setUserAnswer] = useState('');
   const grabbingRef = useRef(false);
   const grabTipTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const isQuiz = isQuizRedPacket(detail?.type);
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -81,14 +94,22 @@ const RedPacketMessage: React.FC<RedPacketMessageProps> = ({ redPacketId }) => {
 
   const handleGrab = async () => {
     if (grabbingRef.current) return;
+    if (isQuiz && !userAnswer.trim()) {
+      message.warning('请先输入答案！');
+      return;
+    }
     grabbingRef.current = true;
     try {
-      const response = await grabRedPacketUsingPost({ redPacketId });
+      const response = await grabRedPacketUsingPost({
+        redPacketId,
+        ...(isQuiz ? { answer: userAnswer.trim() } : {}),
+      });
       if (response.code === 0) {
         const amount = response.data ?? 0;
         const text = `恭喜你抢到 ${amount} 积分！`;
         showGrabTip({ type: 'success', text });
         message.success(text);
+        setUserAnswer('');
         await fetchDetail();
         if (recordsVisible) await fetchRecords();
       } else {
@@ -113,23 +134,41 @@ const RedPacketMessage: React.FC<RedPacketMessageProps> = ({ redPacketId }) => {
   };
 
   const disabled = detail?.remainingCount === 0 || detail?.status === 2;
+  const statusText =
+    detail?.remainingCount === 0
+      ? '（已抢完）'
+      : detail?.status === 2
+        ? '（已过期）'
+        : `（剩余${detail?.remainingCount ?? 0}个）`;
 
   return (
     <>
-      <div className={styles.redPacketMessage}>
+      <div className={`${styles.redPacketMessage} ${isQuiz ? styles.quizRedPacket : ''}`}>
         <div className={styles.redPacketContent}>
-          <GiftOutlined className={styles.redPacketIcon} />
+          {isQuiz ? (
+            <QuestionCircleOutlined className={styles.quizRedPacketIcon} />
+          ) : (
+            <GiftOutlined className={styles.redPacketIcon} />
+          )}
           <div className={styles.redPacketInfo}>
+            {isQuiz && <span className={styles.quizRedPacketBadge}>答题红包</span>}
             <div className={styles.redPacketTitle}>
-              <span className={styles.redPacketText}>{detail?.name || '红包'}</span>
-              <span className={styles.redPacketStatus}>
-                {detail?.remainingCount === 0
-                  ? '（已抢完）'
-                  : detail?.status === 2
-                    ? '（已过期）'
-                    : `（剩余${detail?.remainingCount ?? 0}个）`}
+              <span className={isQuiz ? styles.quizRedPacketText : styles.redPacketText}>
+                {isQuiz ? detail?.name || '题目加载中…' : detail?.name || '红包'}
               </span>
+              <span className={isQuiz ? styles.quizRedPacketStatus : styles.redPacketStatus}>{statusText}</span>
             </div>
+            {isQuiz && !disabled && (
+              <Input
+                size="small"
+                value={userAnswer}
+                onChange={(e) => setUserAnswer(e.target.value)}
+                placeholder="请输入你的答案"
+                className={styles.quizAnswerInput}
+                onPressEnter={handleGrab}
+                maxLength={100}
+              />
+            )}
             {grabTip && (
               <div className={`${styles.grabTip} ${styles[`grabTip_${grabTip.type}`]}`}>{grabTip.text}</div>
             )}
@@ -138,10 +177,10 @@ const RedPacketMessage: React.FC<RedPacketMessageProps> = ({ redPacketId }) => {
                 type="primary"
                 size="small"
                 onClick={handleGrab}
-                className="grabRedPacketButton"
+                className={isQuiz ? styles.quizGrabButton : 'grabRedPacketButton'}
                 disabled={disabled}
               >
-                抢红包
+                {isQuiz ? '提交答案' : '抢红包'}
               </Button>
               <Button type="link" size="small" onClick={handleViewRecords} className="viewRecordsButton">
                 查看记录

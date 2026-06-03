@@ -3,8 +3,9 @@ import {
   getRedPacketRecordsUsingGet,
   grabRedPacketUsingPost,
 } from '@/services/backend/redPacketController';
-import { GiftOutlined } from '@ant-design/icons';
-import { Avatar, Button, message, Modal } from 'antd';
+import { isQuizRedPacket } from '@/components/RedPacketMessage';
+import { GiftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { Avatar, Button, Input, message, Modal } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './index.less';
 
@@ -19,8 +20,11 @@ const ExcelRedPacketCell: React.FC<ExcelRedPacketCellProps> = ({ redPacketId }) 
   const [recordsVisible, setRecordsVisible] = useState(false);
   const [records, setRecords] = useState<API.VO[]>([]);
   const [grabTip, setGrabTip] = useState<GrabTip | null>(null);
+  const [userAnswer, setUserAnswer] = useState('');
   const grabbingRef = useRef(false);
   const grabTipTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const isQuiz = isQuizRedPacket(detail?.type);
 
   const fetchDetail = useCallback(async () => {
     try {
@@ -64,14 +68,22 @@ const ExcelRedPacketCell: React.FC<ExcelRedPacketCellProps> = ({ redPacketId }) 
   const handleGrab = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (grabbingRef.current) return;
+    if (isQuiz && !userAnswer.trim()) {
+      message.warning('请先输入答案！');
+      return;
+    }
     grabbingRef.current = true;
     try {
-      const response = await grabRedPacketUsingPost({ redPacketId });
+      const response = await grabRedPacketUsingPost({
+        redPacketId,
+        ...(isQuiz ? { answer: userAnswer.trim() } : {}),
+      });
       if (response.code === 0) {
         const amount = response.data ?? 0;
         const text = `恭喜你抢到 ${amount} 积分！`;
         showGrabTip({ type: 'success', text });
         message.success(text);
+        setUserAnswer('');
         await fetchDetail();
         if (recordsVisible) await fetchRecords();
       } else {
@@ -107,16 +119,41 @@ const ExcelRedPacketCell: React.FC<ExcelRedPacketCellProps> = ({ redPacketId }) 
   return (
     <>
       <div
-        className={styles.excelRedPacketCard}
+        className={`${styles.excelRedPacketCard} ${isQuiz ? styles.excelQuizRedPacketCard : ''}`}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        <GiftOutlined className={styles.excelRedPacketIcon} />
+        {isQuiz ? (
+          <QuestionCircleOutlined className={styles.excelQuizRedPacketIcon} />
+        ) : (
+          <GiftOutlined className={styles.excelRedPacketIcon} />
+        )}
         <div className={styles.excelRedPacketBody}>
+          {isQuiz && <span className={styles.excelQuizRedPacketBadge}>答题红包</span>}
           <div className={styles.excelRedPacketTitle}>
-            <span className={styles.excelRedPacketName}>{detail?.name || '红包'}</span>
-            <span className={styles.excelRedPacketStatus}>{statusText}</span>
+            <span className={isQuiz ? styles.excelQuizRedPacketName : styles.excelRedPacketName}>
+              {isQuiz ? detail?.name || '题目加载中…' : detail?.name || '红包'}
+            </span>
+            <span className={isQuiz ? styles.excelQuizRedPacketStatus : styles.excelRedPacketStatus}>
+              {statusText}
+            </span>
           </div>
+          {isQuiz && !disabled && (
+            <Input
+              size="small"
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value)}
+              placeholder="输入答案"
+              className={styles.excelQuizAnswerInput}
+              onPressEnter={(e) => {
+                e.stopPropagation();
+                handleGrab(e as unknown as React.MouseEvent);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              maxLength={100}
+            />
+          )}
           {grabTip && (
             <div
               className={`${styles.excelRedPacketTip} ${
@@ -131,10 +168,10 @@ const ExcelRedPacketCell: React.FC<ExcelRedPacketCellProps> = ({ redPacketId }) 
               type="primary"
               size="small"
               disabled={disabled}
-              className={styles.excelRedPacketGrabBtn}
+              className={isQuiz ? styles.excelQuizRedPacketGrabBtn : styles.excelRedPacketGrabBtn}
               onClick={handleGrab}
             >
-              抢红包
+              {isQuiz ? '提交答案' : '抢红包'}
             </Button>
             <Button type="link" size="small" className={styles.excelRedPacketLinkBtn} onClick={handleViewRecords}>
               记录

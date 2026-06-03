@@ -101,6 +101,73 @@
   }
 }
 
+.quizRedPacket {
+  .redPacketContent {
+    background: #e6f4ff;
+    border-color: #91caff;
+  }
+
+  .quizRedPacketIcon {
+    color: #1677ff;
+    font-size: 22px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .quizRedPacketBadge {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 11px;
+    color: #1677ff;
+    background: #bae0ff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    line-height: 1.5;
+  }
+
+  .quizRedPacketText {
+    color: #0958d9;
+    font-weight: 500;
+    font-size: 14px;
+    word-break: break-word;
+  }
+
+  .quizRedPacketStatus {
+    color: #4096ff;
+    font-size: 12px;
+  }
+
+  .quizAnswerInput {
+    font-size: 13px;
+  }
+
+  .quizGrabButton {
+    background: #1677ff;
+    border-color: #1677ff;
+
+    &:hover:not(:disabled) {
+      background: #4096ff;
+      border-color: #4096ff;
+    }
+
+    &:disabled {
+      background: #91caff;
+      border-color: #91caff;
+      color: #fff;
+    }
+  }
+
+  :global {
+    .viewRecordsButton {
+      color: #1677ff;
+
+      &:hover {
+        color: #4096ff;
+      }
+    }
+  }
+}
+
 .redPacketRecords {
   .recordsList {
     max-height: 360px;
