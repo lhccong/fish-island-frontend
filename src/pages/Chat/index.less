@@ -913,6 +913,17 @@
         text-decoration: underline;
       }
     }
+
+    .reportText {
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      color: #fa8c16;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
   .messageItem {
@@ -920,7 +931,8 @@
       .messageFooter {
         .revokeText,
         .quoteText,
-        .repeatText {
+        .repeatText,
+        .reportText {
           opacity: 1;
         }
       }

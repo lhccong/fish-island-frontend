@@ -200,6 +200,7 @@ export default [
       {icon: 'TagsOutlined', path: '/admin/tags', component: './Admin/Tags', name: '标签管理', requireAuth: true},
       {icon: 'BookOutlined', path: '/admin/word/library', component: './Admin/Word/Library', name: '词库管理', requireAuth: true},
       {icon: 'ToolOutlined', path: '/admin/game/itemTemplates', component: './Admin/ItemTemplates', name: '装备管理', requireAuth: true},
+      {icon: 'AlertOutlined', path: '/admin/report', component: './Admin/Report', name: '举报管理', requireAuth: true},
     ],
   },
   {path: '/oauth2/authorize', layout: false, component: './OAuth2/Authorize', requireAuth: false},

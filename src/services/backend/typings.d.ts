@@ -3968,12 +3968,14 @@ declare namespace API {
     reportTypeText?: string;
     /** 举报人用户ID */
     reporterId?: number;
+    reporterUser?: UserVO;
     /** 处理状态 */
     status?: number;
     /** 处理状态描述 */
     statusText?: string;
     /** 被举报对象ID */
     targetId?: number;
+    targetUser?: UserVO;
     /** 被举报用户ID */
     targetUserId?: number;
   };

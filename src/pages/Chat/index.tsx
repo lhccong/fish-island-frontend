@@ -3,6 +3,7 @@ import AnnouncementModal from '@/components/AnnouncementModal';
 import EmoticonPicker from '@/components/EmoticonPicker';
 import LuckyBagMessage, { LUCKY_BAG_IMAGE, LuckyBagModal, parseLuckyBagInline } from '@/components/LuckyBagMessage';
 import MessageContent from '@/components/MessageContent';
+import ReportModal, { REPORT_TYPE } from '@/components/ReportModal';
 import RedPacketMessage, { isQuizRedPacket, RED_PACKET_TYPE } from '@/components/RedPacketMessage';
 import RoomInfoCard from '@/components/RoomInfoCard';
 import MoyuPet, { MiniPet } from '@/components/MoyuPet';
@@ -155,6 +156,7 @@ interface MessageItemProps {
   renderMessageContent: (content: string) => React.ReactNode;
   handleRevokeMessage: (messageId: string) => void;
   handleQuoteMessage: (message: Message) => void;
+  handleReportMessage: (message: Message) => void;
   /** 复读该消息的其他用户列表（连续2条及以上相同内容时填充） */
   repeatUsers?: User[];
   /** 一键复读回调 */
@@ -174,6 +176,7 @@ const MessageItem = React.memo<MessageItemProps>(({
   renderMessageContent,
   handleRevokeMessage,
   handleQuoteMessage,
+  handleReportMessage,
   repeatUsers,
   onRepeat,
 }) => {
@@ -270,6 +273,11 @@ const MessageItem = React.memo<MessageItemProps>(({
         <span className={styles.quoteText} onClick={() => handleQuoteMessage(msg)}>
           引用
         </span>
+        {!isSelf && (
+          <span className={styles.reportText} onClick={() => handleReportMessage(msg)}>
+            举报
+          </span>
+        )}
         {!/\[redpacket\]/i.test(msg.content) && !/\[luckybag\]/i.test(msg.content) && (
           <Tooltip title={hasRepeated ? '你已经复读过啦' : ''} placement="top">
             <span
@@ -421,6 +429,8 @@ const ChatRoom: React.FC = () => {
   const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
 
   const [quotedMessage, setQuotedMessage] = useState<Message | null>(null);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportTarget, setReportTarget] = useState<Message | null>(null);
 
   const [notifications, setNotifications] = useState<Message[]>([]);
 
@@ -2004,6 +2014,15 @@ const ChatRoom: React.FC = () => {
     }, 0);
   }, []);
 
+  const handleReportMessage = useCallback((msg: Message) => {
+    if (!/^\d+$/.test(msg.id)) {
+      messageApi.warning('该消息暂不支持举报');
+      return;
+    }
+    setReportTarget(msg);
+    setReportModalVisible(true);
+  }, [messageApi]);
+
   // Using utility function from titleUtils
 
     // getAdminTag 已在上方通过 useCallback 定义
@@ -3479,6 +3498,7 @@ const ChatRoom: React.FC = () => {
                 renderMessageContent={renderMessageContent}
                 handleRevokeMessage={handleRevokeMessage}
                 handleQuoteMessage={handleQuoteMessage}
+                handleReportMessage={handleReportMessage}
                 repeatUsers={repeatMap.get(msg.id)}
                 onRepeat={handleRepeat}
               />
@@ -4926,6 +4946,25 @@ const ChatRoom: React.FC = () => {
           onJoined={fetchActiveLuckyBags}
         />
       )}
+
+      <ReportModal
+        open={reportModalVisible}
+        reportType={REPORT_TYPE.CHAT}
+        targetId={reportTarget?.id ?? ''}
+        targetUserId={reportTarget?.sender?.id}
+        preview={
+          reportTarget
+            ? `${getUserDisplayName(reportTarget.sender)}：${reportTarget.content}`
+            : undefined
+        }
+        onCancel={() => {
+          setReportModalVisible(false);
+          setReportTarget(null);
+        }}
+        onSuccess={() => {
+          setReportTarget(null);
+        }}
+      />
     </div>
     {showFishCircle && fishCirclePosition === 'right' && <MomentsSidebar position="right" />}
     </div>
