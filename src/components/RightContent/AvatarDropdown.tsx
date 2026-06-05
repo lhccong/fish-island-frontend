@@ -42,6 +42,7 @@ import {
   GiftOutlined,
   BulbOutlined,
   IdcardOutlined,
+  CompassOutlined,
 } from '@ant-design/icons';
 import {
   getMonthSignInUsingGet,
@@ -87,6 +88,7 @@ import FoodRecommender from '@/components/FoodRecommender';
 import MessageNotification, { MessageNotificationRef } from '@/components/MessageNotification';
 import UserDetailModal from '@/components/UserDetailModal';
 import MoneyButton from '../MoneyButton';
+import { startSiteTour } from '@/components/SiteTour';
 
 export type GlobalHeaderRightProps = {
   menu?: boolean;
@@ -986,6 +988,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       label: '兑换码',
     },
     {
+      key: 'siteTour',
+      icon: <CompassOutlined/>,
+      label: '网站引导',
+    },
+    {
       key: 'toggleTheme',
       icon: <BulbOutlined/>,
       label: isDarkMode ? '切换浅色模式' : '切换深色模式',
@@ -1081,6 +1088,10 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       }
       if (key === 'toggleTheme') {
         toggleTheme();
+        return;
+      }
+      if (key === 'siteTour') {
+        window.setTimeout(() => startSiteTour(), 200);
         return;
       }
       history.push(`/account/${key}`);
@@ -1655,6 +1666,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
         <Button
           type="text"
           icon={<SwapOutlined/>}
+          data-tour="tab-mode"
           onClick={() => {
             const currentPath = window.location.pathname;
             history.push(`/home?redirect=${encodeURIComponent(currentPath)}`);
@@ -1677,6 +1689,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
       <MessageNotification ref={messageNotificationRef} onUnreadCountChange={setUnreadMessageCount} />
 
       {/* 合并头像和下拉菜单 */}
+      <div data-tour="user-avatar">
       <HeaderDropdown
         menu={{
           selectedKeys: [],
@@ -1727,6 +1740,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({menu}) => {
           </Tooltip>
         </Space>
       </HeaderDropdown>
+      </div>
 
       {/* 添加修改信息的 Modal */}
       <Modal

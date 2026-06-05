@@ -13,6 +13,7 @@ import GlobalReader from '@/components/GlobalFloatingReader';
 import FloatingChat from '@/components/FloatingChat';
 import routes from '../config/routes';
 import GlobalTitle from '@/components/GlobalTitle';
+import SiteTour from '@/components/SiteTour';
 import {Board, Player, Position, Move, WinningLine} from '@/game';
 import {unregisterServiceWorker} from './utils/unregisterServiceWorker';
 
@@ -463,6 +464,7 @@ export const layout: RunTimeLayoutConfig = ({initialState}) => {
             onClose={hideReader}
           />
           <FloatingChat />
+          <SiteTour />
         </ConfigProvider>
       );
     },

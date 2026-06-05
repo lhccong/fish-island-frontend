@@ -1,0 +1,157 @@
+.siteTour {
+  :global(.ant-tour-inner) {
+    max-width: 420px;
+  }
+}
+
+.pointsGuide {
+  margin-top: 4px;
+}
+
+.chatHighlight {
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 167, 104, 0.14) 0%, rgba(255, 167, 104, 0.06) 100%);
+  border: 1px solid rgba(255, 167, 104, 0.28);
+}
+
+.chatHighlightHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chatIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #ffa768;
+  color: #fff;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.chatHighlightInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.chatHighlightTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.chatHighlightDesc {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.pointsBadge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffa768;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.chatHighlightTip {
+  margin: 10px 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.openChatBtn {
+  height: 38px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.otherMethods {
+  margin-top: 14px;
+}
+
+.otherTitle {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.methodGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.methodItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.methodIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 167, 104, 0.12);
+  color: #ffa768;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.methodInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.methodLabel {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.78);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.methodPoints {
+  font-size: 11px;
+  color: #ffa768;
+  font-weight: 600;
+}
+
+:global([data-theme='dark']) {
+  .chatHighlightTitle,
+  .methodLabel {
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .chatHighlightDesc,
+  .chatHighlightTip,
+  .otherTitle {
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .methodItem {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}

@@ -85,7 +85,7 @@ const MoneyButton: React.FC<MoneyButtonProps> = ({
       onDrag={handleDrag}
       onStop={handleDragStop}
     >
-      <div ref={nodeRef} className="money-button-container">
+      <div ref={nodeRef} className="money-button-container" data-tour="money-button">
         <Tooltip
           title={
             holidayInfo ? (

@@ -652,6 +652,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
   const content = (
     <div
       ref={wrapperRef}
+      data-tour="floating-chat"
       className={`${styles.popupCrWrapper} ${fullscreen ? styles.fullscreenPopup : ''} ${
         excelViewportFullscreen ? styles.excelViewportFullscreen : ''
       } ${isSmallScreen && !excelViewportFullscreen ? styles.smallScreen : ''} ${
