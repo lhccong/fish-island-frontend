@@ -24,6 +24,7 @@ import {
   ArrowUpOutlined,
   SettingOutlined,
   RobotOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 import styles from './index.less';
 import { getPetDetailUsingGet, createPetUsingPost, feedPetUsingPost, patPetUsingPost, updatePetNameUsingPost, getOtherUserPetUsingGet } from '@/services/backend/fishPetController';
@@ -749,6 +750,7 @@ const ViewForgeModal: React.FC<ViewForgeModalProps> = React.memo(({ visible, slo
 
 const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherUserName, isPageComponent = false }) => {
   const { initialState } = useModel('@@initialState');
+  const isLoggedIn = !!initialState?.currentUser;
   const [pet, setPet] = useState<API.PetVO | API.OtherUserPetVO | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [petName, setPetName] = useState('');
@@ -1124,6 +1126,7 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
   // 获取物品列表
   const fetchItems = async () => {
     if (isOtherUser) return; // 查看其他用户时不获取物品
+    if (!isLoggedIn) return;
 
     setItemsLoading(true);
     try {
@@ -1532,18 +1535,20 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
       setPet(null);
       setIsCreating(false);
       setIsOtherUserEmptyPet(false);
-      fetchPetData();
-      fetchPetSkins(); // 获取宠物列表
+      if (isOtherUser || isLoggedIn) {
+        fetchPetData();
+        fetchPetSkins(); // 获取宠物列表
+      }
     }
-  }, [visible, otherUserId, isPageComponent]);
+  }, [visible, otherUserId, isPageComponent, isLoggedIn]);
 
   // 获取物品列表
   useEffect(() => {
-    if ((isPageComponent || visible) && !isOtherUser) {
+    if ((isPageComponent || visible) && !isOtherUser && isLoggedIn) {
       fetchItems();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPageComponent, visible, itemsCurrent, itemsPageSize, itemsCategory]);
+  }, [isPageComponent, visible, isLoggedIn, itemsCurrent, itemsPageSize, itemsCategory]);
 
   // 全局阻止右键菜单（当自定义菜单打开时）
   useEffect(() => {
@@ -1557,6 +1562,25 @@ const MoyuPet: React.FC<MoyuPetProps> = ({ visible, onClose, otherUserId, otherU
       };
     }
   }, [contextMenuItemId, equipSlotContextMenu]);
+
+  // 未登录占位（页面模式）
+  if (isPageComponent && !isOtherUser && !isLoggedIn) {
+    return (
+      <div className={styles.loginPlaceholder}>
+        <div className={styles.loginIcon}>🐟</div>
+        <div className={styles.loginTitle}>请先登录后再查看您的宠物</div>
+        <div className={styles.loginSubtitle}>登录后即可领养专属摸鱼宠物，开启喂食、撸猫、打装备之旅</div>
+        <Button
+          type="primary"
+          size="large"
+          icon={<LoginOutlined />}
+          onClick={() => history.push(`/user/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
+        >
+          去登录
+        </Button>
+      </div>
+    );
+  }
 
   // 创建宠物表单
   if (isCreating) {

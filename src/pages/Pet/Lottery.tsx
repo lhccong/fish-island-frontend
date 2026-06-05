@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, message, Empty, Modal, Progress, Spin } from 'antd';
 import { GiftOutlined } from '@ant-design/icons';
 import { useModel } from '@umijs/max';
+import LoginPlaceholder from '@/components/LoginPlaceholder';
 import styles from './Lottery.less';
 import {
   listTurntablesUsingGet,
@@ -49,6 +50,7 @@ interface Turntable {
 const Lottery: React.FC = () => {
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
+  const isLoggedIn = !!currentUser;
 
   // 计算可用积分
   const availablePoints = (currentUser?.points ?? 0) - (currentUser?.usedPoints ?? 0);
@@ -116,16 +118,15 @@ const Lottery: React.FC = () => {
   };
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     fetchTurntableList();
-  }, []);
+  }, [isLoggedIn]);
 
   useEffect(() => {
-    if (activeTabKey) {
-      fetchTurntableDetail(Number(activeTabKey));
-      // 获取当前转盘的抽奖记录
-      fetchDrawRecords(Number(activeTabKey));
-    }
-  }, [activeTabKey]);
+    if (!isLoggedIn || !activeTabKey) return;
+    fetchTurntableDetail(Number(activeTabKey));
+    fetchDrawRecords(Number(activeTabKey));
+  }, [activeTabKey, isLoggedIn]);
 
   // 获取抽奖记录
   const fetchDrawRecords = async (turntableId?: number, page: number = 1) => {
@@ -327,6 +328,16 @@ const Lottery: React.FC = () => {
       default: return styles.rarityCommon;
     }
   };
+
+  if (!isLoggedIn) {
+    return (
+      <LoginPlaceholder
+        icon="🎁"
+        title="请先登录后再参与抽奖"
+        subtitle="登录后即可使用摸鱼大转盘，抽取稀有装备和道具奖励"
+      />
+    );
+  }
 
   return (
     <div className={styles.lotteryContainer}>

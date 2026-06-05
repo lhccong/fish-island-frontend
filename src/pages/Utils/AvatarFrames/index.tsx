@@ -9,6 +9,7 @@ import { listPropsPageUsingGet, purchasePropsUsingPost } from '@/services/backen
 import { listMyPointsRecordsUsingGet } from '@/services/backend/userPointsRecordController';
 import styles from './index.module.less';
 import { useModel } from '@umijs/max';
+import LoginPlaceholder from '@/components/LoginPlaceholder';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import {history} from "@@/core/history";
 
@@ -39,7 +40,8 @@ const getDateGroupLabel = (timeStr?: string) => {
 };
 
 const AvatarFrames: React.FC = () => {
-  const { setInitialState } = useModel('@@initialState');
+  const { initialState, setInitialState } = useModel('@@initialState');
+  const isLoggedIn = !!initialState?.currentUser;
   const [activeTab, setActiveTab] = useState<string>('frames');
   const [frames, setFrames] = useState<API.AvatarFrameVO[]>([]);
   const [props, setProps] = useState<API.PropsVO[]>([]);
@@ -58,6 +60,8 @@ const AvatarFrames: React.FC = () => {
 
   // 获取当前登录用户
   useEffect(() => {
+    if (!isLoggedIn) return;
+
     const fetchUser = async () => {
       try {
         const res = await getLoginUserUsingGet();
@@ -69,10 +73,12 @@ const AvatarFrames: React.FC = () => {
       }
     };
     fetchUser();
-  }, []);
+  }, [isLoggedIn]);
 
   // 获取头像框列表
   const fetchFrames = async (page: number) => {
+    if (!isLoggedIn) return;
+
     try {
       setFramesLoading(true);
       const res = await listAvatarFrameVoByPageUsingPost({
@@ -104,6 +110,8 @@ const AvatarFrames: React.FC = () => {
 
   // 获取道具列表
   const fetchProps = async (page: number) => {
+    if (!isLoggedIn) return;
+
     try {
       setPropsLoading(true);
       const res = await listPropsPageUsingGet({
@@ -127,8 +135,13 @@ const AvatarFrames: React.FC = () => {
 
   // 初始加载头像框数据
   useEffect(() => {
+    if (!isLoggedIn) {
+      setFramesLoading(false);
+      setPropsLoading(false);
+      return;
+    }
     fetchFrames(1);
-  }, []);
+  }, [isLoggedIn]);
 
   const loadMoreFrames = () => {
     if (framesLoading) return;
@@ -146,6 +159,8 @@ const AvatarFrames: React.FC = () => {
 
   // 获取积分记录列表
   const fetchPointsRecords = async (page: number) => {
+    if (!isLoggedIn) return;
+
     try {
       setPointsLoading(true);
       const res = await listMyPointsRecordsUsingGet({
@@ -615,6 +630,8 @@ const AvatarFrames: React.FC = () => {
 
   // 处理标签页切换
   const handleTabChange = (key: string) => {
+    if (!isLoggedIn) return;
+
     setActiveTab(key);
 
     // 重置数据和页码
@@ -640,6 +657,18 @@ const AvatarFrames: React.FC = () => {
       fetchPointsRecords(1);
     }
   };
+
+  if (!isLoggedIn) {
+    return (
+      <div className={styles.container}>
+        <LoginPlaceholder
+          icon="🛒"
+          title="请先登录后再进入摸鱼商店"
+          subtitle="登录后即可使用积分兑换头像框、道具等物品"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

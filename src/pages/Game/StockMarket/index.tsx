@@ -36,6 +36,7 @@ import {
   InfoCircleOutlined,
 } from '@ant-design/icons';
 import { useModel } from '@umijs/max';
+import LoginPlaceholder from '@/components/LoginPlaceholder';
 import {
   buyIndexUsingPost,
   sellIndexUsingPost,
@@ -74,6 +75,7 @@ const parseNumericValue = (value: string | number | undefined): number => {
 const StockMarket: React.FC = () => {
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
+  const isLoggedIn = !!currentUser;
 
   // 计算可用积分
   const availablePoints = (currentUser?.points ?? 0) - (currentUser?.usedPoints ?? 0);
@@ -96,6 +98,7 @@ const StockMarket: React.FC = () => {
 
   // 加载市场指数
   const loadMarketIndices = async () => {
+    if (!isLoggedIn) return;
     try {
       const response = await getMajorIndicesUsingGet();
       if (response.code === 0 && response.data) {
@@ -108,6 +111,7 @@ const StockMarket: React.FC = () => {
 
   // 加载全部指数持仓
   const loadPositions = async () => {
+    if (!isLoggedIn) return;
     try {
       const response = await getPositionsUsingGet();
       if (response.code === 0 && response.data) {
@@ -130,6 +134,7 @@ const StockMarket: React.FC = () => {
 
   // 加载交易记录
   const loadTransactions = async (page = 1) => {
+    if (!isLoggedIn) return;
     try {
       const response = await getTransactionsUsingPost({
         current: page,
@@ -160,6 +165,8 @@ const StockMarket: React.FC = () => {
 
   // 初始加载
   useEffect(() => {
+    if (!isLoggedIn) return;
+
     const init = async () => {
       setLoading(true);
       await Promise.all([
@@ -170,7 +177,7 @@ const StockMarket: React.FC = () => {
       setLoading(false);
     };
     init();
-  }, []);
+  }, [isLoggedIn]);
 
   // 打开交易弹窗
   const handleOpenTradeModal = useCallback((
@@ -369,6 +376,20 @@ const StockMarket: React.FC = () => {
       },
     },
   ];
+
+  if (!isLoggedIn) {
+    return (
+      <Layout className="stock-market-container">
+        <Content className="stock-market-content">
+          <LoginPlaceholder
+            icon="📈"
+            title="请先登录后再进入摸鱼股市"
+            subtitle="登录后即可使用积分交易上证、深证成指、创业板指等主要指数"
+          />
+        </Content>
+      </Layout>
+    );
+  }
 
   return (
     <Layout className="stock-market-container">

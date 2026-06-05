@@ -32,7 +32,8 @@ import {
   getMyRankUsingGet,
 } from '@/services/backend/petTournamentController';
 import MoyuPet from '@/components/MoyuPet';
-import { history } from '@umijs/max';
+import LoginPlaceholder from '@/components/LoginPlaceholder';
+import { history, useModel } from '@umijs/max';
 import './index.less';
 
 const { Header, Content } = Layout;
@@ -147,6 +148,9 @@ const TopThreePlaceholder: React.FC<{
 };
 
 const Tournament: React.FC = () => {
+  const { initialState } = useModel('@@initialState');
+  const isLoggedIn = !!initialState?.currentUser;
+
   const [loading, setLoading] = useState(false);
   const [leaderboard, setLeaderboard] = useState<TournamentRankItem[]>([]);
   const [myRank, setMyRank] = useState<number | null>(null);
@@ -157,6 +161,8 @@ const Tournament: React.FC = () => {
 
   // 加载排行榜数据
   const loadLeaderboard = async () => {
+    if (!isLoggedIn) return;
+
     try {
       setLoading(true);
       const response = await getLeaderboardUsingGet();
@@ -173,6 +179,8 @@ const Tournament: React.FC = () => {
 
   // 加载我的排名
   const loadMyRank = async () => {
+    if (!isLoggedIn) return;
+
     try {
       const response = await getMyRankUsingGet();
       if (response.code === 0) {
@@ -191,8 +199,9 @@ const Tournament: React.FC = () => {
 
   // 初始加载
   useEffect(() => {
+    if (!isLoggedIn) return;
     refreshData();
-  }, []);
+  }, [isLoggedIn]);
 
   // 处理挑战 - 跳转到对战页面，携带目标排名和对手ID（如果有）
   const handleChallenge = (rank: number) => {
@@ -247,6 +256,20 @@ const Tournament: React.FC = () => {
 
   const topThreeData = getTopThreeData();
   const restData = getRestData();
+
+  if (!isLoggedIn) {
+    return (
+      <Card className="tournament-container">
+        <Content className="tournament-content">
+          <LoginPlaceholder
+            icon="🏆"
+            title="请先登录后再参加武道大会"
+            subtitle="登录后即可挑战排行榜上的强者，争夺巅峰排名"
+          />
+        </Content>
+      </Card>
+    );
+  }
 
   return (
     <Card className="tournament-container">

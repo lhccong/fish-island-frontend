@@ -1,0 +1,44 @@
+.loginPlaceholder {
+  text-align: center;
+  padding: 80px 20px;
+  background: linear-gradient(135deg, #f8faff 0%, #f0f7ff 100%);
+  border-radius: 16px;
+  border: 2px dashed #d9ecff;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .loginIcon {
+    font-size: 64px;
+    margin-bottom: 24px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .loginTitle {
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .loginSubtitle {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 24px;
+    max-width: 360px;
+    line-height: 1.6;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}

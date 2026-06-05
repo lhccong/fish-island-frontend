@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Avatar, Badge, Spin, Modal, Pagination } from 'antd';
 import { TrophyOutlined, CrownOutlined, HomeOutlined, BarChartOutlined, ThunderboltOutlined, BookOutlined, GiftOutlined } from '@ant-design/icons';
-import { history, useSearchParams } from '@umijs/max';
+import { history, useSearchParams, useModel } from '@umijs/max';
 import MoyuPet, { renderPetImage } from '@/components/MoyuPet';
 import Lottery from './Lottery';
+import LoginPlaceholder from '@/components/LoginPlaceholder';
 import styles from './index.less';
 import { getPetRankListUsingGet } from '@/services/backend/petRankController';
 import { listItemTemplatesVoByPageUsingPost } from '@/services/backend/itemTemplatesController';
 import { getBossListWithCacheUsingGet, getBossChallengeRankingUsingGet } from '@/services/backend/bossController';
 
 const PetPage: React.FC = () => {
+  const { initialState } = useModel('@@initialState');
+  const isLoggedIn = !!initialState?.currentUser;
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<string>(tabParam || 'pet');
@@ -57,6 +60,8 @@ const PetPage: React.FC = () => {
 
   // 获取图鉴数据
   const fetchGalleryData = async () => {
+    if (!isLoggedIn) return;
+
     setGalleryLoading(true);
     try {
       const res = await listItemTemplatesVoByPageUsingPost({
@@ -131,11 +136,11 @@ const PetPage: React.FC = () => {
   }, [galleryFilter, activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'gallery') {
+    if (activeTab === 'gallery' && isLoggedIn) {
       fetchGalleryData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, galleryFilter, galleryCurrent, galleryPageSize]);
+  }, [activeTab, galleryFilter, galleryCurrent, galleryPageSize, isLoggedIn]);
 
   useEffect(() => {
     if (activeTab === 'boss') {
@@ -227,6 +232,16 @@ const PetPage: React.FC = () => {
 
   // 渲染图鉴内容
   const renderGalleryContent = () => {
+    if (!isLoggedIn) {
+      return (
+        <LoginPlaceholder
+          icon="📖"
+          title="请先登录后再查看图鉴"
+          subtitle="登录后即可浏览装备道具图鉴，了解各类物品的属性和稀有度"
+        />
+      );
+    }
+
     // 判断数值是否有效（大于0）
     const isValidNumber = (value: any): boolean => {
       return value != null && value !== '' && !isNaN(Number(value)) && Number(value) > 0;

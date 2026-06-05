@@ -33,6 +33,7 @@ import {
   ArrowLeftOutlined,
 } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
+import LoginPlaceholder from '@/components/LoginPlaceholder';
 import { getAllCropsUsingGet } from '@/services/backend/cropController';
 import {
   getMyLandsUsingGet,
@@ -313,6 +314,7 @@ const CropIcon: React.FC<{
 const Farm: React.FC = () => {
   const { initialState, setInitialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
+  const isLoggedIn = !!currentUser;
   const availablePoints =
     (currentUser?.points ?? 0) - (currentUser?.usedPoints ?? 0);
 
@@ -415,6 +417,8 @@ const Farm: React.FC = () => {
   }, []);
 
   const loadFarmData = useCallback(async () => {
+    if (!isLoggedIn) return;
+
     setLoading(true);
     try {
       const [landsRes, cropsRes, farmRes] = await Promise.all([
@@ -444,7 +448,7 @@ const Farm: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [loadStolenRecords]);
+  }, [isLoggedIn, loadStolenRecords]);
 
   const openFriendsModal = useCallback((tab: FriendTab = 'play') => {
     setFriendsInitialTab(tab);
@@ -536,6 +540,11 @@ const Farm: React.FC = () => {
   }, [refreshLandsAndFarmUser]);
 
   useEffect(() => {
+    if (!isLoggedIn) {
+      setLoading(false);
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const visitUserId = params.get('visitUserId');
     if (!visitUserId) {
@@ -579,7 +588,7 @@ const Farm: React.FC = () => {
         setLoading(false);
       }
     })();
-  }, [loadFarmData, loadStolenRecords, visitFarmByUserId]);
+  }, [isLoggedIn, loadFarmData, loadStolenRecords, visitFarmByUserId]);
 
   /** 锁定文档滚动，避免 ProLayout 固定头 + 100vh 叠算出现细滚动条 */
   useEffect(() => {
@@ -1125,6 +1134,20 @@ const Farm: React.FC = () => {
     else classes.push('is-empty');
     return classes.join(' ');
   };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="farm-page">
+        <div className="farm-login-placeholder">
+          <LoginPlaceholder
+            icon="🌾"
+            title="请先登录后再进入摸鱼农场"
+            subtitle="登录后即可种植作物、收获积分，还能拜访好友农场偷菜"
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="farm-page">
