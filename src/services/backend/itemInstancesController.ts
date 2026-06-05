@@ -2,21 +2,6 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
-/** 添加物品 POST /api/itemInstances/add */
-export async function addItemInstanceUsingPost(
-  body: API.ItemInstanceAddRequest,
-  options?: { [key: string]: any },
-) {
-  return request<API.BaseResponseLong_>('/api/itemInstances/add', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  });
-}
-
 /** 批量分解蓝绿装备 POST /api/itemInstances/batchDecomposeBlueGreen */
 export async function batchDecomposeBlueGreenEquipmentsUsingPost(options?: { [key: string]: any }) {
   return request<API.BaseResponseLong_>('/api/itemInstances/batchDecomposeBlueGreen', {
@@ -31,21 +16,6 @@ export async function decomposeItemInstanceUsingPost(
   options?: { [key: string]: any },
 ) {
   return request<API.BaseResponseLong_>('/api/itemInstances/decompose', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  });
-}
-
-/** 删除物品 POST /api/itemInstances/delete */
-export async function deleteItemInstanceUsingPost(
-  body: API.DeleteRequest,
-  options?: { [key: string]: any },
-) {
-  return request<API.BaseResponseBoolean_>('/api/itemInstances/delete', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -151,21 +121,6 @@ export async function unequipItemUsingPost(
   options?: { [key: string]: any },
 ) {
   return request<API.BaseResponseBoolean_>('/api/itemInstances/unequip', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    data: body,
-    ...(options || {}),
-  });
-}
-
-/** 更新物品信息（用户） POST /api/itemInstances/update */
-export async function updateItemInstanceUsingPost(
-  body: API.ItemInstanceUpdateRequest,
-  options?: { [key: string]: any },
-) {
-  return request<API.BaseResponseBoolean_>('/api/itemInstances/update', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

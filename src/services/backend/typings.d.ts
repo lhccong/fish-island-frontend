@@ -325,6 +325,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseListReportReasonOptionVO_ = {
+    code?: number;
+    data?: ReportReasonOptionVO[];
+    message?: string;
+  };
+
   type BaseResponseListSimpleHeroVO_ = {
     code?: number;
     data?: SimpleHeroVO[];
@@ -598,6 +604,12 @@ declare namespace API {
   type BaseResponsePageRedeemCodeVO_ = {
     code?: number;
     data?: PageRedeemCodeVO_;
+    message?: string;
+  };
+
+  type BaseResponsePageReportVO_ = {
+    code?: number;
+    data?: PageReportVO_;
     message?: string;
   };
 
@@ -2181,23 +2193,6 @@ declare namespace API {
     itemInstanceId?: number;
   };
 
-  type ItemInstanceAddRequest = {
-    /** 是否绑定（1-绑定后不可交易，0-未绑定可交易） */
-    bound?: number;
-    /** 耐久度（可选，部分装备适用） */
-    durability?: number;
-    /** 强化等级 */
-    enhanceLevel?: number;
-    /** 扩展信息（如附魔、镶嵌孔、特殊属性等JSON数据） */
-    extraData?: Record<string, any>;
-    /** 持有者用户ID，如果不传默认添加当前登录用户 */
-    ownerUserId?: number;
-    /** 添加数量，stackable为1时有效，stackable为0会忽略 */
-    quantity?: number;
-    /** 物品模板ID */
-    templateId: number;
-  };
-
   type ItemInstanceDecomposeRequest = {
     itemInstanceId?: number;
   };
@@ -2248,21 +2243,6 @@ declare namespace API {
     quantity?: number;
     templateId?: number;
     updateTime?: string;
-  };
-
-  type ItemInstanceUpdateRequest = {
-    /** 绑定状态：1-绑定，0-未绑定 */
-    bound?: number;
-    /** 强化等级 */
-    enhanceLevel?: number;
-    /** 扩展信息(JSON) */
-    extraData?: string;
-    /** 物品实例ID */
-    id: number;
-    ownerUserId?: number;
-    /** 数量 */
-    quantity?: number;
-    templateId?: number;
   };
 
   type ItemInstanceVO = {
@@ -2512,6 +2492,21 @@ declare namespace API {
     type?: number;
   };
 
+  type listReportPageUsingGETParams = {
+    /** 举报类型：1-聊天记录，2-帖子，3-鱼小圈 */
+    reportType?: number;
+    /** 举报人用户ID */
+    reporterId?: number;
+    /** 处理状态：0-待处理，1-已处理，2-已驳回 */
+    status?: number;
+    /** 被举报用户ID */
+    targetUserId?: number;
+    current?: number;
+    pageSize?: number;
+    sortField?: string;
+    sortOrder?: string;
+  };
+
   type listTurntablesUsingGETParams = {
     current?: number;
     pageSize?: number;
@@ -2629,6 +2624,7 @@ declare namespace API {
 
   type MessageQueryRequest = {
     current?: number;
+    messageId?: number;
     pageSize?: number;
     roomId?: number;
     sortField?: string;
@@ -3277,6 +3273,19 @@ declare namespace API {
     total?: number;
   };
 
+  type PageReportVO_ = {
+    countId?: string;
+    current?: number;
+    maxLimit?: number;
+    optimizeCountSql?: boolean;
+    orders?: OrderItem[];
+    pages?: number;
+    records?: ReportVO[];
+    searchCount?: boolean;
+    size?: number;
+    total?: number;
+  };
+
   type PageRequest = {
     current?: number;
     pageSize?: number;
@@ -3867,6 +3876,7 @@ declare namespace API {
 
   type RedPacket = {
     amountPerPacket?: number;
+    answer?: string;
     count?: number;
     createTime?: string;
     creatorAvatar?: string;
@@ -3903,6 +3913,69 @@ declare namespace API {
   type renderAuthUsingGETParams = {
     /** source */
     source: string;
+  };
+
+  type ReportAddRequest = {
+    /** 补充说明 */
+    description?: string;
+    /** 举报原因类型：1-18 */
+    reasonType: number;
+    /** 举报类型：1-聊天记录，2-帖子，3-鱼小圈 */
+    reportType: number;
+    /** 被举报对象ID */
+    targetId: number;
+    /** 被举报用户ID */
+    targetUserId?: number;
+  };
+
+  type ReportHandleRequest = {
+    /** 处理备注 */
+    handleRemark?: string;
+    /** 举报ID */
+    id: number;
+    /** 处理状态：1-已处理，2-已驳回 */
+    status: number;
+  };
+
+  type ReportReasonOptionVO = {
+    /** 原因描述 */
+    text?: string;
+    /** 原因类型值 */
+    value?: number;
+  };
+
+  type ReportVO = {
+    chatMessage?: RoomMessageVo;
+    /** 创建时间 */
+    createTime?: string;
+    /** 补充说明 */
+    description?: string;
+    /** 处理备注 */
+    handleRemark?: string;
+    /** 处理时间 */
+    handleTime?: string;
+    /** 处理人ID */
+    handlerId?: number;
+    /** 举报ID */
+    id?: number;
+    /** 举报原因类型 */
+    reasonType?: number;
+    /** 举报原因描述 */
+    reasonTypeText?: string;
+    /** 举报类型 */
+    reportType?: number;
+    /** 举报类型描述 */
+    reportTypeText?: string;
+    /** 举报人用户ID */
+    reporterId?: number;
+    /** 处理状态 */
+    status?: number;
+    /** 处理状态描述 */
+    statusText?: string;
+    /** 被举报对象ID */
+    targetId?: number;
+    /** 被举报用户ID */
+    targetUserId?: number;
   };
 
   type resetSecretUsingPOSTParams = {

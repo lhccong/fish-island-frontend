@@ -393,13 +393,12 @@ const ChatRoom: React.FC = () => {
   }, []);
 
   // 分页相关状态
-  const [current, setCurrent] = useState<number>(1);
-  const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const pageSize = 10;
   const [loadedMessageIds] = useState<Set<string>>(new Set());
   const loadingRef = useRef(false); // 添加loadingRef防止重复请求
+  const messagesRef = useRef<Message[]>([]);
 
   const [announcement, setAnnouncement] = useState<string>(
     '欢迎来到摸鱼聊天室！🎉 这里是一个充满快乐的地方~。致谢服务商：<a href="https://crash.work/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; text-decoration: none; margin-left: 4px;"><img src="/img/posuiyun.png" alt="破碎工坊云" style="height: 20px; vertical-align: middle; margin-right: 4px;" /></a>',
@@ -1064,8 +1063,9 @@ const ChatRoom: React.FC = () => {
     };
   };
 
-  const loadHistoryMessages = async (page: number, isFirstLoad = false) => {
+  const loadHistoryMessages = async (isFirstLoad = false, cursorMessageId?: number) => {
     if (!hasMore || loadingRef.current) return;
+    if (!isFirstLoad && cursorMessageId == null) return;
 
     try {
       loadingRef.current = true;
@@ -1075,19 +1075,28 @@ const ChatRoom: React.FC = () => {
       const container = messageContainerRef.current;
       const oldScrollHeight = container?.scrollHeight || 0;
 
-      const response = await listMessageVoByPageUsingPost({
-        current: page,
+      const requestBody: API.MessageQueryRequest = {
         pageSize,
         roomId: -1,
         sortField: 'createTime',
         sortOrder: 'desc',
-      });
+      };
+
+      if (isFirstLoad) {
+        requestBody.current = 1;
+      } else {
+        requestBody.messageId = cursorMessageId;
+      }
+
+      const response = await listMessageVoByPageUsingPost(requestBody);
 
       if (response.data?.records) {
+        const rawRecords = response.data.records;
+
         // 创建一个临时集合来跟踪当前请求中的消息ID
         const currentRequestMessageIds = new Set();
 
-        const historyMessages = response.data.records
+        const historyMessages = rawRecords
           .map((record) => {
             const messageId = String(record.messageWrapper?.message?.id);
 
@@ -1116,34 +1125,20 @@ const ChatRoom: React.FC = () => {
         // 处理历史消息，确保正确的时间顺序（旧消息在上，新消息在下）
         if (isFirstLoad) {
           // 首次加载时，反转消息顺序，使最旧的消息在上面
-          setMessages(historyMessages.reverse() as Message[]);
-        } else {
+          const orderedMessages = historyMessages.reverse() as Message[];
+          messagesRef.current = orderedMessages;
+          setMessages(orderedMessages);
+        } else if (historyMessages.length > 0) {
           // 加载更多历史消息时，新的历史消息应该在当前消息的上面
-          // 只有在有新消息时才更新状态
-          if (historyMessages.length > 0) {
-            setMessages((prev) => [...(historyMessages.reverse() as Message[]), ...prev]);
-          }
+          setMessages((prev) => {
+            const next = [...(historyMessages.reverse() as Message[]), ...prev];
+            messagesRef.current = next;
+            return next;
+          });
         }
 
-        setTotal(response.data.total || 0);
-
-        // 更新是否还有更多消息
-        const currentTotal = loadedMessageIds.size;
-        setHasMore(currentTotal < (response.data.total || 0));
-
-        // 重要修改：无论是否有新消息，都更新页码
-        // 这样可以避免一直请求同一页
-        setCurrent(page);
-
-        // 如果没有新消息但服务器返回的总数大于已加载的消息数，
-        // 可能是由于重复消息导致的，尝试请求下一页
-        if (historyMessages.length === 0 && currentTotal < (response.data.total || 0)) {
-          console.log('未获取到新消息，尝试请求下一页', page + 1);
-          // 等待当前请求完成后再尝试下一页
-          setTimeout(() => {
-            loadHistoryMessages(page + 1);
-          }, 300);
-        }
+        // 游标分页：返回条数不足 pageSize 时表示没有更多历史消息
+        setHasMore(rawRecords.length >= pageSize);
 
         // 如果是首次加载，将滚动条设置到底部
         if (isFirstLoad) {
@@ -1202,20 +1197,25 @@ const ChatRoom: React.FC = () => {
     // 检查是否在底部
     checkIfNearBottom();
 
-    // 当滚动到顶部时加载更多
+    // 当滚动到顶部时，使用游标分页加载更早的历史消息
     if (container.scrollTop === 0) {
-      // 更新当前页码，加载下一页
-      const nextPage = current + 1;
-      if (hasMore) {
-        loadHistoryMessages(nextPage);
+      const oldestId = messagesRef.current[0]?.id;
+      const cursorMessageId = oldestId ? Number(oldestId) : undefined;
+      if (cursorMessageId != null && !Number.isNaN(cursorMessageId)) {
+        loadHistoryMessages(false, cursorMessageId);
       }
     }
   };
 
   // 初始化时加载历史消息
   useEffect(() => {
-    loadHistoryMessages(1, true);
+    loadHistoryMessages(true);
   }, []);
+
+  // 同步 messagesRef，供滚动加载时读取当前最早消息游标
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // 添加滚动监听
   useEffect(() => {
@@ -1224,7 +1224,7 @@ const ChatRoom: React.FC = () => {
       container.addEventListener('scroll', handleScroll);
       return () => container.removeEventListener('scroll', handleScroll);
     }
-  }, [loadingRef.current, hasMore, current]);
+  }, [hasMore]);
 
   // 处理图片上传
   const handleImageUpload = async (file: File) => {
@@ -1504,7 +1504,6 @@ const ChatRoom: React.FC = () => {
 
   const handleUserMessageRevoke = (data: any) => {
     setMessages((prev) => prev.filter((msg) => msg.id !== data.data));
-    setTotal((prev) => Math.max(0, prev - 1));
   };
 
   // 修改 WebSocket 连接逻辑
@@ -1670,7 +1669,6 @@ const ChatRoom: React.FC = () => {
 
     // 更新消息列表
     setMessages((prev) => [...prev, newMessage]);
-    setTotal((prev) => prev + 1);
     setHasMore(true);
 
     // 清空输入框、预览图片、文件和引用消息
@@ -2055,8 +2053,7 @@ const ChatRoom: React.FC = () => {
 
     // 批量更新状态，减少重渲染次数
     setMessages((prev) => [...prev, newMessage]);
-    // 更新总消息数和分页状态
-    setTotal((prev) => prev + 1);
+    // 更新分页状态
     setHasMore(true);
     if (inputRef.current) inputRef.current.value = '';
     setIsEmoticonPickerVisible(false);
@@ -2172,7 +2169,6 @@ const ChatRoom: React.FC = () => {
             });
 
             setMessages((prev) => [...prev, newMessage]);
-            setTotal((prev) => prev + 1);
             setHasMore(true);
 
             messageApi.success('红包发送成功！');
@@ -2916,9 +2912,8 @@ const ChatRoom: React.FC = () => {
       onOk: () => {
         // 清空消息列表
         setMessages([]);
+        messagesRef.current = [];
         // 重置分页状态
-        setCurrent(1);
-        setTotal(0);
         setHasMore(true);
         // 清空已加载的消息ID集合
         loadedMessageIds.clear();
@@ -3010,9 +3005,10 @@ const ChatRoom: React.FC = () => {
 
             // 清空当前消息列表并重新加载最新消息
             setMessages([]);
-            setCurrent(1);
+            messagesRef.current = [];
+            loadedMessageIds.clear();
             setHasMore(true);
-            loadHistoryMessages(1, true);
+            loadHistoryMessages(true);
 
             // 显示恢复提示
             messageApi.info(`页面离开了 ${Math.round(hiddenDuration / 1000)} 秒，已重新获取最新聊天记录`);

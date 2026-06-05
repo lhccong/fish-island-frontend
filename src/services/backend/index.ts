@@ -7,6 +7,7 @@ import * as bossController from './bossController';
 import * as chatController from './chatController';
 import * as commentController from './commentController';
 import * as commentThumbController from './commentThumbController';
+import * as contentReportController from './contentReportController';
 import * as cropController from './cropController';
 import * as dataSourceCookieController from './dataSourceCookieController';
 import * as donationDetailRecordsController from './donationDetailRecordsController';
@@ -110,6 +111,7 @@ export default {
   propsController,
   redeemCodeController,
   redPacketController,
+  contentReportController,
   userSignInController,
   stealController,
   tagsController,

@@ -2,7 +2,7 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
-/** 分页获取用户房间消息列表 POST /api/chat/message/page/vo */
+/** 分页获取用户房间消息列表，传 messageId 时走游标分页 POST /api/chat/message/page/vo */
 export async function listMessageVoByPageUsingPost(
   body: API.MessageQueryRequest,
   options?: { [key: string]: any },
