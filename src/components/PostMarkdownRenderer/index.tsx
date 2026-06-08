@@ -18,6 +18,7 @@ import rust from 'react-syntax-highlighter/dist/esm/languages/prism/rust';
 import cpp from 'react-syntax-highlighter/dist/esm/languages/prism/cpp';
 import { CopyOutlined, CheckOutlined } from '@ant-design/icons';
 import { message } from 'antd';
+import { externalImageProps } from '@/constants';
 import './index.less';
 
 // 注册常用语言
@@ -126,6 +127,7 @@ const PostMarkdownRenderer: React.FC<PostMarkdownRendererProps> = ({ content }) 
                 alt={alt}
                 style={{ maxWidth: '100%', height: 'auto', borderRadius: 4 }}
                 {...props}
+                {...externalImageProps}
               />
             );
           },

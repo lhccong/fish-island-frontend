@@ -1,3 +1,4 @@
+import { externalImageProps } from '@/constants';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Avatar, Badge, Button, Card, Drawer, Empty, Input, List, Modal, Space, Spin, Tag, Tooltip, message, Checkbox, Popconfirm } from 'antd';
 import { BellOutlined, CheckCircleOutlined, CheckOutlined, CloseOutlined, DeleteOutlined, EnvironmentOutlined, LoadingOutlined } from '@ant-design/icons';
@@ -344,7 +345,7 @@ const MessageNotification = forwardRef<MessageNotificationRef, MessageNotificati
       if (isImage) {
         return (
           <div className="message-image-container">
-            <img src={imageUrl} alt="消息图片" className="message-image" />
+            <img {...externalImageProps} src={imageUrl} alt="消息图片" className="message-image" />
           </div>
         );
       }

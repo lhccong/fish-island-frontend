@@ -4,6 +4,7 @@ import {
   listEmoticonFavourByPageUsingPost,
 } from '@/services/backend/emoticonFavourController';
 import { parseWebPageUsingGet } from '@/services/backend/webParserController';
+import { externalImageProps } from '@/constants';
 import eventBus from '@/utils/eventBus';
 import {
   BilibiliOutlined,
@@ -330,6 +331,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
     return (
       <div key={key} className={styles.imageContainer}>
         <Image
+          {...externalImageProps}
           src={url}
           alt="图片"
           className={styles.messageImage}
@@ -569,6 +571,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
         <div className={styles.linkContent}>
           {webPages[url]?.favicon ? (
             <img
+              {...externalImageProps}
               src={webPages[url].favicon}
               alt="网站图标"
               className={styles.linkIcon}
@@ -861,7 +864,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
       if (src.match(/^https?:\/\//)) {
         return renderImage(src, `img-${Date.now()}`);
       }
-      return <img {...props} alt={props.alt || '图片'} />;
+      return <img {...props} alt={props.alt || '图片'} {...externalImageProps} />;
     },
     // 自定义 iframe 渲染，直接返回 null
     iframe: () => null,

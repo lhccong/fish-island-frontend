@@ -1,3 +1,4 @@
+import { externalImageProps } from '@/constants';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Avatar, Image, message, Spin, Empty, Divider, Tooltip, Modal, Input, InputNumber, Upload, Button, Space, Dropdown, Popover } from 'antd';
 import { useLocation } from '@umijs/max';
@@ -746,6 +747,7 @@ const FishCirclePage: React.FC = () => {
           <div className="comment-img-grid">
             {imgUrls.map((url, i) => (
               <Image
+                {...externalImageProps}
                 key={i}
                 src={url}
                 alt="评论图片"
@@ -773,6 +775,7 @@ const FishCirclePage: React.FC = () => {
       return (
         <div className="media-grid single">
           <Image
+            {...externalImageProps}
             src={images[0]}
             alt="图片"
             className="grid-image"
@@ -788,6 +791,7 @@ const FishCirclePage: React.FC = () => {
         <div className="media-grid grid-2">
           {images.map((url, index) => (
             <Image
+              {...externalImageProps}
               key={index}
               src={url}
               alt={`图片${index + 1}`}
@@ -805,6 +809,7 @@ const FishCirclePage: React.FC = () => {
         <div className="media-grid grid-4">
           {images.map((url, index) => (
             <Image
+              {...externalImageProps}
               key={index}
               src={url}
               alt={`图片${index + 1}`}
@@ -821,6 +826,7 @@ const FishCirclePage: React.FC = () => {
       <div className="media-grid grid-3">
         {images.slice(0, 9).map((url, index) => (
           <Image
+            {...externalImageProps}
             key={index}
             src={url}
             alt={`图片${index + 1}`}
@@ -841,6 +847,7 @@ const FishCirclePage: React.FC = () => {
             const bgUrl = viewingUser ? viewingUser.momentsBgUrl : currentUser?.momentsBgUrl;
             return bgUrl && bgUrl.trim() ? (
               <img
+                {...externalImageProps}
                 src={bgUrl}
                 alt=""
                 className="cover-bg-img"
@@ -1214,7 +1221,7 @@ const FishCirclePage: React.FC = () => {
                           <div className="comment-images-preview">
                             {(commentImagesMap[moment.id!] || []).map((url, idx) => (
                               <div key={idx} className="comment-preview-item">
-                                <img src={url} alt={`评论图片${idx + 1}`} />
+                                <img {...externalImageProps} src={url} alt={`评论图片${idx + 1}`} />
                                 <span
                                   className="comment-preview-remove"
                                   onClick={() =>
@@ -1452,7 +1459,7 @@ const FishCirclePage: React.FC = () => {
             <div className="publish-images-preview">
               {editImages.map((url, index) => (
                 <div key={index} className="preview-item">
-                  <img src={url} alt={`预览${index + 1}`} />
+                  <img {...externalImageProps} src={url} alt={`预览${index + 1}`} />
                   <span
                     className="remove-btn"
                     onClick={() => setEditImages((prev) => prev.filter((_, i) => i !== index))}

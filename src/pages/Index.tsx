@@ -29,7 +29,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { TouchEvent, useEffect, useRef, useState } from 'react';
 import './Index.less';
 import eventBus from '@/utils/eventBus';
-import { HOT_RANK_AD_ENABLED } from '@/constants';
+import { externalImageProps, HOT_RANK_AD_ENABLED } from '@/constants';
 import { useModel } from '@umijs/max';
 
 const STORAGE_KEY = 'selected_source_ids';
@@ -511,6 +511,7 @@ const Index: React.FC = () => {
                   }}
                 >
                   <Image
+                    {...externalImageProps}
                     src={item.iconUrl}
                     preview={false}
                     style={{
@@ -638,6 +639,7 @@ const Index: React.FC = () => {
                             title={
                               <div style={{ display: 'flex', alignItems: 'center' }}>
                                 <Image
+                                  {...externalImageProps}
                                   src={item.iconUrl}
                                   preview={false}
                                   style={{ width: 20, height: 20, marginRight: 8 }}

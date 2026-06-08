@@ -1,3 +1,4 @@
+import { externalImageProps } from '@/constants';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Avatar, Button, Image, Spin, Empty, Tooltip, Popover, Radio, Card } from 'antd';
 import {
@@ -366,6 +367,7 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
                         {item.mediaJson.slice(0, 3).map((media, idx) =>
                           media.type === 'image' && media.url ? (
                             <Image
+                              {...externalImageProps}
                               key={idx}
                               src={media.url}
                               className={styles.thumb}

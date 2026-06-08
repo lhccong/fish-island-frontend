@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input, Spin, Button, Tooltip, message } from 'antd';
 import { StarOutlined, StarFilled } from '@ant-design/icons';
+import { externalImageProps } from '@/constants';
 import styles from './index.less';
 import {
   addEmoticonFavourUsingPost,
@@ -302,6 +303,7 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
           title={
             <div className={styles.previewContainer}>
               <img
+                {...externalImageProps}
                 src={emoticon.emoticonSrc}
                 alt="preview"
                 className={styles.previewImage}
@@ -313,6 +315,7 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
           mouseEnterDelay={0.5}
         >
           <img
+            {...externalImageProps}
             src={emoticon.emoticonSrc}
             alt="emoticon"
             className={styles.emoticonItem}
@@ -344,6 +347,7 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
                 title={
                   <div className={styles.previewContainer}>
                     <img
+                      {...externalImageProps}
                       src={emoticon.thumbSrc}
                       alt="preview"
                       className={styles.previewImage}
@@ -355,6 +359,7 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
                 mouseEnterDelay={0.5}
               >
                 <img
+                  {...externalImageProps}
                   src={emoticon.thumbSrc}
                   alt="emoticon"
                   className={styles.emoticonItem}

@@ -1,3 +1,4 @@
+import { externalImageProps } from '@/constants';
 import MessageContent from '@/components/MessageContent';
 import { listMessageVoByPageUsingPost } from '@/services/backend/chatController';
 import { wsService } from '@/services/websocket';
@@ -760,7 +761,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
                           }`}
                         >
                           {!settings.hideAvatar && (
-                            <img className={styles.avatar} src={msg.sender.avatar} alt="" />
+                            <img {...externalImageProps} className={styles.avatar} src={msg.sender.avatar} alt="" />
                           )}
                           <div className={styles.messageMain}>
                             <span className={styles.nickname}>{msg.sender.name}</span>

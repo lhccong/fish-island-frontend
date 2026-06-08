@@ -1,3 +1,4 @@
+import { externalImageProps } from '@/constants';
 import React, {useEffect, useState, useRef} from 'react';
 import {useParams, history, Link} from 'umi';
 import {Card, Avatar, Typography, Space, Divider, List, Button, message, Spin, Input, Pagination, Modal, Popover, Image, Alert, Tooltip, Dropdown, Menu} from 'antd';
@@ -1088,6 +1089,7 @@ const PostDetail: React.FC = () => {
           const imageUrl = match[1];
           parts.push(
             <Image
+              {...externalImageProps}
               key={`img-${match.index}`}
               src={imageUrl}
               alt="表情"
@@ -1199,6 +1201,7 @@ const PostDetail: React.FC = () => {
                   {commentPastedImages.map((imageUrl, index) => (
                     <div key={index} className="pasted-image-item">
                       <Image
+                        {...externalImageProps}
                         src={imageUrl}
                         alt="粘贴图片"
                         className="pasted-image"
@@ -2222,6 +2225,7 @@ const PostDetail: React.FC = () => {
                           {pastedImages.map((imageUrl, index) => (
                             <div key={index} className="pasted-image-item">
                               <Image
+                                {...externalImageProps}
                                 src={imageUrl}
                                 alt="粘贴图片"
                                 className="pasted-image"

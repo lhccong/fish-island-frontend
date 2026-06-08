@@ -5,6 +5,7 @@ import {
   EnvironmentOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
+import { externalImageProps } from '@/constants';
 import { publishMomentUsingPost } from '@/services/backend/momentsController';
 import { uploadFileByMinioUsingPost } from '@/services/backend/fileController';
 import './index.less';
@@ -127,7 +128,7 @@ const PublishMomentModal: React.FC<PublishMomentModalProps> = ({ open, onCancel,
           <div className="publish-images-preview">
             {images.map((url, index) => (
               <div key={index} className="preview-item">
-                <img src={url} alt={`预览${index + 1}`} />
+                <img {...externalImageProps} src={url} alt={`预览${index + 1}`} />
                 <span
                   className="remove-btn"
                   onClick={() => setImages((prev) => prev.filter((_, i) => i !== index))}

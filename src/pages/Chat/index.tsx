@@ -84,7 +84,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import styles from './index.less';
-import { UNDERCOVER_NOTIFICATION } from '@/constants';
+import { externalImageProps, UNDERCOVER_NOTIFICATION } from '@/constants';
 import eventBus from '@/utils/eventBus';
 import { joinRoomUsingPost } from '@/services/backend/drawGameController';
 import { getLevelEmoji, generateUniqueShortId, getTitleTagProperties } from '@/utils/titleUtils';
@@ -210,6 +210,7 @@ const MessageItem = React.memo<MessageItemProps>(({
               <Avatar src={msg.sender.avatar} size={32} />
               {msg.sender.avatarFramerUrl && (
                 <img
+                  {...externalImageProps}
                   src={msg.sender.avatarFramerUrl}
                   className={styles.avatarFrame}
                   alt="avatar-frame"
@@ -1843,6 +1844,7 @@ const ChatRoom: React.FC = () => {
           return (
             <span className={styles.titleImageContainer}>
               <img
+                {...externalImageProps}
                 src={titleImg}
                 alt={title.name}
                 className={styles.titleImage}
@@ -1922,6 +1924,7 @@ const ChatRoom: React.FC = () => {
                 <Avatar src={user.avatar} size={48} />
                 {user.avatarFramerUrl && (
                   <img
+                    {...externalImageProps}
                     src={user.avatarFramerUrl}
                     className={styles.avatarFrame}
                     alt="avatar-frame"
@@ -2335,7 +2338,7 @@ const ChatRoom: React.FC = () => {
       return (
         <div className={styles.musicMessage}>
           <div className={styles.musicWrapper}>
-            {coverUrl && <img src={coverUrl} alt="album cover" className={styles.musicCover} />}
+            {coverUrl && <img {...externalImageProps} src={coverUrl} alt="album cover" className={styles.musicCover} />}
             <div className={styles.musicContent}>
               <div className={styles.musicInfo}>{musicInfo}</div>
               <audio
@@ -3366,7 +3369,7 @@ const ChatRoom: React.FC = () => {
 
       {currentMusic && (
         <div className={styles.musicFloatingPlayer}>
-          <img src={currentMusic.cover} alt="cover" className={styles.musicCover} />
+          <img {...externalImageProps} src={currentMusic.cover} alt="cover" className={styles.musicCover} />
           <div className={styles.musicInfo}>
             <div className={styles.musicTitle}>{currentMusic.name}</div>
             <div className={styles.musicArtist}>{currentMusic.artists}</div>
@@ -3574,6 +3577,7 @@ const ChatRoom: React.FC = () => {
           <div className={styles.imagePreview}>
             <div className={styles.previewWrapper}>
               <img
+                {...externalImageProps}
                 src={pendingImageUrl}
                 alt="预览图片"
                 className={styles.previewImage}
@@ -4050,7 +4054,7 @@ const ChatRoom: React.FC = () => {
       </Modal>
 
       <Modal open={isPreviewVisible} footer={null} onCancel={() => setIsPreviewVisible(false)}>
-        {previewImage && <img alt="预览" style={{ width: '100%' }} src={previewImage} />}
+        {previewImage && <img {...externalImageProps} alt="预览" style={{ width: '100%' }} src={previewImage} />}
       </Modal>
 
       <Modal
@@ -4194,6 +4198,7 @@ const ChatRoom: React.FC = () => {
                       <Avatar src={selectedUser.avatar} size={60} />
                       {selectedUser.avatarFramerUrl && (
                         <img
+                          {...externalImageProps}
                           src={selectedUser.avatarFramerUrl}
                           className={styles.avatarFrame}
                           alt="avatar-frame"
@@ -4428,6 +4433,7 @@ const ChatRoom: React.FC = () => {
               {selectedUser.momentsBgUrl && (
                 <div className={styles.userDetailRight}>
                   <img
+                    {...externalImageProps}
                     src={selectedUser.momentsBgUrl}
                     className={styles.momentsBg}
                     alt="moments-bg"
@@ -4463,7 +4469,7 @@ const ChatRoom: React.FC = () => {
                   <div className={styles.followListAvatar}>
                     <Avatar src={item.userAvatar} size={42} />
                     {item.avatarFramerUrl && (
-                      <img src={item.avatarFramerUrl} className={styles.followListAvatarFrame} alt="" />
+                      <img {...externalImageProps} src={item.avatarFramerUrl} className={styles.followListAvatarFrame} alt="" />
                     )}
                   </div>
                   <div className={styles.followListInfo}>

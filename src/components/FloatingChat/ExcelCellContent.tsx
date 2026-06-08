@@ -1,3 +1,4 @@
+import { externalImageProps } from '@/constants';
 import { parseLuckyBagInline } from '@/components/LuckyBagMessage';
 import { parseRedPacketInline } from '@/components/RedPacketMessage';
 import { Image } from 'antd';
@@ -54,6 +55,7 @@ const ExcelCellContent: React.FC<ExcelCellContentProps> = ({ content, showImages
         if (part.type === 'image') {
           return (
             <Image
+              {...externalImageProps}
               key={`img-${index}`}
               src={part.url}
               alt=""

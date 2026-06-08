@@ -1,3 +1,4 @@
+import { externalImageProps } from '@/constants';
 import React, { useEffect, useState } from 'react';
 import { Avatar, Button, Image, Input, InputNumber, message, Modal, Spin, Tooltip } from 'antd';
 import { CloseOutlined, EnvironmentOutlined, GiftOutlined, HeartFilled, HeartOutlined, LoadingOutlined, MessageOutlined } from '@ant-design/icons';
@@ -165,6 +166,7 @@ const MomentDetailModal: React.FC<MomentDetailModalProps> = ({
             <div className="detail-comment-img-grid">
               {imgUrls.map((url, i) => (
                 <Image
+                  {...externalImageProps}
                   key={i}
                   src={url}
                   className="detail-comment-img-item"
@@ -223,6 +225,7 @@ const MomentDetailModal: React.FC<MomentDetailModalProps> = ({
                 >
                   {images.slice(0, 9).map((url, i) => (
                     <Image
+                      {...externalImageProps}
                       key={i}
                       src={url}
                       className="detail-image-item"
