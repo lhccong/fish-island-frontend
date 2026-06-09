@@ -2371,6 +2371,26 @@ const ChatRoom: React.FC = () => {
         </div>
       );
     }
+    const audioMatch = /\[audio\]([^\[\]]*)\[\/audio\]/i.exec(content);
+    if (audioMatch) {
+      const audioUrl = audioMatch[1].trim();
+      const audioInfo = content.split('[audio]')[0].trim();
+      return (
+        <div className={styles.musicMessage}>
+          <div className={styles.musicWrapper}>
+            <div className={styles.musicContent}>
+              {audioInfo ? <div className={styles.musicInfo}>{audioInfo}</div> : null}
+              <audio
+                controls
+                src={audioUrl}
+                style={{ width: '100%', minWidth: '300px' }}
+                preload="metadata"
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
     // 检查是否是红包消息
     // const redPacketMatch = content.match(/\[redpacket\](.*?)\[\/redpacket\]/);
     const redPacketMatch = /\[redpacket\]([^\[\]]*)\[\/redpacket\]/i.exec(content);

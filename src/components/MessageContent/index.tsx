@@ -86,6 +86,8 @@ const MessageContent: React.FC<MessageContentProps> = ({
   const imgRegex = new RegExp('\\[img\\](.*?)\\[/img\\]', 'g');
   // 文件标签匹配正则表达式
   const fileRegex = new RegExp('\\[file\\](.*?)\\[/file\\]', 'g');
+  // 音频标签匹配正则表达式
+  const audioRegex = new RegExp('\\[audio\\](.*?)\\[/audio\\]', 'g');
   // 谁是卧底邀请标签匹配正则表达式
   const undercoverRegex = new RegExp('<undercover>(.*?)</undercover>', 'g');
   // 添加折叠状态管理
@@ -200,13 +202,15 @@ const MessageContent: React.FC<MessageContentProps> = ({
                       trimmedContent.match(/\[img\]/g)?.length === 1;
     const isOnlyFile = trimmedContent.startsWith('[file]') && trimmedContent.endsWith('[/file]') && 
                        trimmedContent.match(/\[file\]/g)?.length === 1;
+    const isOnlyAudio = trimmedContent.startsWith('[audio]') && trimmedContent.endsWith('[/audio]') &&
+                        trimmedContent.match(/\[audio\]/gi)?.length === 1;
     const isOnlyUndercover = trimmedContent.startsWith('<undercover>') && 
                              trimmedContent.endsWith('</undercover>') && 
                              trimmedContent.match(/<undercover>/g)?.length === 1;
     const hasIframe = checkIframeSyntax(content);
     
-    // 如果是纯图片、纯文件、纯邀请消息或包含iframe，设置为特殊消息类型
-    setIsSpecialMessage(isOnlyImg || isOnlyFile || isOnlyUndercover || hasIframe);
+    // 如果是纯图片、纯文件、纯音频、纯邀请消息或包含iframe，设置为特殊消息类型
+    setIsSpecialMessage(isOnlyImg || isOnlyFile || isOnlyAudio || isOnlyUndercover || hasIframe);
   }, [content]);
 
   // 截断文本到指定长度
@@ -389,6 +393,13 @@ const MessageContent: React.FC<MessageContentProps> = ({
       </div>
     );
   };
+
+  // 渲染音频
+  const renderAudio = (url: string, key: string) => (
+    <div key={key} className={styles.audioContainer}>
+      <audio controls src={url} className={styles.audioPlayer} preload="metadata" />
+    </div>
+  );
 
   // 渲染文件
   const renderFile = (url: string, key: string) => {
@@ -987,9 +998,39 @@ const MessageContent: React.FC<MessageContentProps> = ({
         fileLastIndex = fileMatch.index + fileMatch[0].length;
       }
 
+      // 处理音频标签
+      const fileProcessedContent = imgProcessedContent.slice(fileLastIndex);
+      let audioLastIndex = 0;
+      let audioMatch: RegExpExecArray | null;
+
+      while ((audioMatch = audioRegex.exec(fileProcessedContent)) !== null) {
+        if (audioMatch.index > audioLastIndex) {
+          const textBeforeAudio = fileProcessedContent.slice(audioLastIndex, audioMatch.index);
+          const urlParts = textBeforeAudio.split(urlRegex);
+          urlParts.forEach((urlPart, urlIndex) => {
+            if (urlPart.match(urlRegex)) {
+              parts.push(renderUrl(urlPart, `url-audio-${audioMatch!.index}-${urlIndex}`));
+            } else if (urlPart) {
+              parts.push(
+                <LazyMarkdown
+                  key={`markdown-audio-${audioMatch!.index}-${urlIndex}`}
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw, rehypePrism]}
+                  components={markdownComponents}
+                >
+                  {sanitizeHtml(urlPart)}
+                </LazyMarkdown>,
+              );
+            }
+          });
+        }
+        parts.push(renderAudio(audioMatch[1].trim(), `audio-${audioMatch.index}`));
+        audioLastIndex = audioMatch.index + audioMatch[0].length;
+      }
+
       // 处理剩余文本中的URL
-      if (fileLastIndex < imgProcessedContent.length) {
-        const finalText = imgProcessedContent.slice(fileLastIndex);
+      if (audioLastIndex < fileProcessedContent.length) {
+        const finalText = fileProcessedContent.slice(audioLastIndex);
         const urlParts = finalText.split(urlRegex);
         urlParts.forEach((urlPart, urlIndex) => {
           if (urlPart.match(urlRegex)) {

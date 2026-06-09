@@ -3,6 +3,7 @@ import { parseRedPacketInline } from '@/components/RedPacketMessage';
 
 const UNDERCOVER_REGEX = /<undercover>[\s\S]*?<\/undercover>/gi;
 const IMG_TAG_REGEX = /\[img\][\s\S]*?\[\/img\]/gi;
+const AUDIO_TAG_REGEX = /\[audio\][\s\S]*?\[\/audio\]/gi;
 const IMAGE_REGEX = /!\[[^\]]*\]\([^)]+\)/g;
 const LINK_REGEX = /\[([^\]]+)\]\([^)]+\)/g;
 const HTML_TAG_REGEX = /<[^>]+>/g;
@@ -18,6 +19,7 @@ function stripExcelTextSegment(segment: string): string {
   let text = segment
     .replace(UNDERCOVER_REGEX, '[游戏邀请]')
     .replace(IMG_TAG_REGEX, '')
+    .replace(AUDIO_TAG_REGEX, '[音频]')
     .replace(IMAGE_REGEX, '')
     .replace(LINK_REGEX, '$1')
     .replace(HTML_TAG_REGEX, '')
@@ -42,6 +44,9 @@ export function contentToExcelCell(content: string): string {
   const text = stripExcelTextSegment(content);
   if (!text && (/\[img\][\s\S]*?\[\/img\]/i.test(content) || /!\[[^\]]*\]\([^)]+\)/.test(content))) {
     return '[图片]';
+  }
+  if (!text && /\[audio\][\s\S]*?\[\/audio\]/i.test(content)) {
+    return '[音频]';
   }
 
   return text;
