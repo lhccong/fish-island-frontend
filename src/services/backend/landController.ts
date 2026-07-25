@@ -33,3 +33,18 @@ export async function plantUsingPost(body: API.PlantRequest, options?: { [key: s
     ...(options || {}),
   });
 }
+
+/** 按农场等级解锁地块 第1–8块默认解锁；第9–12块需达到对应等级、消耗可用积分，且按顺序解锁 POST /api/land/unlock */
+export async function unlockUsingPost(
+  body: API.UnlockLandRequest,
+  options?: { [key: string]: any },
+) {
+  return request<API.BaseResponseLandDTO_>('/api/land/unlock', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}

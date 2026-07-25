@@ -187,6 +187,12 @@ declare namespace API {
     message?: string;
   };
 
+  type BaseResponseLandDTO_ = {
+    code?: number;
+    data?: LandDTO;
+    message?: string;
+  };
+
   type BaseResponseListAvatarFrame_ = {
     code?: number;
     data?: AvatarFrame[];
@@ -2412,6 +2418,10 @@ declare namespace API {
     plantedTime?: string;
     /** 地块状态（0-空闲，1-种植中，2-已成熟） */
     status?: number;
+    /** 解锁所需可用积分；默认已解锁或超出当前可解锁范围时为 null */
+    unlockCost?: number;
+    /** 解锁所需农场等级；超出当前可解锁范围时为 null */
+    unlockLevel?: number;
   };
 
   type linuxDoCallbackUsingGETParams = {
@@ -4445,6 +4455,11 @@ declare namespace API {
     voterAvatar?: string;
     voterId?: number;
     voterName?: string;
+  };
+
+  type UnlockLandRequest = {
+    /** 地块ID */
+    landId: number;
   };
 
   type unmuteUserUsingPOSTParams = {

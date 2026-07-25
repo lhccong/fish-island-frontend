@@ -39,6 +39,7 @@ import {
   getMyLandsUsingGet,
   harvestUsingPost,
   plantUsingPost,
+  unlockUsingPost,
 } from '@/services/backend/landController';
 import { getMyFarmUserUsingGet } from '@/services/backend/farmUserController';
 import { getLoginUserUsingGet } from '@/services/backend/userController';
@@ -63,6 +64,14 @@ const { Title, Text } = Typography;
 const GRID_COLS = 6;
 const GRID_ROWS = 4;
 const TOTAL_LANDS = GRID_COLS * GRID_ROWS;
+
+/** 第 9–12 块地解锁消耗可用积分（与后端一致；优先用接口返回的 unlockCost） */
+const LAND_UNLOCK_COST: Record<number, number> = {
+  9: 100,
+  10: 400,
+  11: 1000,
+  12: 2000,
+};
 
 const FARM_HARVEST_ICON =
   'https://oss.cqbo.com/moyu/farm/toucai.png';
@@ -184,6 +193,14 @@ const mergeLandUpdates = (
 const isLandUnlocked = (land: API.LandDTO | null): boolean => {
   if (!land?.id) return false;
   return land.locked !== 1;
+};
+
+const getLandUnlockCost = (
+  land: API.LandDTO | null,
+  landIndex: number,
+): number | null => {
+  if (land?.unlockCost != null) return land.unlockCost;
+  return LAND_UNLOCK_COST[landIndex] ?? null;
 };
 
 /** 拜访好友农场时地块是否可交互（不强制要求 land.id，与本人农场解锁规则不同） */
@@ -614,6 +631,17 @@ const Farm: React.FC = () => {
     [landGrid],
   );
 
+  /** 下一块可尝试解锁的地块（按顺序，且有解锁价格） */
+  const nextUnlockable = useMemo(() => {
+    if (unlockedCount >= TOTAL_LANDS) return null;
+    const arrayIndex = unlockedCount;
+    const land = landGrid[arrayIndex];
+    const landIndex = toLandIndex(arrayIndex);
+    const cost = getLandUnlockCost(land, landIndex);
+    if (!land?.id || cost == null) return null;
+    return { land, landIndex, arrayIndex, cost };
+  }, [landGrid, unlockedCount]);
+
   const cropMap = useMemo(() => {
     const map = new Map<number, API.CropDTO>();
     crops.forEach((c) => {
@@ -802,6 +830,13 @@ const Farm: React.FC = () => {
       if (landIndex === 1) return '第 1 块地尚未解锁';
       const prevUnlocked = isLandUnlocked(landGrid[arrayIndex - 1]);
       if (!prevUnlocked) return `请先解锁第 ${landIndex - 1} 块地`;
+      const cost = getLandUnlockCost(land, landIndex);
+      const needLevel = land?.unlockLevel;
+      if (cost != null) {
+        const levelTip =
+          needLevel != null ? `，需农场 Lv.${needLevel}` : '';
+        return `点击消耗 ${cost} 可用积分解锁${levelTip}`;
+      }
       return `第 ${landIndex} 块地尚未解锁`;
     }
     if (isLandMature(land!, now)) {
@@ -830,6 +865,66 @@ const Farm: React.FC = () => {
     setPlantModalOpen(true);
   };
 
+  const handleUnlockLand = (land: API.LandDTO | null, landIndex: number) => {
+    if (!land?.id) {
+      message.warning('地块信息异常，请刷新后重试');
+      return;
+    }
+    const cost = getLandUnlockCost(land, landIndex);
+    if (cost == null) {
+      message.info(`第 ${landIndex} 块地暂不可解锁`);
+      return;
+    }
+    const needLevel = land.unlockLevel;
+    const farmLevel = farmUser?.level ?? 1;
+    if (needLevel != null && farmLevel < needLevel) {
+      message.info(
+        `需农场等级 Lv.${needLevel} 才能解锁第 ${landIndex} 块地（当前 Lv.${farmLevel}）`,
+      );
+      return;
+    }
+    if (availablePoints < cost) {
+      message.warning(
+        `积分不足，解锁第 ${landIndex} 块地需要 ${cost} 可用积分（当前 ${availablePoints}）`,
+      );
+      return;
+    }
+
+    Modal.confirm({
+      title: `解锁第 ${landIndex} 块地`,
+      content:
+        needLevel != null
+          ? `确认消耗 ${cost} 可用积分解锁？需农场等级 Lv.${needLevel}。`
+          : `确认消耗 ${cost} 可用积分解锁该地块？`,
+      okText: '解锁',
+      cancelText: '取消',
+      onOk: async () => {
+        setActionLoading(true);
+        try {
+          const res = await unlockUsingPost({ landId: land.id! });
+          if (res.code === 0) {
+            message.success(`第 ${landIndex} 块地解锁成功！`);
+            if (res.data) {
+              setLands((prev) => mergeLandUpdates(prev, [res.data!]));
+            }
+            const refreshed = await refreshLandsAndFarmUser();
+            if (!refreshed && !res.data) {
+              await loadFarmData();
+            }
+            await refreshCurrentUser();
+          } else {
+            message.error(res.message || '解锁失败');
+          }
+        } catch (e) {
+          message.error('解锁失败');
+          console.error(e);
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
+  };
+
   const handlePlotClick = (land: API.LandDTO | null, arrayIndex: number) => {
     if (visitingFriend) {
       if (!isFriendLandPlot(land)) return;
@@ -856,9 +951,9 @@ const Farm: React.FC = () => {
     if (!isLandUnlocked(land)) {
       if (landIndex > 1 && !isLandUnlocked(landGrid[arrayIndex - 1])) {
         message.info('土地按顺序解锁，请先解锁前一块地');
-      } else {
-        message.info(`第 ${landIndex} 块地尚未解锁，升级农场后可开垦`);
+        return;
       }
+      handleUnlockLand(land, landIndex);
       return;
     }
 
@@ -966,14 +1061,25 @@ const Farm: React.FC = () => {
     }
   };
 
-  const renderPlotOverlay = (land: API.LandDTO | null) => {
+  const renderPlotOverlay = (land: API.LandDTO | null, arrayIndex: number) => {
     const unlocked = visitingFriend ? isFriendLandPlot(land) : isLandUnlocked(land);
 
     if (!unlocked) {
+      const landIndex = toLandIndex(arrayIndex);
+      const isNext =
+        !visitingFriend &&
+        nextUnlockable != null &&
+        arrayIndex === nextUnlockable.arrayIndex;
+      const cost = getLandUnlockCost(land, landIndex);
       return (
         <div className="plot-overlay plot-overlay-locked">
           <LockOutlined className="plot-lock-icon" />
-          <span className="plot-lock-text">未解锁</span>
+          <span className="plot-lock-text">
+            {isNext && cost != null ? `${cost} 积分解锁` : '未解锁'}
+          </span>
+          {isNext && land?.unlockLevel != null && (
+            <span className="plot-lock-level">Lv.{land.unlockLevel}</span>
+          )}
         </div>
       );
     }
@@ -1120,7 +1226,11 @@ const Farm: React.FC = () => {
     const unlocked = visitingFriend ? isFriendLandPlot(land) : isLandUnlocked(land);
     if (!unlocked) {
       classes.push('is-locked');
-      if (!visitingFriend && arrayIndex === unlockedCount) {
+      if (
+        !visitingFriend &&
+        nextUnlockable != null &&
+        arrayIndex === nextUnlockable.arrayIndex
+      ) {
         classes.push('is-next-unlock');
       }
       return classes.join(' ');
@@ -1313,9 +1423,14 @@ const Farm: React.FC = () => {
                             type="button"
                             className={getPlotClassName(land, arrayIndex)}
                             disabled={
+                              actionLoading ||
                               (visitingFriend
                                 ? !isFriendLandPlot(land)
-                                : !isLandUnlocked(land)) || actionLoading
+                                : !isLandUnlocked(land) &&
+                                  !(
+                                    nextUnlockable != null &&
+                                    arrayIndex === nextUnlockable.arrayIndex
+                                  ))
                             }
                             onClick={() => handlePlotClick(land, arrayIndex)}
                           >
@@ -1323,7 +1438,7 @@ const Farm: React.FC = () => {
                               <span className="plot-soil" aria-hidden>
                                 <span className="plot-tile-surface" />
                               </span>
-                              {renderPlotOverlay(land)}
+                              {renderPlotOverlay(land, arrayIndex)}
                             </span>
                             {renderPlotFooter(land)}
                           </button>

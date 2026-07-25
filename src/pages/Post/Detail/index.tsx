@@ -1,7 +1,7 @@
 import { externalImageProps } from '@/constants';
 import React, {useEffect, useState, useRef} from 'react';
 import {useParams, history, Link} from 'umi';
-import {Card, Avatar, Typography, Space, Divider, List, Button, message, Spin, Input, Pagination, Modal, Popover, Image, Alert, Tooltip, Dropdown, Menu} from 'antd';
+import {Card, Avatar, Typography, Space, Divider, Button, message, Spin, Input, Pagination, Modal, Popover, Image, Alert, Tooltip, Dropdown, Menu} from 'antd';
 import {
   LikeOutlined,
   LikeFilled,
@@ -2096,8 +2096,8 @@ const PostDetail: React.FC = () => {
                     >
                       <Space>
                         <Text type="secondary" style={{ fontSize: '12px' }}>🎉</Text>
-                        <Avatar 
-                          src={rewardUser.userAvatar} 
+                        <Avatar
+                          src={rewardUser.userAvatar}
                           size="small"
                           style={{ cursor: 'pointer', border: '2px solid #ffd700' }}
                         />

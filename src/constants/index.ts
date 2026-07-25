@@ -46,3 +46,10 @@ export const UNDERCOVER_NOTIFICATION = {
  * 热榜页广告开关
  */
 export const HOT_RANK_AD_ENABLED = false;
+
+/**
+ * 外链图片通用属性（规避防盗链）
+ */
+export const externalImageProps = {
+  referrerPolicy: 'no-referrer' as const,
+};
