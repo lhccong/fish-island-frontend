@@ -917,7 +917,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
           <LazyMarkdown
             key={`markdown-before-invite-${match.index}`}
             remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypePrism]}
+            rehypePlugins={[rehypeRaw, [rehypePrism, { ignoreMissing: true }]]}
             components={markdownComponents}
           >
             {sanitizeHtml(textBeforeInvite)}
@@ -951,7 +951,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
                 <LazyMarkdown
                   key={`markdown-${match!.index}-${urlIndex}`}
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw, rehypePrism]}
+                  rehypePlugins={[rehypeRaw, [rehypePrism, { ignoreMissing: true }]]}
                   components={markdownComponents}
                 >
                   {sanitizeHtml(urlPart)}
@@ -984,7 +984,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
                 <LazyMarkdown
                   key={`markdown-file-${fileMatch!.index}-${urlIndex}`}
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw, rehypePrism]}
+                  rehypePlugins={[rehypeRaw, [rehypePrism, { ignoreMissing: true }]]}
                   components={markdownComponents}
                 >
                   {sanitizeHtml(urlPart)}
@@ -1015,7 +1015,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
                 <LazyMarkdown
                   key={`markdown-audio-${audioMatch!.index}-${urlIndex}`}
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeRaw, rehypePrism]}
+                  rehypePlugins={[rehypeRaw, [rehypePrism, { ignoreMissing: true }]]}
                   components={markdownComponents}
                 >
                   {sanitizeHtml(urlPart)}
@@ -1040,7 +1040,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
               <LazyMarkdown
                 key={`markdown-final-${urlIndex}`}
                 remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw, rehypePrism]}
+                rehypePlugins={[rehypeRaw, [rehypePrism, { ignoreMissing: true }]]}
                 components={markdownComponents}
               >
                 {sanitizeHtml(urlPart)}
