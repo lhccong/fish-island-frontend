@@ -13,7 +13,6 @@ import {
   LinkOutlined,
   StarFilled,
   StarOutlined,
-  UpOutlined,
   DownOutlined,
   TeamOutlined,
   UserAddOutlined,
@@ -23,7 +22,7 @@ import { useModel } from '@umijs/max';
 import { Button, Card, Image, message } from 'antd';
 import DOMPurify from 'dompurify';
 import 'prismjs/themes/prism-tomorrow.css';
-import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import type { Components } from 'react-markdown';
 import rehypePrism from 'rehype-prism-plus';
 import rehypeRaw from 'rehype-raw';
@@ -46,7 +45,6 @@ export const EMOTICON_FAVORITE_CHANGED = 'emoticon_favorite_changed';
 
 const DOUYIN_ICON = 'https://lf1-cdn-tos.bytegoofy.com/goofy/ies/douyin_web/public/favicon.ico';
 const CODEFATHER_ICON = 'https://www.codefather.cn/favicon.ico';
-const STORAGE_KEY = 'favorite_emoticons';
 
 interface MessageContentProps {
   content: string;
@@ -61,11 +59,90 @@ interface WebPageInfo {
   favicon?: string;
 }
 
-interface Emoticon {
-  thumbSrc: string;
-  idx: number;
-  source: string;
-  isError?: boolean;
+const URL_REGEX_SOURCE = '(https?://[^\\s]+)';
+const IMG_REGEX_SOURCE = '\\[img\\](.*?)\\[/img\\]';
+const FILE_REGEX_SOURCE = '\\[file\\](.*?)\\[/file\\]';
+const AUDIO_REGEX_SOURCE = '\\[audio\\](.*?)\\[/audio\\]';
+const UNDERCOVER_REGEX_SOURCE = '<undercover>(.*?)</undercover>';
+
+const webPageInfoCache = new Map<string, WebPageInfo>();
+const webPageInfoRequests = new Map<string, Promise<WebPageInfo>>();
+let favoriteEmoticonsCache: API.EmoticonFavour[] | null = null;
+let favoriteEmoticonsRequest: Promise<API.EmoticonFavour[]> | null = null;
+let favoriteEmoticonsVersion = 0;
+
+async function loadWebPageInfo(url: string): Promise<WebPageInfo> {
+  const cached = webPageInfoCache.get(url);
+  if (cached) return cached;
+
+  const pending = webPageInfoRequests.get(url);
+  if (pending) return pending;
+
+  const request = parseWebPageUsingGet({ url })
+    .then((response) => {
+      const info: WebPageInfo =
+        response.code === 0 && response.data
+          ? {
+              title: response.data.title || '未知标题',
+              description: response.data.description || '暂无描述',
+              favicon: response.data.favicon,
+            }
+          : { title: '未知网页', description: '获取网页信息失败' };
+      webPageInfoCache.set(url, info);
+      return info;
+    })
+    .catch((error) => {
+      console.error('获取网页信息失败:', error);
+      const fallback = { title: '未知网页', description: '获取网页信息失败' };
+      webPageInfoCache.set(url, fallback);
+      return fallback;
+    })
+    .finally(() => {
+      webPageInfoRequests.delete(url);
+    });
+
+  webPageInfoRequests.set(url, request);
+  return request;
+}
+
+function extractUrls(content: string): string[] {
+  const plainContent = content
+    .replace(new RegExp(IMG_REGEX_SOURCE, 'gi'), '')
+    .replace(new RegExp(FILE_REGEX_SOURCE, 'gi'), '')
+    .replace(new RegExp(AUDIO_REGEX_SOURCE, 'gi'), '');
+  const matches = plainContent.match(new RegExp(URL_REGEX_SOURCE, 'g')) || [];
+  return [...new Set(matches)];
+}
+
+function checkIframeSyntax(text: string): boolean {
+  return /<iframe[^>]*>.*?<\/iframe>/gi.test(text);
+}
+
+async function loadFavoriteEmoticons(force = false): Promise<API.EmoticonFavour[]> {
+  if (!force && favoriteEmoticonsCache) return favoriteEmoticonsCache;
+  if (favoriteEmoticonsRequest) return favoriteEmoticonsRequest;
+
+  const requestVersion = favoriteEmoticonsVersion;
+  const request = listEmoticonFavourByPageUsingPost({ current: 1, pageSize: 100 })
+    .then((response) => {
+      const favorites = response.code === 0 ? response.data?.records || [] : [];
+      if (requestVersion === favoriteEmoticonsVersion) {
+        favoriteEmoticonsCache = favorites;
+      }
+      return favorites;
+    })
+    .catch((error) => {
+      console.error('获取收藏表情包失败:', error);
+      return favoriteEmoticonsCache || [];
+    })
+    .finally(() => {
+      if (favoriteEmoticonsRequest === request) {
+        favoriteEmoticonsRequest = null;
+      }
+    });
+
+  favoriteEmoticonsRequest = request;
+  return request;
 }
 
 const MessageContent: React.FC<MessageContentProps> = ({
@@ -75,57 +152,41 @@ const MessageContent: React.FC<MessageContentProps> = ({
 }) => {
   const { initialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
-  const [webPages, setWebPages] = useState<Record<any, WebPageInfo>>({});
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
-  const [favoriteEmoticons, setFavoriteEmoticons] = useState<API.EmoticonFavour[]>([]);
-  const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const hasFetchedFavorites = useRef(false);
+  const [webPages, setWebPages] = useState<Record<string, WebPageInfo>>(() => {
+    const cachedEntries = extractUrls(content)
+      .map((url) => [url, webPageInfoCache.get(url)] as const)
+      .filter((entry): entry is readonly [string, WebPageInfo] => Boolean(entry[1]));
+    return Object.fromEntries(cachedEntries);
+  });
+  const [favoriteEmoticons, setFavoriteEmoticons] = useState<API.EmoticonFavour[]>(
+    () => favoriteEmoticonsCache || [],
+  );
   // URL匹配正则表达式
-  const urlRegex = new RegExp('(https?://[^\\s]+)', 'g');
+  const urlRegex = new RegExp(URL_REGEX_SOURCE, 'g');
   // 图片标签匹配正则表达式
-  const imgRegex = new RegExp('\\[img\\](.*?)\\[/img\\]', 'g');
+  const imgRegex = new RegExp(IMG_REGEX_SOURCE, 'g');
   // 文件标签匹配正则表达式
-  const fileRegex = new RegExp('\\[file\\](.*?)\\[/file\\]', 'g');
+  const fileRegex = new RegExp(FILE_REGEX_SOURCE, 'g');
   // 音频标签匹配正则表达式
-  const audioRegex = new RegExp('\\[audio\\](.*?)\\[/audio\\]', 'g');
+  const audioRegex = new RegExp(AUDIO_REGEX_SOURCE, 'g');
   // 谁是卧底邀请标签匹配正则表达式
-  const undercoverRegex = new RegExp('<undercover>(.*?)</undercover>', 'g');
+  const undercoverRegex = new RegExp(UNDERCOVER_REGEX_SOURCE, 'g');
   // 添加折叠状态管理
   const [collapsedImages, setCollapsedImages] = useState<Set<string>>(new Set());
   const [expandedImages, setExpandedImages] = useState<Set<string>>(new Set());
-  // 添加状态来判断是否为特殊消息类型
-  const [isSpecialMessage, setIsSpecialMessage] = useState(false);
-
-  // 获取收藏的表情包
-  const fetchFavoriteEmoticons = async () => {
-    // 如果用户未登录，不获取收藏表情
-    if (!currentUser?.id) {
-      setFavoriteEmoticons([]);
-      return;
-    }
-
-    // 如果已经获取过，不再重复获取
-    if (hasFetchedFavorites.current) {
-      return;
-    }
-
-    setFavoriteLoading(true);
-    try {
-      const response = await listEmoticonFavourByPageUsingPost({
-        current: 1,
-        pageSize: 100, // 获取足够多的收藏表情
-      });
-
-      if (response.code === 0 && response.data) {
-        setFavoriteEmoticons(response.data.records || []);
-        hasFetchedFavorites.current = true;
-      }
-    } catch (error) {
-      console.error('获取收藏表情包失败:', error);
-    } finally {
-      setFavoriteLoading(false);
-    }
-  };
+  const isSpecialMessage = useMemo(() => {
+    const trimmedContent = content.trim();
+    const isOnlyImg = trimmedContent.startsWith('[img]') && trimmedContent.endsWith('[/img]') &&
+      trimmedContent.match(/\[img\]/g)?.length === 1;
+    const isOnlyFile = trimmedContent.startsWith('[file]') && trimmedContent.endsWith('[/file]') &&
+      trimmedContent.match(/\[file\]/g)?.length === 1;
+    const isOnlyAudio = trimmedContent.startsWith('[audio]') && trimmedContent.endsWith('[/audio]') &&
+      trimmedContent.match(/\[audio\]/gi)?.length === 1;
+    const isOnlyUndercover = trimmedContent.startsWith('<undercover>') &&
+      trimmedContent.endsWith('</undercover>') &&
+      trimmedContent.match(/<undercover>/g)?.length === 1;
+    return isOnlyImg || isOnlyFile || isOnlyAudio || isOnlyUndercover || checkIframeSyntax(content);
+  }, [content]);
 
   // 添加收藏
   const addFavorite = async (emoticonSrc: string) => {
@@ -133,8 +194,9 @@ const MessageContent: React.FC<MessageContentProps> = ({
       const response = await addEmoticonFavourUsingPost(emoticonSrc);
       if (response.code === 0) {
         message.success('收藏成功');
-        // 刷新收藏列表
-        fetchFavoriteEmoticons();
+        favoriteEmoticonsVersion += 1;
+        favoriteEmoticonsCache = null;
+        favoriteEmoticonsRequest = null;
         // 触发事件通知其他组件刷新收藏列表
         eventBus.emit(EMOTICON_FAVORITE_CHANGED, 'add', emoticonSrc);
       } else {
@@ -152,8 +214,9 @@ const MessageContent: React.FC<MessageContentProps> = ({
       const response = await deleteEmoticonFavourUsingPost({ id: String(id) });
       if (response.code === 0) {
         message.success('取消收藏成功');
-        // 刷新收藏列表
-        fetchFavoriteEmoticons();
+        favoriteEmoticonsVersion += 1;
+        favoriteEmoticonsCache = null;
+        favoriteEmoticonsRequest = null;
         // 触发事件通知其他组件刷新收藏列表
         eventBus.emit(EMOTICON_FAVORITE_CHANGED, 'remove', id);
       } else {
@@ -182,36 +245,26 @@ const MessageContent: React.FC<MessageContentProps> = ({
 
   // 监听收藏变化事件
   useEffect(() => {
-    const handleFavoriteChanged = () => {
-      hasFetchedFavorites.current = false; // 重置标志，允许重新获取
-      fetchFavoriteEmoticons();
+    // 只有图片消息需要收藏状态；模块级缓存合并多个消息组件的相同请求。
+    if (!currentUser?.id || !new RegExp(IMG_REGEX_SOURCE, 'i').test(content)) return;
+
+    let cancelled = false;
+    const refreshFavorites = (force = false) => {
+      loadFavoriteEmoticons(force).then((favorites) => {
+        if (!cancelled) setFavoriteEmoticons(favorites);
+      });
     };
+    const handleFavoriteChanged = () => refreshFavorites(true);
+
+    refreshFavorites();
 
     eventBus.on(EMOTICON_FAVORITE_CHANGED, handleFavoriteChanged);
 
     return () => {
+      cancelled = true;
       eventBus.off(EMOTICON_FAVORITE_CHANGED, handleFavoriteChanged);
     };
-  }, [currentUser?.id]); // 添加 currentUser.id 作为依赖
-
-  // 添加 useEffect 来检测特殊消息类型
-  useEffect(() => {
-    // 检查是否为特殊消息类型（只包含图片、文件或邀请）
-    const trimmedContent = content.trim();
-    const isOnlyImg = trimmedContent.startsWith('[img]') && trimmedContent.endsWith('[/img]') && 
-                      trimmedContent.match(/\[img\]/g)?.length === 1;
-    const isOnlyFile = trimmedContent.startsWith('[file]') && trimmedContent.endsWith('[/file]') && 
-                       trimmedContent.match(/\[file\]/g)?.length === 1;
-    const isOnlyAudio = trimmedContent.startsWith('[audio]') && trimmedContent.endsWith('[/audio]') &&
-                        trimmedContent.match(/\[audio\]/gi)?.length === 1;
-    const isOnlyUndercover = trimmedContent.startsWith('<undercover>') && 
-                             trimmedContent.endsWith('</undercover>') && 
-                             trimmedContent.match(/<undercover>/g)?.length === 1;
-    const hasIframe = checkIframeSyntax(content);
-    
-    // 如果是纯图片、纯文件、纯音频、纯邀请消息或包含iframe，设置为特殊消息类型
-    setIsSpecialMessage(isOnlyImg || isOnlyFile || isOnlyAudio || isOnlyUndercover || hasIframe);
-  }, [content]);
+  }, [content, currentUser?.id]);
 
   // 截断文本到指定长度
   const truncateText = (text: string, maxLength: number = 20) => {
@@ -219,35 +272,24 @@ const MessageContent: React.FC<MessageContentProps> = ({
     return text.slice(0, maxLength) + '...';
   };
 
-  // 获取网页信息
-  const fetchWebPageInfo = async (url: string) => {
-    setLoading((prev) => ({ ...prev, [url]: true }));
-    try {
-      const response = await parseWebPageUsingGet({ url });
-      if (response.code === 0 && response.data) {
-        setWebPages((prev) => ({
-          ...prev,
-          [url]: {
-            title: response.data?.title || '未知标题',
-            description: response.data?.description || '暂无描述',
-            favicon: response.data?.favicon,
-          },
-        }));
-      }
-    } catch (error) {
-      console.error('获取网页信息失败:', error);
-      setWebPages((prev) => ({
-        ...prev,
-        [url]: {
-          title: '未知网页',
-          description: '获取网页信息失败',
-          favicon: undefined,
-        },
-      }));
-    } finally {
-      setLoading((prev) => ({ ...prev, [url]: false }));
-    }
-  };
+  // 链接预览属于副作用，集中在 effect 中执行，并通过模块级缓存跨消息去重。
+  useEffect(() => {
+    const urls = extractUrls(content);
+    if (urls.length === 0) return;
+
+    let cancelled = false;
+    Promise.all(urls.map(async (url) => [url, await loadWebPageInfo(url)] as const)).then(
+      (entries) => {
+        if (!cancelled) {
+          setWebPages((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+        }
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [content]);
 
   // 处理文件下载
   const handleFileDownload = (url: string) => {
@@ -446,10 +488,6 @@ const MessageContent: React.FC<MessageContentProps> = ({
   const renderUrl = (url: string, key: string) => {
     // 检查是否是B站链接
     if (url.includes('bilibili.com')) {
-      if (!webPages[url] && !loading[url]) {
-        fetchWebPageInfo(url);
-      }
-
       return (
         <Card key={key} className={styles.linkCard} size="small" hoverable>
           <div className={styles.linkContent}>
@@ -485,10 +523,6 @@ const MessageContent: React.FC<MessageContentProps> = ({
 
     // 检查是否是抖音链接
     if (url.includes('douyin.com')) {
-      if (!webPages[url] && !loading[url]) {
-        fetchWebPageInfo(url);
-      }
-
       return (
         <Card key={key} className={styles.linkCard} size="small" hoverable>
           <div className={styles.linkContent}>
@@ -529,10 +563,6 @@ const MessageContent: React.FC<MessageContentProps> = ({
 
     // 检查是否是编程导航链接
     if (url.includes('codefather.cn/post/')) {
-      if (!webPages[url] && !loading[url]) {
-        fetchWebPageInfo(url);
-      }
-
       return (
         <Card key={key} className={styles.linkCard} size="small" hoverable>
           <div className={styles.linkContent}>
@@ -571,11 +601,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
       );
     }
 
-    // 其他URL显示为普通链接，但也尝试获取网页信息
-    if (!webPages[url] && !loading[url]) {
-      fetchWebPageInfo(url);
-    }
-
+    // 其他 URL 显示为普通链接，预览信息由上方 effect 异步填充。
     // @ts-ignore
     return (
       <Card key={key} className={styles.linkCard} size="small" hoverable>
@@ -853,16 +879,10 @@ const MessageContent: React.FC<MessageContentProps> = ({
     return sanitized;
   };
 
-  // 修改检测 iframe 语法的函数
-  const checkIframeSyntax = (text: string) => {
-    const iframeRegex = /<iframe[^>]*>.*?<\/iframe>/gi;
-    return iframeRegex.test(text);
-  };
-
   // 修改 ReactMarkdown 组件的配置
   const markdownComponents: Components = {
     // 自定义链接渲染，避免与我们的URL渲染冲突
-    a: ({ node, ...props }: { node?: any; [key: string]: any }) => {
+    a: ({ node: _node, ...props }: { node?: any; [key: string]: any }) => {
       const href = props.href || '';
       if (href.match(urlRegex)) {
         return renderUrl(href, `markdown-url-${Date.now()}`);
@@ -870,7 +890,7 @@ const MessageContent: React.FC<MessageContentProps> = ({
       return <a {...props} target="_blank" rel="noopener noreferrer" />;
     },
     // 自定义图片渲染，避免与我们的图片标签冲突
-    img: ({ node, ...props }: { node?: any; [key: string]: any }) => {
+    img: ({ node: _node, ...props }: { node?: any; [key: string]: any }) => {
       const src = props.src || '';
       if (src.match(/^https?:\/\//)) {
         return renderImage(src, `img-${Date.now()}`);
@@ -1073,4 +1093,8 @@ const MessageContent: React.FC<MessageContentProps> = ({
   </div>;
 };
 
-export default MessageContent;
+export default React.memo(MessageContent, (prev, next) => (
+  prev.content === next.content &&
+  prev.collapseImages === next.collapseImages &&
+  prev.onImageLoad === next.onImageLoad
+));

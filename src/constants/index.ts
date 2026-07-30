@@ -1,8 +1,8 @@
 /**
  * 本地后端地址
  */
-export const BACKEND_HOST_LOCAL = 'http://localhost:8123';
-// export const BACKEND_HOST_LOCAL = 'https://api.yucoder.cn';
+// export const BACKEND_HOST_LOCAL = 'http://localhost:8123';
+export const BACKEND_HOST_LOCAL = 'https://api.yucoder.cn';
 
 /**
  * 线上后端地址
@@ -13,12 +13,19 @@ export const BACKEND_HOST_PROD = 'https://api.yucoder.cn';
  * 验证码地址
  */
 export const BACKEND_HOST_CODE = BACKEND_HOST_LOCAL + '/api';
-// export const BACKEND_HOST_WS = 'wss://api.yucoder.cn/ws/?token=';
-export const BACKEND_HOST_WS = 'ws://127.0.0.1:8090?token=';
+export const BACKEND_HOST_WS = 'wss://api.yucoder.cn/ws/?token=';
+// export const BACKEND_HOST_WS = 'ws://127.0.0.1:8090?token=';
 
 
 export const SYSTEM_LOGO =
   'https://oss.cqbo.com/moyu/moyu.png';
+
+/** 外链图片 referrerPolicy，避免 B 站等 CDN 防盗链返回 403 */
+export const EXTERNAL_IMAGE_REFERRER_POLICY = 'no-referrer' as const;
+
+export const externalImageProps = {
+  referrerPolicy: EXTERNAL_IMAGE_REFERRER_POLICY,
+} as const;
 
 /**
  * 摸鱼阅读 Access Token
@@ -46,10 +53,3 @@ export const UNDERCOVER_NOTIFICATION = {
  * 热榜页广告开关
  */
 export const HOT_RANK_AD_ENABLED = false;
-
-/**
- * 外链图片通用属性（规避防盗链）
- */
-export const externalImageProps = {
-  referrerPolicy: 'no-referrer' as const,
-};

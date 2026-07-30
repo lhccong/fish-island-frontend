@@ -146,9 +146,7 @@ interface UserRemark {
 interface MessageItemProps {
   msg: Message;
   currentUser: any;
-  notifications: Message[];
-  styles: Record<string, string>;
-  UserInfoCard: React.FC<{ user: User }>;
+  isMentioned: boolean;
   handleSelectMention: (user: User) => void;
   handleViewUserDetail: (user: User) => void;
   getUserDisplayName: (user: User) => string;
@@ -161,14 +159,153 @@ interface MessageItemProps {
   repeatUsers?: User[];
   /** 一键复读回调 */
   onRepeat: (content: string) => void;
+  userRemarks: Record<string, string>;
+  userIpInfo: { region: string; country: string } | null;
 }
+
+interface UserInfoCardProps {
+  user: User;
+  currentUserId?: string | number;
+  userRemarks: Record<string, string>;
+  userIpInfo: { region: string; country: string } | null;
+  handleSelectMention: (user: User) => void;
+  getAdminTag: (isAdmin: boolean, level: number, titleId?: number) => React.ReactNode;
+}
+
+const UserInfoCard = React.memo<UserInfoCardProps>(({
+  user,
+  currentUserId,
+  userRemarks,
+  userIpInfo,
+  handleSelectMention,
+  getAdminTag,
+}) => {
+  let userTitleIds: number[] = [];
+  try {
+    userTitleIds = user.titleIdList ? JSON.parse(user.titleIdList) : [];
+  } catch {
+    userTitleIds = [];
+  }
+  const [isTitlesExpanded, setIsTitlesExpanded] = useState(false);
+  const userShortId = generateUniqueShortId(user.id);
+  const allTitles = [
+    getAdminTag(user.isAdmin, user.level, 0),
+    ...userTitleIds.map((titleId) => getAdminTag(user.isAdmin, user.level, titleId)),
+  ];
+  const defaultTitle = user.titleId
+    ? allTitles.find((titleElement, index) => {
+        if (user.titleId === 0 && index === 0) return true;
+        return index > 0 && userTitleIds[index - 1] === user.titleId;
+      }) || allTitles[0]
+    : allTitles[0];
+  const otherTitles = allTitles.filter((title) => title !== defaultTitle);
+
+  return (
+    <div className={styles.userInfoCard} onMouseLeave={() => setIsTitlesExpanded(false)}>
+      <div className={styles.userInfoCardHeader}>
+        <div
+          className={styles.avatarWrapper}
+          onClick={(event: React.MouseEvent) => {
+            event.stopPropagation();
+            handleSelectMention(user);
+          }}
+        >
+          <Popover
+            content={<div className={styles.userShortId}>{userShortId}</div>}
+            trigger="hover"
+            placement="bottom"
+          >
+            <div className={styles.avatarWithFrame}>
+              <Avatar src={user.avatar} size={48} />
+              {user.avatarFramerUrl && (
+                <img
+                  {...externalImageProps}
+                  src={user.avatarFramerUrl}
+                  className={styles.avatarFrame}
+                  alt="avatar-frame"
+                />
+              )}
+            </div>
+          </Popover>
+          <div className={styles.floatingFish}>🐟</div>
+        </div>
+        <div className={styles.userInfoCardTitle}>
+          <div className={styles.userInfoCardNameRow}>
+            <span className={styles.userInfoCardName}>
+              {userRemarks[user.id] || user.name}
+              {userRemarks[user.id] && <span className={styles.originalName}>({user.name})</span>}
+            </span>
+            <span className={styles.userInfoCardLevel}>
+              <span className={styles.levelEmoji}>{getLevelEmoji(user.level)}</span>
+              <span className={styles.levelText}>{user.level}</span>
+            </span>
+          </div>
+          <div className={styles.titlesContainer}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0px' }}>
+              {defaultTitle}
+              {(user.vip || user.isVip) && <span className={styles.vipBadge}>V</span>}
+            </span>
+            {otherTitles.length > 0 && (
+              <Popover
+                content={
+                  <div className={styles.expandedTitles}>
+                    {otherTitles.map((title, index) => (
+                      <div key={index} className={styles.expandedTitle}>
+                        {title}
+                      </div>
+                    ))}
+                  </div>
+                }
+                trigger="click"
+                placement="right"
+                overlayClassName={styles.titlesPopover}
+                open={isTitlesExpanded}
+                onOpenChange={setIsTitlesExpanded}
+              >
+                <Button
+                  type="text"
+                  size="small"
+                  className={styles.expandButton}
+                  icon={<RightOutlined />}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setIsTitlesExpanded((expanded) => !expanded);
+                  }}
+                />
+              </Popover>
+            )}
+          </div>
+          <div className={styles.userInfoCardPoints}>
+            <span className={styles.pointsEmoji}>✨</span>
+            <span className={styles.pointsText}>积分: {user.points || 0}</span>
+          </div>
+          {user.id === String(currentUserId)
+            ? userIpInfo && (
+                <div className={styles.userInfoCardLocation}>
+                  <span className={styles.locationEmoji}>📍</span>
+                  <span className={styles.locationText}>
+                    {userIpInfo.country} · {userIpInfo.region}
+                  </span>
+                </div>
+              )
+            : user.region && (
+                <div className={styles.userInfoCardLocation}>
+                  <span className={styles.locationEmoji}>📍</span>
+                  <span className={styles.locationText}>
+                    {user.country ? `${user.country} · ${user.region}` : user.region}
+                  </span>
+                </div>
+              )}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 const MessageItem = React.memo<MessageItemProps>(({
   msg,
   currentUser,
-  notifications,
-  styles,
-  UserInfoCard,
+  isMentioned,
   handleSelectMention,
   handleViewUserDetail,
   getUserDisplayName,
@@ -179,9 +316,10 @@ const MessageItem = React.memo<MessageItemProps>(({
   handleReportMessage,
   repeatUsers,
   onRepeat,
+  userRemarks,
+  userIpInfo,
 }) => {
   const isSelf = currentUser?.id && String(msg.sender.id) === String(currentUser.id);
-  const isMentioned = notifications.some((n) => n.id === msg.id);
   const canRevoke = isSelf || currentUser?.userRole === 'admin';
 
   // 判断当前用户是否已复读过该消息（原发送者或已在复读列表中）
@@ -202,7 +340,16 @@ const MessageItem = React.memo<MessageItemProps>(({
           style={{ cursor: 'pointer' }}
         >
           <Popover
-            content={<UserInfoCard user={msg.sender} />}
+            content={(
+              <UserInfoCard
+                user={msg.sender}
+                currentUserId={currentUser?.id}
+                userRemarks={userRemarks}
+                userIpInfo={userIpInfo}
+                handleSelectMention={handleSelectMention}
+                getAdminTag={getAdminTag}
+              />
+            )}
             trigger="hover"
             placement="top"
           >
@@ -328,6 +475,7 @@ const ChatRoom: React.FC = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const isNearBottomRef = useRef(true);
   const isManuallyClosedRef = useRef(false);
   const isAutoScrollingRef = useRef(false); // 添加自动滚动标记
   const [expandedImages, setExpandedImages] = useState<Set<string>>(new Set()); // 添加展开图片的状态
@@ -418,8 +566,6 @@ const ChatRoom: React.FC = () => {
   const [annualReportHtml, setAnnualReportHtml] = useState<string>('');
   const [isLoadingAnnualReport, setIsLoadingAnnualReport] = useState(false);
 
-  const [isComponentMounted, setIsComponentMounted] = useState(true);
-  const [isPageVisible, setIsPageVisible] = useState(!document.hidden);
   const pageHiddenTimeRef = useRef<number | null>(null);
   const visibilityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -434,6 +580,10 @@ const ChatRoom: React.FC = () => {
   const [reportTarget, setReportTarget] = useState<Message | null>(null);
 
   const [notifications, setNotifications] = useState<Message[]>([]);
+  const notificationIds = useMemo(
+    () => new Set(notifications.map((notification) => notification.id)),
+    [notifications],
+  );
 
   const [uploadingFile, setUploadingFile] = useState(false);
   const [pendingFileUrl, setPendingFileUrl] = useState<string | null>(null);
@@ -677,18 +827,13 @@ const ChatRoom: React.FC = () => {
   const [listHeight, setListHeight] = useState(0); // 初始值设为0
 
   // 添加一个状态来记录最新消息的时间戳
-  const [lastMessageTimestamp, setLastMessageTimestamp] = useState<number>(Date.now());
+  const lastMessageTimestampRef = useRef<number>(Date.now());
 
   // 添加用户列表显示隐藏状态，从localStorage获取初始值
   const [isUserListVisible, setIsUserListVisible] = useState<boolean>(() => {
     const saved = localStorage.getItem('chat_userlist_visible');
     return saved !== null ? JSON.parse(saved) : true;
   });
-
-  // 添加防抖相关的状态和引用
-  const [newMessageCount, setNewMessageCount] = useState<number>(0);
-  const newMessageTimerRef = useRef<NodeJS.Timeout | null>(null);
-
 
   const [isExportingAnnualReportImage, setIsExportingAnnualReportImage] = useState(false);
 
@@ -719,7 +864,7 @@ const ChatRoom: React.FC = () => {
   const [isLuckyBagListModalVisible, setIsLuckyBagListModalVisible] = useState(false);
   const [selectedLuckyBagId, setSelectedLuckyBagId] = useState<string | null>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     const container = messageContainerRef.current;
     if (!container) return;
 
@@ -751,47 +896,7 @@ const ChatRoom: React.FC = () => {
       // 使用 requestAnimationFrame 代替 setTimeout，性能更好
       setTimeout(checkScrollPosition, 100);
     });
-  };
-
-  // 修改显示新消息提示的函数
-  const showNewMessageNotification = (count: number) => {
-    // 先清除之前的消息提示
-    messageApi.destroy('newMessage');
-
-    messageApi.info({
-      content: (
-        <div
-          onClick={() => {
-            // 点击时关闭消息提示
-            messageApi.destroy('newMessage');
-            scrollToBottom();
-          }}
-          style={{
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <span>收到 {count} 条新消息，点击查看</span>
-          <CloseOutlined
-            onClick={(e) => {
-              e.stopPropagation(); // 阻止事件冒泡
-              messageApi.destroy('newMessage');
-            }}
-            style={{
-              marginLeft: '10px',
-              cursor: 'pointer',
-              color: '#999',
-              fontSize: '12px',
-            }}
-          />
-        </div>
-      ),
-      duration: 3,
-      key: 'newMessage',
-    });
-  };
+  }, []);
 
   // 修改计算高度的函数
   const updateListHeight = useCallback(() => {
@@ -854,7 +959,20 @@ const ChatRoom: React.FC = () => {
       >
         {!isSpeedMode && (
           <div className={styles.avatarWrapper}>
-            <Popover content={<UserInfoCard user={user} />} trigger="hover" placement="right">
+            <Popover
+              content={(
+                <UserInfoCard
+                  user={user}
+                  currentUserId={currentUser?.id}
+                  userRemarks={userRemarks}
+                  userIpInfo={userIpInfo}
+                  handleSelectMention={handleSelectMention}
+                  getAdminTag={getAdminTag}
+                />
+              )}
+              trigger="hover"
+              placement="right"
+            >
               <div className={styles.avatarWithFrame}>
                 <Avatar src={user.avatar} size={28} />
               </div>
@@ -1130,7 +1248,7 @@ const ChatRoom: React.FC = () => {
         // 更新最新消息的时间戳（如果是首次加载）
         if (isFirstLoad && historyMessages.length > 0) {
           const latestMessage = historyMessages[historyMessages.length - 1];
-          setLastMessageTimestamp(new Date(latestMessage.timestamp).getTime());
+          lastMessageTimestampRef.current = new Date(latestMessage.timestamp).getTime();
         }
 
         // 处理历史消息，确保正确的时间顺序（旧消息在上，新消息在下）
@@ -1194,7 +1312,9 @@ const ChatRoom: React.FC = () => {
     const distanceFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
 
-    setIsNearBottom(distanceFromBottom <= threshold);
+    const nextIsNearBottom = distanceFromBottom <= threshold;
+    isNearBottomRef.current = nextIsNearBottom;
+    setIsNearBottom(nextIsNearBottom);
   };
 
   // 修改滚动处理函数
@@ -1227,15 +1347,6 @@ const ChatRoom: React.FC = () => {
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
-
-  // 添加滚动监听
-  useEffect(() => {
-    const container = messageContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
-  }, [hasMore]);
 
   // 处理图片上传
   const handleImageUpload = async (file: File) => {
@@ -1417,7 +1528,7 @@ const ChatRoom: React.FC = () => {
     const messageTimestamp = new Date(incomingMessage.timestamp).getTime();
     const isSelf = incomingMessage.sender.id === String(currentUser?.id);
     // 判断是否是真正的新消息（时间戳大于当前最新消息的时间戳）
-    const isNewMessage = messageTimestamp > lastMessageTimestamp;
+    const isNewMessage = messageTimestamp > lastMessageTimestampRef.current;
 
     setMessages((prev) => {
       // 添加新消息，确保 vip 和 isVip 字段都存在
@@ -1462,22 +1573,6 @@ const ChatRoom: React.FC = () => {
           container.scrollHeight - container.scrollTop - container.clientHeight;
         const isNearBottom = distanceFromBottom <= threshold;
 
-        // 只有在不在底部且是真正的新消息时，才累计新消息数量
-        if (!isSelf && !isNearBottom && isNewMessage) {
-          setNewMessageCount((prev) => prev + 1);
-
-          // 清除之前的定时器
-          if (newMessageTimerRef.current) {
-            clearTimeout(newMessageTimerRef.current);
-          }
-
-          // 设置新的定时器，1秒后显示合并的提示
-          newMessageTimerRef.current = setTimeout(() => {
-            showNewMessageNotification(newMessageCount + 1);
-            setNewMessageCount(0);
-          }, 1000);
-        }
-
         // 只有在底部时才限制消息数量
         if (isNearBottom && newMessages.length > 25) {
           return newMessages.slice(-25);
@@ -1488,7 +1583,7 @@ const ChatRoom: React.FC = () => {
 
     // 如果是新消息，更新最新消息时间戳
     if (isNewMessage) {
-      setLastMessageTimestamp(messageTimestamp);
+      lastMessageTimestampRef.current = messageTimestamp;
       if (!isSelf) {
         handleMentionNotification(incomingMessage);
       }
@@ -1503,12 +1598,6 @@ const ChatRoom: React.FC = () => {
       if (distanceFromBottom <= threshold && !isAutoScrollingRef.current) {
         // 避免重复滚动，添加防抖
         setTimeout(scrollToBottom, 100);
-        // 如果滚动到底部，清除新消息计数和定时器
-        setNewMessageCount(0);
-        if (newMessageTimerRef.current) {
-          clearTimeout(newMessageTimerRef.current);
-          newMessageTimerRef.current = null;
-        }
       }
     }
   };
@@ -1519,7 +1608,6 @@ const ChatRoom: React.FC = () => {
 
   // 修改 WebSocket 连接逻辑
   useEffect(() => {
-    setIsComponentMounted(true);
     isManuallyClosedRef.current = false;
 
     // 只有当用户已登录时才建立WebSocket连接
@@ -1538,7 +1626,6 @@ const ChatRoom: React.FC = () => {
       wsService.connect(token);
 
       return () => {
-        setIsComponentMounted(false);
         isManuallyClosedRef.current = true;
         // 移除消息处理器
         wsService.removeMessageHandler('chat', handleChatMessage);
@@ -1807,12 +1894,13 @@ const ChatRoom: React.FC = () => {
     const textarea = inputRef.current;
     if (textarea) {
       const currentValue = textarea.value;
-      const lastAtPos = currentValue.lastIndexOf('@');
-      if (lastAtPos !== -1) {
-        textarea.value =
-          currentValue.slice(0, lastAtPos) +
-          `@${user.name} ` +
-          currentValue.slice(lastAtPos + mentionSearchText.length + 1);
+        const lastAtPos = currentValue.lastIndexOf('@');
+        if (lastAtPos !== -1) {
+          const mentionEnd = currentValue.indexOf(' ', lastAtPos);
+          textarea.value =
+            currentValue.slice(0, lastAtPos) +
+            `@${user.name} ` +
+            currentValue.slice(mentionEnd === -1 ? currentValue.length : mentionEnd + 1);
       } else {
         const cursorPos = textarea.selectionStart || 0;
         textarea.value =
@@ -1826,7 +1914,7 @@ const ChatRoom: React.FC = () => {
     requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
-  }, [mentionSearchText]);
+  }, []);
 
   // Using utility function from titleUtils
 
@@ -1871,143 +1959,6 @@ const ChatRoom: React.FC = () => {
       </span>
     );
   }, []); // styles 和 getTitleTagProperties 都是稳定引用，无需列入依赖
-
-  const UserInfoCard: React.FC<{ user: User }> = ({ user }) => {
-    // 从 titleIdList 字符串解析称号 ID 数组
-    const userTitleIds: number[] = user.titleIdList ? JSON.parse(user.titleIdList) : [];
-    const [isTitlesExpanded, setIsTitlesExpanded] = useState(false);
-
-    // 生成用户唯一标识符
-    const userShortId = generateUniqueShortId(user.id);
-
-    // 获取所有称号
-    const allTitles = [
-      getAdminTag(user.isAdmin, user.level, 0),
-      ...userTitleIds.map((titleId) => getAdminTag(user.isAdmin, user.level, titleId)),
-    ];
-
-    // 优先显示用户选中的称号
-    const defaultTitle = user.titleId
-      ? allTitles.find((titleElement, index) => {
-          // 如果是等级称号(index=0)且titleId=0，则匹配
-          if (user.titleId === 0 && index === 0) {
-            return true;
-          }
-
-          // 对于其他称号，通过titleId直接匹配
-          if (index > 0 && userTitleIds[index - 1] === user.titleId) {
-            return true;
-          }
-
-          return false;
-        }) || allTitles[0]
-      : allTitles[0];
-    // 其他称号
-    const otherTitles = allTitles.filter((title) => title !== defaultTitle);
-
-    return (
-      <div className={styles.userInfoCard} onMouseLeave={() => setIsTitlesExpanded(false)}>
-        <div className={styles.userInfoCardHeader}>
-          <div
-            className={styles.avatarWrapper}
-            onClick={(e: React.MouseEvent) => {
-              e.stopPropagation();
-              handleSelectMention(user);
-            }}
-          >
-            <Popover
-              content={<div className={styles.userShortId}>{userShortId}</div>}
-              trigger="hover"
-              placement="bottom"
-            >
-              <div className={styles.avatarWithFrame}>
-                <Avatar src={user.avatar} size={48} />
-                {user.avatarFramerUrl && (
-                  <img
-                    {...externalImageProps}
-                    src={user.avatarFramerUrl}
-                    className={styles.avatarFrame}
-                    alt="avatar-frame"
-                  />
-                )}
-              </div>
-            </Popover>
-            <div className={styles.floatingFish}>🐟</div>
-          </div>
-          <div className={styles.userInfoCardTitle}>
-            <div className={styles.userInfoCardNameRow}>
-              <span className={styles.userInfoCardName}>
-                {userRemarks[user.id] || user.name}
-                {userRemarks[user.id] && (
-                  <span className={styles.originalName}>({user.name})</span>
-                )}
-              </span>
-              <span className={styles.userInfoCardLevel}>
-                <span className={styles.levelEmoji}>{getLevelEmoji(user.level)}</span>
-                <span className={styles.levelText}>{user.level}</span>
-              </span>
-            </div>
-            <div className={styles.titlesContainer}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0px' }}>
-                {defaultTitle}
-                {(user.vip || user.isVip) && <span className={styles.vipBadge}>V</span>}
-              </span>
-              {otherTitles.length > 0 && (
-                <Popover
-                  content={
-                    <div className={styles.expandedTitles}>
-                      {otherTitles.map((title, index) => (
-                        <div key={index} className={styles.expandedTitle}>
-                          {title}
-                        </div>
-                      ))}
-                    </div>
-                  }
-                  trigger="click"
-                  placement="right"
-                  overlayClassName={styles.titlesPopover}
-                  open={isTitlesExpanded}
-                  onOpenChange={setIsTitlesExpanded}
-                >
-                  <Button
-                    type="text"
-                    size="small"
-                    className={styles.expandButton}
-                    icon={<RightOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsTitlesExpanded(!isTitlesExpanded);
-                    }}
-                  />
-                </Popover>
-              )}
-            </div>
-            <div className={styles.userInfoCardPoints}>
-              <span className={styles.pointsEmoji}>✨</span>
-              <span className={styles.pointsText}>积分: {user.points || 0}</span>
-            </div>
-            {user.id === String(currentUser?.id)
-              ? userIpInfo && (
-                  <div className={styles.userInfoCardLocation}>
-                    <span className={styles.locationEmoji}>📍</span>
-                    <span className={styles.locationText}>
-                      {userIpInfo.country} · {userIpInfo.region}
-                    </span>
-                  </div>
-                )
-              : user.region && (
-                  <div className={styles.userInfoCardLocation}>
-                    <span className={styles.locationEmoji}>📍</span>
-                    <span className={styles.locationText}>
-                      {user.country ? `${user.country} · ${user.region}` : user.region}
-                    </span>
-                  </div>
-                )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // 在 return 语句之前添加引用消息的处理函数
   const handleQuoteMessage = useCallback((message: Message) => {
@@ -2097,7 +2048,7 @@ const ChatRoom: React.FC = () => {
   };
 
   // 修改 handleInviteClick 函数
-  const handleInviteClick = async (roomId: string, gameType: string) => {
+  const handleInviteClick = useCallback(async (roomId: string, gameType: string) => {
     switch (gameType) {
       case 'chess':
         localStorage.setItem('piece_join_status', 'new');
@@ -2123,7 +2074,7 @@ const ChatRoom: React.FC = () => {
       default:
         break;
     }
-  };
+  }, []);
 
   // 添加发送红包的处理函数
   const handleSendRedPacket = async () => {
@@ -2463,11 +2414,12 @@ const ChatRoom: React.FC = () => {
             content={content}
             onImageLoad={() => {
               // 图片加载完成后,如果是最新消息则滚动到底部
-              const lastMessage = messages[messages.length - 1];
+              const currentMessages = messagesRef.current;
+              const lastMessage = currentMessages[currentMessages.length - 1];
               const isLatestMessage = lastMessage?.content === content;
               if (
                 isLatestMessage &&
-                (isNearBottom || lastMessage?.sender.id === String(currentUser?.id)) &&
+                (isNearBottomRef.current || lastMessage?.sender.id === String(currentUser?.id)) &&
                 !isAutoScrollingRef.current // 避免重复滚动
               ) {
                 // 添加短暂延迟，确保图片已完全渲染
@@ -2487,15 +2439,12 @@ const ChatRoom: React.FC = () => {
       }
     }
     return <MessageContent content={content} />;
-  }, [handleInviteClick, isSpeedMode, expandedImages, messages, isNearBottom, currentUser,
-      isAutoScrollingRef, scrollToBottom]);
+  }, [handleInviteClick, isSpeedMode, expandedImages, currentUser?.id,
+      scrollToBottom]);
 
   // 在组件卸载时清理定时器
   useEffect(() => {
     return () => {
-      if (newMessageTimerRef.current) {
-        clearTimeout(newMessageTimerRef.current);
-      }
       // 清理红包防抖定时器
       if (redPacketDebounceRef.current) {
         clearTimeout(redPacketDebounceRef.current);
@@ -3023,7 +2972,6 @@ const ChatRoom: React.FC = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       const isVisible = !document.hidden;
-      setIsPageVisible(isVisible);
 
       if (isVisible) {
         // 页面变为可见时
@@ -3511,9 +3459,7 @@ const ChatRoom: React.FC = () => {
                 key={msg.id}
                 msg={msg}
                 currentUser={currentUser}
-                notifications={notifications}
-                styles={styles}
-                UserInfoCard={UserInfoCard}
+                isMentioned={notificationIds.has(msg.id)}
                 handleSelectMention={handleSelectMention}
                 handleViewUserDetail={handleViewUserDetail}
                 getUserDisplayName={getUserDisplayName}
@@ -3524,6 +3470,8 @@ const ChatRoom: React.FC = () => {
                 handleReportMessage={handleReportMessage}
                 repeatUsers={repeatMap.get(msg.id)}
                 onRepeat={handleRepeat}
+                userRemarks={userRemarks}
+                userIpInfo={userIpInfo}
               />
             );
           });

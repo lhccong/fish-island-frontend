@@ -102,8 +102,8 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
       const response = await addEmoticonFavourUsingPost(emoticonSrc);
       if (response.code === 0) {
         message.success('收藏成功');
-        // 刷新收藏列表
-        fetchFavoriteEmoticons(1);
+        // 统一通过事件刷新，避免当前组件重复请求两次。
+        eventBus.emit(EMOTICON_FAVORITE_CHANGED, 'add', emoticonSrc);
       } else {
         message.error('收藏失败');
       }
@@ -119,8 +119,8 @@ const EmoticonPicker: React.FC<EmoticonPickerProps> = ({ onSelect }) => {
       const response = await deleteEmoticonFavourUsingPost({ id });
       if (response.code === 0) {
         message.success('取消收藏成功');
-        // 刷新收藏列表
-        fetchFavoriteEmoticons(1);
+        // 统一通过事件刷新，避免当前组件重复请求两次。
+        eventBus.emit(EMOTICON_FAVORITE_CHANGED, 'remove', id);
       } else {
         message.error('取消收藏失败');
       }

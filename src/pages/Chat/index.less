@@ -131,7 +131,8 @@
     flex-direction: column;
     gap: 12px;
     background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
+    // 滚动层自身不做实时模糊，保留外层卡片的玻璃效果，避免滚动时持续重绘。
+    backdrop-filter: none;
     margin: 10px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -2865,6 +2866,15 @@
     .avatarWrapper {
       display: none;
     }
+  }
+
+  .titleSweepLight,
+  .titleFish,
+  .titleStar1,
+  .titleStar2,
+  .vipBadge,
+  .vipBadge::after {
+    animation: none !important;
   }
 }
 

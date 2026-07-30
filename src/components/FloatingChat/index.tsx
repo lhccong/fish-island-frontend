@@ -342,7 +342,9 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
   }, [ensurePosInBounds, excelViewportFullscreen, fullscreen]);
 
   useEffect(() => {
-    if (!isLoggedIn || mode === 'minimized') return;
+    // 完整聊天室拥有自己的消息视图；在该路由下暂停悬浮窗的数据消费，
+    // 避免一条 WebSocket 消息同时更新两套 React 状态。
+    if (!isLoggedIn || mode === 'minimized' || onChatPage) return;
 
     loadHistory();
 
@@ -355,7 +357,7 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
     return () => {
       wsService.removeMessageHandler('chat', handleWsMessage);
     };
-  }, [isLoggedIn, mode, loadHistory, handleWsMessage]);
+  }, [isLoggedIn, mode, onChatPage, loadHistory, handleWsMessage]);
 
   const handleSend = () => {
     const content = inputValue.trim();
@@ -462,8 +464,8 @@ const FloatingChat: React.FC<FloatingChatProps> = ({ fullscreen = false }) => {
   // 独立小窗页由页面内嵌实例渲染，避免重复挂载
   if (onMiniPage && !fullscreen) return null;
 
-  // 在完整聊天室页面且未开启悬浮窗时，不显示（避免重复）
-  if (onChatPage && mode === 'minimized' && !fullscreen) return null;
+  // 完整聊天室页面始终只显示主聊天视图。
+  if (onChatPage && !fullscreen) return null;
 
   const showMinBar = mode === 'minimized' && !fullscreen && !excelViewportFullscreen;
   const showWindow = isWindowOpen || fullscreen || excelViewportFullscreen;

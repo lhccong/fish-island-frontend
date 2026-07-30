@@ -1,5 +1,4 @@
 import {BACKEND_HOST_WS} from "@/constants";
-import type {MessageInstance} from "antd/es/message/interface";
 import {message} from "antd";
 import {startNotification, stopNotification} from "@/utils/notification";
 
@@ -9,6 +8,7 @@ class WebSocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
   private messageHandlers: Map<string, ((data: any) => void)[]> = new Map();
   private isManuallyClosed = false;
   private notificationInterval: number | null = null;
@@ -54,19 +54,25 @@ class WebSocketService {
   }
 
   public connect(token: string) {
-    if (this.isManuallyClosed) {
+    // OPEN 和 CONNECTING 都表示已有有效连接流程，避免多个组件同时调用时重复建连。
+    if (
+      this.ws?.readyState === WebSocket.OPEN ||
+      this.ws?.readyState === WebSocket.CONNECTING
+    ) {
       return;
     }
 
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      return;
-    }
-
+    this.isManuallyClosed = false;
     this.ws = new WebSocket(BACKEND_HOST_WS + token);
 
     this.ws.onopen = () => {
       console.log('WebSocket连接成功');
       this.reconnectAttempts = 0;
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+        this.reconnectTimeout = null;
+      }
+      this.startHeartbeat();
       if (this.ws?.readyState === WebSocket.OPEN) {
         this.ws?.send(JSON.stringify({
           type: 1, // 登录连接
@@ -79,6 +85,7 @@ class WebSocketService {
     this.ws.onclose = () => {
       console.log('WebSocket连接关闭');
       this.ws = null;
+      this.stopHeartbeat();
 
       if (!this.isManuallyClosed && this.reconnectAttempts < this.maxReconnectAttempts) {
         const timeout = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 10000);
@@ -124,8 +131,12 @@ class WebSocketService {
       message.error('连接发生错误');
     };
 
-    // 定期发送心跳消息
-    setInterval(() => {
+  }
+
+  private startHeartbeat() {
+    if (this.heartbeatInterval) return;
+
+    this.heartbeatInterval = setInterval(() => {
       if (this.ws?.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({
           type: 4, // 心跳消息类型
@@ -134,8 +145,15 @@ class WebSocketService {
     }, 25000);
   }
 
+  private stopHeartbeat() {
+    if (!this.heartbeatInterval) return;
+    clearInterval(this.heartbeatInterval);
+    this.heartbeatInterval = null;
+  }
+
   public disconnect() {
     this.isManuallyClosed = true;
+    this.stopHeartbeat();
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -166,7 +184,10 @@ class WebSocketService {
     if (!this.messageHandlers.has(type)) {
       this.messageHandlers.set(type, []);
     }
-    this.messageHandlers.get(type)?.push(handler);
+    const handlers = this.messageHandlers.get(type);
+    if (handlers && !handlers.includes(handler)) {
+      handlers.push(handler);
+    }
   }
 
   public removeMessageHandler(type: string, handler: (data: any) => void) {
