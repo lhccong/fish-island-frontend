@@ -2,7 +2,7 @@
 import type { MemeInfo, UploadImageResponse, ImageResponse, ErrorResponse } from './types';
 
 const STORAGE_KEY = 'meme-generator-backend-url';
-const DEFAULT_BASE = 'https://emoticon.xiaojingge.com';
+const DEFAULT_BASE = 'https://emoticon.yucoder.cn';
 const CACHE_PREFIX = 'meme_cache_';
 const INFOS_CACHE_KEY = `${CACHE_PREFIX}infos`;
 const INFOS_CACHE_TTL = 24 * 60 * 60 * 1000;

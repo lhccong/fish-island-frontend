@@ -81,7 +81,7 @@ import {
   Switch,
   Tooltip,
 } from 'antd';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import styles from './index.less';
 import { externalImageProps, UNDERCOVER_NOTIFICATION } from '@/constants';
@@ -474,7 +474,6 @@ const ChatRoom: React.FC = () => {
   const { currentUser } = initialState || {};
   const [messageApi, contextHolder] = message.useMessage();
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
-  const [isNearBottom, setIsNearBottom] = useState(true);
   const isNearBottomRef = useRef(true);
   const isManuallyClosedRef = useRef(false);
   const isAutoScrollingRef = useRef(false); // 添加自动滚动标记
@@ -868,34 +867,12 @@ const ChatRoom: React.FC = () => {
     const container = messageContainerRef.current;
     if (!container) return;
 
-    // 标记正在进行自动滚动
+    // Live messages should track the bottom immediately. Starting a new smooth
+    // animation for every message makes wheel and touch scrolling feel sticky.
     isAutoScrollingRef.current = true;
-
-    // 使用 requestAnimationFrame 确保在下一帧执行滚动
-    requestAnimationFrame(() => {
-      // 使用性能更好的方式计算滚动位置
-      const scrollTarget = container.scrollHeight - container.clientHeight;
-
-      container.scrollTo({
-        top: scrollTarget,
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-      });
-
-      // 添加二次检查，处理可能的延迟加载情况，但减少不必要的重复滚动
-      const checkScrollPosition = () => {
-        if (container.scrollTop + container.clientHeight < container.scrollHeight - 20) {
-          container.scrollTo({
-            top: container.scrollHeight - container.clientHeight,
-            behavior: 'auto', // 二次滚动使用即时滚动，避免动画叠加
-          });
-        }
-        // 滚动完成后重置标记
-        isAutoScrollingRef.current = false;
-      };
-
-      // 使用 requestAnimationFrame 代替 setTimeout，性能更好
-      setTimeout(checkScrollPosition, 100);
-    });
+    container.scrollTop = container.scrollHeight - container.clientHeight;
+    isNearBottomRef.current = true;
+    isAutoScrollingRef.current = false;
   }, []);
 
   // 修改计算高度的函数
@@ -1105,19 +1082,17 @@ const ChatRoom: React.FC = () => {
     }
   };
   // 修改 useEffect 来监听消息变化并自动滚动
-  useEffect(() => {
+  useLayoutEffect(() => {
     // 只有在以下情况才自动滚动到底部：
     // 1. 是当前用户发送的消息
     // 2. 用户已经在查看最新消息（在底部附近）
     // 3. 不是由于加载历史消息导致的变化
 
-    if (isNearBottom && !loadingRef.current) {
+    if (isNearBottomRef.current && !loadingRef.current) {
       // 添加短暂延迟，避免与其他滚动机制冲突
-      setTimeout(() => {
-        scrollToBottom();
-      }, 100);
+      scrollToBottom();
     }
-  }, [messages]); // 监听消息数组变化
+  }, [messages, scrollToBottom]); // 监听消息数组变化
   // 初始化时获取在线用户列表（仅在列表可见时）
   useEffect(() => {
     if (isUserListVisible) {
@@ -1314,29 +1289,34 @@ const ChatRoom: React.FC = () => {
 
     const nextIsNearBottom = distanceFromBottom <= threshold;
     isNearBottomRef.current = nextIsNearBottom;
-    setIsNearBottom(nextIsNearBottom);
   };
 
-  // 修改滚动处理函数
+  const scrollFrameRef = useRef<number | null>(null);
+
+  // Keep the hot scroll path to at most one DOM read per animation frame.
   const handleScroll = () => {
-    // 如果是自动滚动触发的，不执行其他逻辑
-    if (isAutoScrollingRef.current) return;
+    if (isAutoScrollingRef.current || scrollFrameRef.current !== null) return;
 
-    const container = messageContainerRef.current;
-    if (!container || loadingRef.current || !hasMore) return;
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      const container = messageContainerRef.current;
+      if (!container) return;
 
-    // 检查是否在底部
-    checkIfNearBottom();
+      checkIfNearBottom();
 
-    // 当滚动到顶部时，使用游标分页加载更早的历史消息
-    if (container.scrollTop === 0) {
-      const oldestId = messagesRef.current[0]?.id;
-      const cursorMessageId = oldestId ? Number(oldestId) : undefined;
-      if (cursorMessageId != null && !Number.isNaN(cursorMessageId)) {
-        loadHistoryMessages(false, cursorMessageId);
+      if (container.scrollTop <= 1 && !loadingRef.current && hasMore) {
+        const oldestId = messagesRef.current[0]?.id;
+        const cursorMessageId = oldestId ? Number(oldestId) : undefined;
+        if (cursorMessageId != null && !Number.isNaN(cursorMessageId)) {
+          loadHistoryMessages(false, cursorMessageId);
+        }
       }
-    }
+    });
   };
+
+  useEffect(() => () => {
+    if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
+  }, []);
 
   // 初始化时加载历史消息
   useEffect(() => {
@@ -1590,16 +1570,9 @@ const ChatRoom: React.FC = () => {
     }
 
     // 实时检查是否在底部
-    const container = messageContainerRef.current;
-    if (container) {
-      const threshold = 30;
-      const distanceFromBottom =
-        container.scrollHeight - container.scrollTop - container.clientHeight;
-      if (distanceFromBottom <= threshold && !isAutoScrollingRef.current) {
+    /* Bottom tracking is handled by the messages layout effect.
         // 避免重复滚动，添加防抖
-        setTimeout(scrollToBottom, 100);
-      }
-    }
+    */
   };
 
   const handleUserMessageRevoke = (data: any) => {
