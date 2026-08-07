@@ -83,6 +83,7 @@ import {
 } from 'antd';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList as List } from 'react-window';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import styles from './index.less';
 import { externalImageProps, UNDERCOVER_NOTIFICATION } from '@/constants';
 import eventBus from '@/utils/eventBus';
@@ -468,15 +469,13 @@ const ChatRoom: React.FC = () => {
   // inputValue state 已移除，改用非受控 inputRef.current.value 直接读写，避免打字触发全量重渲染
   const [isEmojiPickerVisible, setIsEmojiPickerVisible] = useState(false);
   const [isEmoticonPickerVisible, setIsEmoticonPickerVisible] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messageContainerRef = useRef<HTMLDivElement>(null);
+  const messageListRef = useRef<VirtuosoHandle>(null);
   const { initialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
   const [messageApi, contextHolder] = message.useMessage();
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   const isNearBottomRef = useRef(true);
   const isManuallyClosedRef = useRef(false);
-  const isAutoScrollingRef = useRef(false); // 添加自动滚动标记
   const [expandedImages, setExpandedImages] = useState<Set<string>>(new Set()); // 添加展开图片的状态
 
   // 读取布局模式，top 模式下需要额外减去 header 高度避免出现滚动条
@@ -552,6 +551,9 @@ const ChatRoom: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const pageSize = 10;
+  // Virtuoso 在向顶部插入历史消息时通过该索引保持当前视口位置。
+  const INITIAL_FIRST_ITEM_INDEX = 1_000_000;
+  const [firstItemIndex, setFirstItemIndex] = useState(INITIAL_FIRST_ITEM_INDEX);
   const [loadedMessageIds] = useState<Set<string>>(new Set());
   const loadingRef = useRef(false); // 添加loadingRef防止重复请求
   const messagesRef = useRef<Message[]>([]);
@@ -864,16 +866,15 @@ const ChatRoom: React.FC = () => {
   const [selectedLuckyBagId, setSelectedLuckyBagId] = useState<string | null>(null);
 
   const scrollToBottom = useCallback(() => {
-    const container = messageContainerRef.current;
-    if (!container) return;
-
-    // Live messages should track the bottom immediately. Starting a new smooth
-    // animation for every message makes wheel and touch scrolling feel sticky.
-    isAutoScrollingRef.current = true;
-    container.scrollTop = container.scrollHeight - container.clientHeight;
+    const lastIndex = messagesRef.current.length - 1;
+    if (lastIndex < 0) return;
+    messageListRef.current?.scrollToIndex({
+      index: firstItemIndex + lastIndex,
+      align: 'end',
+      behavior: 'auto',
+    });
     isNearBottomRef.current = true;
-    isAutoScrollingRef.current = false;
-  }, []);
+  }, [firstItemIndex]);
 
   // 修改计算高度的函数
   const updateListHeight = useCallback(() => {
@@ -1175,10 +1176,6 @@ const ChatRoom: React.FC = () => {
       loadingRef.current = true;
       setLoading(true);
 
-      // 记录当前滚动高度
-      const container = messageContainerRef.current;
-      const oldScrollHeight = container?.scrollHeight || 0;
-
       const requestBody: API.MessageQueryRequest = {
         pageSize,
         roomId: -1,
@@ -1234,6 +1231,7 @@ const ChatRoom: React.FC = () => {
           setMessages(orderedMessages);
         } else if (historyMessages.length > 0) {
           // 加载更多历史消息时，新的历史消息应该在当前消息的上面
+          setFirstItemIndex((index) => index - historyMessages.length);
           setMessages((prev) => {
             const next = [...(historyMessages.reverse() as Message[]), ...prev];
             messagesRef.current = next;
@@ -1249,21 +1247,6 @@ const ChatRoom: React.FC = () => {
           setTimeout(() => {
             scrollToBottom();
           }, 100);
-        } else {
-          // 保持滚动位置
-          requestAnimationFrame(() => {
-            if (container) {
-              // 防止自动滚动检测干扰
-              isAutoScrollingRef.current = true;
-              const newScrollHeight = container.scrollHeight;
-              container.scrollTop = newScrollHeight - oldScrollHeight;
-
-              // 重置标记
-              setTimeout(() => {
-                isAutoScrollingRef.current = false;
-              }, 100);
-            }
-          });
         }
       }
     } catch (error) {
@@ -1275,48 +1258,14 @@ const ChatRoom: React.FC = () => {
     }
   };
 
-  // 检查是否在底部
-  const checkIfNearBottom = () => {
-    // 如果正在自动滚动，不更新状态
-    if (isAutoScrollingRef.current) return;
-
-    const container = messageContainerRef.current;
-    if (!container) return;
-
-    const threshold = 100; // 距离底部100px以内都认为是在底部
-    const distanceFromBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight;
-
-    const nextIsNearBottom = distanceFromBottom <= threshold;
-    isNearBottomRef.current = nextIsNearBottom;
-  };
-
-  const scrollFrameRef = useRef<number | null>(null);
-
-  // Keep the hot scroll path to at most one DOM read per animation frame.
-  const handleScroll = () => {
-    if (isAutoScrollingRef.current || scrollFrameRef.current !== null) return;
-
-    scrollFrameRef.current = requestAnimationFrame(() => {
-      scrollFrameRef.current = null;
-      const container = messageContainerRef.current;
-      if (!container) return;
-
-      checkIfNearBottom();
-
-      if (container.scrollTop <= 1 && !loadingRef.current && hasMore) {
-        const oldestId = messagesRef.current[0]?.id;
-        const cursorMessageId = oldestId ? Number(oldestId) : undefined;
-        if (cursorMessageId != null && !Number.isNaN(cursorMessageId)) {
-          loadHistoryMessages(false, cursorMessageId);
-        }
-      }
-    });
-  };
-
-  useEffect(() => () => {
-    if (scrollFrameRef.current !== null) cancelAnimationFrame(scrollFrameRef.current);
-  }, []);
+  const handleHistoryStartReached = useCallback(() => {
+    if (loadingRef.current || !hasMore) return;
+    const oldestId = messagesRef.current[0]?.id;
+    const cursorMessageId = oldestId ? Number(oldestId) : undefined;
+    if (cursorMessageId != null && !Number.isNaN(cursorMessageId)) {
+      loadHistoryMessages(false, cursorMessageId);
+    }
+  }, [hasMore]);
 
   // 初始化时加载历史消息
   useEffect(() => {
@@ -1475,15 +1424,19 @@ const ChatRoom: React.FC = () => {
 
   // 添加滚动到指定消息的函数
   const scrollToMessage = (messageId: string) => {
-    const messageElement = document.getElementById(`message-${messageId}`);
-    if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // 添加高亮效果
-      messageElement.classList.add(styles.highlighted);
-      setTimeout(() => {
-        messageElement.classList.remove(styles.highlighted);
-      }, 2000);
-    }
+    const index = messagesRef.current.findIndex((item) => item.id === messageId);
+    if (index < 0) return;
+    messageListRef.current?.scrollToIndex({
+      index: firstItemIndex + index,
+      align: 'center',
+      behavior: 'smooth',
+    });
+    // 虚拟列表会在滚动后才挂载目标消息，稍后再添加高亮效果。
+    setTimeout(() => {
+      const messageElement = document.getElementById(`message-${messageId}`);
+      messageElement?.classList.add(styles.highlighted);
+      setTimeout(() => messageElement?.classList.remove(styles.highlighted), 2000);
+    }, 350);
   };
 
   // 添加处理@消息的函数
@@ -1545,19 +1498,6 @@ const ChatRoom: React.FC = () => {
         newMessages = [...prev, processedMessage];
       }
 
-      // 检查是否在底部
-      const container = messageContainerRef.current;
-      if (container) {
-        const threshold = 30; // 30px的阈值
-        const distanceFromBottom =
-          container.scrollHeight - container.scrollTop - container.clientHeight;
-        const isNearBottom = distanceFromBottom <= threshold;
-
-        // 只有在底部时才限制消息数量
-        if (isNearBottom && newMessages.length > 25) {
-          return newMessages.slice(-25);
-        }
-      }
       return newMessages;
     });
 
@@ -2392,11 +2332,10 @@ const ChatRoom: React.FC = () => {
               const isLatestMessage = lastMessage?.content === content;
               if (
                 isLatestMessage &&
-                (isNearBottomRef.current || lastMessage?.sender.id === String(currentUser?.id)) &&
-                !isAutoScrollingRef.current // 避免重复滚动
+                (isNearBottomRef.current || lastMessage?.sender.id === String(currentUser?.id))
               ) {
-                // 添加短暂延迟，确保图片已完全渲染
-                setTimeout(scrollToBottom, 200);
+                // 图片会改变动态行高，让 Virtuoso 在测量后继续贴住底部。
+                setTimeout(() => messageListRef.current?.autoscrollToBottom(), 200);
               }
             }}
           />
@@ -2722,23 +2661,29 @@ const ChatRoom: React.FC = () => {
     handleSendRef.current(content);
   }, []);
 
-  // 复读检测：用 useMemo 缓存，避免每次渲染都做 O(n²) 遍历
+  // 复读检测：按连续消息分组，一次线性扫描完成。
   const { repeatMap, skipSet } = useMemo(() => {
     const rMap = new Map<string, User[]>();
     const sSet = new Set<string>();
-    for (let i = 0; i < messages.length; i++) {
-      if (sSet.has(messages[i].id)) continue;
+    for (let i = 0; i < messages.length;) {
       const baseContent = messages[i].content;
-      if (messages[i].quotedMessage) continue;
-      if (/\[redpacket\]/i.test(baseContent)) continue;
-      if (/\[luckybag\]/i.test(baseContent)) continue;
+      if (
+        messages[i].quotedMessage ||
+        /\[redpacket\]/i.test(baseContent) ||
+        /\[luckybag\]/i.test(baseContent)
+      ) {
+        i += 1;
+        continue;
+      }
       const group: Message[] = [messages[i]];
-      for (let j = i + 1; j < messages.length; j++) {
-        if (messages[j].content === baseContent && !messages[j].quotedMessage) {
-          group.push(messages[j]);
-        } else {
-          break;
-        }
+      let nextIndex = i + 1;
+      while (
+        nextIndex < messages.length &&
+        messages[nextIndex].content === baseContent &&
+        !messages[nextIndex].quotedMessage
+      ) {
+        group.push(messages[nextIndex]);
+        nextIndex += 1;
       }
       if (group.length >= 3) {
         const seenUserIds = new Set<string>();
@@ -2756,6 +2701,7 @@ const ChatRoom: React.FC = () => {
         }
         rMap.set(messages[i].id, repeatUsers);
       }
+      i = nextIndex;
     }
     return { repeatMap: rMap, skipSet: sSet };
   }, [messages]);
@@ -2877,6 +2823,7 @@ const ChatRoom: React.FC = () => {
         // 清空消息列表
         setMessages([]);
         messagesRef.current = [];
+        setFirstItemIndex(INITIAL_FIRST_ITEM_INDEX);
         // 重置分页状态
         setHasMore(true);
         // 清空已加载的消息ID集合
@@ -3408,28 +3355,39 @@ const ChatRoom: React.FC = () => {
         />
       </Modal>
 
-      <div
+      <Virtuoso
         className={styles.messageContainer}
-        ref={messageContainerRef}
-        onScroll={handleScroll}
+        ref={messageListRef}
+        data={messages}
+        firstItemIndex={firstItemIndex}
+        initialTopMostItemIndex={firstItemIndex + Math.max(messages.length - 1, 0)}
+        computeItemKey={(_, msg) => msg.id}
+        defaultItemHeight={88}
+        increaseViewportBy={{ top: 300, bottom: 500 }}
+        atBottomThreshold={100}
+        atBottomStateChange={(atBottom) => {
+          isNearBottomRef.current = atBottom;
+        }}
+        followOutput={(atBottom) => (atBottom || isNearBottomRef.current ? 'auto' : false)}
+        startReached={handleHistoryStartReached}
         onClick={() => {
           // 点击消息区域时，如果功能面板是显示状态，则收起面板
           if (isMobileToolbarVisible) {
             setIsMobileToolbarVisible(false);
           }
         }}
-      >
-        {loading && (
-          <div className={styles.loadingWrapper}>
-            <Spin />
-          </div>
-        )}
-        {(() => {
-          return messages.map((msg) => {
-            if (skipSet.has(msg.id)) return null;
-            return (
+        components={{
+          Header: () => loading ? (
+            <div className={styles.loadingWrapper}>
+              <Spin />
+            </div>
+          ) : null,
+        }}
+        itemContent={(_, msg) => {
+          if (skipSet.has(msg.id)) return null;
+          return (
+            <div className={styles.virtualMessageItem}>
               <MessageItem
-                key={msg.id}
                 msg={msg}
                 currentUser={currentUser}
                 isMentioned={notificationIds.has(msg.id)}
@@ -3446,11 +3404,10 @@ const ChatRoom: React.FC = () => {
                 userRemarks={userRemarks}
                 userIpInfo={userIpInfo}
               />
-            );
-          });
-        })()}
-        <div ref={messagesEndRef} />
-      </div>
+            </div>
+          );
+        }}
+      />
 
       {/* 用户列表隐藏时显示浮动按钮 */}
       {!isUserListVisible && (

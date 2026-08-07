@@ -122,14 +122,11 @@
   }
 
   .messageContainer {
+    --message-horizontal-inset: 40px;
     grid-area: messages;
     padding: 20px;
-    overflow-y: auto;
     overflow-x: hidden;
     padding-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
     background: rgba(255, 255, 255, 0.8);
     // 滚动层自身不做实时模糊，保留外层卡片的玻璃效果，避免滚动时持续重绘。
     backdrop-filter: none;
@@ -143,9 +140,9 @@
     scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
 
     @media screen and (max-width: 768px) {
+      --message-horizontal-inset: 20px;
       margin: 8px;
       padding: 10px;
-      gap: 10px;
       height: calc(100% - 70px);
     }
 
@@ -419,6 +416,15 @@
         margin: -8px;
       }
     }
+  }
+
+  .virtualMessageItem {
+    display: flex;
+    flex-direction: column;
+    width: calc(100% - var(--message-horizontal-inset));
+    min-width: 0;
+    box-sizing: border-box;
+    padding-bottom: 12px;
   }
 
   .userList {
