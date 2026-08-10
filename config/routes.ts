@@ -99,6 +99,14 @@ export default [
         name: '游戏大全',
         requireAuth: false
       },
+      {
+        icon: 'DesktopOutlined',
+        path: '/game/landlords',
+        component: './Game/Landlords',
+        name: '斗地主',
+        requireAuth: true
+      },
+      {path: '/game/landlords/:roomId', component: './Game/Landlords/LandlordsRoom', requireAuth: true},
     ],
   },
   {
