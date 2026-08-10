@@ -45,6 +45,13 @@ export interface ActionBarProps {
   // 等待提示
   waitForName?: string;
   waitForAction?: 'play' | 'rob';
+
+  // 邀请
+  roomId?: string;
+  inviteCooldown?: number;
+  onSendInvite?: () => void;
+  playerCount?: number;
+  maxPlayers?: number;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -71,11 +78,18 @@ const ActionBar: React.FC<ActionBarProps> = ({
   onLeave,
   waitForName,
   waitForAction = 'play',
+  roomId,
+  inviteCooldown = 0,
+  onSendInvite,
+  playerCount = 0,
+  maxPlayers = 3,
 }) => {
   // 等待阶段
   if (isWaitingPhase(phase)) {
+    // 房间满人时所有人都不能再发送邀请
+    const isRoomFull = playerCount >= maxPlayers;
     return (
-      <Space style={{ width: '100%', justifyContent: 'center' }}>
+      <Space style={{ width: '100%', justifyContent: 'center' }} size="middle">
         <Button onClick={onReady} type={isReady ? 'default' : 'primary'}>
           {isReady ? '取消准备' : '准备'}
         </Button>
@@ -87,6 +101,15 @@ const ActionBar: React.FC<ActionBarProps> = ({
             style={{ backgroundColor: '#16a34a' }}
           >
             开始游戏
+          </Button>
+        )}
+        {roomId && onSendInvite && !isRoomFull && (
+          <Button
+            onClick={onSendInvite}
+            disabled={inviteCooldown > 0}
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+          >
+            {inviteCooldown > 0 ? `邀请中 (${inviteCooldown}s)` : '邀请好友'}
           </Button>
         )}
         <Button danger onClick={onLeave}>

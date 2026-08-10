@@ -182,21 +182,27 @@ export const createGameStartHandler = (
 
 /**
  * 创建 GAME_CHAT 处理器
+ * @param setChatMessages 设置聊天消息列表
+ * @param getCurrentUserId 获取当前用户 ID 的函数（handler 可能晚于组件挂载创建，用 getter 保证最新值）
  */
 export const createGameChatHandler = (
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
+  getCurrentUserId: () => string | number | null | undefined = () => null,
 ) => {
   return (payload: any) => {
     const data = payload?.data ?? payload;
-    console.debug('[landlords] chat', data);
+    const currentUserId = getCurrentUserId();
+    const isMe =
+      currentUserId != null && String(data.userId) === String(currentUserId);
     setChatMessages((prev) => [
       ...prev,
       {
         id: `${Date.now()}-${Math.random()}`,
         userId: data.userId,
-        userName: data.userName || '未知',
+        userName: data.userName || '',
         content: data.content || '',
         timestamp: Date.now(),
+        isMe,
       },
     ]);
   };
