@@ -16,10 +16,11 @@
  *
  * 业务逻辑全部由 useGameState Hook 提供。
  */
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { Button, Tag, message as antdMessage, Alert } from 'antd';
 import { ArrowLeft } from 'lucide-react';
-import { history } from '@umijs/max';
+import { history, useModel } from '@umijs/max';
+import { wsService } from '@/services/websocket';
 import PlayerInfo from './components/PlayerInfo';
 import LandlordCards from './components/LandlordCards';
 import HandCards from './components/HandCards';
@@ -33,6 +34,14 @@ import { isWaitingPhase, isPlayingPhase, isRobbingPhase, canPlayPhase } from './
 
 const LandlordsRoom: React.FC = () => {
   const roomId = window.location.pathname.split('/').pop() || '';
+  const { initialState } = useModel('@@initialState');
+  const currentUserInfo = initialState?.currentUser;
+
+  // 邀请冷却状态
+  const [inviteCooldown, setInviteCooldown] = useState<number>(0);
+  const inviteCooldownRef = useRef<NodeJS.Timeout | null>(null);
+
+  const userId = currentUserInfo?.id;
 
   const {
     gameState,
@@ -119,12 +128,109 @@ const LandlordsRoom: React.FC = () => {
     history.push('/game/landlords');
   }, [leaveRoom, roomId]);
 
-  // 临时离开
+  // 房间超时解散（后端定时任务触发：凑不齐人 / 全员离线）
+  // 收到广播后立即弹提示并跳回房间列表，避免用户卡在房间页
   useEffect(() => {
-    if (tempLeaveInfo) {
-    }
-  }, [tempLeaveInfo]);
+    if (!userId || !roomId) return undefined;
 
+    const handler = (data: any) => {
+      const payload = data?.data ?? data;
+      if (payload?.roomId && String(payload.roomId) === String(roomId)) {
+        const reason = payload.reason || '房间已解散';
+        antdMessage.warning(reason);
+        // 与 handleLeave 保持一致：标记本地已离开 → 调 leaveRoom → 跳列表
+        localStorage.setItem(
+          'landlords_left_room',
+          JSON.stringify({ roomId, timestamp: Date.now(), force: true }),
+        );
+        leaveRoom();
+        history.push('/game/landlords');
+      }
+    };
+
+    wsService.addMessageHandler('gameRoomClosed', handler);
+    return () => {
+      wsService.removeMessageHandler('gameRoomClosed', handler);
+    };
+  }, [userId, roomId, leaveRoom]);
+
+  // 发送邀请到鱼窝
+  const handleSendInvite = useCallback(() => {
+    if (!currentUserInfo?.id) {
+      antdMessage.error('请先登录！');
+      return;
+    }
+
+    if (inviteCooldown > 0) {
+      antdMessage.warning(`请等待 ${inviteCooldown} 秒后再发送邀请`);
+      return;
+    }
+
+    if (!roomId) {
+      antdMessage.error('房间不存在，无法发送邀请');
+      return;
+    }
+
+    // 创建邀请消息
+    const inviteMessage = `[invite/landlords]${roomId}[/invite]`;
+
+    // 使用全局 WebSocket 服务发送消息
+    wsService.send({
+      type: 2,
+      userId: -1,
+      data: {
+        type: 'chat',
+        content: {
+          message: {
+            id: `${Date.now()}`,
+            content: inviteMessage,
+            sender: {
+              id: String(currentUserInfo.id),
+              name: currentUserInfo.userName || '游客',
+              avatar: currentUserInfo.userAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=visitor',
+              level: currentUserInfo.level || 1,
+              isAdmin: currentUserInfo.userRole === 'admin',
+            },
+            timestamp: new Date(),
+          },
+        },
+      },
+    });
+
+    // 设置冷却时间
+    setInviteCooldown(60);
+
+    // 启动倒计时
+    if (inviteCooldownRef.current) {
+      clearInterval(inviteCooldownRef.current);
+    }
+
+    inviteCooldownRef.current = setInterval(() => {
+      setInviteCooldown((prev) => {
+        if (prev <= 1) {
+          if (inviteCooldownRef.current) {
+            clearInterval(inviteCooldownRef.current);
+            inviteCooldownRef.current = null;
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    antdMessage.success('邀请已发送到聊天室');
+  }, [currentUserInfo, roomId, inviteCooldown]);
+
+  // 清理冷却计时器
+  useEffect(() => {
+    return () => {
+      if (inviteCooldownRef.current) {
+        clearInterval(inviteCooldownRef.current);
+      }
+    };
+  }, []);
+
+  // 临时离开（UI 由下方 tempLeaveInfo 渲染，这里不再留空 effect）
   // 标准化玩家数据
   const formatPlayer = (player: PlayerState | null): PlayerState => ({
     userId: player?.userId || 0,
@@ -311,6 +417,8 @@ const LandlordsRoom: React.FC = () => {
           backgroundColor: '#ffffff',
           borderTop: '1px solid #e5e7eb',
           display: 'flex',
+          minHeight: 0,
+          overflow: 'hidden',
         }}
       >
         {/* 我的信息 18% */}
@@ -383,6 +491,11 @@ const LandlordsRoom: React.FC = () => {
               onCancelRobot={cancelRobot}
               onSetRobot={setRobot}
               onLeave={handleLeave}
+              roomId={roomId}
+              inviteCooldown={inviteCooldown}
+              onSendInvite={handleSendInvite}
+              playerCount={gameState.players?.length || 0}
+              maxPlayers={3}
             />
           </div>
 
@@ -426,13 +539,14 @@ const LandlordsRoom: React.FC = () => {
             flexDirection: 'column',
             padding: 12,
             minHeight: 0,
+            overflow: 'hidden',
             borderLeft: '1px solid #e5e7eb',
           }}
         >
           <ChatSidebar
             messages={chatMessages}
             onSend={sendChat}
-            currentUserId={currentUser?.userId}
+            currentUserId={currentUserInfo?.id ?? currentUser?.userId}
           />
         </div>
       </div>

@@ -109,7 +109,7 @@ export function useGameState(roomId: string | undefined) {
       setLoading,
     );
 
-    handleGameChatRef.current = createGameChatHandler(setChatMessages);
+    handleGameChatRef.current = createGameChatHandler(setChatMessages, () => userIdRef.current);
     handleGameReadyRef.current = createReadyHandler(setGameState);
     handleLeaveRoomRef.current = createLeaveRoomHandler(setTempLeaveInfo);
     handleTurnNotifyRef.current = createTurnNotifyHandler(
@@ -281,7 +281,7 @@ export function useGameState(roomId: string | undefined) {
     if (currentRoomId && currentUser) {
       sendGameMessage(MSG_TYPE.GAME_CHAT, {
         content,
-        userName: currentUser.userName || '玩家',
+        userName: currentUser.userName || '',
       });
     }
   };

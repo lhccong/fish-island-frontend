@@ -3,8 +3,8 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Card, Button, Tabs, List, Spin, message as antMessage, Empty, Tag, Space, Modal, Alert } from 'antd';
-import { Users, RefreshCw, Plus, Lock, Crown, PlayCircle, AlertCircle } from 'lucide-react';
+import { Card, Button, Tabs, List, Spin, message as antMessage, Empty, Tag, Space, Modal, Alert, Avatar, Tooltip } from 'antd';
+import { Users, RefreshCw, Plus, Lock, Crown, AlertCircle } from 'lucide-react';
 import { wsService } from '@/services/websocket';
 import { useModel, history } from '@umijs/max';
 import { RoomRestriction, RoomStateBackend } from './types';
@@ -14,6 +14,8 @@ const MSG_TYPE = {
   GAME_CREATE_ROOM: 'gameCreateRoom',
   GAME_ROOM_ADDED: 'gameRoomAdded',
   GAME_ROOM_REMOVED: 'gameRoomRemoved',
+  // 房间超时解散：如果当前用户被该房间限制，自动解除限制
+  GAME_ROOM_CLOSED: 'gameRoomClosed',
 };
 
 const codeToGameTypeName = (code: string) => {
@@ -110,6 +112,14 @@ const LandlordsIndex: React.FC = () => {
     }
   }, []);
 
+  // 房间超时解散：如果是自己受限的房间，立即解除限制（这样能直接进其它房间）
+  const handleGameRoomClosed = useCallback((payload: any) => {
+    const data = payload?.data ?? payload;
+    if (data?.roomId) {
+      setRestriction((prev) => (prev?.roomId === data.roomId ? null : prev));
+    }
+  }, []);
+
   const handleGameCreateRoom = useCallback((payload: any) => {
     const data = payload?.data ?? payload;
     if (data?.roomId) {
@@ -128,6 +138,7 @@ const LandlordsIndex: React.FC = () => {
       [MSG_TYPE.GAME_ROOM_LIST]: handleGameRoomList,
       [MSG_TYPE.GAME_ROOM_ADDED]: handleGameRoomAdded,
       [MSG_TYPE.GAME_ROOM_REMOVED]: handleGameRoomRemoved,
+      [MSG_TYPE.GAME_ROOM_CLOSED]: handleGameRoomClosed,
       [MSG_TYPE.GAME_CREATE_ROOM]: handleGameCreateRoom,
       error: handleError,
     };
@@ -172,6 +183,7 @@ const LandlordsIndex: React.FC = () => {
     handleGameRoomList,
     handleGameRoomAdded,
     handleGameRoomRemoved,
+    handleGameRoomClosed,
     handleGameCreateRoom,
     handleError,
   ]);
@@ -326,11 +338,15 @@ const LandlordsIndex: React.FC = () => {
         <Tabs
           activeKey={selectedGameType}
           onChange={(key) => {
+            // 癞子模式尚未实现，禁止切换
+            if (key === 'laizi') {
+              return;
+            }
             setSelectedGameType(key);
           }}
           items={[
             { key: 'classic', label: '经典模式' },
-            { key: 'laizi', label: '癞子模式' },
+            { key: 'laizi', label: '癞子模式（开发中）', disabled: true },
           ]}
         />
       </Card>
@@ -427,8 +443,8 @@ const LandlordsIndex: React.FC = () => {
                 const playerCount = item.playerCount || 0;
                 const maxPlayers = item.maxPlayers || 3;
                 const isFull = playerCount >= maxPlayers;
-                const isPlaying = item.state === RoomStateBackend.PLAYING || item.state === RoomStateBackend.ROBBING;
                 const isMyRoom = restriction?.roomId === item.roomId;
+                const players: any[] = Array.isArray(item.players) ? item.players : [];
 
                 return (
                   <List.Item>
@@ -448,9 +464,10 @@ const LandlordsIndex: React.FC = () => {
                           {isMyRoom && (
                             <Tag color="warning">你的房间</Tag>
                           )}
-                          {isPlaying && (
-                            <Tag color="error" icon={<PlayCircle />}>
-                              游戏中
+                          {/* 房间状态标签：等待/准备/发牌/叫地主/游戏中/结束 */}
+                          {item.state && item.state !== RoomStateBackend.CLOSED && (
+                            <Tag color={stateToTagColor(item.state)}>
+                              {stateToLabel(item.state)}
                             </Tag>
                           )}
                           {item.needPassword && (
@@ -464,11 +481,82 @@ const LandlordsIndex: React.FC = () => {
                           )}
                         </Space>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, color: '#6b7280', fontSize: 14 }}>
-                        <Users size={14} />
-                        <span>
-                          {playerCount}/{maxPlayers} 人
+
+                      {/* 玩家头像区 */}
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                          {Array.from({ length: maxPlayers }).map((_, idx) => {
+                            const p = players[idx];
+                            if (!p) {
+                              // 空位占位
+                              return (
+                                <div
+                                  key={`empty-${idx}`}
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    border: '1.5px dashed #d1d5db',
+                                    backgroundColor: '#f9fafb',
+                                    marginLeft: idx === 0 ? 0 : -8,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#9ca3af',
+                                    fontSize: 12,
+                                    zIndex: maxPlayers - idx,
+                                  }}
+                                >
+                                  ?
+                                </div>
+                              );
+                            }
+                            const online = p.online !== false;
+                            const tooltipText = `${p.userName || '玩家'}${online ? '' : '（离线）'}`;
+                            return (
+                              <Tooltip key={p.userId ?? idx} title={tooltipText}>
+                                <div
+                                  style={{
+                                    position: 'relative',
+                                    marginLeft: idx === 0 ? 0 : -8,
+                                    zIndex: maxPlayers - idx,
+                                  }}
+                                >
+                                  <Avatar
+                                    src={p.avatar}
+                                    size={36}
+                                    style={{
+                                      border: `2px solid ${online ? '#fff' : '#e5e7eb'}`,
+                                      filter: online ? 'none' : 'grayscale(100%) opacity(0.6)',
+                                      backgroundColor: '#e5e7eb',
+                                    }}
+                                  >
+                                    {(p.userName || '?').charAt(0)}
+                                  </Avatar>
+                                  {/* 在线小圆点 */}
+                                  <span
+                                    style={{
+                                      position: 'absolute',
+                                      right: 0,
+                                      bottom: 0,
+                                      width: 10,
+                                      height: 10,
+                                      borderRadius: '50%',
+                                      backgroundColor: online ? '#22c55e' : '#9ca3af',
+                                      border: '2px solid #fff',
+                                    }}
+                                  />
+                                </div>
+                              </Tooltip>
+                            );
+                          })}
+                        </div>
+                        <span style={{ color: '#6b7280', fontSize: 13 }}>
+                          {playerCount}/{maxPlayers}
                         </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, color: '#6b7280', fontSize: 13 }}>
                         <span style={{ marginLeft: 'auto' }}>
                           {gameTypeToLabel(item.gameType)}
                         </span>

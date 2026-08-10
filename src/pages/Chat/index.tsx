@@ -1984,6 +1984,9 @@ const ChatRoom: React.FC = () => {
           message.error('加入房间失败，请稍后再试');
         }
         break;
+      case 'landlords':
+        history.push(`/game/landlords/${roomId}`);
+        break;
       default:
         break;
     }
@@ -2288,6 +2291,9 @@ const ChatRoom: React.FC = () => {
           break;
         case 'draw':
           game = '你画我猜';
+          break;
+        case 'landlords':
+          game = '斗地主';
           break;
       }
       return (

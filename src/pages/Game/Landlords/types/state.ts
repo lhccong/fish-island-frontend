@@ -71,6 +71,8 @@ export interface ChatMessage {
   userName: string;
   content: string;
   timestamp: number;
+  /** 是否是当前用户自己发的（前端在接收广播时根据当前 userId 标记，避免渲染时再比较出错） */
+  isMe?: boolean;
 }
 
 /**
