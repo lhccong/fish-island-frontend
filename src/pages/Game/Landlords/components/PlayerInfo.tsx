@@ -12,6 +12,7 @@ import React from 'react';
 import { Avatar, Tag } from 'antd';
 import { Crown } from 'lucide-react';
 import CardBack from './CardBack';
+import { isWaitingPhase, isPlayingPhase, isRobbingPhase, isEndingPhase } from '../types/phase';
 
 interface PlayerInfoProps {
   player: {
@@ -106,10 +107,11 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   };
 
   // 判断是否应该显示"已准备"标签（仅在等待阶段显示）
-  const showReadyTag = isReady && !isLandlord && (!gamePhase || gamePhase === 'waiting' || gamePhase === 'WAITING');
+  const showReadyTag = isReady && !isLandlord && (!gamePhase || isWaitingPhase(gamePhase));
 
   // 判断是否应该显示地主标签（仅在地主确定后才显示，即 playing 或 ending 阶段）
-  const showLandlordTag = isLandlord && gamePhase && (gamePhase === 'playing' || gamePhase === 'PLAYING' || gamePhase === 'ending' || gamePhase === 'ENDING');
+  const showLandlordTag =
+    isLandlord && !!gamePhase && (isPlayingPhase(gamePhase) || isEndingPhase(gamePhase));
 
   const tagStyle: React.CSSProperties = {
     fontSize: 12,
@@ -119,7 +121,11 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   };
 
   // 判断是否应该显示农民标签（仅在地主确定后才显示，即 playing 或 ending 阶段，且玩家不是地主）
-  const showFarmerTag = !isLandlord && player?.isLandlord !== undefined && gamePhase && (gamePhase === 'playing' || gamePhase === 'PLAYING' || gamePhase === 'ending' || gamePhase === 'ENDING');
+  const showFarmerTag =
+    !isLandlord &&
+    player?.isLandlord !== undefined &&
+    !!gamePhase &&
+    (isPlayingPhase(gamePhase) || isEndingPhase(gamePhase));
 
   // 头像样式
   const avatarContainerStyle: React.CSSProperties = {
@@ -228,7 +234,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   const renderTimer = () => {
     // 仅在 playing/robbing 阶段显示计时器
     if (!isCurrentTurn || !timeLeft || timeLeft <= 0) return null;
-    if (!gamePhase || (gamePhase !== 'playing' && gamePhase !== 'PLAYING' && gamePhase !== 'robbing' && gamePhase !== 'ROBBING')) return null;
+    if (!gamePhase || (!isPlayingPhase(gamePhase) && !isRobbingPhase(gamePhase))) return null;
 
     const isUrgent = timeLeft <= 5;
     return (

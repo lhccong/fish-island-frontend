@@ -6,6 +6,8 @@
  */
 import { message as antMessage } from 'antd';
 import { GameState, GameEvent, PlayerStatus, GameResult, ChatMessage } from '../../types';
+import { GamePhase } from '../../types/enums/game';
+import { RoomStateBackend } from '../../types/enums/room';
 import {
   extractCardIds,
   normalizePlayer,
@@ -13,10 +15,11 @@ import {
   mergeGameState,
 } from '../state';
 
-const VALID_PHASES: readonly string[] = [
-  'waiting', 'dealing', 'robbing', 'landlord_confirmed', 'playing', 'ending', 'closed',
-  'WAITING', 'READY', 'ROBBING', 'PLAYING', 'DISTRIBUTING', 'ENDING', 'CLOSED',
-];
+// 阶段白名单（仅用于判定消息是否携带有效 phase / roomState 字段）
+// 真实 phase 永远经 normalizePhase 归一为小写；
+// roomState 来自后端 RoomStateEnum 永远是大写 —— 故两个白名单不能合并
+const VALID_GAME_PHASES: readonly string[] = Object.values(GamePhase) as readonly string[];
+const VALID_ROOM_STATES: readonly string[] = Object.values(RoomStateBackend) as readonly string[];
 
 /**
  * 创建 GAME_STATE_UPDATE 处理器
@@ -51,8 +54,8 @@ export const createGameStateUpdateHandler = (
       }
     }
 
-    const hasValidPhase = data?.phase && VALID_PHASES.includes(data.phase);
-    const hasValidRoomState = data?.roomState && VALID_PHASES.includes(data.roomState);
+    const hasValidPhase = data?.phase && VALID_GAME_PHASES.includes(data.phase);
+    const hasValidRoomState = data?.roomState && VALID_ROOM_STATES.includes(data.roomState);
     const isPlayerJoinEvent = data?.event === GameEvent.PLAYER_JOIN || data?.players;
     const isPlayerStatusChangeEvent =
       data?.event === GameEvent.PLAYER_STATUS_CHANGE || data?.status;

@@ -8,6 +8,7 @@ import React from 'react';
 import GameTimer from './GameTimer';
 import PlayedCard from './PlayedCard';
 import { PlayerState } from '../types';
+import { isPlayingPhase, isRobbingPhase } from '../types/phase';
 
 export interface PlayAreaProps {
   // 三个位置的玩家
@@ -41,7 +42,7 @@ const PlayArea: React.FC<PlayAreaProps> = ({
   gamePhase,
 }) => {
   // 判断是否应该显示计时器（仅在 playing 或 robbing 阶段）
-  const shouldShowTimer = timeLeft > 0 && gamePhase && (gamePhase === 'playing' || gamePhase === 'PLAYING' || gamePhase === 'robbing' || gamePhase === 'ROBBING');
+  const shouldShowTimer = timeLeft > 0 && gamePhase && (isPlayingPhase(gamePhase) || isRobbingPhase(gamePhase));
   const renderPlayerCards = (
     player: PlayerState | null | undefined,
     align: 'left' | 'right' | 'center',

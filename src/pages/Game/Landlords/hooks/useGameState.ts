@@ -135,6 +135,7 @@ export function useGameState(roomId: string | undefined) {
       setGameState,
       setLoading,
       setGameResult,
+      roomIdRef.current || '',
     );
 
     handleActionResultRef.current = createActionResultHandler(

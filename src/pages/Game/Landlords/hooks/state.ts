@@ -66,6 +66,7 @@ export const normalizePlayer = (
     isReady: p.ready || p.isReady || false,
     isLandlord,
     isOnline: p.online ?? p.isOnline ?? true,
+    isRobotControlled: p.isRobotControlled ?? false,
     currentPlayedCards: currentPlayedCardIds,
   };
 };

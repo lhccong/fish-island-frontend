@@ -24,27 +24,15 @@ export const normalizePhase = (phase: string | undefined): string => {
   return 'waiting';
 };
 
-// 检查阶段是否在等待中
-export const isWaitingPhase = (phase: string): boolean => {
-  return phase === 'waiting' || phase === 'WAITING';
-};
+// 调用方在 setGameState 入口统一过 normalizePhase，
+// 故 isXxxPhase 只判断小写 —— 无需再写大写 OR
+export const isWaitingPhase = (phase: string): boolean => phase === 'waiting';
+export const isPlayingPhase = (phase: string): boolean => phase === 'playing';
+export const isRobbingPhase = (phase: string): boolean => phase === 'robbing';
+export const isEndingPhase = (phase: string): boolean => phase === 'ending';
 
-// 检查阶段是否在游戏中
-export const isPlayingPhase = (phase: string): boolean => {
-  return phase === 'playing' || phase === 'PLAYING';
-};
+export const isLandlordConfirmedPhase = (phase: string): boolean => phase === 'landlord_confirmed';
 
-// 检查阶段是否在叫地主
-export const isRobbingPhase = (phase: string): boolean => {
-  return phase === 'robbing' || phase === 'ROBBING';
-};
-
-// 检查阶段是否在确定地主（显示底牌）
-export const isLandlordConfirmedPhase = (phase: string): boolean => {
-  return phase === 'landlord_confirmed';
-};
-
-// 检查阶段是否可以出牌（地主确定后或出牌中）
 export const canPlayPhase = (phase: string): boolean => {
   return isPlayingPhase(phase) || isLandlordConfirmedPhase(phase);
 };

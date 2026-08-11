@@ -8,6 +8,7 @@
 import React from 'react';
 import { Button, Space } from 'antd';
 import { isWaitingPhase, isPlayingPhase, isRobbingPhase } from '../types/phase';
+import { GAME_CONFIG } from '../constants';
 
 export interface ActionBarProps {
   phase: string;
@@ -82,7 +83,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
   inviteCooldown = 0,
   onSendInvite,
   playerCount = 0,
-  maxPlayers = 3,
+  maxPlayers = GAME_CONFIG.playerCount,
 }) => {
   // 等待阶段
   if (isWaitingPhase(phase)) {

@@ -104,9 +104,12 @@ const LandlordsRoom: React.FC = () => {
     return () => clearInterval(id);
   }, [phase, gameState.readyPhaseStartTime]);
 
-  // 至少 2 人准备 + 3 人在场 + 房主 才可开始
+  // 至少 playerCount-1 人准备 + playerCount 人在场 + 房主 才可开始
   const readyCount = gameState.players?.filter((p) => p.isReady).length || 0;
-  const canStart = !!isOwner && readyCount >= 2 && (gameState.players?.length || 0) >= 3;
+  const canStart =
+    !!isOwner &&
+    readyCount >= GAME_CONFIG.playerCount - 1 &&
+    (gameState.players?.length || 0) >= GAME_CONFIG.playerCount;
   const canPlay = isMyTurnToPlay && canPlayPhase(phase);
   const showTimer = timeLeft > 0 && (isPlayingPhase(phase) || isRobbingPhase(phase));
 
@@ -277,21 +280,13 @@ const LandlordsRoom: React.FC = () => {
   }, []);
 
   // 临时离开（UI 由下方 tempLeaveInfo 渲染，这里不再留空 effect）
-  // 标准化玩家数据
-  const formatPlayer = (player: PlayerState | null): PlayerState => ({
-    userId: player?.userId || 0,
-    userName: player?.userName || player?.nickname || '等待加入...',
-    avatar: player?.avatar || '',
-    cardCount: player?.cardCount || 0,
-    isLandlord: player?.isLandlord || false,
-    isCurrentPlayer: player?.isCurrentPlayer || false,
-    isReady: player?.isReady || false,
-    isOwner: player?.isOwner || false,
-    isOnline: player?.isOnline ?? true,
-    isRobotControlled: player?.isRobotControlled || false,
-    isMe: player?.isMe || false,
-    currentPlayedCards: player?.currentPlayedCards || [],
-  });
+  // UI 兜底（不污染 normalizePlayer）：座位为空时显示「等待加入...」
+  const placeholderPlayer: PlayerState = {
+    userId: 0,
+    userName: '等待加入...',
+  };
+  const leftPlayerView = leftPlayer ?? placeholderPlayer;
+  const rightPlayerView = rightPlayer ?? placeholderPlayer;
 
   return (
     <div
@@ -342,7 +337,7 @@ const LandlordsRoom: React.FC = () => {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 14 }}>
-            {gameState.players?.length || 0}/3 玩家
+            {gameState.players?.length || 0}/{GAME_CONFIG.playerCount} 玩家
           </span>
           {readyCountdown > 0 && (
             <Tag color={readyCountdown <= 5 ? 'red' : 'orange'} style={{ margin: 0 }}>
@@ -397,7 +392,7 @@ const LandlordsRoom: React.FC = () => {
           }}
         >
           <PlayerInfo
-            player={formatPlayer(leftPlayer)}
+            player={leftPlayerView}
             position="left"
             isCurrentTurn={showTimer ? currentActorId === leftPlayer?.userId : undefined}
             gamePhase={phase}
@@ -463,7 +458,7 @@ const LandlordsRoom: React.FC = () => {
           }}
         >
           <PlayerInfo
-            player={formatPlayer(rightPlayer)}
+            player={rightPlayerView}
             position="right"
             isCurrentTurn={showTimer ? currentActorId === rightPlayer?.userId : undefined}
             gamePhase={phase}
@@ -495,7 +490,7 @@ const LandlordsRoom: React.FC = () => {
           }}
         >
           <PlayerInfo
-            player={formatPlayer(currentUser)}
+            player={currentUser ?? placeholderPlayer}
             position="bottom"
             showCardCount={false}
             isCurrentTurn={showTimer ? currentActorId === currentUser?.userId : undefined}
@@ -556,7 +551,7 @@ const LandlordsRoom: React.FC = () => {
               inviteCooldown={inviteCooldown}
               onSendInvite={handleSendInvite}
               playerCount={gameState.players?.length || 0}
-              maxPlayers={3}
+              maxPlayers={GAME_CONFIG.playerCount}
             />
           </div>
 
