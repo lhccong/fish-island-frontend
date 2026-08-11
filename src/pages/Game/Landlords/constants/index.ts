@@ -2,37 +2,37 @@
  * 斗地主游戏常量定义
  */
 
-// 颜色主题
+// 颜色主题 - 橙色摸鱼岛风格
 export const COLORS = {
-  // 游戏主色调 - 米色/卡其色桌布
-  gamePrimary: '#f5e6c8',
-  gameSecondary: '#e8d4a8',
+  // 游戏主色调
+  gamePrimary: '#f97316',
+  gameSecondary: '#f5f5f5',
 
   // 扑克牌颜色
   cardRed: '#dc2626',
-  cardBlack: '#1f2937',
-  cardBack: '#1e40af',
+  cardBlack: '#333333',
+  cardBack: '#f97316',
 
   // 玩家角色
-  landlordColor: '#dc2626',
-  farmerColor: '#16a34a',
+  landlordColor: '#ff4d4f',
+  farmerColor: '#52c41a',
 
-  // 状态颜色
-  turnColor: '#fbbf24',
-  timerDanger: '#ef4444',
-  timerNormal: '#3b82f6',
+  // 状态颜色 - 橙色风格
+  turnColor: '#f97316',
+  timerDanger: '#ff4d4f',
+  timerNormal: '#f97316',
 
-  // 背景 - 纯白色
+  // 背景 - 白色主题
   gameBg: '#ffffff',
-  tableBg: '#f9fafb',
+  tableBg: '#f5f5f5',
 
   // UI 颜色
   overlayBg: 'rgba(0, 0, 0, 0.85)',
   cardBg: '#ffffff',
   panelBg: '#ffffff',
-  borderColor: '#d9d9d9',
-  textPrimary: '#1f2937',
-  textSecondary: '#6b7280',
+  borderColor: '#e8e8e8',
+  textPrimary: '#333333',
+  textSecondary: '#999999',
 };
 
 // 布局尺寸
@@ -107,5 +107,5 @@ export const PLAYER_STATUS = {
   turn: { label: '轮到', color: 'yellow' },
   offline: { label: '离线', color: 'gray' },
   ready: { label: '已准备', color: 'green' },
- 托管: { label: '托管中', color: 'blue' },
+  托管: { label: '托管中', color: 'orange' },
 };

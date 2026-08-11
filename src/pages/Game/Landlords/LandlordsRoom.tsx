@@ -5,14 +5,14 @@
  * ┌────────────────────────────────────────────────────────────────┐
  * │  顶部导航（高 52）                                                │
  * │  [← 返回]   房间号: <id>   [模式]                                │
- * ├──────────────┬─────────────────────────────┬────────────────────┤
- * │ 左侧 PlayerInfo │   LandlordCards（底牌）   │  右侧 PlayerInfo  │
- * │               ├─────────────────────────────┤                  │
- * │               │       PlayArea              │                  │
- * │               │ (倒计时 + 三玩家出牌区)       │                  │
- * ├──────────────┼─────────────────────────────┼────────────────────┤
- * │ 底部 PlayerInfo│  ActionBar + HandCards      │   ChatPanel      │
- * └──────────────┴─────────────────────────────┴────────────────────┘
+ * ├──────────────┬────────────────────┬─────────────────────────────┤
+ * │ 左侧 PlayerInfo │   LandlordCards   │  右侧 PlayerInfo           │
+ * │      35%        │   (底牌) + PlayArea│       35%                │
+ * │               │       30%+        │                             │
+ * ├──────────────┼────────────────────┼─────────────────────────────┤
+ * │ 底部 PlayerInfo│  ActionBar+手牌    │   ChatPanel                 │
+ * │      35%        │       30%+        │       35%                  │
+ * └──────────────┴────────────────────┴─────────────────────────────┘
  *
  * 业务逻辑全部由 useGameState Hook 提供。
  */
@@ -84,29 +84,56 @@ const LandlordsRoom: React.FC = () => {
   const isReady = currentUser?.isReady;
   const phase = gameState.phase || 'waiting';
 
-  // 准备倒计时：当房间处于 waiting 阶段且后端已下发 readyPhaseStartTime 时，本地计算剩余秒数
+  // 准备倒计时：只有房间满员(3人)且玩家未准备时才显示倒计时
   const [readyCountdown, setReadyCountdown] = useState<number>(0);
+  const isRoomFull = (gameState.players?.length || 0) >= GAME_CONFIG.playerCount;
+
   useEffect(() => {
-    if (phase !== 'waiting' || !gameState.readyPhaseStartTime) {
+    // 条件：waiting阶段 + 房间满员 + 有readyPhaseStartTime + 玩家未准备
+    if (phase !== 'waiting' || !isRoomFull || !gameState.readyPhaseStartTime || isReady) {
       setReadyCountdown(0);
       return;
     }
     const readyTimeoutMs = GAME_CONFIG.readyTimeout * 1000;
+    const endTime = gameState.readyPhaseStartTime + readyTimeoutMs;
+    // 如果倒计时已经结束，不显示倒计时
+    if (endTime <= Date.now()) {
+      setReadyCountdown(0);
+      return;
+    }
     const tick = () => {
       const remaining = Math.max(
         0,
-        Math.ceil((gameState.readyPhaseStartTime! + readyTimeoutMs - Date.now()) / 1000),
+        Math.ceil((endTime - Date.now()) / 1000),
       );
       setReadyCountdown(remaining);
     };
     tick();
     const id = setInterval(tick, 500);
     return () => clearInterval(id);
-  }, [phase, gameState.readyPhaseStartTime]);
+  }, [phase, gameState.readyPhaseStartTime, isReady, isRoomFull]);
 
-  // 至少 2 人准备 + 3 人在场 + 房主 才可开始
+  // 准备超时自动退出房间：房间满员 + 倒计时结束 + 玩家未准备
+  // 只有当 endTime 还未到期时才应该触发
+  useEffect(() => {
+    if (!gameState.readyPhaseStartTime) return;
+    const readyTimeoutMs = GAME_CONFIG.readyTimeout * 1000;
+    const endTime = gameState.readyPhaseStartTime + readyTimeoutMs;
+    // 只有倒计时已到期才触发退出
+    if (endTime > Date.now()) return;
+    if (isRoomFull && phase === 'waiting' && !isReady) {
+      antdMessage.warning('准备超时，已自动退出房间');
+      leaveRoom();
+      history.push('/game/landlords');
+    }
+  }, [readyCountdown, phase, isReady, isRoomFull]);
+
+  // 至少 playerCount-1 人准备 + playerCount 人在场 + 房主 才可开始
   const readyCount = gameState.players?.filter((p) => p.isReady).length || 0;
-  const canStart = !!isOwner && readyCount >= 2 && (gameState.players?.length || 0) >= 3;
+  const canStart =
+    !!isOwner &&
+    readyCount >= GAME_CONFIG.playerCount - 1 &&
+    (gameState.players?.length || 0) >= GAME_CONFIG.playerCount;
   const canPlay = isMyTurnToPlay && canPlayPhase(phase);
   const showTimer = timeLeft > 0 && (isPlayingPhase(phase) || isRobbingPhase(phase));
 
@@ -149,9 +176,17 @@ const LandlordsRoom: React.FC = () => {
     history.push('/game/landlords');
   }, [leaveRoom, roomId]);
 
+  // 优化：如果用户正在查看结算弹窗，给用户延迟离开的时间
+  const pendingLeaveRef = useRef<{ reason: string; timer: NodeJS.Timeout } | null>(null);
+
   // 被系统强制移出（房间解散 / 被踢）：标记本地已离开 → 跳列表
   const kickAndLeave = useCallback(
     (reason: string) => {
+      // 如果有待处理的延迟离开，先清除
+      if (pendingLeaveRef.current) {
+        clearTimeout(pendingLeaveRef.current.timer);
+        pendingLeaveRef.current = null;
+      }
       antdMessage.warning(reason);
       localStorage.setItem(
         'landlords_left_room',
@@ -164,41 +199,40 @@ const LandlordsRoom: React.FC = () => {
   );
 
   // 房间超时解散（后端定时任务触发：凑不齐人 / 满员没人开始）
+  // 优化：如果用户正在查看结算弹窗，给用户时间查看后再离开
   useEffect(() => {
     if (!userId || !roomId) return undefined;
 
     const handler = (data: any) => {
       const payload = data?.data ?? data;
       if (payload?.roomId && String(payload.roomId) === String(roomId)) {
-        kickAndLeave(payload?.reason || '房间已解散');
+        const reason = payload?.reason || '房间已解散';
+
+        // 如果用户正在查看结算弹窗，延迟离开，给用户时间查看结算
+        if (gameResult && !pendingLeaveRef.current) {
+          console.debug('[landlords] 收到房间关闭消息，用户正在查看结算，延迟离开');
+          pendingLeaveRef.current = {
+            reason,
+            timer: setTimeout(() => {
+              pendingLeaveRef.current = null;
+              kickAndLeave(reason);
+            }, 3000), // 延迟3秒，让用户有时间查看结算
+          };
+        } else {
+          kickAndLeave(reason);
+        }
       }
     };
 
     wsService.addMessageHandler('gameRoomClosed', handler);
     return () => {
       wsService.removeMessageHandler('gameRoomClosed', handler);
+      if (pendingLeaveRef.current) {
+        clearTimeout(pendingLeaveRef.current.timer);
+        pendingLeaveRef.current = null;
+      }
     };
-  }, [userId, roomId, kickAndLeave]);
-
-  // 玩家被踢（准备超时等）：STATE_UPDATE 通道，event === 'playerKicked'
-  // 收到后弹提示，跳转回房间列表
-  useEffect(() => {
-    if (!userId || !roomId) return undefined;
-
-    const handler = (data: any) => {
-      const payload = data?.data ?? data;
-      if (payload?.event !== 'playerKicked') return;
-      // 房间匹配 + 是踢我本人 → 才跳转
-      if (payload?.roomId && String(payload.roomId) !== String(roomId)) return;
-      if (payload?.userId && String(payload.userId) !== String(userId)) return;
-      kickAndLeave(payload?.reason || '你因超时被移出房间');
-    };
-
-    wsService.addMessageHandler('gameStateUpdate', handler);
-    return () => {
-      wsService.removeMessageHandler('gameStateUpdate', handler);
-    };
-  }, [userId, roomId, kickAndLeave]);
+  }, [userId, roomId, kickAndLeave, gameResult]);
 
   // 发送邀请到鱼窝
   const handleSendInvite = useCallback(() => {
@@ -277,21 +311,13 @@ const LandlordsRoom: React.FC = () => {
   }, []);
 
   // 临时离开（UI 由下方 tempLeaveInfo 渲染，这里不再留空 effect）
-  // 标准化玩家数据
-  const formatPlayer = (player: PlayerState | null): PlayerState => ({
-    userId: player?.userId || 0,
-    userName: player?.userName || player?.nickname || '等待加入...',
-    avatar: player?.avatar || '',
-    cardCount: player?.cardCount || 0,
-    isLandlord: player?.isLandlord || false,
-    isCurrentPlayer: player?.isCurrentPlayer || false,
-    isReady: player?.isReady || false,
-    isOwner: player?.isOwner || false,
-    isOnline: player?.isOnline ?? true,
-    isRobotControlled: player?.isRobotControlled || false,
-    isMe: player?.isMe || false,
-    currentPlayedCards: player?.currentPlayedCards || [],
-  });
+  // UI 兜底（不污染 normalizePlayer）：座位为空时显示「等待加入...」
+  const placeholderPlayer: PlayerState = {
+    userId: 0,
+    userName: '等待加入...',
+  };
+  const leftPlayerView = leftPlayer ?? placeholderPlayer;
+  const rightPlayerView = rightPlayer ?? placeholderPlayer;
 
   return (
     <div
@@ -301,7 +327,7 @@ const LandlordsRoom: React.FC = () => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f5f5f5',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -314,13 +340,13 @@ const LandlordsRoom: React.FC = () => {
         style={{
           flex: '0 0 auto',
           height: 52,
-          backgroundColor: '#1f2937',
-          color: '#fff',
+          backgroundColor: '#ffffff',
+          color: '#333',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -328,21 +354,21 @@ const LandlordsRoom: React.FC = () => {
             icon={<ArrowLeft size={16} />}
             onClick={handleLeave}
             style={{
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderColor: 'rgba(255,255,255,0.3)',
-              color: '#fff',
+              backgroundColor: '#f5f5f5',
+              borderColor: '#d9d9d9',
+              color: '#333',
             }}
           >
             返回
           </Button>
           <span style={{ fontSize: 16, fontWeight: 700 }}>房间号: {roomId}</span>
-          <Tag color="blue" style={{ margin: 0 }}>
+          <Tag color="orange" style={{ margin: 0 }}>
             {gameState.gameType === 'LANDLORDS_CLASSIC' ? '经典模式' : '斗地主'}
           </Tag>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 14 }}>
-            {gameState.players?.length || 0}/3 玩家
+            {gameState.players?.length || 0}/{GAME_CONFIG.playerCount} 玩家
           </span>
           {readyCountdown > 0 && (
             <Tag color={readyCountdown <= 5 ? 'red' : 'orange'} style={{ margin: 0 }}>
@@ -368,50 +394,54 @@ const LandlordsRoom: React.FC = () => {
       {/* 准备阶段倒计时提示 */}
       {readyCountdown > 0 && !isReady && (
         <Alert
-          message={`本局已结束，请点击「准备」继续（剩余 ${readyCountdown}s，超时将被移出房间）`}
+          message={`请点击「准备」继续（剩余 ${readyCountdown}s，超时将被移出房间）`}
           type={readyCountdown <= 5 ? 'error' : 'warning'}
           showIcon
           style={{ margin: 8 }}
         />
       )}
 
-      {/* 中部主区 */}
+      {/* 中部主区 flex: 1 自动填充剩余空间 */}
       <div
         style={{
-          flex: 1,
-          display: 'flex',
+          flex: '1 1 auto',
           minHeight: 0,
-          backgroundColor: '#ffffff',
+          display: 'flex',
+          backgroundColor: '#f5f5f5',
         }}
       >
-        {/* 左侧玩家 18% */}
+        {/* 左侧玩家 - 响应式宽度 30% */}
         <div
           style={{
-            flex: '0 0 18%',
-            backgroundColor: '#f9fafb',
+            flex: '0 0 30%',
+            minWidth: 140,
+            maxWidth: 320,
+            backgroundColor: '#f5f5f5',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: 12,
-            borderRight: '1px solid #e5e7eb',
+            padding: 8,
+            borderRight: '1px solid #e8e8e8',
+            boxSizing: 'border-box',
           }}
         >
           <PlayerInfo
-            player={formatPlayer(leftPlayer)}
+            player={leftPlayerView}
             position="left"
             isCurrentTurn={showTimer ? currentActorId === leftPlayer?.userId : undefined}
             gamePhase={phase}
           />
         </div>
 
-        {/* 中间 60% */}
+        {/* 中间自适应 */}
         <div
           style={{
-            flex: '1 1 60%',
+            flex: '1 1 auto',
+            minWidth: 250,
             display: 'flex',
             flexDirection: 'column',
-            minWidth: 0,
-            backgroundColor: '#ffffff',
+            minHeight: 0,
+            backgroundColor: '#f5f5f5',
           }}
         >
           {/* 底牌区 */}
@@ -419,12 +449,12 @@ const LandlordsRoom: React.FC = () => {
             <div
               style={{
                 flex: '0 0 25%',
-                backgroundColor: '#ffffff',
+                backgroundColor: '#f5f5f5',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 16,
-                borderBottom: '1px solid #f3f4f6',
+                borderBottom: '1px solid #e8e8e8',
               }}
             >
               <LandlordCards
@@ -450,20 +480,23 @@ const LandlordsRoom: React.FC = () => {
           />
         </div>
 
-        {/* 右侧玩家 18% */}
+        {/* 右侧玩家 - 响应式宽度 30% */}
         <div
           style={{
-            flex: '0 0 18%',
-            backgroundColor: '#f9fafb',
+            flex: '0 0 30%',
+            minWidth: 140,
+            maxWidth: 320,
+            backgroundColor: '#f5f5f5',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: 12,
-            borderLeft: '1px solid #e5e7eb',
+            padding: 8,
+            borderLeft: '1px solid #e8e8e8',
+            boxSizing: 'border-box',
           }}
         >
           <PlayerInfo
-            player={formatPlayer(rightPlayer)}
+            player={rightPlayerView}
             position="right"
             isCurrentTurn={showTimer ? currentActorId === rightPlayer?.userId : undefined}
             gamePhase={phase}
@@ -471,54 +504,54 @@ const LandlordsRoom: React.FC = () => {
         </div>
       </div>
 
-      {/* 下方 30% */}
+      {/* 下方区域（固定高度） */}
       <div
         style={{
-          flex: '0 0 30%',
-          backgroundColor: '#ffffff',
-          borderTop: '1px solid #e5e7eb',
+          flex: '0 0 200px',
+          backgroundColor: '#f5f5f5',
+          borderTop: '1px solid #e8e8e8',
           display: 'flex',
-          minHeight: 0,
           overflow: 'hidden',
         }}
       >
-        {/* 我的信息 18% */}
+        {/* 左侧我的信息 - 与顶部左侧玩家对齐 */}
         <div
           style={{
-            flex: '0 0 18%',
-            backgroundColor: '#f9fafb',
+            flex: '0 0 30%',
+            minWidth: 140,
+            maxWidth: 320,
+            backgroundColor: '#f5f5f5',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: 12,
-            borderRight: '1px solid #e5e7eb',
+            padding: 8,
+            borderRight: '1px solid #e8e8e8',
+            boxSizing: 'border-box',
           }}
         >
           <PlayerInfo
-            player={formatPlayer(currentUser)}
-            position="bottom"
-            showCardCount={false}
+            player={currentUser ?? placeholderPlayer}
+            position="left"
             isCurrentTurn={showTimer ? currentActorId === currentUser?.userId : undefined}
             gamePhase={phase}
           />
         </div>
 
-        {/* 中间区域 60% */}
+        {/* 中间操作区+手牌 flex: 1 */}
         <div
           style={{
-            flex: '1 1 60%',
+            flex: '1 1 auto',
             display: 'flex',
             flexDirection: 'column',
             minWidth: 0,
-            borderLeft: '1px solid #f3f4f6',
-            backgroundColor: '#ffffff',
+            backgroundColor: '#f5f5f5',
           }}
         >
           {/* 操作区 */}
           <div
             style={{
               flex: '0 0 56px',
-              backgroundColor: '#ffffff',
+              backgroundColor: '#f5f5f5',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -556,7 +589,7 @@ const LandlordsRoom: React.FC = () => {
               inviteCooldown={inviteCooldown}
               onSendInvite={handleSendInvite}
               playerCount={gameState.players?.length || 0}
-              maxPlayers={3}
+              maxPlayers={GAME_CONFIG.playerCount}
             />
           </div>
 
@@ -564,24 +597,15 @@ const LandlordsRoom: React.FC = () => {
           <div
             style={{
               flex: 1,
-              backgroundColor: '#16a34a',
+              backgroundColor: '#f5f5f5',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'flex-end',
+              justifyContent: 'center',
               padding: '8px 12px',
               minHeight: 0,
+              overflow: 'hidden',
             }}
           >
-            <div
-              style={{
-                color: 'rgba(255,255,255,0.7)',
-                fontSize: 12,
-                marginBottom: 4,
-              }}
-            >
-              我的牌 ({handCards.length}张)
-            </div>
             <HandCards
               cards={handCards}
               selectedCards={selectedCards}
@@ -591,17 +615,18 @@ const LandlordsRoom: React.FC = () => {
           </div>
         </div>
 
-        {/* 右侧聊天 18% */}
+        {/* 右侧聊天区域 - 与顶部右侧玩家对齐 */}
         <div
           style={{
-            flex: '0 0 18%',
-            backgroundColor: '#f9fafb',
+            flex: '0 0 30%',
+            minWidth: 140,
+            maxWidth: 320,
+            backgroundColor: '#f5f5f5',
             display: 'flex',
             flexDirection: 'column',
-            padding: 12,
-            minHeight: 0,
-            overflow: 'hidden',
-            borderLeft: '1px solid #e5e7eb',
+            padding: 8,
+            borderLeft: '1px solid #e8e8e8',
+            boxSizing: 'border-box',
           }}
         >
           <ChatSidebar

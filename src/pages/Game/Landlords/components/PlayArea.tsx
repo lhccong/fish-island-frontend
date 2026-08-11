@@ -8,6 +8,7 @@ import React from 'react';
 import GameTimer from './GameTimer';
 import PlayedCard from './PlayedCard';
 import { PlayerState } from '../types';
+import { isPlayingPhase, isRobbingPhase } from '../types/phase';
 
 export interface PlayAreaProps {
   // 三个位置的玩家
@@ -41,7 +42,7 @@ const PlayArea: React.FC<PlayAreaProps> = ({
   gamePhase,
 }) => {
   // 判断是否应该显示计时器（仅在 playing 或 robbing 阶段）
-  const shouldShowTimer = timeLeft > 0 && gamePhase && (gamePhase === 'playing' || gamePhase === 'PLAYING' || gamePhase === 'robbing' || gamePhase === 'ROBBING');
+  const shouldShowTimer = timeLeft > 0 && gamePhase && (isPlayingPhase(gamePhase) || isRobbingPhase(gamePhase));
   const renderPlayerCards = (
     player: PlayerState | null | undefined,
     align: 'left' | 'right' | 'center',
@@ -66,10 +67,10 @@ const PlayArea: React.FC<PlayAreaProps> = ({
           <div
             style={{
               fontSize: align === 'center' ? 18 : 16,
-              color: '#1f2937',
+              color: '#333333',
               fontWeight: 600,
               padding: align === 'center' ? '6px 16px' : '4px 12px',
-              background: align === 'center' ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.85)',
+              background: align === 'center' ? 'rgba(245, 245, 245, 0.95)' : 'rgba(245, 245, 245, 0.9)',
               borderRadius: align === 'center' ? 8 : 6,
               boxShadow: align === 'center' ? '0 2px 8px rgba(0, 0, 0, 0.1)' : '0 1px 4px rgba(0, 0, 0, 0.08)',
             }}
@@ -81,7 +82,6 @@ const PlayArea: React.FC<PlayAreaProps> = ({
           style={{
             display: 'flex',
             flexWrap: 'wrap',
-            maxWidth: align === 'center' ? 280 : 160,
             gap: '4px 0',
             justifyContent: align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center',
           }}
@@ -109,9 +109,10 @@ const PlayArea: React.FC<PlayAreaProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '8px 16px',
+        padding: '8px 12px',
         minHeight: 0,
         position: 'relative',
+        backgroundColor: '#f5f5f5',
       }}
     >
       {/* 中央倒计时 - 仅在 playing/robbing 阶段显示 */}
@@ -137,12 +138,12 @@ const PlayArea: React.FC<PlayAreaProps> = ({
       )}
 
       {/* 左边玩家 */}
-      <div style={{ position: 'absolute', left: 24, top: '35%', transform: 'translateY(-50%)' }}>
+      <div style={{ position: 'absolute', left: '2%', top: '35%', transform: 'translateY(-50%)' }}>
         {renderPlayerCards(leftPlayer, 'left')}
       </div>
 
       {/* 右边玩家 */}
-      <div style={{ position: 'absolute', right: 24, top: '35%', transform: 'translateY(-50%)' }}>
+      <div style={{ position: 'absolute', right: '2%', top: '35%', transform: 'translateY(-50%)' }}>
         {renderPlayerCards(rightPlayer, 'right')}
       </div>
 

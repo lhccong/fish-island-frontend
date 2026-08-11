@@ -2,6 +2,7 @@
  * 消息处理器：房间/准备/离开
  */
 import { message as antMessage } from 'antd';
+import { history } from '@@/core/history';
 import { GameState, TempLeaveInfo } from '../../types';
 import { normalizePhase } from '../../types/phase';
 import { PlayerRole } from '../../types/enums/player';
@@ -16,12 +17,21 @@ export const createJoinRoomHandler = (
   setGameState: React.Dispatch<React.SetStateAction<GameState>>,
   setLoading: (loading: boolean) => void,
   setGameResult: (r: any) => void,
+  roomId: string,
 ) => {
   return (payload: any) => {
     console.debug('[landlords] 收到 gameJoinRoom:', JSON.stringify(payload)?.substring(0, 500));
     const data = payload?.data ?? payload;
 
     setGameResult(null);
+
+    // 加入房间失败 - 自动跳转回房间列表并显示错误
+    if (data.success === false) {
+      antMessage.error(data.message || '加入房间失败');
+      setLoading(false);
+      history.push('/game/landlords');
+      return;
+    }
 
     if (data.gameState) {
       handleGameStateUpdate(data.gameState);
@@ -39,6 +49,9 @@ export const createJoinRoomHandler = (
         gameType: roomInfo.gameType || prev.gameType,
         phase: normalizePhase(roomInfo.state),
         landlordId: roomInfo.landlordId || prev.landlordId,
+        readyPhaseStartTime: roomInfo.readyPhaseStartTime
+          ? Number(roomInfo.readyPhaseStartTime)
+          : undefined,
         players: roomPlayers.map((p: any) => {
           const prevPlayer = (prev.players || []).find(
             (pp) => String(pp.userId) === String(p.userId),
@@ -58,16 +71,11 @@ export const createJoinRoomHandler = (
             isMe: currentUserId ? String(p.userId) === String(currentUserId) : false,
             robScore: p.robScore || 0,
             isRobotControlled:
-              prevPlayer?.isRobotControlled ?? p.isRobotControlled ?? false,
+              prevPlayer?.isRobotControlled ?? p.robotControlled ?? false,
             currentPlayedCards: prevPlayer?.currentPlayedCards ?? [],
           };
         }),
       }));
-    }
-
-    if (data.success === false) {
-      antMessage.error(data.message || '加入房间失败');
-    } else if (data.success === true) {
       setLoading(false);
     }
   };

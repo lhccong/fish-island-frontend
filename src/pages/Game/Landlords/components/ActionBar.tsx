@@ -8,6 +8,7 @@
 import React from 'react';
 import { Button, Space } from 'antd';
 import { isWaitingPhase, isPlayingPhase, isRobbingPhase } from '../types/phase';
+import { GAME_CONFIG } from '../constants';
 
 export interface ActionBarProps {
   phase: string;
@@ -82,7 +83,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
   inviteCooldown = 0,
   onSendInvite,
   playerCount = 0,
-  maxPlayers = 3,
+  maxPlayers = GAME_CONFIG.playerCount,
 }) => {
   // 等待阶段
   if (isWaitingPhase(phase)) {
@@ -98,7 +99,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
             type="primary"
             onClick={onStart}
             disabled={!canStart}
-            style={{ backgroundColor: '#16a34a' }}
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: '#fff' }}
           >
             开始游戏
           </Button>
@@ -107,7 +108,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
           <Button
             onClick={onSendInvite}
             disabled={inviteCooldown > 0}
-            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+            style={{ backgroundColor: '#faad14', borderColor: '#faad14', color: '#fff' }}
           >
             {inviteCooldown > 0 ? `邀请中 (${inviteCooldown}s)` : '邀请好友'}
           </Button>
@@ -124,7 +125,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
     // 如果有人叫了3分，显示等待地主确定
     if (highestRobScore === 3) {
       return (
-        <span style={{ color: '#6b7280' }}>
+        <span style={{ color: '#999' }}>
           等待地主确定...
         </span>
       );
@@ -143,21 +144,21 @@ const ActionBar: React.FC<ActionBarProps> = ({
           <Button
             type="primary"
             onClick={() => onRobLandlord?.(1)}
-            style={{ backgroundColor: '#f59e0b' }}
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
           >
             叫1分
           </Button>
           <Button
             type="primary"
             onClick={() => onRobLandlord?.(2)}
-            style={{ backgroundColor: '#f59e0b' }}
+            style={{ backgroundColor: '#faad14', borderColor: '#faad14', color: '#fff' }}
           >
             叫2分
           </Button>
           <Button
             type="primary"
             onClick={() => onRobLandlord?.(3)}
-            style={{ backgroundColor: '#dc2626' }}
+            style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }}
           >
             叫3分
           </Button>
@@ -165,7 +166,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
       );
     }
     return (
-      <span style={{ color: '#6b7280' }}>
+      <span style={{ color: '#999' }}>
         等待 {waitForName} 叫地主...
       </span>
     );
@@ -184,14 +185,14 @@ const ActionBar: React.FC<ActionBarProps> = ({
             type="primary"
             onClick={onPlay}
             disabled={disabled || selectedCount === 0}
-            style={{ backgroundColor: '#16a34a' }}
+            style={{ backgroundColor: '#f97316', borderColor: '#f97316', color: '#fff' }}
           >
             出牌 {selectedCount > 0 && `(${selectedCount})`}
           </Button>
           {isRobotControlled ? (
             <Button danger onClick={onCancelRobot}>取消AI托管</Button>
           ) : (
-            <Button onClick={onSetRobot}>AI托管</Button>
+            <Button onClick={onSetRobot} style={{ backgroundColor: '#faad14', borderColor: '#faad14', color: '#fff' }}>AI托管</Button>
           )}
         </Space>
       );
@@ -200,26 +201,26 @@ const ActionBar: React.FC<ActionBarProps> = ({
       return (
         <Space style={{ width: '100%', justifyContent: 'center' }}>
           <Button onClick={onReselect}>重选</Button>
-          <span style={{ color: '#6b7280' }}>
+          <span style={{ color: '#999' }}>
             等待 {waitForName} {waitForAction === 'play' ? '出牌' : '操作'}...
           </span>
           {isRobotControlled ? (
             <Button danger onClick={onCancelRobot}>取消AI托管</Button>
           ) : (
-            <Button onClick={onSetRobot}>AI托管</Button>
+            <Button onClick={onSetRobot} style={{ backgroundColor: '#faad14', borderColor: '#faad14', color: '#fff' }}>AI托管</Button>
           )}
         </Space>
       );
     }
     return (
       <Space style={{ width: '100%', justifyContent: 'center' }}>
-        <span style={{ color: '#6b7280' }}>
+        <span style={{ color: '#999' }}>
           等待 {waitForName} {waitForAction === 'play' ? '出牌' : '操作'}...
         </span>
         {isRobotControlled ? (
           <Button danger onClick={onCancelRobot}>取消AI托管</Button>
         ) : (
-          <Button onClick={onSetRobot}>AI托管</Button>
+          <Button onClick={onSetRobot} style={{ backgroundColor: '#faad14', borderColor: '#faad14', color: '#fff' }}>AI托管</Button>
         )}
       </Space>
     );
