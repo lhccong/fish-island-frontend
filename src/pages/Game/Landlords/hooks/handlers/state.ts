@@ -41,7 +41,12 @@ export const createGameStateUpdateHandler = (
       try {
         const innerData = typeof payload.data === 'string' ? JSON.parse(payload.data) : payload.data;
         if (innerData.roomInfo?.players) {
-          data = { ...innerData, players: innerData.roomInfo.players };
+          data = {
+            ...innerData,
+            players: innerData.roomInfo.players,
+            // 从 roomInfo 中提取 readyPhaseStartTime 用于倒计时
+            readyPhaseStartTime: innerData.roomInfo.readyPhaseStartTime,
+          };
         } else if (innerData.gameState) {
           data = innerData.gameState;
         } else if (innerData.players) {
@@ -60,7 +65,8 @@ export const createGameStateUpdateHandler = (
     const isPlayerStatusChangeEvent =
       data?.event === GameEvent.PLAYER_STATUS_CHANGE || data?.status;
     const isPlayerReconnectEvent = data?.event === GameEvent.PLAYER_RECONNECT;
-    if (!hasValidPhase && !hasValidRoomState && !isPlayerJoinEvent && !isPlayerStatusChangeEvent && !isPlayerReconnectEvent) {
+    const hasReadyPhaseTimer = data?.readyPhaseStartTime != null;
+    if (!hasValidPhase && !hasValidRoomState && !isPlayerJoinEvent && !isPlayerStatusChangeEvent && !isPlayerReconnectEvent && !hasReadyPhaseTimer) {
       console.debug('[landlords] 忽略无效状态更新消息:', data?.event || 'no event');
       return;
     }

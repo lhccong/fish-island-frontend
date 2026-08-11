@@ -104,7 +104,9 @@ export const mergePlayers = (
 const numField = (data: any, key: string, prev: number | undefined): number | undefined => {
   if (!data || !(key in data)) return prev;
   const v = data[key];
-  return typeof v === 'number' ? v : prev;
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string' && v) return Number(v);
+  return prev;
 };
 
 /**

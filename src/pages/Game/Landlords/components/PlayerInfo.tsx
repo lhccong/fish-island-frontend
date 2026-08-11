@@ -8,7 +8,7 @@
  * - right: [手牌（左）| 玩家信息（右）]  — 横向两列（镜像）
  * - bottom: 头像 + 昵称（并排），状态标签在下方  （自己）
  */
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Avatar, Tag } from 'antd';
 import { Crown } from 'lucide-react';
 import CardBack from './CardBack';
@@ -74,25 +74,78 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   const displayAvatar = avatar || userAvatar;
   const avatarSize = compact ? 40 : 52;
 
+  // 响应式卡片尺寸 - 基于容器宽度计算
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [cardSize, setCardSize] = useState({ width: 36, height: 50 });
+
+  useEffect(() => {
+    const calculateCardSize = () => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+
+      // 根据可用宽度计算卡片大小（3张卡片 + gap 需要空间）
+      // 卡片宽度约为容器宽度的 30%
+      let width = Math.min(containerWidth * 0.3, containerHeight * 0.55);
+      let height = width * 1.4;
+
+      // 限制最大最小尺寸
+      const minWidth = 26;
+      const maxWidth = 48;
+      width = Math.max(minWidth, Math.min(maxWidth, width));
+      height = width * 1.4;
+
+      // 确保高度不会超出容器
+      if (height > containerHeight * 0.8) {
+        height = containerHeight * 0.8;
+        width = height / 1.4;
+        width = Math.max(minWidth, Math.min(maxWidth, width));
+        height = width * 1.4;
+      }
+
+      setCardSize({ width, height });
+    };
+
+    calculateCardSize();
+    window.addEventListener('resize', calculateCardSize);
+
+    const container = containerRef.current;
+    if (container && 'ResizeObserver' in window) {
+      const resizeObserver = new ResizeObserver(() => {
+        calculateCardSize();
+      });
+      resizeObserver.observe(container);
+      return () => {
+        resizeObserver.disconnect();
+        window.removeEventListener('resize', calculateCardSize);
+      };
+    }
+
+    return () => window.removeEventListener('resize', calculateCardSize);
+  }, []);
+
   // 整体外壳样式
   const containerStyle: React.CSSProperties = {
     display: 'flex',
-    alignItems: 'stretch',
+    alignItems: 'center',
     gap: 8,
-    padding: 8,
+    padding: 10,
     transition: 'all 0.2s',
-    borderRadius: 8,
+    borderRadius: 10,
     width: '100%',
+    boxSizing: 'border-box',
     position: 'relative', // 支持倒计时绝对定位
     ...(isCurrentPlayer || isCurrentTurn
       ? {
           backgroundColor: '#fff',
-          border: '2px solid #facc15',
-          boxShadow: '0 0 12px rgba(251,191,36,0.6)',
+          border: '2px solid #f97316',
+          boxShadow: '0 0 12px rgba(249,115,22,0.3)',
         }
       : {
           backgroundColor: '#fff',
-          border: '1px solid #e5e7eb',
+          border: '1px solid #e8e8e8',
           boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
         }),
   };
@@ -166,7 +219,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   const nicknameStyle: React.CSSProperties = {
     fontSize: compact ? 12 : 14,
     fontWeight: 'bold',
-    color: '#1f2937',
+    color: '#333333',
     maxWidth: '100%',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -182,11 +235,14 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    flex: 1,
+    flex: '0 0 auto',
     minWidth: 0,
-    backgroundColor: '#f8fafc',
+    minHeight: 0,
+    backgroundColor: '#f0f0f0',
     borderRadius: 8,
     padding: 8,
+    maxWidth: '100%',
+    overflow: 'hidden',
   };
 
   // ========== 状态标签 ==========
@@ -274,7 +330,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
             position: 'absolute',
             top: -4,
             right: -4,
-            backgroundColor: '#ef4444',
+            backgroundColor: '#ff4d4f',
             color: '#fff',
             fontSize: 10,
             padding: '2px 4px',
@@ -325,7 +381,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
 
   // ========== 手牌区（横向排列）==========
   const VISIBLE_BACK_CARDS = 3;
-  const CARD_GAP = -12;
+  const CARD_GAP_PERCENT = 0.22;
 
   const renderHandCards = () => {
     return (
@@ -334,8 +390,10 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
           {Array.from({ length: VISIBLE_BACK_CARDS }).map((_, i) => (
             <CardBack
               key={i}
+              width={cardSize.width}
+              height={cardSize.height}
               style={{
-                marginLeft: i === 0 ? 0 : CARD_GAP,
+                marginLeft: i === 0 ? 0 : -cardSize.width * CARD_GAP_PERCENT,
                 zIndex: VISIBLE_BACK_CARDS - i,
               }}
             />
@@ -346,12 +404,13 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
             style={{
               fontSize: 12,
               fontWeight: 'bold',
-              color: '#1d4ed8',
+              color: '#f97316',
               whiteSpace: 'nowrap',
-              backgroundColor: '#dbeafe',
+              backgroundColor: '#fff7e6',
               padding: '2px 8px',
               borderRadius: 4,
               marginTop: 6,
+              border: '1px solid #f97316',
             }}
           >
             {displayCardCount} 张
@@ -364,7 +423,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   // ========== 左侧玩家布局 ==========
   if (position === 'left') {
     return (
-      <div style={containerStyle}>
+      <div style={{ ...containerStyle }} ref={containerRef}>
         {renderTimer()}
         {renderPlayerInfoColumn('left')}
         {renderHandCards()}
@@ -375,7 +434,7 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
   // ========== 右侧玩家布局 ==========
   if (position === 'right') {
     return (
-      <div style={containerStyle}>
+      <div style={{ ...containerStyle }} ref={containerRef}>
         {renderTimer()}
         {renderHandCards()}
         {renderPlayerInfoColumn('right')}
@@ -383,12 +442,43 @@ const PlayerInfo: React.FC<PlayerInfoProps> = ({
     );
   }
 
-  // ========== 底部玩家布局（与左右玩家一致的样式）==========
+  // ========== 底部玩家布局（与左右玩家一致的样式，包含手牌占位区）==========
   if (position === 'bottom') {
     return (
-      <div style={containerStyle}>
+      <div style={{ ...containerStyle }} ref={containerRef}>
         {renderTimer()}
         {renderPlayerInfoColumn('left')}
+        {/* 手牌占位区 - 与顶部左右玩家视觉对齐，固定大小不撑开 */}
+        <div style={{ ...handCardsContainerStyle, flex: '0 0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            {Array.from({ length: VISIBLE_BACK_CARDS }).map((_, i) => (
+              <CardBack
+                key={i}
+                width={cardSize.width}
+                height={cardSize.height}
+                style={{
+                  marginLeft: i === 0 ? 0 : -cardSize.width * CARD_GAP_PERCENT,
+                  zIndex: VISIBLE_BACK_CARDS - i,
+                }}
+              />
+            ))}
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 'bold',
+              color: '#6b7280',
+              whiteSpace: 'nowrap',
+              backgroundColor: '#e5e7eb',
+              padding: '2px 8px',
+              borderRadius: 4,
+              marginTop: 6,
+              border: '1px solid #d1d5db',
+            }}
+          >
+            {displayCardCount} 张
+          </div>
+        </div>
       </div>
     );
   }

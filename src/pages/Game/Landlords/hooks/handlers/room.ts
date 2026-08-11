@@ -49,6 +49,9 @@ export const createJoinRoomHandler = (
         gameType: roomInfo.gameType || prev.gameType,
         phase: normalizePhase(roomInfo.state),
         landlordId: roomInfo.landlordId || prev.landlordId,
+        readyPhaseStartTime: roomInfo.readyPhaseStartTime
+          ? Number(roomInfo.readyPhaseStartTime)
+          : undefined,
         players: roomPlayers.map((p: any) => {
           const prevPlayer = (prev.players || []).find(
             (pp) => String(pp.userId) === String(p.userId),
