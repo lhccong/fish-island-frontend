@@ -59,6 +59,8 @@ export interface GameState {
   timeLeft?: number;
   maxTime?: number;
   currentActionCards?: string[];
+  /** 准备阶段开始时间（毫秒）；后端在一局结束/重置房间时下发；为 undefined 表示不在准备阶段 */
+  readyPhaseStartTime?: number;
   [key: string]: any;
 }
 
