@@ -88,8 +88,8 @@ export const GAME_CONFIG = {
   // 出牌超时 (秒)
   playTimeout: 30,
 
-  // 提示超时 (秒)
-  hintTimeout: 10,
+  // 准备超时（秒）：与后端 GameConstants.READY_TIMEOUT_MS 保持一致
+  readyTimeout: 30,
 };
 
 // 叫地主分数选项

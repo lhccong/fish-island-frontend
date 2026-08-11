@@ -466,8 +466,8 @@ const LandlordsIndex: React.FC = () => {
                           )}
                           {/* 房间状态标签：等待/准备/发牌/叫地主/游戏中/结束 */}
                           {item.state && item.state !== RoomStateBackend.CLOSED && (
-                            <Tag color={stateToTagColor(item.state)}>
-                              {stateToLabel(item.state)}
+                            <Tag color={getStateColor(item.state)}>
+                              {getStateLabel(item.state)}
                             </Tag>
                           )}
                           {item.needPassword && (

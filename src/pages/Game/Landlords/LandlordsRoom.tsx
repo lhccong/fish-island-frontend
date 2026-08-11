@@ -31,6 +31,7 @@ import GameOverModal from './components/GameOverModal';
 import { useGameState } from './hooks/useGameState';
 import { PlayerState } from './types';
 import { isWaitingPhase, isPlayingPhase, isRobbingPhase, canPlayPhase } from './types/phase';
+import { GAME_CONFIG } from './constants';
 
 const LandlordsRoom: React.FC = () => {
   const roomId = window.location.pathname.split('/').pop() || '';
@@ -83,6 +84,26 @@ const LandlordsRoom: React.FC = () => {
   const isReady = currentUser?.isReady;
   const phase = gameState.phase || 'waiting';
 
+  // 准备倒计时：当房间处于 waiting 阶段且后端已下发 readyPhaseStartTime 时，本地计算剩余秒数
+  const [readyCountdown, setReadyCountdown] = useState<number>(0);
+  useEffect(() => {
+    if (phase !== 'waiting' || !gameState.readyPhaseStartTime) {
+      setReadyCountdown(0);
+      return;
+    }
+    const readyTimeoutMs = GAME_CONFIG.readyTimeout * 1000;
+    const tick = () => {
+      const remaining = Math.max(
+        0,
+        Math.ceil((gameState.readyPhaseStartTime! + readyTimeoutMs - Date.now()) / 1000),
+      );
+      setReadyCountdown(remaining);
+    };
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [phase, gameState.readyPhaseStartTime]);
+
   // 至少 2 人准备 + 3 人在场 + 房主 才可开始
   const readyCount = gameState.players?.filter((p) => p.isReady).length || 0;
   const canStart = !!isOwner && readyCount >= 2 && (gameState.players?.length || 0) >= 3;
@@ -128,23 +149,28 @@ const LandlordsRoom: React.FC = () => {
     history.push('/game/landlords');
   }, [leaveRoom, roomId]);
 
-  // 房间超时解散（后端定时任务触发：凑不齐人 / 全员离线）
-  // 收到广播后立即弹提示并跳回房间列表，避免用户卡在房间页
+  // 被系统强制移出（房间解散 / 被踢）：标记本地已离开 → 跳列表
+  const kickAndLeave = useCallback(
+    (reason: string) => {
+      antdMessage.warning(reason);
+      localStorage.setItem(
+        'landlords_left_room',
+        JSON.stringify({ roomId, timestamp: Date.now(), force: true }),
+      );
+      leaveRoom();
+      history.push('/game/landlords');
+    },
+    [leaveRoom, roomId],
+  );
+
+  // 房间超时解散（后端定时任务触发：凑不齐人 / 满员没人开始）
   useEffect(() => {
     if (!userId || !roomId) return undefined;
 
     const handler = (data: any) => {
       const payload = data?.data ?? data;
       if (payload?.roomId && String(payload.roomId) === String(roomId)) {
-        const reason = payload.reason || '房间已解散';
-        antdMessage.warning(reason);
-        // 与 handleLeave 保持一致：标记本地已离开 → 调 leaveRoom → 跳列表
-        localStorage.setItem(
-          'landlords_left_room',
-          JSON.stringify({ roomId, timestamp: Date.now(), force: true }),
-        );
-        leaveRoom();
-        history.push('/game/landlords');
+        kickAndLeave(payload?.reason || '房间已解散');
       }
     };
 
@@ -152,7 +178,27 @@ const LandlordsRoom: React.FC = () => {
     return () => {
       wsService.removeMessageHandler('gameRoomClosed', handler);
     };
-  }, [userId, roomId, leaveRoom]);
+  }, [userId, roomId, kickAndLeave]);
+
+  // 玩家被踢（准备超时等）：STATE_UPDATE 通道，event === 'playerKicked'
+  // 收到后弹提示，跳转回房间列表
+  useEffect(() => {
+    if (!userId || !roomId) return undefined;
+
+    const handler = (data: any) => {
+      const payload = data?.data ?? data;
+      if (payload?.event !== 'playerKicked') return;
+      // 房间匹配 + 是踢我本人 → 才跳转
+      if (payload?.roomId && String(payload.roomId) !== String(roomId)) return;
+      if (payload?.userId && String(payload.userId) !== String(userId)) return;
+      kickAndLeave(payload?.reason || '你因超时被移出房间');
+    };
+
+    wsService.addMessageHandler('gameStateUpdate', handler);
+    return () => {
+      wsService.removeMessageHandler('gameStateUpdate', handler);
+    };
+  }, [userId, roomId, kickAndLeave]);
 
   // 发送邀请到鱼窝
   const handleSendInvite = useCallback(() => {
@@ -298,6 +344,11 @@ const LandlordsRoom: React.FC = () => {
           <span style={{ fontSize: 14 }}>
             {gameState.players?.length || 0}/3 玩家
           </span>
+          {readyCountdown > 0 && (
+            <Tag color={readyCountdown <= 5 ? 'red' : 'orange'} style={{ margin: 0 }}>
+              准备倒计时 {readyCountdown}s
+            </Tag>
+          )}
           {tempLeaveInfo && <Tag color="warning">临时离开</Tag>}
         </div>
       </header>
@@ -310,6 +361,16 @@ const LandlordsRoom: React.FC = () => {
           type="info"
           showIcon
           closable
+          style={{ margin: 8 }}
+        />
+      )}
+
+      {/* 准备阶段倒计时提示 */}
+      {readyCountdown > 0 && !isReady && (
+        <Alert
+          message={`本局已结束，请点击「准备」继续（剩余 ${readyCountdown}s，超时将被移出房间）`}
+          type={readyCountdown <= 5 ? 'error' : 'warning'}
+          showIcon
           style={{ margin: 8 }}
         />
       )}

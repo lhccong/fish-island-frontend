@@ -38,6 +38,9 @@ export const MSG_TYPE = {
 
   // 错误
   ERROR: 'error',
+
+  // 被踢（复用 STATE_UPDATE 通道，这里仅做类型注解，避免误删）
+  GAME_PLAYER_KICKED: 'gamePlayerKicked',
 } as const;
 
 export type MsgTypeValue = (typeof MSG_TYPE)[keyof typeof MSG_TYPE];

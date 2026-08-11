@@ -97,6 +97,16 @@ export const mergePlayers = (
 };
 
 /**
+ * 取数字字段：data 中提供则使用 data；否则保留 prev
+ * 后端可用 0/null 显式清除（如退出准备阶段时清空 readyPhaseStartTime）
+ */
+const numField = (data: any, key: string, prev: number | undefined): number | undefined => {
+  if (!data || !(key in data)) return prev;
+  const v = data[key];
+  return typeof v === 'number' ? v : prev;
+};
+
+/**
  * 从服务器推送的 data payload 中提取标准化的 game state
  */
 export const mergeGameState = (
@@ -125,5 +135,6 @@ export const mergeGameState = (
     lastPlayedPlayerId:
       data?.lastPlayerId || data?.lastPlayedPlayerId || prev.lastPlayedPlayerId,
     lastPatternDesc: data?.lastPatternDesc || data?.pattern || prev.lastPatternDesc,
+    readyPhaseStartTime: numField(data, 'readyPhaseStartTime', prev.readyPhaseStartTime),
   };
 };
