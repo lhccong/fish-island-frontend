@@ -82,7 +82,6 @@ const PlayArea: React.FC<PlayAreaProps> = ({
           style={{
             display: 'flex',
             flexWrap: 'wrap',
-            maxWidth: align === 'center' ? '50%' : '30%',
             gap: '4px 0',
             justifyContent: align === 'left' ? 'flex-start' : align === 'right' ? 'flex-end' : 'center',
           }}

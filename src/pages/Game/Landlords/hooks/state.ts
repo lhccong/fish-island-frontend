@@ -66,7 +66,7 @@ export const normalizePlayer = (
     isReady: p.ready || p.isReady || false,
     isLandlord,
     isOnline: p.online ?? p.isOnline ?? true,
-    isRobotControlled: p.isRobotControlled ?? false,
+    isRobotControlled: p.isRobotControlled ?? p.robotControlled ?? false,
     currentPlayedCards: currentPlayedCardIds,
   };
 };
@@ -89,7 +89,7 @@ export const mergePlayers = (
     return {
       ...incomingPlayer,
       isRobotControlled:
-        prevPlayer?.isRobotControlled ?? incomingPlayer.isRobotControlled ?? false,
+        prevPlayer?.isRobotControlled ?? incomingPlayer.isRobotControlled ?? incomingPlayer.robotControlled ?? false,
       currentPlayedCards:
         prevPlayer?.currentPlayedCards ?? incomingPlayer.currentPlayedCards ?? [],
       isOnline: prevPlayer?.isOnline ?? incomingPlayer.isOnline ?? true,

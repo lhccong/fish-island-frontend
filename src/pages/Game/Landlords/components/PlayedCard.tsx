@@ -36,10 +36,11 @@ const PlayedCard: React.FC<PlayedCardProps> = ({ id, style }) => {
   const displayValue = parsed.displayValue;
   const { width, height } = cardSize;
   const borderRadius = width * 0.14;
-  const fontSize = width * 0.22;
-  const symbolSize = width * 0.38;
-  const cornerPadding = width * 0.08;
-  const cornerFontSize = width * 0.17;
+  // 左上角角标：放大 50%（相对于 width）
+  const cornerFontSize = width * 0.32;
+  // 中间图案：缩小 25%
+  const symbolSize = width * 0.28;
+  const cornerPadding = width * 0.06;
 
   return (
     <div

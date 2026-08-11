@@ -177,7 +177,8 @@ export function parsePokerId(id: string): ParsedCard {
       symbol: suitChar,
       isRed,
       color: isRed ? '#ef4444' : '#1f2937',
-      bgColor: isRed ? '#fff1f2' : '#f9fafb',
+      // 牌面背景统一使用浅色，不管红黑花色
+      bgColor: '#f9fafb',
     };
   }
 

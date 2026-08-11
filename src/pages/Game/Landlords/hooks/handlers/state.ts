@@ -95,7 +95,7 @@ export const createGameStateUpdateHandler = (
             userId: serverPlayer.userId || serverPlayer.id,
             id: serverPlayer.userId || serverPlayer.id,
             // 保留临时状态
-            isRobotControlled: prevPlayer?.isRobotControlled ?? serverPlayer.isRobotControlled ?? false,
+            isRobotControlled: prevPlayer?.isRobotControlled ?? serverPlayer.isRobotControlled ?? serverPlayer.robotControlled ?? false,
             currentPlayedCards: prevPlayer?.currentPlayedCards ?? serverPlayer.currentPlayedCards ?? [],
             // 更新在线状态
             isOnline: finalOnline,

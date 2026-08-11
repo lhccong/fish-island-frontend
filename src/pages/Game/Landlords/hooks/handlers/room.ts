@@ -71,7 +71,7 @@ export const createJoinRoomHandler = (
             isMe: currentUserId ? String(p.userId) === String(currentUserId) : false,
             robScore: p.robScore || 0,
             isRobotControlled:
-              prevPlayer?.isRobotControlled ?? p.isRobotControlled ?? false,
+              prevPlayer?.isRobotControlled ?? p.robotControlled ?? false,
             currentPlayedCards: prevPlayer?.currentPlayedCards ?? [],
           };
         }),

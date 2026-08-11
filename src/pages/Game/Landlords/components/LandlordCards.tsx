@@ -22,10 +22,11 @@ interface SingleCardProps {
 const SingleCard: React.FC<SingleCardProps> = ({ id, index, cardWidth, cardHeight }) => {
   const parsed = parsePokerId(id);
   const borderRadius = cardWidth * 0.14;
-  const fontSize = cardWidth * 0.23;
-  const symbolSize = cardWidth * 0.4;
-  const cornerPadding = cardWidth * 0.08;
-  const cornerFontSize = cardWidth * 0.17;
+  // 左上角角标：放大 50%（相对于 cardWidth）
+  const cornerFontSize = cardWidth * 0.32;
+  // 中间图案：缩小 25%
+  const symbolSize = cardWidth * 0.28;
+  const cornerPadding = cardWidth * 0.06;
 
   return (
     <div
