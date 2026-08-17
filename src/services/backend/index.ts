@@ -21,6 +21,7 @@ import * as fileController from './fileController';
 import * as fishAuthController from './fishAuthController';
 import * as fishPetController from './fishPetController';
 import * as fundController from './fundController';
+import * as gameRankingController from './gameRankingController';
 import * as heroController from './heroController';
 import * as hotPostController from './hotPostController';
 import * as indexTradeController from './indexTradeController';
@@ -129,4 +130,5 @@ export default {
   userRemarkController,
   voteController,
   wordLibraryController,
+  gameRankingController,
 };

@@ -9,10 +9,23 @@ export const PHASE = {
 
 /**
  * 标准化阶段为小写
- * 兼容后端传回大写或小写阶段值
+ * 兼容后端传回大写/小写阶段值，或数字状态码
  */
-export const normalizePhase = (phase: string | undefined): string => {
-  if (!phase) return 'waiting';
+export const normalizePhase = (phase: string | number | undefined): string => {
+  if (phase === undefined || phase === null) return 'waiting';
+  if (typeof phase === 'number') {
+    // 数字状态码映射（后端 GameRoom.RoomState）
+    // 1=WAITING, 2=READY, 3=DISTRIBUTING, 4=ROBBING, 5=PLAYING
+    const map: Record<number, string> = {
+      1: 'waiting',
+      2: 'waiting',  // 已准备但仍在等待开始
+      3: 'dealing',
+      4: 'robbing',
+      5: 'playing',
+      6: 'ending',
+    };
+    return map[phase] ?? 'waiting';
+  }
   const upper = phase.toUpperCase();
   if (upper === 'WAITING') return 'waiting';
   if (upper === 'DEALING') return 'dealing';

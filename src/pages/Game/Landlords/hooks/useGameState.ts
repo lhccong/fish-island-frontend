@@ -34,7 +34,7 @@ import {
   createActionResultHandler,
 } from './handlers/turn';
 import {
-  createJoinRoomHandler,
+  createRoomStateHandler,
   createReadyHandler,
   createLeaveRoomHandler,
 } from './handlers/room';
@@ -93,7 +93,7 @@ export function useGameState(roomId: string | undefined) {
   const handleGameStateUpdateRef = useRef<ReturnType<typeof createGameStateUpdateHandler>>();
   const handleGameStartRef = useRef<ReturnType<typeof createGameStartHandler>>();
   const handleGameChatRef = useRef<ReturnType<typeof createGameChatHandler>>();
-  const handleGameJoinRoomRef = useRef<ReturnType<typeof createJoinRoomHandler>>();
+  const handleRoomStateRef = useRef<ReturnType<typeof createRoomStateHandler>>();
   const handleGameReadyRef = useRef<ReturnType<typeof createReadyHandler>>();
   const handleLeaveRoomRef = useRef<ReturnType<typeof createLeaveRoomHandler>>();
   const handleTurnNotifyRef = useRef<ReturnType<typeof createTurnNotifyHandler>>();
@@ -129,13 +129,14 @@ export function useGameState(roomId: string | undefined) {
       setSelectedCards,
     );
 
-    handleGameJoinRoomRef.current = createJoinRoomHandler(
+    // 统一房间状态处理器（处理 CREATE, JOIN, RECONNECT）
+    handleRoomStateRef.current = createRoomStateHandler(
       userIdRef.current,
       (payload: any) => handleGameStateUpdateRef.current?.(payload),
       setGameState,
       setLoading,
       setGameResult,
-      roomIdRef.current || '',
+      roomIdRef.current,
     );
 
     handleActionResultRef.current = createActionResultHandler(
@@ -176,7 +177,7 @@ export function useGameState(roomId: string | undefined) {
       [MSG_TYPE.GAME_STATE_UPDATE]: safeHandler(handleGameStateUpdateRef.current),
       [MSG_TYPE.GAME_START]: safeHandler(handleGameStartRef.current),
       [MSG_TYPE.GAME_CHAT]: safeHandler(handleGameChatRef.current),
-      [MSG_TYPE.GAME_JOIN_ROOM]: safeHandler(handleGameJoinRoomRef.current),
+      [MSG_TYPE.GAME_ROOM_STATE]: safeHandler(handleRoomStateRef.current),
       [MSG_TYPE.GAME_READY]: safeHandler(handleGameReadyRef.current),
       [MSG_TYPE.GAME_LEAVE_ROOM]: safeHandler(handleLeaveRoomRef.current),
       [MSG_TYPE.GAME_TURN_NOTIFY]: safeHandler(turnNotifyWithRefs),
@@ -227,6 +228,72 @@ export function useGameState(roomId: string | undefined) {
     }
     return clearTimer;
   }, [gameState.currentPlayerId, gameState.currentRobPlayerId, gameState.phase, leftRoom]);
+
+  // 页面卸载/关闭时自动离开房间
+  useEffect(() => {
+    // 注册 beforeunload 事件（页面关闭/刷新/跳转前）
+    const handleBeforeUnload = () => {
+      const currentRoomId = roomIdRef.current;
+      const currentUserId = userIdRef.current;
+      if (currentRoomId && currentUserId && !leftRoomRef.current) {
+        // 标记本地已离开（优先执行，确保状态更新）
+        localStorage?.setItem(
+          'landlords_left_room',
+          JSON.stringify({ roomId: currentRoomId, timestamp: Date.now() })
+        );
+
+        // 使用 sendBeacon 发送离开房间请求
+        // sendBeacon 会在页面卸载时异步发送请求，是 beforeunload 中最可靠的方式
+        if (navigator.sendBeacon) {
+          try {
+            // 获取 token
+            const token = localStorage.getItem('tokenValue');
+            if (token) {
+              // 构建请求数据（sendBeacon 需要 FormData 或 Blob）
+              const formData = new FormData();
+              formData.append('Authorization', `Bearer ${token}`);
+              
+              // 使用 JSON 发送
+              const blob = new Blob(
+                [JSON.stringify({ roomId: currentRoomId })],
+                { type: 'application/json' }
+              );
+              
+              // 发送请求到后端接口
+              navigator.sendBeacon('/api/game/room/leave', blob);
+              console.debug('[landlords] 页面卸载，发送离开房间请求: roomId=', currentRoomId);
+            }
+          } catch (e) {
+            console.warn('[landlords] sendBeacon 失败', e);
+          }
+        }
+      }
+    };
+
+    // 注册 visibilitychange 事件（页面切换到后台时）
+    // 注意：visibilitychange 可能不如 beforeunload 可靠，但可以作为补充
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        const currentRoomId = roomIdRef.current;
+        const currentUserId = userIdRef.current;
+        if (currentRoomId && currentUserId && !leftRoomRef.current) {
+          console.debug('[landlords] 页面隐藏，标记离开房间');
+          localStorage?.setItem(
+            'landlords_left_room',
+            JSON.stringify({ roomId: currentRoomId, timestamp: Date.now(), hidden: true })
+          );
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   // ===== 业务操作（暴露给组件） =====
   const leaveRoom = () => {
