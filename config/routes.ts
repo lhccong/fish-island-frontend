@@ -107,6 +107,7 @@ export default [
         requireAuth: true
       },
       {path: '/game/landlords/:roomId', component: './Game/Landlords/LandlordsRoom', requireAuth: true},
+      {path: '/game/landlords/ranking', component: './Game/Landlords/Ranking', name: '斗地主排行', requireAuth: true},
     ],
   },
   {

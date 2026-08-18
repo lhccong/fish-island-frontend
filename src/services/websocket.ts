@@ -100,7 +100,7 @@ class WebSocketService {
       try {
         const data = JSON.parse(event.data);
 
-        console.log('[WebSocket] 收到消息 type:', data.type, 'data:', JSON.stringify(data).substring(0, 300));
+        // console.log('[WebSocket] 收到消息 type:', data.type, 'data:', JSON.stringify(data));
 
         // 如果消息处理被暂停，直接丢弃聊天消息
         if (this.isMessageProcessingPaused) {

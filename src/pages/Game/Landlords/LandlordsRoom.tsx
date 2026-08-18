@@ -507,7 +507,7 @@ const LandlordsRoom: React.FC = () => {
       {/* 下方区域（固定高度） */}
       <div
         style={{
-          flex: '0 0 200px',
+          flex: '0 0 280px',
           backgroundColor: '#f5f5f5',
           borderTop: '1px solid #e8e8e8',
           display: 'flex',

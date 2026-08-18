@@ -4,18 +4,22 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { Card, Button, Tabs, List, Spin, message as antMessage, Empty, Tag, Space, Modal, Alert, Avatar, Tooltip } from 'antd';
-import { Users, RefreshCw, Plus, Lock, Crown, AlertCircle } from 'lucide-react';
+import { Users, RefreshCw, Plus, Lock, Crown, AlertCircle, Trophy } from 'lucide-react';
 import { wsService } from '@/services/websocket';
 import { useModel, history } from '@umijs/max';
 import { RoomRestriction, RoomStateBackend } from './types';
 
 const MSG_TYPE = {
   GAME_ROOM_LIST: 'gameRoomList',
-  GAME_CREATE_ROOM: 'gameCreateRoom',
+  GAME_ROOM_STATE: 'gameRoomState',  // 统一房间状态
   GAME_ROOM_ADDED: 'gameRoomAdded',
   GAME_ROOM_REMOVED: 'gameRoomRemoved',
   // 房间超时解散：如果当前用户被该房间限制，自动解除限制
   GAME_ROOM_CLOSED: 'gameRoomClosed',
+  // 创建房间请求（后端返回 gameRoomState）
+  GAME_CREATE_ROOM: 'gameCreateRoom',
+  // 加入房间请求（后端返回 gameRoomState）
+  GAME_JOIN_ROOM: 'gameJoinRoom',
 };
 
 const codeToGameTypeName = (code: string) => {
@@ -89,105 +93,6 @@ const LandlordsIndex: React.FC = () => {
     }
   }, []);
 
-  const handleGameRoomAdded = useCallback((payload: any) => {
-    const data = payload?.data ?? payload;
-    if (data?.roomInfo) {
-      // 添加新房间到列表，不按模式过滤
-      setRoomList((prev) => {
-        if (prev.some((room) => room.roomId === data.roomId)) {
-          return prev;
-        }
-        return [data.roomInfo, ...prev];
-      });
-    }
-  }, []);
-
-  const handleGameRoomRemoved = useCallback((payload: any) => {
-    const data = payload?.data ?? payload;
-    if (data?.roomId) {
-      // 从列表中移除房间
-      setRoomList((prev) =>
-        prev.filter((room) => room.roomId !== data.roomId)
-      );
-    }
-  }, []);
-
-  // 房间超时解散：如果是自己受限的房间，立即解除限制（这样能直接进其它房间）
-  const handleGameRoomClosed = useCallback((payload: any) => {
-    const data = payload?.data ?? payload;
-    if (data?.roomId) {
-      setRestriction((prev) => (prev?.roomId === data.roomId ? null : prev));
-    }
-  }, []);
-
-  const handleGameCreateRoom = useCallback((payload: any) => {
-    const data = payload?.data ?? payload;
-    if (data?.roomId) {
-      history.push(`/game/landlords/${data.roomId}`);
-    }
-  }, []);
-
-  const handleError = useCallback((payload: any) => {
-    antMessage.error(payload?.data || '发生错误');
-  }, []);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const handlers: Record<string, (data: any) => void> = {
-      [MSG_TYPE.GAME_ROOM_LIST]: handleGameRoomList,
-      [MSG_TYPE.GAME_ROOM_ADDED]: handleGameRoomAdded,
-      [MSG_TYPE.GAME_ROOM_REMOVED]: handleGameRoomRemoved,
-      [MSG_TYPE.GAME_ROOM_CLOSED]: handleGameRoomClosed,
-      [MSG_TYPE.GAME_CREATE_ROOM]: handleGameCreateRoom,
-      error: handleError,
-    };
-
-    handlersRef.current = handlers;
-    Object.entries(handlers).forEach(([type, handler]) => {
-      wsService.addMessageHandler(type, handler);
-    });
-
-    // 监听其他页面离开房间的事件
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'landlords_left_room' && e.newValue) {
-        try {
-          const data = JSON.parse(e.newValue);
-          if (data.roomId) {
-            // 离开的房间ID，去掉该限制
-            setRestriction((prev) => {
-              if (prev?.roomId === data.roomId) {
-                return null;
-              }
-              return prev;
-            });
-          }
-        } catch (err) {
-          console.error('[landlords] 解析离开房间数据失败', err);
-        }
-        // 清除标记
-        localStorage.removeItem('landlords_left_room');
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      Object.keys(handlers).forEach((type) => {
-        wsService.removeMessageHandler(type, handlers[type]);
-      });
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [
-    userId,
-    handleGameRoomList,
-    handleGameRoomAdded,
-    handleGameRoomRemoved,
-    handleGameRoomClosed,
-    handleGameCreateRoom,
-    handleError,
-  ]);
-
   const sendMessageWithUserId = useCallback((type: string, data: Record<string, any> = {}) => {
     if (!userId) {
       console.debug('[landlords-index] userId not ready, skip:', type);
@@ -233,11 +138,114 @@ const LandlordsIndex: React.FC = () => {
     });
   }, [sendMessageWithUserId, selectedGameType]);
 
+  const handleGameRoomAdded = useCallback((payload: any) => {
+    const data = payload?.data ?? payload;
+    if (data?.roomInfo) {
+      // 添加新房间到列表，不按模式过滤
+      setRoomList((prev) => {
+        if (prev.some((room) => room.roomId === data.roomId)) {
+          return prev;
+        }
+        return [data.roomInfo, ...prev];
+      });
+    } else if (data?.roomId) {
+      // 如果没有 roomInfo 但有 roomId，刷新整个列表
+      refreshRoomList();
+    }
+  }, [refreshRoomList]);
+
+  const handleGameRoomRemoved = useCallback((payload: any) => {
+    const data = payload?.data ?? payload;
+    if (data?.roomId) {
+      // 从列表中移除房间
+      setRoomList((prev) =>
+        prev.filter((room) => room.roomId !== data.roomId)
+      );
+    }
+  }, []);
+
+  // 房间超时解散：如果是自己受限的房间，立即解除限制（这样能直接进其它房间）
+  const handleGameRoomClosed = useCallback((payload: any) => {
+    const data = payload?.data ?? payload;
+    if (data?.roomId) {
+      setRestriction((prev) => (prev?.roomId === data.roomId ? null : prev));
+    }
+  }, []);
+
+  const handleGameRoomState = useCallback((payload: any) => {
+    const data = payload?.data ?? payload;
+    // CREATE 动作表示创建房间成功，跳转到房间页
+    if (data?.action === 'CREATE' && data?.roomId) {
+      // 跳转前先刷新房间列表，确保其他用户能看到新房间
+      refreshRoomList();
+      history.push(`/game/landlords/${data.roomId}`);
+    }
+  }, [refreshRoomList]);
+
+  const handleError = useCallback((payload: any) => {
+    antMessage.error(payload?.data || '发生错误');
+  }, []);
+
   useEffect(() => {
-    if (!userId) return undefined;
+    if (!userId) return;
+
+    const handlers: Record<string, (data: any) => void> = {
+      [MSG_TYPE.GAME_ROOM_LIST]: handleGameRoomList,
+      [MSG_TYPE.GAME_ROOM_ADDED]: handleGameRoomAdded,
+      [MSG_TYPE.GAME_ROOM_REMOVED]: handleGameRoomRemoved,
+      [MSG_TYPE.GAME_ROOM_CLOSED]: handleGameRoomClosed,
+      [MSG_TYPE.GAME_ROOM_STATE]: handleGameRoomState,
+      error: handleError,
+    };
+
+    handlersRef.current = handlers;
+    Object.entries(handlers).forEach(([type, handler]) => {
+      wsService.addMessageHandler(type, handler);
+    });
+
+    // 监听其他页面离开房间的事件
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'landlords_left_room' && e.newValue) {
+        try {
+          const data = JSON.parse(e.newValue);
+          if (data.roomId) {
+            // 离开的房间ID，去掉该限制
+            setRestriction((prev) => {
+              if (prev?.roomId === data.roomId) {
+                return null;
+              }
+              return prev;
+            });
+          }
+        } catch (err) {
+          console.error('[landlords] 解析离开房间数据失败', err);
+        }
+        // 清除标记
+        localStorage.removeItem('landlords_left_room');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      Object.keys(handlers).forEach((type) => {
+        wsService.removeMessageHandler(type, handlers[type]);
+      });
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [
+    userId,
+    handleGameRoomList,
+    handleGameRoomAdded,
+    handleGameRoomRemoved,
+    handleGameRoomClosed,
+    handleGameRoomState,
+    handleError,
+  ]);
+
+  useEffect(() => {
+    if (!userId) return;
     refreshRoomList();
-    const interval = setInterval(refreshRoomList, 5000);
-    return () => clearInterval(interval);
   }, [userId, selectedGameType, refreshRoomList]);
 
   const handleCreateRoom = () => {
@@ -321,15 +329,25 @@ const LandlordsIndex: React.FC = () => {
               三人对战，经典玩法。叫地主、出牌、抢分，比比谁先出完！
             </div>
           </div>
-          <Button
-            type="primary"
-            size="large"
-            icon={<Plus size={20} />}
-            onClick={handleCreateRoom}
-            style={{ height: 48, paddingLeft: 24, paddingRight: 24, fontSize: 18 }}
-          >
-            创建房间
-          </Button>
+          <Space>
+            <Button
+              size="large"
+              icon={<Trophy size={20} />}
+              onClick={() => history.push('/game/landlords/ranking')}
+              style={{ height: 48, paddingLeft: 20, paddingRight: 20, fontSize: 16 }}
+            >
+              排行榜
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              icon={<Plus size={20} />}
+              onClick={handleCreateRoom}
+              style={{ height: 48, paddingLeft: 24, paddingRight: 24, fontSize: 18 }}
+            >
+              创建房间
+            </Button>
+          </Space>
         </Space>
       </Card>
 
