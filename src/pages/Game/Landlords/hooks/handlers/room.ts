@@ -78,7 +78,7 @@ export const createRoomStateHandler = (
             isCurrentPlayer: p.isCurrentPlayer || false,
             isReady: p.ready || false,
             isOwner: p.role === PlayerRole.OWNER || false,
-            isOnline: prevPlayer?.isOnline ?? p.online ?? true,
+            isOnline: p.online ?? true,
             isMe: currentUserId ? String(p.userId) === String(currentUserId) : false,
             robScore: p.robScore || 0,
             isRobotControlled:
