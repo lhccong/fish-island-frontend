@@ -192,6 +192,14 @@ export function useGameState(roomId: string | undefined) {
 
     return () => {
       isUnmountRef.current = true;
+
+      // 如果不是主动离开，则发送离开房间消息
+      // leftRoomRef.current 为 true 表示用户主动点击返回按钮离开，此时 leaveRoom 已经处理过
+      if (!leftRoomRef.current && roomIdRef.current) {
+        console.debug('[landlords] 组件卸载，发送离开房间消息');
+        sendGameMessage(MSG_TYPE.GAME_LEAVE_ROOM, { roomId: roomIdRef.current });
+      }
+
       Object.entries(handlers).forEach(([type, handler]) => {
         wsService.removeMessageHandler(type, handler);
       });
@@ -229,49 +237,8 @@ export function useGameState(roomId: string | undefined) {
     return clearTimer;
   }, [gameState.currentPlayerId, gameState.currentRobPlayerId, gameState.phase, leftRoom]);
 
-  // 页面卸载/关闭时自动离开房间
+  // 页面卸载/关闭时标记离开状态（用于重连判断）
   useEffect(() => {
-    // 注册 beforeunload 事件（页面关闭/刷新/跳转前）
-    const handleBeforeUnload = () => {
-      const currentRoomId = roomIdRef.current;
-      const currentUserId = userIdRef.current;
-      if (currentRoomId && currentUserId && !leftRoomRef.current) {
-        // 标记本地已离开（优先执行，确保状态更新）
-        localStorage?.setItem(
-          'landlords_left_room',
-          JSON.stringify({ roomId: currentRoomId, timestamp: Date.now() })
-        );
-
-        // 使用 sendBeacon 发送离开房间请求
-        // sendBeacon 会在页面卸载时异步发送请求，是 beforeunload 中最可靠的方式
-        if (navigator.sendBeacon) {
-          try {
-            // 获取 token
-            const token = localStorage.getItem('tokenValue');
-            if (token) {
-              // 构建请求数据（sendBeacon 需要 FormData 或 Blob）
-              const formData = new FormData();
-              formData.append('Authorization', `Bearer ${token}`);
-              
-              // 使用 JSON 发送
-              const blob = new Blob(
-                [JSON.stringify({ roomId: currentRoomId })],
-                { type: 'application/json' }
-              );
-              
-              // 发送请求到后端接口
-              navigator.sendBeacon('/api/game/room/leave', blob);
-              console.debug('[landlords] 页面卸载，发送离开房间请求: roomId=', currentRoomId);
-            }
-          } catch (e) {
-            console.warn('[landlords] sendBeacon 失败', e);
-          }
-        }
-      }
-    };
-
-    // 注册 visibilitychange 事件（页面切换到后台时）
-    // 注意：visibilitychange 可能不如 beforeunload 可靠，但可以作为补充
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         const currentRoomId = roomIdRef.current;
@@ -286,12 +253,26 @@ export function useGameState(roomId: string | undefined) {
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    const handleBeforeUnload = () => {
+      const currentRoomId = roomIdRef.current;
+      const currentUserId = userIdRef.current;
+      if (currentRoomId && currentUserId && !leftRoomRef.current) {
+        console.debug('[landlords] 页面关闭，发送离开房间消息');
+        // 使用 sendBeacon 确保消息发送
+        const data = JSON.stringify({
+          type: 'GAME_LEAVE_ROOM',
+          data: JSON.stringify({ roomId: currentRoomId }),
+        });
+        navigator.sendBeacon?.('/api/ws/message', data);
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
 

@@ -111,6 +111,7 @@ export const createGameStateUpdateHandler = (
       return;
     }
 
+    // 处理玩家状态变更事件 - 直接更新，不走 mergePlayers
     if (isPlayerStatusChangeEvent && data?.userId && data?.status) {
       const targetUserId = String(data.userId);
       const newStatus = data.status;
