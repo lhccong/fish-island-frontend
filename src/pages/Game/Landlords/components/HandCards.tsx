@@ -23,6 +23,9 @@ interface PokerCardComponentProps {
   cardHeight: number;
 }
 
+// 手牌之间的重叠比例（marginLeft 偏移与尺寸计算共用，保证总宽度一致）
+const CARD_OVERLAP_RATIO = 0.48;
+
 const PokerCardComponent: React.FC<PokerCardComponentProps> = ({
   id,
   selected,
@@ -58,7 +61,7 @@ const PokerCardComponent: React.FC<PokerCardComponentProps> = ({
         backgroundColor: parsed.bgColor,
         border: selected ? `3px solid #f97316` : '2px solid #d9d9d9',
         color: parsed.color,
-        marginLeft: -cardWidth * 0.17,
+        marginLeft: -cardWidth * CARD_OVERLAP_RATIO,
         zIndex: selected ? 1000 : undefined,
         transform: selected ? `translateY(-${cardHeight * 0.2}px)` : undefined,
         boxShadow: selected
@@ -147,52 +150,61 @@ const HandCards: React.FC<HandCardsProps> = ({
       const container = containerRef.current;
       if (!container) return;
 
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
+      // 读取实际渲染尺寸（包含 padding/border 后的真实可用区）
+      const rect = container.getBoundingClientRect();
+      const containerWidth = rect.width || container.clientWidth;
+      const containerHeight = rect.height || container.clientHeight;
+
+      if (containerWidth <= 0 || containerHeight <= 0) return;
 
       // 牌数（斗地主最多20张牌，癞子可能增加）
       const cardCount = cards.length || 17;
 
-      // 每张牌重叠约17%，有效宽度占比 = 0.17 + cardCount * 0.83
-      const effectiveWidthRatio = 0.17 + cardCount * 0.83;
+      // 重叠比例与外层卡片一致
+      const overlapRatio = CARD_OVERLAP_RATIO;
+      // 有效宽度占比 = 第一张完整宽 + 后续每张露出 (1 - overlap) 的宽度
+      const effectiveWidthRatio = overlapRatio + cardCount * (1 - overlapRatio);
 
-      // 根据宽度计算单张牌宽度
+      // 横向限制：根据容器宽度算出的最大单张牌宽
       const widthFromWidth = containerWidth / effectiveWidthRatio;
 
-      // 根据高度计算单张牌高度（需要留出选中时上移的空间，约20%）
-      const heightForCard = containerHeight * 0.75; // 留25%空间给选中上移
-      const widthFromHeight = heightForCard / 1.4; // 按牌面比例
+      // 纵向限制：留 25% 给选中上移，按牌面比例 1:1.4 反推宽度
+      const widthFromHeight = (containerHeight * 0.75) / 1.4;
 
-      // 取两者中较小的值，确保不溢出
+      // 取两者中较小值，保证不溢出容器
       let cardWidth = Math.min(widthFromWidth, widthFromHeight);
 
-      // 限制最大最小尺寸
-      const minWidth = 32;
+      // 设置尺寸上下限，保证极端情况下仍可读
+      const minWidth = 28;
       const maxWidth = 72;
       cardWidth = Math.max(minWidth, Math.min(maxWidth, cardWidth));
 
       const cardHeight = cardWidth * 1.4;
 
-      setCardSize({ width: cardWidth, height: cardHeight });
+      setCardSize((prev) =>
+        prev.width !== cardWidth || prev.height !== cardHeight
+          ? { width: cardWidth, height: cardHeight }
+          : prev
+      );
     };
 
     calculateCardSize();
     window.addEventListener('resize', calculateCardSize);
 
-    // 使用 ResizeObserver 监听容器大小变化
+    // 使用 ResizeObserver 监听容器大小变化（包括布局调整导致的尺寸变化）
     const container = containerRef.current;
+    let resizeObserver: ResizeObserver | null = null;
     if (container && 'ResizeObserver' in window) {
-      const resizeObserver = new ResizeObserver(() => {
+      resizeObserver = new ResizeObserver(() => {
         calculateCardSize();
       });
       resizeObserver.observe(container);
-      return () => {
-        resizeObserver.disconnect();
-        window.removeEventListener('resize', calculateCardSize);
-      };
     }
 
-    return () => window.removeEventListener('resize', calculateCardSize);
+    return () => {
+      if (resizeObserver) resizeObserver.disconnect();
+      window.removeEventListener('resize', calculateCardSize);
+    };
   }, [cards.length]);
 
   if (cards.length === 0) {
@@ -212,9 +224,18 @@ const HandCards: React.FC<HandCardsProps> = ({
         alignItems: 'center',
         width: '100%',
         height: '100%',
+        overflow: 'visible',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          maxWidth: '100%',
+          overflow: 'visible',
+        }}
+      >
         {sortedCards.map((cardId, index) => {
           // 用 cardId:index 作为唯一 key，支持多副牌场景下区分同 ID 的不同实例
           const cardKey = `${cardId}:${index}`;
