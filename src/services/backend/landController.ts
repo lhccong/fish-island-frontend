@@ -2,9 +2,34 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
+/** 收获时新解锁的图鉴条目 */
+export interface CollectionUnlockVO {
+  cropId: number;
+  cropName: string;
+  cropIcon?: string;
+  grade: number;
+  weight: number;
+  firstObtainedTime: string;
+  /** 图鉴更新额外奖励积分 */
+  bonus?: number;
+}
+
+/** 批量收获结果：地块列表 + 本次总积分 + 新解锁图鉴 */
+export interface HarvestResultVO {
+  lands: API.LandDTO[];
+  totalPoints: number;
+  newCollections?: CollectionUnlockVO[];
+}
+
+export interface BaseResponseHarvestResultVO_ {
+  code?: number;
+  data?: HarvestResultVO;
+  message?: string;
+}
+
 /** 批量收获作物 POST /api/land/harvest */
 export async function harvestUsingPost(body: API.HarvestRequest, options?: { [key: string]: any }) {
-  return request<API.BaseResponseListLandDTO_>('/api/land/harvest', {
+  return request<BaseResponseHarvestResultVO_>('/api/land/harvest', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

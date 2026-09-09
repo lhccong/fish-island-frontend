@@ -2,7 +2,7 @@ import Footer from '@/components/Footer';
 import {BACKEND_HOST_CODE, SYSTEM_LOGO} from '@/constants';
 import {userRegisterUsingPost} from '@/services/backend/userController';
 import {LockOutlined, UserOutlined} from '@ant-design/icons';
-import {LoginForm, ProFormText} from '@ant-design/pro-form';
+import {LoginForm, ProFormText} from '@ant-design/pro-components';
 import {Captcha} from 'aj-captcha-react';
 import {message, Tabs} from 'antd';
 import React, {useRef, useState} from 'react';

@@ -141,9 +141,7 @@ export default defineConfig({
       projectName: 'backend',
     },
   ],
-  mfsu: {
-    strategy: 'normal',
-  },
+  mfsu: false,
   requestRecord: {},
   metas: [
     { name: 'theme-color', content: '#1890ff' },
