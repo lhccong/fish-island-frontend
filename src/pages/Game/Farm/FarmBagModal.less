@@ -1,0 +1,274 @@
+// 农场背包弹窗（图鉴 / buff 道具 / 成就）
+// 注意：Modal 渲染在 body 顶层，样式为全局类（farm-bag-*），不依赖农场页局部样式
+.farm-bag-modal {
+  .farm-bag-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .farm-bag-tab {
+    border: 1px solid #e5e2d8;
+    background: #faf8f2;
+    border-radius: 16px;
+    padding: 5px 16px;
+    font-size: 14px;
+    color: #6b6455;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &.active {
+      background: #4c9f70;
+      border-color: #4c9f70;
+      color: #fff;
+      font-weight: 600;
+    }
+  }
+
+  .farm-bag-spin {
+    min-height: 220px;
+  }
+
+  .farm-bag-body {
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  .farm-bag-hint {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 12px;
+  }
+
+  // ===== 图鉴 =====
+  .farm-bag-crop-group {
+    background: #faf8f2;
+    border: 1px solid #eee9dd;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .farm-bag-crop-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .farm-bag-crop-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #fff;
+  }
+
+  .farm-bag-crop-title {
+    min-width: 110px;
+
+    .farm-bag-crop-name {
+      display: block;
+      font-weight: 600;
+      color: #3f3a2f;
+    }
+
+    .farm-bag-crop-progress {
+      font-size: 12px;
+      color: #97917f;
+    }
+  }
+
+  .farm-bag-crop-bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: #e8e4d6;
+    overflow: hidden;
+
+    .farm-bag-crop-bar-fill {
+      display: block;
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #7fc88a, #4c9f70);
+      transition: width 0.3s;
+    }
+  }
+
+  .farm-bag-grade-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .farm-bag-grade-cell {
+    border-radius: 10px;
+    padding: 8px 4px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+
+    .farm-bag-grade-cell-icon {
+      font-size: 22px;
+      line-height: 26px;
+    }
+
+    .farm-bag-grade-cell-grade {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .farm-bag-grade-cell-weight {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    &.is-locked {
+      background: #f1efe7;
+      color: #b3ad9c;
+      border: 1px dashed #dcd7c6;
+    }
+
+    &.is-unlocked {
+      background: #fff;
+      border: 1px solid #e3e0d3;
+      color: #4a4536;
+      box-shadow: 0 1px 3px rgba(96, 84, 52, 0.08);
+    }
+
+    &.grade-9,
+    &.grade-10 {
+      &.is-unlocked {
+        border-color: #e8b34b;
+        background: #fffaf0;
+      }
+    }
+  }
+
+  // ===== buff 道具 =====
+  .farm-bag-buff-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #faf8f2;
+    border: 1px solid #eee9dd;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .farm-bag-buff-icon {
+    font-size: 30px;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #e3e0d3;
+    filter: grayscale(1);
+    opacity: 0.55;
+
+    &.owned-true {
+      filter: none;
+      opacity: 1;
+      background: linear-gradient(135deg, #f4fbe9, #e6f6dd);
+      border-color: #b9dfae;
+    }
+  }
+
+  .farm-bag-buff-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .farm-bag-buff-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .farm-bag-buff-name {
+    font-weight: 600;
+    color: #3f3a2f;
+  }
+
+  .farm-bag-buff-level {
+    margin: 0;
+  }
+
+  .farm-bag-buff-desc {
+    font-size: 12px;
+    color: #97917f;
+    margin-top: 2px;
+  }
+
+  .farm-bag-buff-effect {
+    font-size: 13px;
+    color: #4a4536;
+    margin-top: 4px;
+  }
+
+  .farm-bag-buff-next {
+    font-size: 12px;
+    color: #6b8f5e;
+    margin-top: 2px;
+
+    .farm-bag-buff-cost {
+      color: #b08a3e;
+    }
+
+    .farm-bag-buff-threshold {
+      font-size: 12px;
+    }
+  }
+
+  .farm-bag-buff-lock {
+    font-size: 12px;
+    color: #c0392b;
+    margin-top: 4px;
+  }
+
+  .farm-bag-buff-action {
+    flex-shrink: 0;
+  }
+
+  // ===== 成就 =====
+  .farm-bag-achievement-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #faf8f2;
+    border: 1px solid #eee9dd;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .farm-bag-achievement-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .farm-bag-achievement-name {
+    font-weight: 600;
+    color: #3f3a2f;
+
+    .farm-bag-achievement-reward {
+      margin-left: 8px;
+      font-size: 12px;
+      color: #b08a3e;
+      font-weight: 500;
+    }
+  }
+
+  .farm-bag-achievement-desc {
+    font-size: 12px;
+    color: #97917f;
+    margin-top: 2px;
+  }
+}
