@@ -86,8 +86,8 @@ const data = new Map<number, Event>([
   }],
   [900011, {
     id: 900011, grade: 0, ages: [16, 16], include: "AGE=16", exclude: "EVT?[900011]",
-    event: "你带同学误入违法场所，被当警察的 Ciao 查获。你接受了调查与教育矫治，认真反省这次鲁莽的行为。",
-    effect: { SPR: -2 }
+    event: "你带同学前往违法场所，被当警察的 Ciao 查获。你因违法行为入狱，在服刑改造期间认真反省、规律锻炼。体质 +1。",
+    effect: { STR: 1 }
   }],
   [900012, {
     id: 900012, grade: 2, ages: [25, 25], include: "(AGE=25)&(EVT?[10001])", exclude: "EVT?[900012]",

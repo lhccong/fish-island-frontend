@@ -249,6 +249,7 @@ test('specific ages, boy event, low point, and mutually exclusive guessing are e
 
 test('all specified additive effects change only the intended attributes', () => {
   const effects = new Map([
+    [900011, { strength: 1 }],
     [900014, { money: 3, intelligence: -1 }], [900015, { strength: -3 }],
     [900018, { strength: -2, intelligence: -2 }],
     [900020, { charm: 1, intelligence: 1, strength: 1, money: 1, spirit: 1 }],
