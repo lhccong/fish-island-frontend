@@ -48,6 +48,18 @@ export interface NextResult {
     end: boolean
 }
 
+export function yearlyEventPools(state: GameState) {
+    const age = state.props.current.age
+    const calendar = ages.get(age)!.event
+    if (!state.lifespanLoss) return calendar
+    const biological = ages.get(Math.min(500, age + state.lifespanLoss))!.event
+    // Original aging events use biological age; local stories retain their stated calendar ages.
+    return Array.from({ length: Math.max(calendar.length, biological.length) }, (_, index) => [
+        ...(biological[index] || []).filter(([id]) => id < 900000),
+        ...(calendar[index] || []).filter(([id]) => id >= 900000),
+    ])
+}
+
 export function next(
     state: GameState,
     profile: ProfileState,
@@ -58,16 +70,18 @@ export function next(
     })
     const age = s.props.current.age
     const tr = ttr(s, profile, rng)
-    const events = ages.get(age)!.event
+    const events = yearlyEventPools(tr.state)
     let event: Event['id'] | null = null
     for (const level of events) {
         const filtered = level.filter(([e]) => ec(e, tr.state, profile))
         if (filtered.length < 1) continue
         event = pickWeight(filtered, rng)
     }
+    // Local late-life stories can displace the last ordinary aging event.
+    if (event === null && age + (tr.state.lifespanLoss || 0) >= 100) event = 10000
     if (event === null)
         throw new Error('No event could be picked for age ' + age)
-    const er = etr(event, tr.state, profile)
+    const er = etr(event, tr.state, profile, rng)
     const ar = atr(Ao.Trajectory, er.state, profile)
     const end = ar.state.life < 1
     return {

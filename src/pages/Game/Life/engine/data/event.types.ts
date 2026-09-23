@@ -39,6 +39,16 @@ export type Event = {
     readonly postEvent?: string
     /** 事件效果 */
     readonly effect?: EventEffect
+    /** Absolute attribute changes, applied after additive effects. */
+    readonly set?: Omit<EventEffect, 'LIF' | 'AGE'>
+    /** Inclusive age range used when generating ordinary event pools. */
+    readonly ages?: readonly [number, number]
+    /** Weighted continuation, resolved in the same year. */
+    readonly randomBranch?: readonly (readonly [number, number])[]
+    /** Biological aging offset; does not change the displayed calendar age. */
+    readonly lifespanLoss?: number
+    /** Lasting strength cost for each positive gain in other attributes. */
+    readonly strengthCostPerGain?: number
     /** 非随机事件 */
     readonly NoRandom?: boolean
     /** 有某事件时才能被随机到 */

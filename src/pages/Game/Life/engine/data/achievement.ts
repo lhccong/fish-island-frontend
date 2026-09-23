@@ -1,4 +1,79 @@
 const data = new Map([
+  [900127, { id: 900127, name: "唯愿君如意", grade: 2, hide: false, opportunity: "TRAJECTORY",
+    condition: "EVT?[900127]", description: "拒绝过波老师的邀请，在智力超过 50 后再次相遇，祝福他上岸并收获幸福。" }],
+  [910001, { id: 910001, name: "初入仙途", grade: 1, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910001]", description: "修仙模式中，测出灵根并踏入炼气期。" }],
+  [910002, { id: 910002, name: "道基初成", grade: 1, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910002]", description: "修仙模式中，突破至筑基期。" }],
+  [910003, { id: 910003, name: "金丹大道", grade: 2, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910003]", description: "修仙模式中，突破至结丹期。" }],
+  [910004, { id: 910004, name: "元婴出窍", grade: 2, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910004]", description: "修仙模式中，突破至元婴期。" }],
+  [910005, { id: 910005, name: "化神通玄", grade: 2, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910005]", description: "修仙模式中，突破至化神期。" }],
+  [910006, { id: 910006, name: "灵界来客", grade: 3, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910006]", description: "突破至炼虚期，跨界进入灵界。" }],
+  [910007, { id: 910007, name: "身神合一", grade: 3, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910007]", description: "修仙模式中，突破至合体期。" }],
+  [910008, { id: 910008, name: "大乘之道", grade: 3, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910008]", description: "修仙模式中，突破至大乘期。" }],
+  [910009, { id: 910009, name: "飞升仙界", grade: 3, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910009]", description: "渡过飞升仙劫，成就真仙。" }],
+  [910010, { id: 910010, name: "金仙不朽", grade: 3, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910010]", description: "修仙模式中，突破至金仙境。" }],
+  [910011, { id: 910011, name: "太乙问道", grade: 3, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910011]", description: "修仙模式中，突破至太乙境。" }],
+  [910012, { id: 910012, name: "大罗自在", grade: 3, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910012]", description: "修仙模式中，突破至大罗境。" }],
+  [910013, { id: 910013, name: "证道永恒", grade: 3, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910013]", description: "修仙模式中，证得道祖之位，完成此世修行。" }],
+  [910020, { id: 910020, name: "雷劫余生", grade: 2, hide: false, opportunity: "TRAJECTORY", condition: "EVT?[910020]", description: "修仙模式中，成功渡过一次天劫。" }],
+  [900031, {
+    id: 900031, name: "摸鱼岛悟道", grade: 3, hide: false, opportunity: "TRAJECTORY",
+    condition: "EVT?[900031]",
+    description: "家道中落却才华满腹，经合一引荐，在岛友的交流中悟道。知是行之始，行是知之成。"
+  }],
+  [900039, {
+    id: 900039, name: "阴阳之体", grade: 2, hide: true, opportunity: "TRAJECTORY",
+    condition: "EVT?[900039]",
+    description: "修炼乞丐卖给你的《葵花宝典》，突破炼气一层，觉醒阴阳之体。"
+  }],
+  [900041, {
+    id: 900041, name: "少年网瘾与梦", grade: 1, hide: false, opportunity: "TRAJECTORY",
+    condition: "EVT?[900041]",
+    description: "初遇明天，听闻童年网吧经历。少年对电脑的热忱打动了你。"
+  }],
+  [900042, {
+    id: 900042, name: "不认命的读书执念", grade: 1, hide: false, opportunity: "TRAJECTORY",
+    condition: "EVT?[900042]",
+    description: "了解到明天不愿因家境放弃求学，坚持至少要读完大学。"
+  }],
+  [900043, {
+    id: 900043, name: "大专软件生", grade: 1, hide: false, opportunity: "TRAJECTORY",
+    condition: "EVT?[900043]",
+    description: "听闻明天选择软件专业，靠韧劲自学编程，也付出了熬夜损耗身体的代价。"
+  }],
+  [900044, {
+    id: 900044, name: "折翼游戏梦", grade: 2, hide: false, opportunity: "TRAJECTORY",
+    condition: "EVT?[900044]",
+    description: "知晓明天成为 Java 程序员的经历。梦想未能落地，代码经验却沉淀为技术功底。"
+  }],
+  [900045, {
+    id: 900045, name: "摸鱼岛技术义工", grade: 2, hide: false, opportunity: "TRAJECTORY",
+    condition: "EVT?[900045]",
+    description: "听完明天的完整故事。六年 Java 生涯后，初心未凉，他在摸鱼岛无偿帮助众人。"
+  }],
+  [
+    900002,
+    {
+      id: 900002,
+      name: "螺丝的强制爱",
+      description: "修仙途中遭遇打螺丝的强迫结契，脱身后损失五十年苦修。",
+      grade: 2,
+      condition: "EVT?[900002]",
+      hide: false,
+      opportunity: "TRAJECTORY"
+    }
+  ],
+  [
+    900001,
+    {
+      id: 900001,
+      name: "聪的奖赏",
+      description: "偶遇摸鱼岛岛主聪，获赠《制造 Bug 秘籍》。",
+      grade: 2,
+      condition: "EVT?[900001]",
+      hide: false,
+      opportunity: "TRAJECTORY"
+    }
+  ],
   [
     101,
     {

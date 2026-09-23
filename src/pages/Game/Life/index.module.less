@@ -1,55 +1,245 @@
-.container { min-height: 78vh; padding: 24px; background: linear-gradient(145deg, #f6fbff, #eef4f7); color: #173042; }
+@primary: #ffa768;
+@primaryText: #402616;
+@accentText: #a64b0b;
+@primarySoft: #fff6ed;
+@primarySelected: #ffead9;
+
+.container { min-height: 78vh; padding: 24px; background: #fafafa; color: #303030; }
 .home, .panel, .playPanel { width: min(980px, 100%); margin: 0 auto; }
 .home { min-height: 72vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-.kicker { color: #3d8297; font-weight: 700; letter-spacing: .08em; }
-h1 { margin: 12px 0 4px; font-size: clamp(2rem, 6vw, 4.2rem); color: #164b63; }
-.home p { color: #66808b; font-size: 1.1rem; }
+.kicker { color: @accentText; font-weight: 700; letter-spacing: 0; }
+.home h1 { margin: 12px 0 4px; font-size: 48px; color: #303030; }
+.home p { color: #757575; font-size: 1.1rem; }
 .primary, .disabled, .textButton { border: 0; cursor: pointer; }
-.primary { padding: 12px 28px; background: #167c91; color: white; font-weight: 700; border-radius: 8px; box-shadow: 0 8px 18px rgba(22,124,145,.2); }
-.disabled { padding: 12px 28px; background: #b8c8cd; color: white; border-radius: 8px; cursor: not-allowed; }
-.textButton { background: none; color: #167c91; font-weight: 700; }
-.homeStats { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 36px; color: #71878d; }
-.panel { padding: clamp(18px, 4vw, 36px); background: white; border: 1px solid #dce8eb; border-radius: 10px; box-shadow: 0 14px 40px rgba(33,71,83,.08); }
+.primary { padding: 12px 28px; background: @primary; color: @primaryText; font-weight: 700; border-radius: 8px; box-shadow: 0 8px 18px rgba(255,167,104,.2);
+  &:hover:not(:disabled) { background: #ffb781; }
+  &:focus-visible { outline: 2px solid @accentText; outline-offset: 3px; }
+}
+.disabled { padding: 12px 28px; background: #e5e5e5; color: #757575; border-radius: 8px; cursor: not-allowed; }
+.textButton { background: none; color: @accentText; font-weight: 700; }
+.homeStats { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 36px; color: #757575; }
+.panel { padding: clamp(18px, 4vw, 36px); background: white; border: 1px solid #e8e8e8; border-radius: 10px; box-shadow: 0 14px 40px rgba(0,0,0,.05); }
 .panel h2 { margin-top: 0; }
 .sectionHeading { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-bottom: 20px; font-size: 1.1rem; }
-.sectionHeading span { color: #3d8297; font-weight: 700; }
+.sectionHeading span { color: @accentText; font-weight: 700; }
+.pickPanel {
+  width: min(980px, 100%); margin: 0 auto; padding: 12px 0 24px;
+  button { transition: background .18s, box-shadow .18s; }
+}
+.pickHeader {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding-bottom: 24px; border-bottom: 1px solid #e8e8e8;
+  h2 { font-size: 24px; line-height: 1.4; margin: 5px 0 0; font-weight: 700; }
+}
+.pickEyebrow { font-size: 12px; font-weight: 600; color: @accentText; }
+.progressSteps {
+  display: flex; flex-wrap: wrap; gap: 24px; margin: 0; padding: 0; list-style: none;
+  li { display: flex; align-items: center; gap: 8px; color: #858585; font-size: 13px; }
+  b { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid #d9d9d9; border-radius: 50%; font-size: 12px; }
+  [aria-current] { color: @accentText; font-weight: 600; b { background: @primary; border-color: @primary; color: @primaryText; } }
+}
+.drawStage {
+  min-height: 420px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 40px 12px; gap: 24px;
+  h3 { margin: 0; font-size: 20px; font-weight: 600; color: #404040; }
+}
+.cardDeck {
+  width: min(410px, 100%); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px; margin-bottom: 4px;
+}
+.cardBack {
+  position: relative; display: grid; place-items: center; aspect-ratio: 3 / 4;
+  border: 1px solid #f2c69f; border-radius: 6px; background: @primarySoft; color: #bd651f;
+  box-shadow: 0 3px 0 #f1e4d8;
+  &::before { content: ''; position: absolute; inset: 6px; border: 1px solid #f5d9bd; border-radius: 3px; }
+  &:nth-child(4n) { background: #f5f2fc; border-color: #cfc3e6; color: #9475b8; &::before { border-color: #dfd5ef; } }
+  &:nth-child(5n) { background: #eff5f9; border-color: #c1d8e8; color: #6c96b3; &::before { border-color: #d4e3ee; } }
+}
+.drawButton { display: inline-flex; align-items: center; justify-content: center; gap: 16px; min-height: 48px; min-width: 192px; }
+.pickStatus {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 24px 0 16px;
+  h3 { margin: 0; font-size: 16px; }
+  span { color: #757575; font-size: 14px; white-space: nowrap; b { color: @accentText; } }
+}
+.talentGrid.pickGrid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  .talent { min-height: 126px; overflow-wrap: anywhere; }
+  .talent:hover:not(.selected) { box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+}
+.pickFooter {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 24px;
+  padding-top: 20px; border-top: 1px solid #e8e8e8;
+  > button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; }
+}
+.pickedSlots {
+  display: flex; flex-wrap: wrap; gap: 8px; min-width: 0;
+  span { display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; font-size: 12px; color: #858585; border-bottom: 2px solid #ddd; }
+  .filledSlot { color: @accentText; border-color: @primary; }
+}
+@media (max-width: 800px) {
+  .talentGrid.pickGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .pickHeader { align-items: flex-start; gap: 16px; flex-direction: column; padding-bottom: 18px; h2 { font-size: 22px; } }
+  .progressSteps { gap: 20px; }
+  .drawStage { padding: 28px 0; min-height: 360px; }
+  .cardDeck { gap: 7px; width: min(330px, 100%); }
+  .pickFooter { > button { width: 100%; } }
+}
 .modeGrid, .characterGrid, .talentGrid, .allocateGrid { display: grid; gap: 12px; }
 .modeGrid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.modeGrid button, .character { padding: 22px; border: 1px solid #d7e5e8; background: #fbfdfe; text-align: left; border-radius: 8px; cursor: pointer; }
-.modeGrid button:hover, .character:hover, .selected { border-color: #167c91; background: #f0fafc; }
+.lifeModes {
+  margin-top: 28px;
+  button { position: relative; min-height: 215px; color: #505050; background: white;
+    > svg:first-child { color: @accentText; margin-bottom: 20px; }
+    > svg:last-child { position: absolute; right: 20px; bottom: 22px; color: @accentText; }
+    strong { font-size: 19px; }
+    small { display: block; margin-top: 10px; color: #757575; padding-right: 20px; }
+    &:disabled { opacity: .55; cursor: not-allowed; background: #f3f3f3; border-color: #e0e0e0; }
+    &:focus-visible { outline: 2px solid @accentText; outline-offset: 3px; }
+  }
+  .cultivationMode { border-color: @primary; border-top: 3px solid @primary; }
+}
+.cultivationPanel { width: min(980px, 100%); margin: 0 auto; padding: 12px 0 24px; }
+.cultivationWorld { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #608079; }
+.cultivationAllocation { padding-top: 12px; }
+.cultivationTalentReadOnly { cursor: default; }
+.realmRoad {
+  margin: 28px 0; padding-top: 22px; border-top: 1px solid #e8e8e8;
+  h3 { font-size: 14px; margin: 0 0 16px; color: #606060; }
+  ol { list-style: none; display: flex; flex-wrap: wrap; gap: 12px 20px; padding: 0; margin: 0; }
+  li { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #888; white-space: nowrap;
+    span { display: grid; place-items: center; width: 21px; height: 21px; font-size: 11px; border: 1px solid #ddd; border-radius: 50%; }
+  }
+  .realmReached { color: @accentText; }
+}
+.realmStatus { padding: 22px 0 16px; }
+.realmTitle {
+  display: flex; align-items: center; gap: 14px;
+  h2 { margin: 4px 0 0; font-size: 24px; line-height: 1.4; color: #303030; }
+  > div > span { font-size: 12px; color: #757575; }
+}
+.realmEmblem { width: 52px; height: 52px; flex-shrink: 0; display: grid; place-items: center; color: @accentText; background: @primarySelected; border-radius: 8px; }
+.rootLabel { margin-left: auto; padding: 5px 0; font-size: 13px; color: #397569; white-space: nowrap; }
+.cultivationMetrics {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 24px 0 18px;
+  span, b { display: block; }
+  span { color: #858585; font-size: 12px; margin-bottom: 6px; }
+  b { font-size: 17px; color: #404040; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  small { font-weight: 400; font-size: 12px; }
+}
+.cultivationProgress {
+  > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-size: 12px; margin-bottom: 8px; color: #858585; b { margin-left: 5px; color: @accentText; } }
+  progress { appearance: none; display: block; width: 100%; height: 7px; background: #e8e8e8; border: 0; border-radius: 4px; overflow: hidden;
+    &::-webkit-progress-bar { background: #e8e8e8; }
+    &::-webkit-progress-value { background: @primary; }
+    &::-moz-progress-bar { background: @primary; }
+  }
+}
+.cultivationAttributes {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px;
+  > div { display: flex; justify-content: space-between; gap: 6px; border-bottom: 2px solid #d4e2dd; padding: 8px 4px; }
+  span { font-size: 12px; color: #777; }
+  b { color: #397569; font-variant-numeric: tabular-nums; }
+}
+.logs.cultivationLogs {
+  min-height: 220px; height: 36vh; max-height: 460px;
+  article { grid-template-columns: minmax(58px, 85px) minmax(0, 1fr); }
+  article > b { font-size: 12px; overflow-wrap: anywhere; }
+}
+.cultivationRealmLog { color: #8be0cf; font-weight: 600; }
+.cultivationError { padding: 14px 0; color: #c43d42; }
+.cultivationEnding { display: flex; align-items: center; gap: 16px; margin-top: 24px; color: @accentText; h2 { margin: 4px 0 0; font-size: 24px; } span { color: #777; font-size: 12px; } }
+.cultivationSectionTitle { font-size: 16px; margin: 24px 0 16px; }
+.cultivationBadges { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 28px; span { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: @accentText; } }
+.cultivationPanel > .primary { display: inline-flex; align-items: center; gap: 12px; }
+@media (max-width: 600px) {
+  .cultivationPanel .pickHeader { flex-direction: row; align-items: center; }
+  .realmTitle { gap: 10px; flex-wrap: wrap; h2 { font-size: 21px; } }
+  .rootLabel { font-size: 12px; }
+  .cultivationMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cultivationAttributes > div { flex-direction: column; align-items: center; }
+  .logs.cultivationLogs article { grid-template-columns: 62px minmax(0, 1fr); }
+}
+.modeGrid button, .character { padding: 22px; border: 1px solid #e0e0e0; background: #fafafa; text-align: left; border-radius: 8px; cursor: pointer; }
+.modeGrid button:hover, .character:hover, .selected { border-color: @primary; background: @primarySoft; }
 .modeGrid strong, .modeGrid span, .character strong, .character > span { display: block; }
-.modeGrid span, .character > span { margin-top: 8px; color: #769099; font-size: .9rem; }
+.modeGrid span, .character > span { margin-top: 8px; color: #757575; font-size: .9rem; }
 .talentGrid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 22px; }
-.talent { position: relative; min-height: 104px; padding: 14px 36px 14px 14px; border: 1px solid #d7e5e8; background: #fff; text-align: left; border-radius: 7px; cursor: pointer; color: #173042; }
+.talent { position: relative; min-height: 104px; padding: 14px 36px 14px 14px; border: 1px solid #e0e0e0; background: #fff; text-align: left; border-radius: 7px; cursor: pointer; color: #303030; }
 .talent strong, .talent span { display: block; }
-.talent span { margin-top: 8px; color: #71878d; font-size: .82rem; line-height: 1.5; }
+.talent span { margin-top: 8px; color: #757575; font-size: .82rem; line-height: 1.5; }
 .grade-0 { border-color: #cbd7da; color: #536b72; } .grade-1 { border-color: #59a5d5; color: #24709b; } .grade-2 { border-color: #9b79d5; color: #7149aa; } .grade-3 { border-color: #e6a34b; color: #b56d14; }
 .talent.selected, .character.selected {
-  border-color: #167c91;
-  background: #def3f5;
-  box-shadow: inset 0 0 0 2px #167c91;
+  border-color: @primary;
+  background: @primarySelected;
+  box-shadow: inset 0 0 0 2px @primary;
 }
-.selectionMark { position: absolute; top: 12px; right: 12px; color: #167c91; }
-.talent:focus-visible { outline: 3px solid #167c91; outline-offset: 3px; }
+.selectionMark { position: absolute; top: 12px; right: 12px; color: @accentText; }
+.talent:focus-visible { outline: 3px solid @primary; outline-offset: 3px; }
 .propertyGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 18px; }
 .property { padding: 10px; border: 1px solid currentColor; text-align: center; background: white; }
 .property span, .property b, .property small { display: block; } .property b { font-size: 1.3rem; } .property small { font-size: .72rem; margin-top: 3px; }
 .allocateGrid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin: 16px 0 22px; }
-.allocateGrid label { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid #d7e5e8; }
-.allocateGrid input { width: 60px; padding: 5px; border: 1px solid #bfd0d5; text-align: center; }
+.allocateGrid label { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid #e0e0e0; }
+.allocateGrid input { width: 60px; padding: 5px; border: 1px solid #d9d9d9; text-align: center;
+  &:focus-visible { outline: 2px solid @primary; outline-offset: 1px; }
+}
 .actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .randomButton {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 11px 20px; border: 1px solid #167c91; border-radius: 8px;
-  background: white; color: #167c91; font-weight: 700; cursor: pointer;
-  &:hover { background: #def3f5; }
-  &:focus-visible { outline: 3px solid #167c91; outline-offset: 3px; }
+  padding: 11px 20px; border: 1px solid @primary; border-radius: 8px;
+  background: white; color: @accentText; font-weight: 700; cursor: pointer;
+  &:hover { background: @primarySelected; }
+  &:focus-visible { outline: 3px solid @primary; outline-offset: 3px; }
 }
 .good { color: #198754; } .bad { color: #c43d42; }
+.visuallyHidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.characterDeck { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; width: min(360px, 100%); }
+.celebrityGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding: 0; border: 0; margin: 0 0 24px; min-width: 0; }
+.celebrityOption {
+  position: relative; min-width: 0; display: flex; cursor: pointer;
+  > input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  &:hover .celebrityCard { border-color: @primary; }
+  > input:checked + .celebrityCard { border-color: @primary; box-shadow: inset 0 0 0 1px @primary; background: #fffbf7;
+    .celebrityCheck { background: @primary; border-color: @primary; color: @primaryText; }
+    .celebrityEmblem { color: @accentText; background: @primarySelected; }
+  }
+  > input:focus-visible + .celebrityCard { outline: 2px solid @accentText; outline-offset: 3px; }
+}
+.celebrityCard { width: 100%; min-width: 0; padding: 22px 18px; border: 1px solid #dedede; border-radius: 8px; background: white; transition: border-color .18s, background .18s; }
+.celebrityIdentity {
+  display: flex; gap: 12px; align-items: center; min-height: 52px;
+  > div { flex: 1; min-width: 0; > span { font-size: 11px; color: #858585; } }
+  h3 { margin: 3px 0 0; font-size: 21px; line-height: 1.4; color: #303030; overflow-wrap: anywhere; }
+}
+.celebrityEmblem { width: 46px; height: 50px; flex-shrink: 0; display: grid; place-items: center; color: #56847a; background: #edf5f2; border-radius: 6px; }
+.celebrityCheck { display: grid; place-items: center; width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; border: 1px solid #d5d5d5; }
+.celebrityProperties {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 24px 0; padding-bottom: 22px; border-bottom: 1px solid #ededed;
+  > div { min-width: 0; > span:first-child { font-size: 12px; color: #777; } }
+  b { display: block; color: #404040; font-size: 22px; font-variant-numeric: tabular-nums; margin: 4px 0 8px; }
+}
+.celebrityMeter { display: block; width: 100%; height: 3px; background: #ecefec; border-radius: 2px; overflow: hidden; i { display: block; height: 100%; background: #74a398; } }
+.celebrityTalentHeading { display: flex; align-items: center; gap: 6px; color: @accentText; font-size: 12px; small { margin-left: auto; color: #858585; font-size: 11px; } }
+.celebrityTalents {
+  list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 15px;
+  li { display: flex; align-items: flex-start; gap: 9px; min-width: 0; > div { min-width: 0; } }
+  strong { font-size: 13px; font-weight: 600; color: #454545; }
+  p { margin: 4px 0 0; font-size: 12px; line-height: 1.65; color: #7a7a7a; overflow-wrap: anywhere; }
+}
+.celebrityGrade { width: 6px; height: 6px; flex-shrink: 0; margin-top: 7px; border-radius: 50%; background: currentColor; }
+.celebrityFooter { justify-content: space-between; > span { font-size: 13px; color: #858585; b { margin-left: 8px; color: @accentText; } } }
+@media (max-width: 800px) {
+  .celebrityGrid { grid-template-columns: minmax(0, 1fr); }
+  .celebrityCard { padding: 20px; }
+  .celebrityTalents { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 22px; }
+}
+@media (max-width: 420px) { .celebrityTalents { grid-template-columns: minmax(0, 1fr); } }
 .playPanel { min-height: 78vh; display: flex; flex-direction: column; }
-.logs { flex: 1; min-height: 300px; max-height: 58vh; overflow: auto; padding: 16px; background: #172a33; color: #e9f3f4; border-radius: 8px; }
+.logs { flex: 1; min-height: 300px; max-height: 58vh; overflow: auto; padding: 16px; background: #242424; color: #f0f0f0; border-radius: 8px; }
 .logs article { display: grid; grid-template-columns: 52px 1fr; gap: 12px; margin-bottom: 14px; line-height: 1.55; }
-.logs article > b { color: #72d4e1; } .logs p { margin: 0 0 5px; } .talentLog { color: #f0c66d; } .achievementLog { color: #ff9b9b; }
+.logs article > b { color: @primary; } .logs p { margin: 0 0 5px; } .talentLog { color: #f0c66d; } .achievementLog { color: #ff9b9b; }
 .logs {
   .grade-0 { color: #e9f3f4; }
   .grade-1 { color: #8dcdf5; }
@@ -65,17 +255,89 @@ h1 { margin: 12px 0 4px; font-size: clamp(2rem, 6vw, 4.2rem); color: #164b63; }
 }
 .playbackModes {
   display: flex; max-width: 100%; min-width: 0; padding: 3px; margin: 0;
-  border: 1px solid #b7cdd3; border-radius: 8px; background: white;
+  border: 1px solid #e0e0e0; border-radius: 8px; background: white;
   label { position: relative; cursor: pointer; }
   input { position: absolute; opacity: 0; width: 1px; height: 1px; }
   span { display: block; padding: 9px 14px; border-radius: 5px; line-height: 20px; white-space: nowrap; }
-  input:checked + span { background: #167c91; color: white; }
-  input:focus-visible + span { outline: 2px solid #167c91; outline-offset: 2px; }
+  input:checked + span { background: @primary; color: @primaryText; }
+  input:focus-visible + span { outline: 2px solid @accentText; outline-offset: 2px; }
   &:disabled { opacity: .45; label { cursor: not-allowed; } }
 }
-.muted { color: #71878d; } .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 24px; }
-.stats b { padding: 16px; background: #f1f8fa; color: #276679; }
-.achievementList { display: grid; gap: 8px; max-height: 55vh; overflow: auto; }
-.achievement { display: flex; justify-content: space-between; gap: 16px; padding: 10px 12px; border-left: 4px solid currentColor; background: #f7fbfc; }
-.achievement span { color: #71878d; } .hidden { color: #9aabad; filter: grayscale(1); }
+.muted { color: #757575; }
+.achievementsPanel { width: min(980px, 100%); margin: 0 auto; padding: 12px 0 28px; }
+.backButton {
+  display: inline-flex; align-items: center; gap: 7px; padding: 9px 0; border: 0; background: none; color: @accentText; cursor: pointer;
+  &:focus-visible { outline: 2px solid @primary; outline-offset: 4px; }
+}
+.collectionStats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 26px 0; gap: 24px; border-bottom: 1px solid #e8e8e8; }
+.collectionStat {
+  min-width: 0;
+  > span { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #707070; }
+  > div { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; }
+  b { font-size: 30px; line-height: 1.2; font-variant-numeric: tabular-nums; color: #303030; }
+  small { font-size: 13px; color: #858585; }
+  &:last-child { svg, b { color: @accentText; } }
+}
+.collectionProgress {
+  margin: 20px 0 28px;
+  > div { display: flex; justify-content: space-between; margin-bottom: 9px; font-size: 12px; color: #707070; b { color: @accentText; } }
+  progress { display: block; appearance: none; width: 100%; height: 6px; border: 0; border-radius: 3px; overflow: hidden; background: #eaeaea;
+    &::-webkit-progress-bar { background: #eaeaea; }
+    &::-webkit-progress-value { background: @primary; border-radius: 3px; }
+    &::-moz-progress-bar { background: @primary; border-radius: 3px; }
+  }
+}
+.achievementToolbar { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; gap: 14px; }
+.achievementFilters {
+  display: flex; border: 0; padding: 0; margin: 0; min-width: 0; gap: 4px;
+  label { position: relative; cursor: pointer; }
+  input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  span { display: flex; align-items: center; gap: 7px; padding: 9px 12px; font-size: 13px; border-radius: 6px; color: #707070; white-space: nowrap; }
+  b { font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  input:checked + span { background: @primarySelected; color: @accentText; font-weight: 600; }
+  input:focus-visible + span { outline: 2px solid @accentText; outline-offset: 2px; }
+}
+.achievementSearch {
+  display: flex; align-items: center; gap: 8px; width: 220px; max-width: 100%; padding: 8px 11px; border: 1px solid #dedede; background: white; border-radius: 6px; color: #858585;
+  input { border: 0; outline: none; width: 100%; min-width: 0; background: transparent; font-size: 13px; color: #303030; }
+  &:focus-within { border-color: @primary; box-shadow: 0 0 0 2px @primarySoft; }
+}
+.achievementResults { margin: 16px 0 12px; font-size: 12px; color: #858585; }
+.achievementGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.achievementCard {
+  display: flex; align-items: flex-start; gap: 13px; min-width: 0; min-height: 144px; padding: 18px 16px;
+  border: 1px solid #e4e4e4; border-radius: 8px; background: #f7f7f7; color: #808080;
+}
+.achievementIcon { flex-shrink: 0; width: 40px; height: 40px; display: grid; place-items: center; background: #ededed; color: #999; border-radius: 8px; }
+.achievementBody {
+  flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column;
+  h3 { margin: 1px 0 6px; font-size: 14px; line-height: 1.5; font-weight: 600; color: #626262; overflow-wrap: anywhere; }
+  p { margin: 0 0 16px; font-size: 12px; line-height: 1.7; color: #808080; overflow-wrap: anywhere; }
+}
+.achievementMeta {
+  display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: auto; font-size: 11px;
+  span { display: inline-flex; align-items: center; gap: 4px; }
+  span:last-child { color: #858585; }
+}
+.achievementCard.achievementUnlocked {
+  background: white; border-color: #edc7a9;
+  .achievementIcon { color: @accentText; background: @primarySoft; }
+  h3 { color: #303030; }
+  .achievementMeta span:last-child { color: #237953; }
+}
+.achievementEmpty {
+  display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 56px 16px; color: #999;
+  h3 { margin: 0; font-size: 15px; color: #707070; }
+}
+@media (max-width: 900px) { .achievementGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  .collectionStats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; padding: 22px 0; }
+  .collectionStat b { font-size: 26px; }
+  .achievementGrid { grid-template-columns: minmax(0, 1fr); }
+  .achievementSearch { width: 100%; }
+  .achievementFilters { width: 100%; justify-content: space-between; span { padding: 9px 8px; } }
+  .achievementCard { min-height: 128px; }
+  .achievementsPanel .pickHeader { flex-direction: row; align-items: center; }
+}
+@media (max-width: 600px) { .home h1 { font-size: 30px; } }
 @media (max-width: 600px) { .container { padding: 12px; } .homeStats { flex-direction: column; } .sectionHeading { align-items: flex-start; flex-direction: column; } .logs article { grid-template-columns: 42px 1fr; gap: 8px; } }

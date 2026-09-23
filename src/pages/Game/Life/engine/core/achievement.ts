@@ -17,9 +17,11 @@ export function trigger(
     opportunity: AchievementOpportunity,
     state: GameState,
     profile: ProfileState,
+    allowed?: (id: Achievement['id']) => boolean,
 ): TriggerResult<Achievement['id']> {
     const flatState = createFlatState(state, profile)
     const triggers = OpportunityMap.get(opportunity)!.filter(a => {
+        if (allowed && !allowed(a)) return false
         if (state.achievements.has(a)) return false
         if (profile.achievements.has(a)) return false
         const { condition } = achievements.get(a)!

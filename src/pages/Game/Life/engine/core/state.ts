@@ -13,6 +13,7 @@ export interface Properties {
 }
 
 export interface HLProperties {
+    strengthCostPerGain?: number
     current: Properties // 当前属性
     highest: Properties // 历史最高属性
     lowest: Properties // 历史最低属性
@@ -29,6 +30,7 @@ export function createHLProperties(allocation: Allocation) {
 }
 
 export interface GameState {
+    lifespanLoss?: number
     props: HLProperties // 本局属性
     life: number // 本局生命值
     talents: Set<Talent['id']> // 本局拥有的天赋
@@ -39,6 +41,7 @@ export interface GameState {
 
 /** 持久化存储的数据 */
 export interface ProfileState {
+    cultivation?: { times: number; bestRealm: number; bestAge: number; events?: number[] }
     times: number // 游戏次数
     locked?: Talent['id'][] // 锁定的天赋
     talents: Set<Talent['id']> // 拥有过的天赋
@@ -154,9 +157,15 @@ export function createFlatState(game: GameState, profile: ProfileState) {
 
 export function propsEffect(hlp: HLProperties, effect: Partial<Properties>) {
     return produce(hlp, draft => {
-        for (const key in effect) {
+        const applied = { ...effect }
+        if (hlp.strengthCostPerGain) {
+            const gain = (['charm', 'intelligence', 'money', 'spirit'] as const)
+                .reduce((total, key) => total + Math.max(0, effect[key] || 0), 0)
+            applied.strength = (applied.strength || 0) - gain * hlp.strengthCostPerGain
+        }
+        for (const key in applied) {
             const prop = key as keyof Properties
-            const value = effect[prop]!
+            const value = applied[prop]!
             draft.current[prop] += value
             draft.highest[prop] = Math.max(
                 draft.highest[prop],
@@ -194,6 +203,7 @@ export function nextProfile(
     locked?: Talent['id'][],
 ) {
     return {
+        ...(profile.cultivation ? { cultivation: profile.cultivation } : {}),
         times: profile.times + 1,
         talents: new Set([...profile.talents, ...state.talents]),
         events: new Set([...profile.events, ...state.events]),

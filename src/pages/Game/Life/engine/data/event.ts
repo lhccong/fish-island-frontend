@@ -1,4 +1,297 @@
-const data = new Map([
+import type { Event } from './event.types';
+
+const data = new Map<number, Event>([
+  [900100, { id: 900100, grade: 1, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900100]",
+    event: "你认识了送餐又快、又高又帅的外卖员冷，打赏他十块钱。家境 -1。", effect: { MNY: -1 },
+    branch: [{ condition: "AGE>=0", event: 900101 }] }],
+  [900101, { id: 900101, grade: 1, NoRandom: true,
+    event: "隔日，体验生活的富二代冷开着限定超跑邀你去高档餐厅。结账时你们 AA，你付出了远超预期的费用。家境 -9。",
+    effect: { MNY: -9 }, branch: [{ condition: "MNY<=0", event: 900102 }] }],
+  [900102, { id: 900102, grade: 0, NoRandom: true, event: "这顿饭掏空了你的积蓄，你破产了。" }],
+  [900103, { id: 900103, grade: 0, ages: [14, 14], include: "AGE=14", exclude: "EVT?[900103]",
+    event: "你打开了一个神秘网站，此后的每个夜晚都在熬夜。衰老判定提前 2 年，智力 -1，快乐 +5。",
+    lifespanLoss: 2, effect: { INT: -1, SPR: 5 } }],
+  [900104, { id: 900104, grade: 0, ages: [18, 18], include: "AGE=18", exclude: "EVT?[900104]",
+    event: "朋友带你去酒吧，你尽兴而归，也疲惫不堪。快乐 +4，体质 -3。", effect: { SPR: 4, STR: -3 } }],
+  [900105, { id: 900105, grade: 0, ages: [24, 24], include: "AGE=24", exclude: "EVT?[900105]",
+    event: "女朋友让你在工作和结婚之间作出选择。", randomBranch: [[900106, 1], [900107, 1]] }],
+  [900106, { id: 900106, grade: 0, NoRandom: true, event: "你选择先专注工作，婚事暂时搁置。" }],
+  [900107, { id: 900107, grade: 0, NoRandom: true, event: "你选择与她结婚，重新安排工作与生活。" }],
+  [900108, { id: 900108, grade: 0, ages: [26, 26], include: "AGE=26", exclude: "EVT?[900108]",
+    event: "你的孩子出生了，肤色比你预想的深。妻子告诉你这是你们的亲生孩子，你抱起了这个新生命。" }],
+  [900109, { id: 900109, grade: 0, ages: [32, 32], include: "AGE=32", exclude: "EVT?[900109]",
+    event: "坐在还着车贷的车里，看着背负房贷的家和下一代，你想起了十五岁时与小杨度过的盛夏。" }],
+  [900110, { id: 900110, grade: 0, ages: [18, 18], include: "AGE=18", exclude: "EVT?[900110]",
+    event: "朋友邀你去 PC。你卷入一场危险的夜间活动。",
+    branch: [{ condition: "STR<4", event: 900111 }] }],
+  [900111, { id: 900111, grade: 0, NoRandom: true, event: "你的体质不足以承受这场折腾，突发意外，抢救无效。",
+    branch: [{ condition: "AGE>=0", event: 10000 }] }],
+  [900112, { id: 900112, grade: 1, ages: [24, 24], include: "(AGE=24)&(INT>=8)", exclude: "EVT?[900112]",
+    event: "你进入大厂，成为高薪牛马。家境 +3，体质 -3，快乐 -1。", effect: { MNY: 3, STR: -3, SPR: -1 } }],
+  [900113, { id: 900113, grade: 2, ages: [14, 80], include: "(AGE>=14)&(AGE<=80)", exclude: "EVT?[900113]",
+    event: "你从垃圾桶捡到写着 HC 诅咒的纸条。此后颜值、智力、家境、快乐每增加 1 点，体质就减少 1 点。",
+    strengthCostPerGain: 1 }],
+  [900114, { id: 900114, grade: 1, ages: [18, 23], include: "(AGE>=18)&(AGE<=23)", exclude: "EVT?[900114]",
+    event: "出门游玩时偶遇波老师，他向你发出游玩邀请。", randomBranch: [[900115, 1], [900116, 1]] }],
+  [900115, { id: 900115, grade: 0, NoRandom: true, event: "你拒绝了波老师的邀请。属性不变。" }],
+  [900116, { id: 900116, grade: 1, NoRandom: true,
+    event: "你接受了波老师的邀请。片刻过后，他留给你一个嫌弃的眼神，独自离开。体质 -1，家境 +1，快乐 +2。",
+    effect: { STR: -1, MNY: 1, SPR: 2 } }],
+  [900117, { id: 900117, grade: 0, ages: [18, 65], include: "(AGE>=18)&(AGE<=65)", exclude: "EVT?[900117]",
+    event: "上班时你发现了摸鱼岛。智力 -1，快乐 +2。", effect: { INT: -1, SPR: 2 } }],
+  [900118, { id: 900118, grade: 0, ages: [18, 65], include: "(AGE>=18)&(AGE<=65)", exclude: "EVT?[900118]",
+    event: "下班后你浏览 91，熬夜消磨了时光。快乐 +3，体质 -2。", effect: { SPR: 3, STR: -2 } }],
+  [900119, { id: 900119, grade: 1, ages: [14, 80], include: "(AGE>=14)&(AGE<=80)", exclude: "EVT?[900119]",
+    event: "你在摸鱼岛抢到了随机福袋。", randomBranch: [[900120, 1], [900121, 1], [900122, 1], [900123, 1], [900124, 1]] }],
+  [900120, { id: 900120, grade: 1, NoRandom: true, event: "打开福袋，家境 +1。", effect: { MNY: 1 } }],
+  [900121, { id: 900121, grade: 1, NoRandom: true, event: "打开福袋，家境 +2。", effect: { MNY: 2 } }],
+  [900122, { id: 900122, grade: 1, NoRandom: true, event: "打开福袋，家境 +3。", effect: { MNY: 3 } }],
+  [900123, { id: 900123, grade: 1, NoRandom: true, event: "打开福袋，家境 +4。", effect: { MNY: 4 } }],
+  [900124, { id: 900124, grade: 2, NoRandom: true, event: "打开福袋，家境 +5。", effect: { MNY: 5 } }],
+  [900125, { id: 900125, grade: 0, ages: [14, 80], include: "(AGE>=14)&(AGE<=80)", exclude: "EVT?[900125]",
+    event: "你的农场被脚本光顾，收成被一扫而空。快乐 -1。", effect: { SPR: -1 } }],
+  [900126, { id: 900126, grade: 0, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900126]",
+    event: "你被黑心资本家暗算。家境 -2。", effect: { MNY: -2 } }],
+  [900127, { id: 900127, grade: 2, ages: [19, 80], include: "(AGE>=19)&(AGE<=80)&(INT>50)&(EVT?[900115])", exclude: "EVT?[900127]",
+    event: "你在摸鱼岛再次遇见波老师，听他说自己要上岸了。你送上祝福，他最终收获幸福，也因你之前的拒绝而认可了你。唯愿君如意。家境 +2，快乐 +7。",
+    effect: { MNY: 2, SPR: 7 } }],
+  [900128, { id: 900128, grade: 0, ages: [14, 40], include: "(AGE>=14)&(AGE<=40)", exclude: "EVT?[900128]",
+    event: "你玩人生重开模拟器，连续十局死于意外。快乐 -5。", effect: { SPR: -5 },
+    branch: [{ condition: "SPR<=0", event: 900129 }] }],
+  [900129, { id: 900129, grade: 0, NoRandom: true, event: "连番打击之下，你突发急症，没能被救回来。",
+    branch: [{ condition: "AGE>=0", event: 10000 }] }],
+  [900130, { id: 900130, grade: 1, ages: [14, 40], include: "(AGE>=14)&(AGE<=40)", exclude: "EVT?[900130]",
+    event: "你玩人生重开模拟器，终于渡劫成功。快乐 +1。", effect: { SPR: 1 } }],
+  [900131, { id: 900131, grade: 0, ages: [14, 80], include: "(AGE>=14)&(AGE<=80)", exclude: "EVT?[900131]",
+    event: "你玩二游时参与社区大战，吵了许久。智力 -2，快乐 +3。", effect: { INT: -2, SPR: 3 } }],
+  [900132, { id: 900132, grade: 0, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900132]",
+    event: "你在原神里充钱抽六命角色。家境 -2。哒哒哒哒哒，好想玩原神！", effect: { MNY: -2 } }],
+  [900133, { id: 900133, grade: 1, ages: [14, 80], include: "(AGE>=14)&(AGE<=80)", exclude: "EVT?[900133]",
+    event: "你在原神里十连六金。快乐 +1。啦啦啦啦啦，好想玩原神！", effect: { SPR: 1 } }],
+  [900134, { id: 900134, grade: 0, ages: [1, 100], include: "(AGE>=1)&(AGE<=100)", exclude: "EVT?[900134]",
+    event: "你碰上了疫情，最终活了下来，但身体尚未恢复。体质 -2。", effect: { STR: -2 } }],
+  [900135, { id: 900135, grade: 0, ages: [14, 80], include: "(AGE>=14)&(AGE<=80)", exclude: "EVT?[900135]",
+    event: "你玩原神被人叫作「原批」，却没有放在心上。快乐 +1。", effect: { SPR: 1 } }],
+  [900136, { id: 900136, grade: 0, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900136]",
+    event: "你在街上遇见了昏过去的波比，帮忙呼叫救援，也提醒自己好好锻炼。体质 +1。", effect: { STR: 1 } }],
+  [900137, { id: 900137, grade: 1, ages: [81, 81], include: "AGE=81", exclude: "EVT?[900137]",
+    event: "你遇见仙人，对方递来延年益寿丹。你没有相信，最终寿尽而亡。",
+    branch: [{ condition: "AGE>=0", event: 10000 }] }],
+  [900138, { id: 900138, grade: 0, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900138]",
+    event: "你得知暗恋的人已有对象，失落之余也想明白了许多事。快乐 -5，智力 +5。", effect: { SPR: -5, INT: 5 } }],
+  [900010, {
+    id: 900010, grade: 1, ages: [0, 3], include: "(AGE>=0)&(AGE<=3)", exclude: "EVT?[900010]",
+    event: "一只穿耐克的蚕宝宝路过了你所在的摸鱼岛。它携带了超过 10MB 的背包，导致岛屿超载沉没，你打出 GG。",
+    branch: [{ condition: "AGE>=0", event: 10000 }]
+  }],
+  [900011, {
+    id: 900011, grade: 0, ages: [16, 16], include: "AGE=16", exclude: "EVT?[900011]",
+    event: "你带同学误入违法场所，被当警察的 Ciao 查获。你接受了调查与教育矫治，认真反省这次鲁莽的行为。",
+    effect: { SPR: -2 }
+  }],
+  [900012, {
+    id: 900012, grade: 2, ages: [25, 25], include: "(AGE=25)&(EVT?[10001])", exclude: "EVT?[900012]",
+    event: "你是男孩，25 岁。这天，摸鱼岛发生了不可思议的奇幻事件：你怀孕了。"
+  }],
+  [900013, {
+    id: 900013, grade: 0, ages: [10, 10], include: "AGE=10", exclude: "EVT?[900013]",
+    event: "你尝试危险的憋气挑战，意外失去意识，最终没能被救回来。",
+    branch: [{ condition: "AGE>=0", event: 10000 }]
+  }],
+  [900014, {
+    id: 900014, grade: 1, ages: [18, 60], include: "(AGE>=18)&(AGE<=60)&((SPR<=2)|(MNY<=2))", exclude: "EVT?[900014]",
+    event: "你在人生低谷时遇到了曼波，曼波直接带你进厂开 CNC。家境 +3，智力 -1。",
+    effect: { MNY: 3, INT: -1 }
+  }],
+  [900015, {
+    id: 900015, grade: 0, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900015]",
+    event: "你在西伯利亚旅游时遇到曼波。他的猫耄耋不喜欢你，冲你一阵哈气，你惊慌失措，摔了一跤。体质 -3。",
+    effect: { STR: -3 }
+  }],
+  [900016, {
+    id: 900016, grade: 1, ages: [4, 80], include: "(AGE>=4)&(AGE<=80)", exclude: "EVT?[900016]",
+    event: "你遇到麻薯大王发善心，奖励了你一顿美食。你吃得心满意足。快乐 +1。",
+    effect: { SPR: 1 }
+  }],
+  [900017, {
+    id: 900017, grade: 0, ages: [4, 80], include: "(AGE>=4)&(AGE<=80)", exclude: "EVT?[900017]",
+    event: "你遇见麻薯，对方大方地给你分了 10 斤脂肪。你的体重悄悄增加了。"
+  }],
+  [900018, {
+    id: 900018, grade: 0, ages: [4, 80], include: "(AGE>=4)&(AGE<=80)", exclude: "EVT?[900018]",
+    event: "你遇到了邪恶的麻薯大王，被折腾得身心俱疲。体质 -2，智力 -2。",
+    effect: { STR: -2, INT: -2 }
+  }],
+  [900019, {
+    id: 900019, grade: 2, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900019]",
+    event: "你外出徒步爬山时遇到合一。他举杯相邀，问你是否愿意与他共饮。",
+    randomBranch: [[900020, 1], [900021, 1]]
+  }],
+  [900020, {
+    id: 900020, grade: 2, NoRandom: true,
+    event: "你与合一共饮，得到他的传授：「知行合一」。颜值、智力、体质、家境、快乐各 +1。",
+    effect: { CHR: 1, INT: 1, STR: 1, MNY: 1, SPR: 1 }
+  }],
+  [900021, {
+    id: 900021, grade: 0, NoRandom: true,
+    event: "你拒绝了共饮。合一一言不发，突然给了你一拳。你愤然离去。体质 -1，智力 -1，快乐 -5。",
+    effect: { STR: -1, INT: -1, SPR: -5 }
+  }],
+  [900022, {
+    id: 900022, grade: 0, ages: [18, 50], include: "(AGE>=18)&(AGE<=50)", exclude: "EVT?[900022]",
+    event: "「你不干，有的是人干！」黑心老板麻薯大帝疯狂让你加班内卷。你拼命工作，靠双手打破家徒四壁。体质 -1，快乐 -1，家境 +1。",
+    effect: { STR: -1, SPR: -1, MNY: 1 }
+  }],
+  [900023, {
+    id: 900023, grade: 1, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900023]",
+    event: "你收到去南京修行的邀请。",
+    randomBranch: [[900024, 1], [900025, 1]]
+  }],
+  [900024, {
+    id: 900024, grade: 1, NoRandom: true,
+    event: "你同意去南京修行，支付了旅费。家境 -10。",
+    effect: { MNY: -10 }, randomBranch: [[900026, 1], [900027, 1]]
+  }],
+  [900025, {
+    id: 900025, grade: 0, NoRandom: true,
+    event: "你拒绝了南京修行的邀请，心里有些失落。快乐 -2。",
+    effect: { SPR: -2 }
+  }],
+  [900026, {
+    id: 900026, grade: 1, NoRandom: true,
+    event: "你在南京海底世界面基了党哥。党哥邀请你上台和海豚互动。",
+    randomBranch: [[900029, 1], [900028, 1]]
+  }],
+  [900027, {
+    id: 900027, grade: 0, NoRandom: true,
+    event: "你在南京安静地修行了一阵。这次没有遇见党哥，旅程平安结束。"
+  }],
+  [900028, {
+    id: 900028, grade: 0, NoRandom: true,
+    event: "你拒绝上台和海豚互动，留在台下，有些遗憾。快乐 -2。",
+    effect: { SPR: -2 }
+  }],
+  [900029, {
+    id: 900029, grade: 0, NoRandom: true,
+    event: "你同意上台互动，却不幸被海豚咬伤。治疗花了一大笔钱，也耽误了修行。家境 -100，体质 -2（修为受损），快乐 -10。",
+    effect: { MNY: -100, STR: -2, SPR: -10 }
+  }],
+  [900030, {
+    id: 900030, grade: 0, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900030]",
+    event: "你出门逛街，偶遇陈合一的掠夺，损失了一些财物。家境 -1，快乐 -1。",
+    effect: { MNY: -1, SPR: -1 }
+  }],
+  [900031, {
+    id: 900031, grade: 3, ages: [18, 499], include: "(AGE>=18)&(AGE<500)&(MNY=0)&(INT>100)&(STR<10)", exclude: "EVT?[900031]",
+    event: "家道中落，一身才华无处可施，身体也早已不堪重负。偶然得到合一引荐，你进入摸鱼岛。在与岛友们的交流中，你逐渐明白自己的道路，最终在摸鱼岛悟道！知是行之始，行是知之成。家境 +1，智力 +50，体质 +50，快乐 +1。",
+    effect: { MNY: 1, INT: 50, STR: 50, SPR: 1 }
+  }],
+  [900032, {
+    id: 900032, grade: 1, ages: [6, 80], include: "(AGE>=6)&(AGE<=80)", exclude: "EVT?[900032,900033]",
+    event: "在牛马的「猜猜我是 GG 还是 MM」游戏中，你猜中了正确结果。智力 +1。",
+    effect: { INT: 1 }
+  }],
+  [900033, {
+    id: 900033, grade: 0, ages: [6, 80], include: "(AGE>=6)&(AGE<=80)", exclude: "EVT?[900032,900033]",
+    event: "在牛马的「猜猜我是 GG 还是 MM」游戏中，你猜错了结果。智力 -1。",
+    effect: { INT: -1 }
+  }],
+  [900034, {
+    id: 900034, grade: 0, ages: [18, 60], include: "(AGE>=18)&(AGE<=60)", exclude: "EVT?[900034]",
+    event: "你入职一家公司，老板说「我们扁平化管理」，你被压成了饼。体质 -1，家境 +1，快乐 -1。",
+    effect: { STR: -1, MNY: 1, SPR: -1 }
+  }],
+  [900035, {
+    id: 900035, grade: 0, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900035]",
+    event: "你为了减肥办健身卡，卡瘦了，你没瘦。体质 -1，家境 -1，快乐 -1。",
+    effect: { STR: -1, MNY: -1, SPR: -1 }
+  }],
+  [900036, {
+    id: 900036, grade: 0, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900036]",
+    event: "你炒股抄底，发现这辈子对不起的还是家人。家境 -3，快乐 -1。",
+    effect: { MNY: -3, SPR: -1 }
+  }],
+  [900037, {
+    id: 900037, grade: 0, ages: [18, 60], include: "(AGE>=18)&(AGE<=60)", exclude: "EVT?[900037]",
+    event: "国家大力发展供给侧结构性改革，你作为搬砖小能手未享受到这项普惠政策。你去警局申诉，却遭到暴力对待，手脚受伤，被丢了出来。体质 -4。",
+    effect: { STR: -4 }
+  }],
+  [900038, {
+    id: 900038, grade: 2, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900038]",
+    event: "你抱着「搏一搏，单车变摩托」的想法，在一场荒诞的足球竞猜中梭哈德国 7:1 巴西，竟押中了号称 6500 倍的赔率。你坚信自己就是气运之子。家境 +5。",
+    effect: { MNY: 5 }
+  }],
+  [900039, {
+    id: 900039, grade: 2, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900039]",
+    event: "你遇到一个乞丐，说你是万年难遇的修仙奇才，要卖你《葵花宝典》。你坚信自己是气运之子，花大价钱买下并开始修炼。第二天体重少了二两，突破炼气一层，觉醒了奇幻的阴阳之体。体质 -1，家境 -2。",
+    effect: { STR: -1, MNY: -2 }
+  }],
+  [900041, {
+    id: 900041, grade: 1, ages: [12, 80], include: "(AGE>=12)&(AGE<=80)", exclude: "EVT?[900041]",
+    event: "你初次遇见明天，听他说起幼时与同村伙伴攒钱奔赴网吧，在屏幕前种下游戏开发的理想。少年对电脑的热忱打动了你。智力 +2，快乐 +2。",
+    effect: { INT: 2, SPR: 2 }
+  }],
+  [900042, {
+    id: 900042, grade: 1, ages: [13, 90], include: "(AGE>=13)&(AGE<=90)&(EVT?[900041])", exclude: "EVT?[900042]",
+    event: "明天继续向你讲述：家人反复灌输没钱就别读书，但他没有顺从，心中始终坚持至少要读完大学。纵使前路艰难，也不愿主动放弃求学。你受到鼓舞，体质 +3（毅力），快乐 +1（抗压）。",
+    effect: { STR: 3, SPR: 1 }
+  }],
+  [900043, {
+    id: 900043, grade: 1, ages: [14, 100], include: "(AGE>=14)&(AGE<=100)&(EVT?[900042])", exclude: "EVT?[900043]",
+    event: "你得知明天最终考上大专，毅然选择软件相关专业，靠着韧劲自学编程。你也开始学习，只是长期熬夜损耗了身体。智力 +2（知识），快乐 +1（自信），体质 -1。",
+    effect: { INT: 2, SPR: 1, STR: -1 }
+  }],
+  [900044, {
+    id: 900044, grade: 2, ages: [15, 110], include: "(AGE>=15)&(AGE<=110)&(EVT?[900043])", exclude: "EVT?[900044]",
+    event: "明天怀揣游戏开发梦想，却兜兜转转成为 Java 程序员，理想与现实擦肩而过。梦想未能落地，多年代码经验却沉淀出技术功底。你若有所悟。智力 +2（悟性），快乐 -2。",
+    effect: { INT: 2, SPR: -2 }
+  }],
+  [900045, {
+    id: 900045, grade: 2, ages: [16, 120], include: "(AGE>=16)&(AGE<=120)&(EVT?[900044])", exclude: "EVT?[900045]",
+    event: "你听完了明天的完整故事：六年 Java 开发生涯后，他来到摸鱼岛，无偿解答众人的技术难题。初心未凉，他依旧愿意帮助他人。你也决定分享所学。智力 +2（知识），快乐 +1（情商），颜值 +1（声望）。",
+    effect: { INT: 2, SPR: 1, CHR: 1 }
+  }],
+  [900046, {
+    id: 900046, grade: 2, ages: [4, 499], include: "(AGE>=4)&(AGE<500)", exclude: "EVT?[900046]",
+    event: "你遇到了神·麻薯。它说：「神本无相。」你的容貌随之消散，颜值归零。",
+    set: { CHR: 0 }
+  }],
+  [900047, {
+    id: 900047, grade: 1, ages: [18, 18], include: "AGE=18", exclude: "EVT?[900047]",
+    event: "18 岁，你学会了吟诗，从此出口成章，偶尔不知所云。智力 -1，快乐 +2。",
+    effect: { INT: -1, SPR: 2 }
+  }],
+  [
+    900002,
+    {
+      id: 900002,
+      event: "你在路上遇到了打螺丝。对方无视你的拒绝，强迫你与其结为道侣。你奋力脱身，却伤及根基，损失了五十年苦修。体质 -50。",
+      format: false,
+      grade: 2,
+      NoRandom: false,
+      include: "(AGE>=18)&(AGE<500)&(EVT?[10323,40001,40003,40061,900039])",
+      exclude: "EVT?[900002]",
+      effect: {
+        STR: -50
+      }
+    }
+  ],
+  [
+    900001,
+    {
+      id: 900001,
+      event: "你在摸鱼岛偶遇岛主聪。他神秘一笑，将《制造 Bug 秘籍》传授给你：“没有 Bug 的代码，是不完整的。”你深受启发，智力 +2，快乐 +2。",
+      format: false,
+      grade: 2,
+      NoRandom: false,
+      include: "(AGE>=18)&(AGE<=60)",
+      exclude: "EVT?[900001]",
+      effect: {
+        INT: 2,
+        SPR: 2
+      }
+    }
+  ],
   [
     10000,
     {
