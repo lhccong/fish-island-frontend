@@ -1,6 +1,7 @@
 import { externalImageProps } from '@/constants';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Avatar, Button, Image, Spin, Empty, Tooltip, Popover, Radio, Card } from 'antd';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import {
   HeartFilled,
   HeartOutlined,
@@ -13,6 +14,7 @@ import {
   RightOutlined,
   EnvironmentOutlined,
   SettingOutlined,
+  SmileOutlined,
 } from '@ant-design/icons';
 import { listMomentsUsingPost, toggleLikeUsingPost } from '@/services/backend/momentsController';
 import PublishMomentModal from '@/components/PublishMomentModal';
@@ -38,7 +40,9 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
   });
   const currentPageRef = useRef(1);
   const loadingRef = useRef(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<VirtuosoHandle>(null);
+  const atTopRef = useRef(true);
+  const [imagePreview, setImagePreview] = useState<{ urls: string[]; current: number } | null>(null);
 
   useEffect(() => {
     localStorage.setItem(collapsedStorageKey, JSON.stringify(collapsed));
@@ -74,7 +78,8 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
   // 收起时的展开箭头：左侧栏收起显示右箭头，右侧栏收起显示左箭头
   const collapseIcon = position === 'left' ? <RightOutlined /> : <LeftOutlined />;
   // 展开时的收起箭头：左侧栏显示左箭头，右侧栏显示右箭头
-  const expandIcon = position === 'left' ? <LeftOutlined /> : <RightOutlined />;  const [publishVisible, setPublishVisible] = useState(false);
+  const expandIcon = position === 'left' ? <LeftOutlined /> : <RightOutlined />;
+  const [publishVisible, setPublishVisible] = useState(false);
   const [detailMomentId, setDetailMomentId] = useState<number | null>(null);
   const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -88,7 +93,7 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
 
     const nextPage = isLoadMore ? currentPageRef.current + 1 : 1;
     loadingRef.current = true;
-    if (!isLoadMore) setLoading(true);
+    setLoading(true);
 
     try {
       const res = await listMomentsUsingPost({
@@ -101,7 +106,10 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
         const records = res.data.records || [];
         const total = res.data.total || 0;
         if (isLoadMore) {
-          setMoments((prev) => [...prev, ...records]);
+          setMoments((prev) => {
+            const existingIds = new Set(prev.map((item) => item.id));
+            return [...prev, ...records.filter((item) => !existingIds.has(item.id))];
+          });
         } else {
           setMoments(records);
         }
@@ -120,10 +128,12 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
     fetchMoments(false);
   }, []);
 
-  // 10 秒静默轮询：只刷新第一页，不触发 loading 状态，弹窗打开时暂停
+  // Only poll at the first page's top; never reset pagination while browsing history.
   const silentRefresh = useCallback(async () => {
     if (loadingRef.current || refreshing) return;
-    if (detailMomentId !== null || publishVisible) return; // 弹窗打开时跳过
+    if (collapsed || document.hidden || !atTopRef.current || currentPageRef.current !== 1) return;
+    if (detailMomentId !== null || publishVisible || imagePreview !== null) return;
+    loadingRef.current = true;
     try {
       const res = await listMomentsUsingPost({
         current: 1,
@@ -135,9 +145,7 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
         const records = res.data.records || [];
         const total = res.data.total || 0;
         setMoments((prev) => {
-          // 仅当第一条 id 不同时才更新，避免无意义重渲染
-          if (records.length > 0 && prev[0]?.id === records[0]?.id &&
-              records.length === prev.slice(0, 10).length) return prev;
+          if (JSON.stringify(prev) === JSON.stringify(records)) return prev;
           return records;
         });
         currentPageRef.current = 1;
@@ -145,8 +153,10 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
       }
     } catch {
       // 静默失败，不提示
+    } finally {
+      loadingRef.current = false;
     }
-  }, [refreshing, detailMomentId, publishVisible]);
+  }, [refreshing, detailMomentId, publishVisible, collapsed, imagePreview]);
 
   useEffect(() => {
     autoRefreshRef.current = setInterval(silentRefresh, 10000);
@@ -161,7 +171,7 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
     setRefreshing(true);
     loadingRef.current = true;
     // 滚动回顶部
-    if (containerRef.current) containerRef.current.scrollTop = 0;
+    listRef.current?.scrollTo({ top: 0 });
     try {
       const res = await listMomentsUsingPost({
         current: 1,
@@ -183,22 +193,6 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
       setRefreshing(false);
     }
   };
-
-  // 滚动加载更多
-  const handleScroll = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 60) {
-      fetchMoments(true);
-    }
-  }, [fetchMoments]);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', handleScroll);
-    return () => el.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
 
   // ── 点赞（列表内快捷点赞，不打开详情） ────────────────────
   const handleLike = async (e: React.MouseEvent, momentId: number, liked: boolean) => {
@@ -322,7 +316,7 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
         </div>
 
         {/* 列表 */}
-        <div className={styles.list} ref={containerRef}>
+        <div className={styles.list}>
           {loading && moments.length === 0 ? (
             <div className={styles.center}>
               <Spin />
@@ -332,8 +326,27 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
               <Empty description="暂无动态" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             </div>
           ) : (
-            <>
-              {moments.map((item) => (
+            <Virtuoso
+              ref={listRef}
+              style={{ height: '100%' }}
+              data={moments}
+              computeItemKey={(_, item) => item.id!}
+              defaultItemHeight={200}
+              increaseViewportBy={100}
+              endReached={() => fetchMoments(true)}
+              atTopStateChange={(atTop) => { atTopRef.current = atTop; }}
+              components={{
+                Footer: () => loading ? (
+                  <div className={styles.center}><Spin size="small" /></div>
+                ) : !hasMore ? (
+                  <div className={styles.noMore}>没有更多了</div>
+                ) : null,
+              }}
+              itemContent={(_, item) => {
+                const imageUrls = (item.mediaJson || [])
+                  .filter((media) => media.type === 'image' && media.url)
+                  .map((media) => media.url!);
+                return (
                 <div
                   key={item.id}
                   className={styles.item}
@@ -374,27 +387,38 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
                     </div>
                   )}
 
-                  {item.mediaJson && item.mediaJson.length > 0 && (
+                  {imageUrls.length > 0 && (
                     <div className={styles.images} onClick={(e) => e.stopPropagation()}>
-                      <Image.PreviewGroup>
-                        {item.mediaJson.slice(0, 3).map((media, idx) =>
-                          media.type === 'image' && media.url ? (
-                            <Image
-                              {...externalImageProps}
-                              key={idx}
-                              src={media.url}
-                              className={styles.thumb}
-                              preview={{ src: media.url }}
-                            />
-                          ) : null
-                        )}
-                        {item.mediaJson.length > 3 && (
-                          <div className={styles.moreImages}>
-                            <PictureOutlined />
-                            <span>+{item.mediaJson.length - 3}</span>
-                          </div>
-                        )}
-                      </Image.PreviewGroup>
+                          <button
+                            type="button"
+                            key={imageUrls[0]}
+                            className={styles.imageButton}
+                            aria-label="查看第 1 张图片"
+                            title={imageUrls.length > 1 ? `查看全部 ${imageUrls.length} 张图片` : '查看原图'}
+                            onClick={() => setImagePreview({ urls: imageUrls, current: 0 })}
+                          >
+                            <span className={styles.imagePlaceholder} aria-hidden="true">
+                              <span className={styles.placeholderFace}><SmileOutlined /></span>
+                              <span className={styles.placeholderLabel}>点开瞅瞅</span>
+                            </span>
+                              <img
+                                {...externalImageProps}
+                                src={imageUrls[0]}
+                                alt=""
+                                width={72}
+                                height={72}
+                                loading="lazy"
+                                decoding="async"
+                                className={styles.thumb}
+                                onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                              />
+                            {imageUrls.length > 1 && (
+                              <span className={styles.imageCount} aria-hidden="true">
+                                <PictureOutlined />
+                                {imageUrls.length}
+                              </span>
+                            )}
+                          </button>
                     </div>
                   )}
 
@@ -414,20 +438,24 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
                     </span>
                   </div>
                 </div>
-              ))}
-
-              {!loading && hasMore && (
-                <div className={styles.center} style={{ padding: '8px 0' }}>
-                  <Spin size="small" />
-                </div>
-              )}
-              {!hasMore && moments.length > 0 && (
-                <div className={styles.noMore}>没有更多了</div>
-              )}
-            </>
+                );
+              }}
+            />
           )}
         </div>
       </div>
+      )}
+
+      {imagePreview && (
+        <Image.PreviewGroup
+          items={imagePreview.urls.map((src) => ({ src, ...externalImageProps }))}
+          preview={{
+            visible: true,
+            current: imagePreview.current,
+            onChange: (current) => setImagePreview((prev) => prev && { ...prev, current }),
+            onVisibleChange: (visible) => { if (!visible) setImagePreview(null); },
+          }}
+        />
       )}
 
       {/* 复用鱼小圈发布弹窗 */}
@@ -448,4 +476,4 @@ const MomentsSidebar: React.FC<{ position?: 'left' | 'right' }> = ({ position = 
   );
 };
 
-export default MomentsSidebar;
+export default React.memo(MomentsSidebar);
