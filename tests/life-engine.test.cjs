@@ -205,7 +205,7 @@ function atAge(age, seen = [], overrides = {}) {
 
 test('new random events occupy only their age ranges and branch outcomes cannot be drawn', () => {
   const additions = Array.from(events.values()).filter(event => event.id >= 900010 && event.id < 910000);
-  assert.equal(additions.length, 76);
+  assert.equal(additions.length, 77);
   for (const event of additions) {
     for (const [age, row] of ages) {
       const entries = row.event.flat().filter(([id]) => id === event.id);
@@ -383,6 +383,12 @@ test('Mingtian story unlocks five achievements in order with profile persistence
 });
 
 test('new submissions enforce exact ages, intelligence gates, and once-only stories', () => {
+  for (const age of [7, 13]) assert.equal(canTriggerEvent(900139, atAge(age), profile()), false);
+  for (const age of [8, 12]) assert.ok(canTriggerEvent(900139, atAge(age), profile()));
+  const panda = triggerEvent(900139, atAge(10), profile());
+  assert.equal(panda.state.props.current.intelligence, allocation.intelligence + 1);
+  assert.equal(panda.state.props.current.spirit, allocation.spirit + 3);
+  assert.equal(canTriggerEvent(900139, panda.state, profile()), false);
   for (const [id, age] of [[900103, 14], [900104, 18], [900105, 24], [900108, 26], [900109, 32], [900110, 18], [900137, 81]]) {
     assert.ok(canTriggerEvent(id, atAge(age), profile()));
     assert.equal(canTriggerEvent(id, atAge(age - 1), profile()), false);

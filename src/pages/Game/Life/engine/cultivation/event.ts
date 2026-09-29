@@ -123,7 +123,7 @@ const fatalEncounters: readonly (readonly [number, number, string])[] = [
 for (const [id, realm, event] of fatalEncounters) {
   if (cultivationEvents.has(id)) throw new Error(`Duplicate cultivation event: ${id}`);
   cultivationEvents.set(id, {
-    id, event, kind: 'danger', fatal: true, weight: 6, once: true,
+    id, event, kind: 'danger', fatal: true, weight: 2, once: true,
     minRealm: realm, maxRealm: realm, category: '生死',
   });
 }

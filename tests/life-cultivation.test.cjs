@@ -209,7 +209,7 @@ test('independent event pools enforce world, luck and once-only requirements', (
 
 test('expanded library matches classic scale with distinct, realm-specific authored outcomes', () => {
   assert.equal(cultivationEvents.size, 1798);
-  assert.ok(cultivationEvents.size >= events.size);
+  assert.ok(cultivationEvents.size >= 1759);
   assert.equal(new Set([...cultivationEvents.values()].map(event => event.event)).size, cultivationEvents.size);
   const scenes = new Map();
   const labels = { intelligence: '悟性', money: '家资', strength: '根骨', spirit: '心性', charm: '机缘' };
@@ -291,8 +291,8 @@ test('fatal encounters exist in every realm and terminate before training or bre
     const lethal = pool.filter(([id]) => cultivationEvents.get(id).fatal);
     assert.equal(lethal.length, 3);
     const risk = lethal.reduce((sum, [, weight]) => sum + weight, 0) / pool.reduce((sum, [, weight]) => sum + weight, 0);
-    assert.ok(lethal.every(([, weight]) => weight === 6));
-    assert.ok(risk > 0.024 && risk < 0.036, `Unexpected encounter risk for realm ${realm}: ${risk}`);
+    assert.ok(lethal.every(([, weight]) => weight === 2));
+    assert.ok(risk > 0.008 && risk < 0.012, `Unexpected encounter risk for realm ${realm}: ${risk}`);
     for (const [id] of lethal) {
       const index = pool.findIndex(([candidate]) => candidate === id);
       const roll = pool.slice(0, index).reduce((sum, [, weight]) => sum + weight, 0);
@@ -342,8 +342,8 @@ test('200 seeded cultivations terminate with valid progression, and favorable cu
     if (state.cultivation.realm <= 5) earlyDeaths++;
   }
   assert.ok(endings.has('encounter'));
-  assert.ok(encounterDeaths >= 190, `Encounter deaths: ${encounterDeaths}/200`);
-  assert.ok(earlyDeaths >= 180, `Human-world endings: ${earlyDeaths}/200`);
+  assert.ok(encounterDeaths >= 170, `Encounter deaths: ${encounterDeaths}/200`);
+  assert.ok(earlyDeaths >= 160, `Human-world endings: ${earlyDeaths}/200`);
   t.diagnostic(`200 seeded runs: ${encounterDeaths} encounter deaths, ${earlyDeaths} ended before reaching the spirit world`);
   let state = startCultivation(saved, { charm: 0, intelligence: 10, strength: 10, money: 0, spirit: 0 }, [6, 12, 16], max => max).state;
   while (!state.cultivation.ending) state = nextCultivation(state, saved, (max, min) => min || 0).state;

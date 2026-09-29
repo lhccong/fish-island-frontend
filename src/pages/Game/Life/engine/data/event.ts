@@ -79,6 +79,9 @@ const data = new Map<number, Event>([
     branch: [{ condition: "AGE>=0", event: 10000 }] }],
   [900138, { id: 900138, grade: 0, ages: [18, 80], include: "(AGE>=18)&(AGE<=80)", exclude: "EVT?[900138]",
     event: "你得知暗恋的人已有对象，失落之余也想明白了许多事。快乐 -5，智力 +5。", effect: { SPR: -5, INT: 5 } }],
+  [900139, { id: 900139, grade: 1, ages: [8, 12], include: "(AGE>=8)&(AGE<=12)", exclude: "EVT?[900139]",
+    event: "8–12 岁，你随家人进山踏青，走入人迹罕至的深山老林。树梢传来一声细微软糯的轻响，你克制住伸手触摸的冲动，静静仰望。一只小熊猫叼着野果跃入密林深处，那一瞬间的温柔治愈了你整个童年。你从此心性柔软，也懂得敬畏自然。智力 +1，快乐 +3。",
+    effect: { INT: 1, SPR: 3 } }],
   [900010, {
     id: 900010, grade: 1, ages: [0, 3], include: "(AGE>=0)&(AGE<=3)", exclude: "EVT?[900010]",
     event: "一只穿耐克的蚕宝宝路过了你所在的摸鱼岛。它携带了超过 10MB 的背包，导致岛屿超载沉没，你打出 GG。",
