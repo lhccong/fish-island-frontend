@@ -22,7 +22,6 @@ import {
   MailOutlined,
   ClockCircleOutlined,
   ShopOutlined,
-  ShoppingOutlined,
   InboxOutlined,
   CheckSquareOutlined,
   BookOutlined,
@@ -55,11 +54,24 @@ import FarmFriendsModal, {
   isFarmStealRecordUnread,
 } from './FarmFriendsModal';
 import FarmCottageDeco from './FarmCottageDeco';
+import FarmBagModal, { type FarmBagTab } from './FarmBagModal';
+import {
+  getMyBuffsUsingGet,
+  type FarmBuffVO,
+} from '@/services/backend/farmBuffController';
 import { isValidUserIdString } from '@/utils/farmNavigate';
 import './index.less';
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
+
+/** buff 道具图标（与 FarmBagModal 一致） */
+const FARM_BUFF_ICON: Record<number, string> = {
+  1: '⚡',
+  2: '🌾',
+  3: '🛡️',
+  4: '🍀',
+};
 
 const GRID_COLS = 6;
 const GRID_ROWS = 4;
@@ -358,6 +370,11 @@ const Farm: React.FC = () => {
   const [selectedCropId, setSelectedCropId] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
+  const [bagModalOpen, setBagModalOpen] = useState(false);
+  const [bagModalMode, setBagModalMode] = useState<'bag' | 'shop'>('bag');
+  const [bagModalTab, setBagModalTab] = useState<FarmBagTab>('collection');
+  const [ownedBuffs, setOwnedBuffs] = useState<FarmBuffVO[]>([]);
+
   const refreshCurrentUser = useCallback(async () => {
     try {
       const res = await getLoginUserUsingGet();
@@ -390,6 +407,17 @@ const Farm: React.FC = () => {
     () => stolenRecords.filter(isFarmStealRecordUnread).length,
     [stolenRecords],
   );
+
+  const loadBuffs = useCallback(async () => {
+    try {
+      const res = await getMyBuffsUsingGet();
+      if (res.code === 0 && res.data) {
+        setOwnedBuffs(res.data.filter((b) => b.owned));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   const handleMarkAllStolenRead = useCallback(async () => {
     if (unreadStolenCount === 0) {
@@ -459,13 +487,31 @@ const Farm: React.FC = () => {
       }
 
       await loadStolenRecords();
+      await loadBuffs();
     } catch (e) {
       message.error('加载农场数据失败');
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [isLoggedIn, loadStolenRecords]);
+  }, [isLoggedIn, loadStolenRecords, loadBuffs]);
+
+  const openBag = useCallback((tab: FarmBagTab) => {
+    setBagModalMode('bag');
+    setBagModalTab(tab);
+    setBagModalOpen(true);
+  }, []);
+
+  /** 商店：道具购买与升级（与背包合并前为"商城"，语义重复已移除） */
+  const openShop = useCallback(() => {
+    setBagModalMode('shop');
+    setBagModalTab('buff');
+    setBagModalOpen(true);
+  }, []);
+
+  const handleBagDataChanged = useCallback(async () => {
+    await Promise.all([refreshCurrentUser(), loadBuffs()]);
+  }, [refreshCurrentUser, loadBuffs]);
 
   const openFriendsModal = useCallback((tab: FriendTab = 'play') => {
     setFriendsInitialTab(tab);
@@ -997,17 +1043,53 @@ const Farm: React.FC = () => {
     setActionLoading(true);
     try {
       const res = await harvestUsingPost({ landIds });
-      if (res.code === 0) {
+      if (res.code === 0 && res.data) {
+        const { lands: updatedLands, totalPoints, newCollections } = res.data;
         message.success(
           landIds.length > 1
-            ? `成功收获 ${landIds.length} 块地！`
-            : '收获成功，积分已入账～',
+            ? `成功收获 ${landIds.length} 块地，共 +${totalPoints ?? 0} 积分！`
+            : `收获成功，+${totalPoints ?? 0} 积分～`,
         );
         const refreshed = await refreshLandsAndFarmUser();
-        if (!refreshed && res.data?.length) {
-          setLands((prev) => mergeLandUpdates(prev, res.data!));
+        if (!refreshed && updatedLands?.length) {
+          setLands((prev) => mergeLandUpdates(prev, updatedLands));
         }
         await refreshCurrentUser();
+        if (newCollections && newCollections.length > 0) {
+          Modal.info({
+            title: '🎉 解锁新图鉴',
+            className: 'farm-collection-unlock-modal',
+            okText: '收下啦',
+            content: (
+              <div className="farm-collection-unlock-list">
+                {newCollections.map((entry, idx) => (
+                  <div
+                    key={`${entry.cropId}-${entry.grade}-${idx}`}
+                    className="farm-collection-unlock-item"
+                  >
+                    <span className="farm-collection-unlock-icon">
+                      {entry.cropIcon || '🌱'}
+                    </span>
+                    <span className="farm-collection-unlock-name">
+                      {entry.cropName}
+                    </span>
+                    <span className="farm-collection-unlock-grade">
+                      品级 {entry.grade}
+                    </span>
+                    <span className="farm-collection-unlock-weight">
+                      {entry.weight}g · 最大重量
+                    </span>
+                    {!!entry.bonus && entry.bonus > 0 && (
+                      <span className="farm-collection-unlock-bonus">
+                        +{entry.bonus} 积分
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ),
+          });
+        }
       } else {
         message.error(res.message || '收获失败');
       }
@@ -1188,9 +1270,9 @@ const Farm: React.FC = () => {
         }
       },
     },
-    { key: 'shop', label: '商店', icon: <ShopOutlined />, accent: 'green' },
-    { key: 'tasks', label: '任务', icon: <CheckSquareOutlined />, accent: 'blue' },
-    { key: 'backpack', label: '背包', icon: <InboxOutlined />, accent: 'brown' },
+    { key: 'shop', label: '商店', icon: <ShopOutlined />, accent: 'green', onClick: openShop },
+    { key: 'tasks', label: '任务', icon: <CheckSquareOutlined />, accent: 'blue', onClick: () => openBag('achievement') },
+    { key: 'backpack', label: '背包', icon: <InboxOutlined />, accent: 'brown', onClick: () => openBag('collection') },
     {
       key: 'harvest',
       label: '收获',
@@ -1214,7 +1296,6 @@ const Farm: React.FC = () => {
       accent: 'pink',
       onClick: () => openFriendsModal('play'),
     },
-    { key: 'mall', label: '商城', icon: <ShoppingOutlined />, accent: 'green' },
     { key: 'feed', label: '喂食', icon: <CoffeeOutlined />, accent: 'brown' },
     { key: 'guide', label: '指引', icon: <BookOutlined />, accent: 'cream' },
     { key: 'pet', label: '灵宠', icon: <HeartOutlined />, accent: 'pink' },
@@ -1383,6 +1464,29 @@ const Farm: React.FC = () => {
                     </Badge>
                   </button>
                 </Tooltip>
+
+                {!visitingFriend && ownedBuffs.length > 0 && (
+                  <div className="farm-buff-badges" aria-label="农场光环道具">
+                    {ownedBuffs.map((buff) => (
+                      <Tooltip
+                        key={buff.buffType}
+                        title={`${buff.name} Lv.${buff.level}${buff.effectDesc ? `（${buff.effectDesc}）` : ''}`}
+                      >
+                        <button
+                          type="button"
+                          className="farm-buff-badge"
+                          aria-label={`${buff.name} Lv.${buff.level}`}
+                          onClick={openShop}
+                        >
+                          <span className="farm-buff-badge-icon">
+                            {FARM_BUFF_ICON[buff.buffType] ?? '✨'}
+                          </span>
+                          <span className="farm-buff-badge-level">Lv.{buff.level}</span>
+                        </button>
+                      </Tooltip>
+                    ))}
+                  </div>
+                )}
               </aside>
 
               <div className="farm-land-field">
@@ -1637,6 +1741,14 @@ const Farm: React.FC = () => {
           )}
         </div>
       </Modal>
+
+      <FarmBagModal
+        open={bagModalOpen}
+        initialTab={bagModalTab}
+        mode={bagModalMode}
+        onClose={() => setBagModalOpen(false)}
+        onDataChanged={handleBagDataChanged}
+      />
     </div>
   );
 };
