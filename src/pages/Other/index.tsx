@@ -3,6 +3,7 @@ import {
   LinkOutlined,
   MobileOutlined,
   PlayCircleOutlined,
+  RocketOutlined,
   SoundOutlined,
 } from '@ant-design/icons';
 import { Card, Col, message, Row, Space, Typography } from 'antd';
@@ -102,6 +103,48 @@ const OtherProducts: React.FC = () => {
             >
               <Paragraph>
                 摸鱼音乐是一个轻松便捷的在线音乐平台，汇集丰富音乐内容，陪你在工作和学习之余享受片刻放松时光。
+              </Paragraph>
+              <Paragraph className="visit-link">
+                <span className="link-text">立即访问</span>
+              </Paragraph>
+            </Card>
+          </a>
+        </Col>
+
+        <Col xs={24} sm={24} md={12} lg={8}>
+          <a
+            href="https://game.yucoder.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="card-link"
+          >
+            <Card
+              cover={
+                <div
+                  style={{
+                    padding: '32px',
+                    textAlign: 'center',
+                    borderBottom: '1px solid #f0f0f0',
+                  }}
+                >
+                  <RocketOutlined style={{ fontSize: '64px', color: '#fa8c16' }} />
+                </div>
+              }
+              title={
+                <Space>
+                  <Title level={3}>摸鱼派对</Title>
+                  <a
+                    href="#"
+                    onClick={(e) => handleCopyUrl('https://game.yucoder.cn/', e)}
+                    className="copy-link"
+                  >
+                    <LinkOutlined />
+                  </a>
+                </Space>
+              }
+            >
+              <Paragraph>
+                工作之余，来摸鱼派对享受轻松愉快的游戏时光。
               </Paragraph>
               <Paragraph className="visit-link">
                 <span className="link-text">立即访问</span>
